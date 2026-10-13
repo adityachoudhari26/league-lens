@@ -44,7 +44,7 @@ Node is used for frontend development and builds. The production application run
 
 - [ ] **5. Add owner setup and credential protection.** Review and implement owner authentication, protected setup, server-side sessions, and encrypted credential storage. Keep registration closed by default. **Done when:** unauthorized requests cannot access protected data, secrets do not appear in responses or logs, and setup cannot be claimed without its token. Document encryption-key backup requirements.
 
-- [ ] **6. Build the ESPN connector.** Turn the verified read-only flow into reusable Go code; normalize league settings, teams, roster slots, players, and matchups. Add UI configuration and reconnect/error states. **Done when:** the selected ESPN team imports correctly, fixture tests verify normalization, and an expired or invalid connection leaves the last successful snapshot intact.
+- [ ] **6. Build the ESPN connector.** Backend adapter and command implemented and verified; UI configuration/reconnect states remain deferred. Turn the verified read-only flow into reusable Go code; normalize league settings, teams, roster slots, players, and matchups. Add UI configuration and reconnect/error states. **Done when:** the selected ESPN team imports correctly, fixture tests verify normalization, and an expired or invalid connection leaves the last successful snapshot intact.
 
 - [x] **7. Build the Sleeper connector.** Look up a username, select a league/team, and normalize the same data categories. Treat public username lookup as selection, not proof of account ownership. **Done when:** the selected Sleeper team imports correctly and fixture tests cover its mappings and missing-data cases.
 
@@ -82,14 +82,13 @@ The repository includes the locally implemented Go/Postgres foundation described
 
 Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
 
-**Current:** Sleeper implements the shared `fantasy.Provider` contract on
-`feat/provider-contracts`. The importer consumes normalized league data; provider
+**Current:** Sleeper and ESPN implement the shared `fantasy.Provider` contract. The importer consumes normalized league data; provider
 HTTP formats stay inside adapters. See [provider contracts](docs/designs/provider-contracts.md).
 
-Included: a reusable Sleeper import service, a temporary flag-based import command,
+Included: a reusable provider-independent import service, a temporary flag-based import command,
 current rosters and team records, available current-season weekly rosters/matchups,
 cached DynastyProcess identity lookup, and atomic persistence with sync status.
-Authentication, ESPN import, frontend/Connect work, scheduling, and AI remain deferred.
+Authentication, frontend/Connect work, scheduling, and AI remain deferred.
 
 Sleeper now exercises full-league import and current-season backfill. Existing prior-season data is preserved. Generated queries and transaction behavior are tested against disposable Postgres.
 
@@ -204,4 +203,47 @@ Run `just migrate` after this update. The additive migration retains normalized
 team records/ranks, matchup scoring-week spans and byes, and unknown eligibility.
 Existing historical data is retained. The first import after the change may
 create a fresh current observation because snapshot hashing now uses the shared
-model; later unchanged imports deduplicate as before. ESPN remains unimplemented.
+model; later unchanged imports deduplicate as before. ESPN uses the same schema; no additional migration is needed for its adapter.
+
+
+## Import a private ESPN league locally
+
+After starting Postgres and applying migrations, export `ESPN_S2` and `ESPN_SWID`
+from your private local credentials, then run:
+
+```sh
+just import-espn YOUR_LEAGUE_ID 2026 YOUR_TEAM_ID
+```
+
+With `DATABASE_URL` already exported, the equivalent command is:
+
+```sh
+go run ./cmd/import espn --league-id YOUR_LEAGUE_ID --season 2026 --team-id YOUR_TEAM_ID
+```
+
+The season is explicit because ESPN reuses league IDs. Team selection is a local
+preference, not application authentication. Credentials are environment-only;
+the command does not read `.env.local` automatically. `just` loads only
+`.env.development`. Do not put cookie values in command arguments or commit them.
+The connection stores a hash-derived account identifier, not the SWID cookie.
+
+The adapter imports all teams, current records/rosters, and available earlier
+weekly rosters in the selected season. ESPN must return the requested historical
+week; a mismatched week fails the import. Missing roster data remains unknown,
+while an explicit empty entry list means an empty roster. Historical snapshots
+do not borrow current standings. Matchup totals retain their scoring-week spans,
+including multiweek rounds; future rounds are deferred. Undecided matchups retain
+unknown status because the response does not prove games have started. Missing opponents are
+not automatically classified as byes. Partial schedules cannot delete unseen
+pairings. Unknown roster slots retain their ESPN slot ID.
+
+Player identities use exact ESPN IDs plus the shared mapping dataset. Defense
+aliases use ESPN franchise IDs. Unsupported scoring rules and position-specific
+overrides remain in supplemental settings. Credentials and member data are never
+included in those settings. There are no automatic retries; HTTP/auth failures
+return a sanitized error and leave previously imported league data intact.
+
+ESPN's fantasy API is undocumented and may change. The adapter follows the
+[community ESPN client](https://github.com/cwendt94/espn-api) and verified read-only
+responses. Fixture tests cover authentication failures, redirects, history,
+multiweek scores, defense identity, and missing data.

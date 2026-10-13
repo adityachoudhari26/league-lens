@@ -17,3 +17,23 @@ func TestArguments(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestESPNArguments(t *testing.T) {
+	var out bytes.Buffer
+	options, err := parseImportOptions([]string{"espn", "--league-id", "123", "--season", "2026", "--team-id", "2"}, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if options.leagueID != "123" {
+		t.Fatal("lost league selection")
+	}
+	for _, args := range [][]string{
+		{"espn", "--league-id", "123", "--team-id", "2"},
+		{"espn", "--league-id", "123", "--season", "2026"},
+		{"espn", "--league-id", "123", "--season", "2026", "--team-id", "0"},
+	} {
+		if _, err := parseImportOptions(args, &out); err == nil {
+			t.Fatalf("accepted invalid selection %v", args)
+		}
+	}
+}
