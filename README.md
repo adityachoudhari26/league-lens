@@ -80,7 +80,7 @@ The repository includes the locally implemented Go/Postgres foundation described
 
 Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
 
-**Current:** the infrastructure/database foundation is implemented locally on `feat/database-foundation`. The source portion of checkpoint 4 is present; generation and application query wiring remain deferred. Checkpoints 2 and 3 are not complete because the frontend and Connect flow are deferred. No scaffold push or PR is authorized.
+**Current:** the infrastructure/database foundation is merged. Development commands are being updated locally on `chore/just-air-dev`. The source portion of checkpoint 4 is present; generation and application query wiring remain deferred. Checkpoints 2 and 3 are not complete because the frontend and Connect flow are deferred. No scaffold push or PR is authorized.
 
 Included: Go health server, Postgres Compose service, explicit Goose migrations, 12 domain tables, source SQL queries, sqlc configuration, and unit/integration tests. No generated bindings, authentication, provider imports/backfill execution, player-mapping downloads, frontend, background jobs, or AI are implemented yet.
 
@@ -88,24 +88,33 @@ The schema supports full-league import and initial current-season backfill; thos
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook setup.
 
+## Development tools
+
+Use `just` to list the command menu. Install it with `brew install just` on macOS or follow [the official installation guide](https://just.systems/man/en/packages.html). Then run the setup sequence below. `just tools` installs Air v1.65.3 under the ignored project `bin/` directory, without changing your global Air installation.
+
+`just dev-api` uses Air to rebuild and restart Go after source or embedded SQL changes. It stops the old server on a compile error and sends an interrupt for graceful shutdown. SQL edits trigger a rebuild only; migrations are always explicit. No command runs code generation. Use `just serve` for a plain run. The frontend is not implemented, so there is no `dev-web` recipe yet.
+
+Development settings live in `.env.development` (created with owner-only permissions). Restart the development command after changing that file. The existing `.env.local` provider credentials and local VS Code settings remain separate and ignored. Use `just setup` safely on an existing checkout: it never overwrites configuration.
+
 ## Local database foundation
 
-Prerequisites: Go 1.26+ and Docker Compose. Node is not required for this slice.
+Prerequisites: Go 1.26+, just, and Docker Compose. Node is not required for this slice.
 
 ```sh
-make db-up
-export DATABASE_URL='postgres://league_lens:league_lens_local@127.0.0.1:54329/league_lens?sslmode=disable'
-make migrate-up
-make serve
+just setup
+just tools
+just db-up
+just migrate
+just dev-api
 ```
 
-The database port is loopback-only. The password shown is a local development default; configure your own values before any remote deployment. Go reads exported environment variables and does not automatically load `.env.local`. Do not overwrite the existing provider credential file with `.env.example`.
+The database port is loopback-only. The password shown is a local development default; configure your own values before any remote deployment. `just` loads `.env.development`; exported shell values take precedence. Direct Go commands read exported environment variables only. Neither just nor Air loads `.env.local`. Do not overwrite the existing provider credential file with `.env.example`.
 
 - `GET http://127.0.0.1:8080/healthz`: process liveness.
 - `GET http://127.0.0.1:8080/readyz`: database connectivity, not migration/auth/provider readiness.
-- `make test`, `make check`, `make build`: unit tests, static checks, and Go binaries.
-- `TEST_DATABASE_URL=... make test-integration`: migration/schema/query tests in a temporary schema on a disposable database.
-- `make db-stop`: stop Postgres while retaining its volume.
+- `just test`, `just check`, `just build`: unit tests, static checks, and Go binaries.
+- `just test-db`: starts a disposable Postgres container, tests migrations/schema/queries, and removes the container afterward. It does not use your development database.
+- `just db-stop`: stop Postgres while retaining its volume.
 
 No build or test command invokes a generator. `sqlc.yaml` is source configuration only; generated packages do not exist yet. See [the database design and import plan](docs/designs/database-foundation.md) for history semantics and the transaction boundary. Public-facing authentication and data endpoints are not part of this scaffold.
 

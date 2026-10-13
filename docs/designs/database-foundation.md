@@ -64,23 +64,24 @@ Backfill should use one attempt per historical period so one unavailable week do
 
 ## Development commands
 
-Go 1.26+ and Docker Compose are sufficient for this slice; the machine's broken Node installation is not used. Copy values from `.env.example` into your shell or a separate ignored development file. Do not overwrite or source the existing provider credential file into a client build.
+Go 1.26+, just, and Docker Compose are sufficient for this slice; the machine's broken Node installation is not used. Run `just setup` to copy `.env.example` to `.env.development` without overwriting an existing file. Do not overwrite or source the existing provider credential file into a client build.
 
 ```sh
-make db-up
-export DATABASE_URL='postgres://league_lens:league_lens_local@127.0.0.1:54329/league_lens?sslmode=disable'
-make migrate-up
-make serve
+just setup
+just tools
+just db-up
+just migrate
+just dev-api
 ```
 
-The sample password is for a loopback-only development database. If changing Compose credentials or port, update DATABASE_URL accordingly. Keep TLS enabled for remote databases. `make db-stop` preserves the named volume. `make migrate-down` explicitly rolls back one migration and can delete application data; it is not an ordinary stop command.
+The sample password is for a loopback-only development database. If changing Compose credentials or port, update DATABASE_URL accordingly. Keep TLS enabled for remote databases. `just db-stop` preserves the named volume. `just migrate-down` explicitly rolls back one migration and can delete application data; it is not an ordinary stop command.
 
 ```sh
-make test
-make check
-make build
-# Use a disposable database. Integration tests create/drop a temporary schema.
-TEST_DATABASE_URL="$DATABASE_URL" make test-integration
+just test
+just check
+just build
+# Creates and removes its own disposable database container.
+just test-db
 ```
 
 Integration tests validate migrations up/repeat/down/up, source-query preparation, identity uniqueness, access filtering, cross-season protection, partial historical coverage, null scores, and idempotent history corrections. Synthetic fixture data never contains real league details.

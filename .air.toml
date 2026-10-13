@@ -1,0 +1,28 @@
+root = "."
+tmp_dir = "tmp/air"
+# just supplies .env.development. Never load the provider credential file here.
+env_files = []
+
+[build]
+cmd = "go build -o ./tmp/air/server ./cmd/server"
+entrypoint = ["./tmp/air/server"]
+include_ext = ["go", "sql"]
+include_file = ["go.mod", "go.sum"]
+exclude_dir = [".git", ".vscode", "bin", "tmp", "web", "vendor", "node_modules"]
+exclude_regex = ["_test\\.go$"]
+exclude_unchanged = true
+delay = 300
+stop_on_error = true
+send_interrupt = true
+kill_delay = "12s"
+log = "build-errors.log"
+
+[log]
+time = true
+
+[misc]
+clean_on_exit = true
+
+[screen]
+clear_on_rebuild = false
+keep_scroll = true
