@@ -11,3 +11,11 @@
 - Keep scaffold changes local. Do not push branches or create PRs unless the user changes this instruction.
 - sqlc generation is authorized for database queries via `just gen-db` (v1.30.0). Buf, go generate, and scaffold generators still require explicit authorization.
 - Current implementation scope includes the Go/Postgres foundation and the Sleeper import service/command. Frontend, Connect endpoints, ESPN import, background scheduling, and AI are deferred.
+
+## Code organization and readability
+
+- Prefer focused, modular functions that each do one recognizable thing. A helper with only four lines is worthwhile when its name expresses a meaningful operation; reuse and line count are not prerequisites for extraction.
+- Let calling code read as a sequence of clearly named operations. Use descriptive result variables so readers can understand what was computed or what happened without opening every helper.
+- Keep orchestration separate from the details of fetching, validation, transformation, and persistence. Extract cohesive operations rather than arbitrary chunks of lines, and avoid vague names such as `handleData` or `processStuff`.
+- Apply the same approach to frontend components and hooks: give each a clear responsibility and a name that describes its purpose. Small components are welcome when they represent a meaningful part of the interface or behavior.
+- Prefer straightforward composition over unnecessary abstraction. The goal is readable responsibilities and clear data flow, not the maximum number of functions or files.
