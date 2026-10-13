@@ -81,3 +81,7 @@ _require-air:
 # Import a public Sleeper league for the local owner (not authentication).
 import-sleeper username league_id owner_email="owner@localhost": _require-env
     go run ./cmd/import sleeper --username {{quote(username)}} --league-id {{quote(league_id)}} --owner-email {{quote(owner_email)}}
+
+# Import a private ESPN league; export ESPN_S2 and ESPN_SWID first.
+import-espn league_id season team_id owner_email="owner@localhost": _require-env
+    go run ./cmd/import espn --league-id {{quote(league_id)}} --season {{quote(season)}} --team-id {{quote(team_id)}} --owner-email {{quote(owner_email)}}
