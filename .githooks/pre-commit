@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+branch=$(git symbolic-ref --quiet --short HEAD || true)
+case "$branch" in
+  main|master)
+    echo "Create a feature branch before committing. Changes to main go through pull requests." >&2
+    exit 1
+    ;;
+esac

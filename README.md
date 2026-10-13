@@ -6,6 +6,8 @@ An open-source, self-hosted fantasy football dashboard for ESPN and Sleeper, wit
 
 We will build one checkpoint at a time. After each checkpoint, stop, show what changed, report the checks performed and any limitations, and wait for your approval before starting the next checkpoint. Approval applies only to the next checkpoint, not the entire roadmap.
 
+All changes must be made on feature branches and reviewed through pull requests. Never push directly to `main`.
+
 This README is the progress tracker. Check an item only when its acceptance criteria have been verified. Update the plan together if the scope changes. Do not publish, deploy to a public host, or choose a project license implicitly.
 
 ## Selected stack

@@ -2,6 +2,12 @@
 
 Follow the checkpoints in [README.md](README.md). Keep each change focused and explain what changed and how it was verified.
 
+## Branches and pull requests
+
+Create a feature branch before making changes (for example, `chore/repo-hygiene` or `feat/app-scaffold`). Push that branch and open a pull request for review. Never commit or push directly to `main`. Do not merge a pull request without the owner's approval.
+
+The local pre-commit hook rejects commits on `main` and `master`. Hooks must be enabled on each clone; GitHub branch protection is separate and is not configured by this repository.
+
 ## Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
