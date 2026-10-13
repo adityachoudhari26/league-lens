@@ -9,5 +9,5 @@
 ## Current scaffold constraints
 
 - Keep scaffold changes local. Do not push branches or create PRs unless the user changes this instruction.
-- Do not run code generation (Buf, sqlc, go generate, or scaffold generators) until explicitly authorized.
+- sqlc generation is authorized for the typed-query checkpoint via `just gen-db` (v1.30.0). Buf, go generate, and scaffold generators still require explicit authorization.
 - Current implementation scope is the Go/Postgres foundation; frontend, Connect endpoints, provider import services, and AI are deferred.

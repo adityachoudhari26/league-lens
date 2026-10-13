@@ -40,7 +40,7 @@ Node is used for frontend development and builds. The production application run
 
 - [ ] **3. Connect the frontend to Go.** Define a small health service in Protobuf, configure reproducible code generation, and call it from the frontend through Connect Query. **Done when:** the page displays the real backend response and a useful error when the backend is unavailable; generated bindings reproduce cleanly.
 
-- [ ] **4. Add Postgres and migrations.** Add a local database service, Goose migrations, pgx connections, and sqlc queries. Design ownership for users, connections, leagues, and selected teams. Separate process health from database readiness. **Done when:** an empty database migrates successfully, a database round trip works, and an unavailable database is reported accurately.
+- [x] **4. Add Postgres and migrations.** Add a local database service, Goose migrations, pgx connections, and sqlc queries. Design ownership for users, connections, leagues, and selected teams. Separate process health from database readiness. **Done when:** an empty database migrates successfully, a database round trip works, and an unavailable database is reported accurately.
 
 - [ ] **5. Add owner setup and credential protection.** Review and implement owner authentication, protected setup, server-side sessions, and encrypted credential storage. Keep registration closed by default. **Done when:** unauthorized requests cannot access protected data, secrets do not appear in responses or logs, and setup cannot be claimed without its token. Document encryption-key backup requirements.
 
@@ -68,7 +68,9 @@ cmd/server/           Go application entry point
 internal/             Backend services, connectors, auth, and jobs
 proto/                Versioned API definitions
 gen/                  Generated Go API bindings
-db/                   SQL queries, migrations, and generated query code
+db/                   SQL queries and migrations
+internal/store/       Generated sqlc query bindings
+internal/database/    Pool ownership and transaction boundary
 docs/                 Approved designs and implementation notes
 compose.yaml          Self-hosted services
 Dockerfile            Frontend build and Go runtime packaging
@@ -80,11 +82,11 @@ The repository includes the locally implemented Go/Postgres foundation described
 
 Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
 
-**Current:** the infrastructure/database foundation is merged. Development commands are being updated locally on `chore/just-air-dev`. The source portion of checkpoint 4 is present; generation and application query wiring remain deferred. Checkpoints 2 and 3 are not complete because the frontend and Connect flow are deferred. No scaffold push or PR is authorized.
+**Current:** the database foundation and development tools are merged. The typed-query checkpoint is implemented locally on `feat/typed-database-queries`. Generation is isolated in its own first commit, followed by handwritten transaction wiring. No push or PR is authorized for this checkpoint.
 
-Included: Go health server, Postgres Compose service, explicit Goose migrations, 12 domain tables, source SQL queries, sqlc configuration, and unit/integration tests. No generated bindings, authentication, provider imports/backfill execution, player-mapping downloads, frontend, background jobs, or AI are implemented yet.
+Included: Go health server, Postgres Compose service, explicit Goose migrations, 12 domain tables, sqlc v1.30.0 bindings, pooled query access, transaction handling, and unit/integration tests. Authentication, provider imports/backfill execution, player-mapping downloads, frontend, background jobs, and AI remain deferred. Checkpoints 2 and 3 still await frontend/Connect work.
 
-The schema supports full-league import and initial current-season backfill; those behaviors will run only when connector services are implemented. Prior seasons are preserved. Source query preparation has been tested against Postgres, but sqlc generation has deliberately not been run.
+The schema supports full-league import and initial current-season backfill; those behaviors will run only when connector services are implemented. Prior seasons are preserved. Generated queries and transaction behavior are tested against disposable Postgres.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook setup.
 
@@ -92,7 +94,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook set
 
 Use `just` to list the command menu. Install it with `brew install just` on macOS or follow [the official installation guide](https://just.systems/man/en/packages.html). Then run the setup sequence below. `just tools` installs Air v1.65.3 under the ignored project `bin/` directory, without changing your global Air installation.
 
-`just dev-api` uses Air to rebuild and restart Go after source or embedded SQL changes. It stops the old server on a compile error and sends an interrupt for graceful shutdown. SQL edits trigger a rebuild only; migrations are always explicit. No command runs code generation. Use `just serve` for a plain run. The frontend is not implemented, so there is no `dev-web` recipe yet.
+`just dev-api` uses Air to rebuild and restart Go after source or embedded SQL changes. It stops the old server on a compile error and sends an interrupt for graceful shutdown. SQL edits trigger a rebuild only; migrations are always explicit. Development commands do not run generation; use `just gen-db` explicitly when changing database queries. Use `just serve` for a plain run. The frontend is not implemented, so there is no `dev-web` recipe yet.
 
 Development settings live in `.env.development` (created with owner-only permissions). Restart the development command after changing that file. The existing `.env.local` provider credentials and local VS Code settings remain separate and ignored. Use `just setup` safely on an existing checkout: it never overwrites configuration.
 
@@ -116,8 +118,25 @@ The database port is loopback-only. The password shown is a local development de
 - `just test-db`: starts a disposable Postgres container, tests migrations/schema/queries, and removes the container afterward. It does not use your development database.
 - `just db-stop`: stop Postgres while retaining its volume.
 
-No build or test command invokes a generator. `sqlc.yaml` is source configuration only; generated packages do not exist yet. See [the database design and import plan](docs/designs/database-foundation.md) for history semantics and the transaction boundary. Public-facing authentication and data endpoints are not part of this scaffold.
+No build or test command invokes a generator. `sqlc.yaml` generates committed bindings under `internal/store`; edit SQL inputs and run `just gen-db` rather than editing generated Go. See [the database design and import plan](docs/designs/database-foundation.md) for history semantics and the transaction boundary. Public-facing authentication and data endpoints are not part of this scaffold.
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE). You may use, modify, redistribute, and commercially host the software subject to its license terms. External services and data remain subject to their own terms.
+
+## Typed database queries
+
+Generation uses sqlc **v1.30.0**, the version recorded in the generated files. Install that version if it is not already on your PATH:
+
+```sh
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
+# Ensure the Go bin directory (normally $HOME/go/bin) is on PATH.
+sqlc version
+just gen-db
+```
+
+`just gen-db` rejects other sqlc versions. After changing `db/queries` or migrations, run it explicitly and review the generated diff. Buf and other generators remain deferred. Ordinary startup, build, and tests never generate code.
+
+`internal/database` owns the pool and exposes `Queries()` for individual operations and `InTx(ctx, callback)` for atomic writes. The callback receives transaction-bound generated queries. Use those queries for every operation in the transaction and do not retain them afterward. Errors, panics, and cancellation roll back; callbacks are not automatically retried. Do not call `Queries()` or nest `InTx` from inside the callback. Network fetches belong outside the transaction.
+
+`just test-db` now runs both schema checks and typed-query transaction tests in a disposable database. No real provider credentials are needed.

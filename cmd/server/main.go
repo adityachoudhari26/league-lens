@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/config"
+	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/httpserver"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -29,13 +29,13 @@ func run() error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	data, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return errors.New("could not configure database pool; check DATABASE_URL")
 	}
-	defer pool.Close()
+	defer data.Close()
 	srv := &http.Server{
-		Addr: cfg.HTTPAddr, Handler: httpserver.NewHandler(pool.Ping),
+		Addr: cfg.HTTPAddr, Handler: httpserver.NewHandler(data.Ping),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
 		WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
