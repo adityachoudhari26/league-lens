@@ -50,3 +50,19 @@ git diff --cached --stat
 ```
 
 Run the checks relevant to your changes and report the results. The scaffold will add reproducible build, lint, generation, and test commands; none are claimed to exist yet. Do not rewrite published history just to convert older commits to the new convention.
+
+## Continuous integration
+
+Pull requests and pushes to `main` run Go formatting, shell syntax, vet, race
+checks, builds, disposable Postgres integration tests, and a sqlc v1.30.0 drift
+check. Run `just check`, `go test -race ./...`, `just build`, `just test-db`, and
+`just gen-db` locally before submitting; commit any regenerated files.
+
+PR titles must follow the same Conventional Commit format as local commits
+because they become squash commit subjects. Editing a title reruns its check.
+Workflows use read-only repository permissions and need no provider credentials.
+
+Recommended required checks in GitHub branch rules: `Go checks`, `Database
+integration`, `Generated database code`, and `Conventional PR title`. Adding the
+workflows does not enable branch protection automatically. Release publishing is
+deferred until the app is ready to distribute.
