@@ -1,0 +1,35 @@
+name: PR title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: Conventional PR title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate squash commit title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Pass untrusted title text as data, never interpolate it into shell code.
+          case "$PR_TITLE" in
+            *$'\n'*|Merge\ *|Revert\ \"*)
+              echo 'Use a single-line Conventional Commit title.' >&2
+              exit 1
+              ;;
+          esac
+          printf '%s\n' "$PR_TITLE" > "$RUNNER_TEMP/pr-title.txt"
+          sh scripts/check-commit-message.sh "$RUNNER_TEMP/pr-title.txt"
