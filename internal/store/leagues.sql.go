@@ -71,7 +71,7 @@ func (q *Queries) ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([
 }
 
 const listTeamsForUser = `-- name: ListTeamsForUser :many
-SELECT t.id, t.league_season_id, t.external_team_id, t.name, t.created_at, t.updated_at FROM teams t WHERE t.league_season_id=$2
+SELECT t.id, t.league_season_id, t.external_team_id, t.name, t.created_at, t.updated_at, t.record_json, t.rank FROM teams t WHERE t.league_season_id=$2
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
  WHERE cl.league_season_id=t.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
@@ -99,6 +99,8 @@ func (q *Queries) ListTeamsForUser(ctx context.Context, arg ListTeamsForUserPara
 			&i.Name,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RecordJson,
+			&i.Rank,
 		); err != nil {
 			return nil, err
 		}
@@ -172,19 +174,27 @@ func (q *Queries) UpsertLeagueSeason(ctx context.Context, arg UpsertLeagueSeason
 }
 
 const upsertTeam = `-- name: UpsertTeam :one
-INSERT INTO teams (league_season_id,external_team_id,name) VALUES ($1,$2,$3)
+INSERT INTO teams (league_season_id,external_team_id,name,record_json,rank) VALUES ($1,$2,$3,$4,$5)
 ON CONFLICT (league_season_id,external_team_id)
-DO UPDATE SET name=EXCLUDED.name,updated_at=now() RETURNING id, league_season_id, external_team_id, name, created_at, updated_at
+DO UPDATE SET name=EXCLUDED.name,record_json=EXCLUDED.record_json,rank=EXCLUDED.rank,updated_at=now() RETURNING id, league_season_id, external_team_id, name, created_at, updated_at, record_json, rank
 `
 
 type UpsertTeamParams struct {
 	LeagueSeasonID pgtype.UUID
 	ExternalTeamID string
 	Name           string
+	RecordJson     []byte
+	Rank           pgtype.Int4
 }
 
 func (q *Queries) UpsertTeam(ctx context.Context, arg UpsertTeamParams) (Team, error) {
-	row := q.db.QueryRow(ctx, upsertTeam, arg.LeagueSeasonID, arg.ExternalTeamID, arg.Name)
+	row := q.db.QueryRow(ctx, upsertTeam,
+		arg.LeagueSeasonID,
+		arg.ExternalTeamID,
+		arg.Name,
+		arg.RecordJson,
+		arg.Rank,
+	)
 	var i Team
 	err := row.Scan(
 		&i.ID,
@@ -193,6 +203,8 @@ func (q *Queries) UpsertTeam(ctx context.Context, arg UpsertTeamParams) (Team, e
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RecordJson,
+		&i.Rank,
 	)
 	return i, err
 }

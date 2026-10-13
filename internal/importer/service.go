@@ -6,32 +6,30 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/database"
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
-	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Source interface {
-	Header(context.Context, string, string) (sleeper.Header, error)
-	Fetch(context.Context, sleeper.Header) (sleeper.Data, error)
-}
 type Service struct {
 	DB             *database.DB
-	Source         Source
+	Source         fantasy.Provider
 	Catalog        playerids.Catalog
 	CatalogVersion string
 }
-type Request struct{ OwnerEmail, Username, LeagueID string }
+type Request struct {
+	OwnerEmail, ExternalAccountID string
+	Selection                     fantasy.ConnectionSelection
+}
 type Result struct {
-	Teams, Players, Weeks int
-	SyncID                pgtype.UUID
+	Teams, Players, MatchupPeriods int
+	SyncID                         pgtype.UUID
 }
 
 // importTarget is the durable context shared by both import transactions.
@@ -40,8 +38,7 @@ type importTarget struct {
 	connection store.Connection
 	league     store.LeagueSeason
 	run        store.SyncRun
-	name       string
-	settings   []byte
+	selection  fantasy.ConnectionSelection
 }
 
 func text(value string) pgtype.Text { return pgtype.Text{String: value, Valid: true} }
@@ -51,21 +48,27 @@ func timestamp(value time.Time) pgtype.Timestamptz {
 }
 
 func (s *Service) Import(ctx context.Context, request Request) (Result, error) {
-	if strings.TrimSpace(request.OwnerEmail) == "" || request.Username == "" || request.LeagueID == "" {
-		return Result{}, fmt.Errorf("owner, username, and league ID required")
+	if strings.TrimSpace(request.OwnerEmail) == "" || request.ExternalAccountID == "" || request.Selection.League.ExternalID == "" {
+		return Result{}, fmt.Errorf("owner, external account, and league selection required")
 	}
-	header, err := s.Source.Header(ctx, request.Username, request.LeagueID)
+	header, err := s.Source.DescribeLeague(ctx, request.Selection.League.ExternalID)
 	if err != nil {
 		return Result{}, err
 	}
-	target, err := s.startImport(ctx, request.OwnerEmail, header)
+	if header.Ref != request.Selection.League {
+		return Result{}, fmt.Errorf("league selection changed")
+	}
+	target, err := s.startImport(ctx, request, header)
 	if err != nil {
 		return Result{}, err
 	}
 	result := Result{SyncID: target.run.ID}
-	data, err := s.Source.Fetch(ctx, header)
+	data, err := s.Source.FetchLeague(ctx, header)
 	if err != nil {
 		return result, s.recordFailure(target.run.ID, err, "provider_fetch_failed")
+	}
+	if err = validateData(data, header, request.Selection); err != nil {
+		return result, s.recordFailure(target.run.ID, err, "invalid_provider_data")
 	}
 	result, err = s.saveImport(ctx, target, data)
 	if err != nil {
@@ -75,13 +78,9 @@ func (s *Service) Import(ctx context.Context, request Request) (Result, error) {
 }
 
 // Establish the import target and durable run before bulk provider reads.
-func (s *Service) startImport(ctx context.Context, email string, header sleeper.Header) (importTarget, error) {
+func (s *Service) startImport(ctx context.Context, request Request, header fantasy.League) (importTarget, error) {
 	var target importTarget
-	year, err := strconv.Atoi(header.League.Season)
-	if err != nil {
-		return target, err
-	}
-	settings, err := json.Marshal(header.League)
+	settings, err := json.Marshal(header.Settings)
 	if err != nil {
 		return target, err
 	}
@@ -89,19 +88,19 @@ func (s *Service) startImport(ctx context.Context, email string, header sleeper.
 		if err := queries.LockImportWrites(ctx); err != nil {
 			return err
 		}
-		user, err := ensureOwner(ctx, queries, email)
+		user, err := ensureOwner(ctx, queries, request.OwnerEmail)
 		if err != nil {
 			return err
 		}
-		connection, err := ensureSleeperConnection(ctx, queries, user.ID, header.User.ID)
+		connection, err := ensureProviderConnection(ctx, queries, user.ID, string(header.Ref.Provider), request.ExternalAccountID)
 		if err != nil {
 			return err
 		}
-		league, err := queries.EnsureLeagueSeason(ctx, store.EnsureLeagueSeasonParams{Provider: "sleeper", ExternalLeagueID: header.League.ID, Season: int32(year), Name: header.League.Name, SettingsJson: settings})
+		league, err := queries.EnsureLeagueSeason(ctx, store.EnsureLeagueSeasonParams{Provider: string(header.Ref.Provider), ExternalLeagueID: header.Ref.ExternalID, Season: int32(header.Ref.Season), Name: header.Name, SettingsJson: settings})
 		if err != nil {
 			return err
 		}
-		if err = queries.AttachLeague(ctx, store.AttachLeagueParams{ConnectionID: connection.ID, LeagueSeasonID: league.ID, UserID: user.ID, Provider: "sleeper"}); err != nil {
+		if err = queries.AttachLeague(ctx, store.AttachLeagueParams{ConnectionID: connection.ID, LeagueSeasonID: league.ID, UserID: user.ID, Provider: string(header.Ref.Provider)}); err != nil {
 			return err
 		}
 		kind := "initial"
@@ -109,7 +108,7 @@ func (s *Service) startImport(ctx context.Context, email string, header sleeper.
 			kind = "refresh"
 		}
 		run, err := queries.StartSync(ctx, store.StartSyncParams{ConnectionID: connection.ID, LeagueSeasonID: league.ID, Kind: kind})
-		target = importTarget{user: user, connection: connection, league: league, run: run, name: header.League.Name, settings: settings}
+		target = importTarget{user: user, connection: connection, league: league, run: run, selection: request.Selection}
 		return err
 	})
 	return target, err
@@ -124,10 +123,10 @@ func ensureOwner(ctx context.Context, queries *store.Queries, email string) (sto
 	return owner, err
 }
 
-func ensureSleeperConnection(ctx context.Context, queries *store.Queries, userID pgtype.UUID, externalID string) (store.Connection, error) {
-	connection, err := queries.FindSleeperConnection(ctx, store.FindSleeperConnectionParams{UserID: userID, ExternalUserID: text(externalID)})
+func ensureProviderConnection(ctx context.Context, queries *store.Queries, userID pgtype.UUID, provider, externalID string) (store.Connection, error) {
+	connection, err := queries.FindProviderConnection(ctx, store.FindProviderConnectionParams{UserID: userID, Provider: provider, ExternalUserID: text(externalID)})
 	if errors.Is(err, pgx.ErrNoRows) {
-		connection, err = queries.CreateConnection(ctx, store.CreateConnectionParams{UserID: userID, Provider: "sleeper", ExternalUserID: text(externalID)})
+		connection, err = queries.CreateConnection(ctx, store.CreateConnectionParams{UserID: userID, Provider: provider, ExternalUserID: text(externalID)})
 	}
 	if err == nil && connection.Status == "disabled" {
 		err = fmt.Errorf("connection is disabled")
@@ -135,23 +134,27 @@ func ensureSleeperConnection(ctx context.Context, queries *store.Queries, userID
 	return connection, err
 }
 
-func (s *Service) saveImport(ctx context.Context, target importTarget, data sleeper.Data) (Result, error) {
+func (s *Service) saveImport(ctx context.Context, target importTarget, data fantasy.LeagueData) (Result, error) {
 	result := Result{SyncID: target.run.ID}
-	err := s.DB.InTx(ctx, func(queries *store.Queries) error {
+	settings, err := json.Marshal(data.League.Settings)
+	if err != nil {
+		return result, err
+	}
+	err = s.DB.InTx(ctx, func(queries *store.Queries) error {
 		if err := queries.LockImportWrites(ctx); err != nil {
 			return err
 		}
 		if err := rejectSupersededImport(ctx, queries, target); err != nil {
 			return err
 		}
-		// startImport prepared this metadata from the same provider header.
+		// Persist metadata from the fetched payload, not an earlier description.
 		league := target.league
 		var err error
-		if _, err = queries.UpsertLeagueSeason(ctx, store.UpsertLeagueSeasonParams{Provider: "sleeper", ExternalLeagueID: league.ExternalLeagueID, Season: league.Season, Name: target.name, SettingsJson: target.settings}); err != nil {
+		if _, err = queries.UpsertLeagueSeason(ctx, store.UpsertLeagueSeasonParams{Provider: league.Provider, ExternalLeagueID: league.ExternalLeagueID, Season: league.Season, Name: data.League.Name, SettingsJson: settings}); err != nil {
 			return err
 		}
 		writer := newLeagueWriter(s, queries, target, data)
-		result.Teams, result.Players, result.Weeks, err = writer.write(ctx)
+		result.Teams, result.Players, result.MatchupPeriods, err = writer.write(ctx)
 		if err != nil {
 			return err
 		}

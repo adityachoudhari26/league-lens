@@ -173,8 +173,14 @@ func TestSchemaAndQueries(t *testing.T) {
 		rows.Close()
 
 	})
-	if err := Migrate(ctx, conn, "down"); err != nil {
+	migrationFiles, err := filepath.Glob("migrations/*.sql")
+	if err != nil {
 		t.Fatal(err)
+	}
+	for range migrationFiles {
+		if err := Migrate(ctx, conn, "down"); err != nil {
+			t.Fatal(err)
+		}
 	}
 	var count int
 	if err := conn.QueryRowContext(ctx, `SELECT count(*) FROM information_schema.tables WHERE table_schema=$1 AND table_name='players'`, schema).Scan(&count); err != nil {

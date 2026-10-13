@@ -51,6 +51,18 @@ func TestFetch(t *testing.T) {
 	if len(data.Rosters) != 2 || len(data.Weeks) != 2 || data.Period != 2 {
 		t.Fatalf("unexpected data: %+v", data)
 	}
+	league, err := c.DescribeLeague(context.Background(), "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	account, selection, err := c.ResolveSelection(context.Background(), "test", league)
+	if err != nil || account != "owner" || len(selection.SelectedTeamIDs) != 1 || selection.SelectedTeamIDs[0] != "1" {
+		t.Fatalf("selection failed: %v", err)
+	}
+	payload, err := c.FetchLeague(context.Background(), league)
+	if err != nil || len(payload.Teams) != 2 || len(payload.Matchups) != 2 {
+		t.Fatalf("contract fetch failed: %v", err)
+	}
 	if data.Weeks[1][0].CustomPoints == nil || *data.Weeks[1][0].CustomPoints != 0 {
 		t.Fatal("zero score override lost")
 	}

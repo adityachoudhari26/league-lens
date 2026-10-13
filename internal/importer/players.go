@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
@@ -21,31 +21,39 @@ type playerIdentity struct {
 	hasMappedName bool
 }
 
-func (s *Service) playerIdentity(sleeperID string) playerIdentity {
-	identity := playerIdentity{name: "Sleeper " + sleeperID, kind: "person", externalIDs: map[string]string{"sleeper": sleeperID}, mappingSource: "provider"}
-	defenses := " ARI ATL BAL BUF CAR CHI CIN CLE DAL DEN DET GB HOU IND JAX KC LAC LAR LV MIA MIN NE NO NYG NYJ PHI PIT SEA SF TB TEN WAS "
-	if strings.Contains(defenses, " "+sleeperID+" ") {
-		identity.kind = "team_defense"
-		identity.name = sleeperID + " defense"
-		return identity
+func (s *Service) playerIdentity(provider fantasy.ProviderID, player fantasy.Player) (playerIdentity, error) {
+	identity := playerIdentity{name: player.Name, kind: string(player.Kind), externalIDs: map[string]string{string(provider): player.ExternalID}, mappingSource: "provider"}
+	for _, alias := range player.KnownIDs {
+		identity.externalIDs[string(alias.Namespace)] = alias.ExternalID
 	}
-	mapping, found := s.Catalog[sleeperID]
+	if player.Kind == fantasy.PlayerTeamDefense {
+		return identity, nil
+	}
+	mapping, found := s.Catalog.Lookup(string(provider), player.ExternalID)
 	if !found {
-		return identity
+		return identity, nil
 	}
-	identity.externalIDs = mapping.IDs
+	for namespace, id := range mapping.IDs {
+		if existing, known := identity.externalIDs[namespace]; known && existing != id {
+			return identity, fmt.Errorf("conflicting provider and dataset player aliases")
+		}
+		identity.externalIDs[namespace] = id
+	}
 	identity.mappingSource = "dynastyprocess"
 	identity.sourceVersion = text(s.CatalogVersion)
 	if mapping.Name != "" {
 		identity.name = mapping.Name
 		identity.hasMappedName = true
 	}
-	return identity
+	return identity, nil
 }
 
-func (s *Service) resolvePlayer(ctx context.Context, queries *store.Queries, sleeperID string) (pgtype.UUID, error) {
-	identity := s.playerIdentity(sleeperID)
-	player, err := findMappedPlayer(ctx, queries, sleeperID, identity.externalIDs)
+func (s *Service) resolvePlayer(ctx context.Context, queries *store.Queries, provider fantasy.ProviderID, input fantasy.Player) (pgtype.UUID, error) {
+	identity, err := s.playerIdentity(provider, input)
+	if err != nil {
+		return pgtype.UUID{}, err
+	}
+	player, err := findMappedPlayer(ctx, queries, input.ExternalID, identity.externalIDs)
 	if err != nil {
 		return pgtype.UUID{}, err
 	}
@@ -56,7 +64,7 @@ func (s *Service) resolvePlayer(ctx context.Context, queries *store.Queries, sle
 		}
 	}
 	if player.EntityType != identity.kind {
-		return pgtype.UUID{}, fmt.Errorf("player entity type conflict for Sleeper %s", sleeperID)
+		return pgtype.UUID{}, fmt.Errorf("player entity type conflict for %s", input.ExternalID)
 	}
 	if identity.hasMappedName {
 		if err = queries.UpdateMappedPlayerName(ctx, store.UpdateMappedPlayerNameParams{ID: player.ID, DisplayName: identity.name}); err != nil {
@@ -69,7 +77,7 @@ func (s *Service) resolvePlayer(ctx context.Context, queries *store.Queries, sle
 	return player.ID, nil
 }
 
-func findMappedPlayer(ctx context.Context, queries *store.Queries, sleeperID string, externalIDs map[string]string) (store.Player, error) {
+func findMappedPlayer(ctx context.Context, queries *store.Queries, externalID string, externalIDs map[string]string) (store.Player, error) {
 	var existing store.Player
 	for _, provider := range identityProviders {
 		externalID := externalIDs[provider]
@@ -84,7 +92,7 @@ func findMappedPlayer(ctx context.Context, queries *store.Queries, sleeperID str
 			return store.Player{}, err
 		}
 		if existing.ID.Valid && existing.ID != player.ID {
-			return store.Player{}, fmt.Errorf("conflicting player mappings for Sleeper %s", sleeperID)
+			return store.Player{}, fmt.Errorf("conflicting player mappings for %s", externalID)
 		}
 		existing = player
 	}

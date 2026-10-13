@@ -87,3 +87,24 @@ func Parse(source io.Reader) (Catalog, error) {
 	}
 	return catalog, nil
 }
+
+// Lookup accepts any supported player namespace and rejects ambiguous aliases.
+func (catalog Catalog) Lookup(namespace, externalID string) (Entry, bool) {
+	if namespace == "sleeper" {
+		entry, found := catalog[externalID]
+		return entry, found
+	}
+	var match Entry
+	found := false
+	for _, entry := range catalog {
+		if entry.IDs[namespace] != externalID {
+			continue
+		}
+		if found {
+			return Entry{}, false
+		}
+		match = entry
+		found = true
+	}
+	return match, found
+}

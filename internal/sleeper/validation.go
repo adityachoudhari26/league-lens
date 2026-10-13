@@ -43,7 +43,7 @@ func validateLeagueRosters(rosters []Roster, header Header) (map[int]bool, error
 			}
 		}
 	}
-	if !ownsTeam {
+	if header.User.ID != "" && !ownsTeam {
 		return nil, fmt.Errorf("Sleeper user does not own a team in this league")
 	}
 	return rosterIDs, nil

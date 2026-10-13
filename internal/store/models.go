@@ -40,16 +40,18 @@ type LeagueSeason struct {
 }
 
 type Matchup struct {
-	ID                pgtype.UUID
-	LeagueSeasonID    pgtype.UUID
-	ExternalMatchupID string
-	Period            int32
-	TeamAID           pgtype.UUID
-	TeamBID           pgtype.UUID
-	ScoreA            pgtype.Numeric
-	ScoreB            pgtype.Numeric
-	Status            string
-	FetchedAt         pgtype.Timestamptz
+	ID                 pgtype.UUID
+	LeagueSeasonID     pgtype.UUID
+	ExternalMatchupID  string
+	Period             int32
+	TeamAID            pgtype.UUID
+	TeamBID            pgtype.UUID
+	ScoreA             pgtype.Numeric
+	ScoreB             pgtype.Numeric
+	Status             string
+	FetchedAt          pgtype.Timestamptz
+	ScoringPeriodsJson []byte
+	IsBye              bool
 }
 
 type Player struct {
@@ -96,6 +98,8 @@ type Team struct {
 	Name           string
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
+	RecordJson     []byte
+	Rank           pgtype.Int4
 }
 
 type TeamSnapshot struct {

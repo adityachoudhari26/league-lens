@@ -78,18 +78,19 @@ func (q *Queries) EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeason
 	return i, err
 }
 
-const findSleeperConnection = `-- name: FindSleeperConnection :one
-SELECT id, user_id, provider, external_user_id, encrypted_credentials, status, created_at, updated_at FROM connections WHERE user_id=$1 AND provider='sleeper' AND external_user_id=$2
+const findProviderConnection = `-- name: FindProviderConnection :one
+SELECT id, user_id, provider, external_user_id, encrypted_credentials, status, created_at, updated_at FROM connections WHERE user_id=$1 AND provider=$2 AND external_user_id=$3
 ORDER BY created_at LIMIT 1
 `
 
-type FindSleeperConnectionParams struct {
+type FindProviderConnectionParams struct {
 	UserID         pgtype.UUID
+	Provider       string
 	ExternalUserID pgtype.Text
 }
 
-func (q *Queries) FindSleeperConnection(ctx context.Context, arg FindSleeperConnectionParams) (Connection, error) {
-	row := q.db.QueryRow(ctx, findSleeperConnection, arg.UserID, arg.ExternalUserID)
+func (q *Queries) FindProviderConnection(ctx context.Context, arg FindProviderConnectionParams) (Connection, error) {
+	row := q.db.QueryRow(ctx, findProviderConnection, arg.UserID, arg.Provider, arg.ExternalUserID)
 	var i Connection
 	err := row.Scan(
 		&i.ID,
