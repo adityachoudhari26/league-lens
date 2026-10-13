@@ -34,7 +34,7 @@ Node is used for frontend development and builds. The production application run
 
 - [x] **0a. Prepare the repository.** Add Conventional Commit guidance and a local commit-message hook, editor and line-ending defaults, Git and Docker exclusions, and contribution instructions. **Done when:** commit validation accepts valid messages and rejects invalid ones, credentials remain excluded, and housekeeping files pass checks. Stop for review before checkpoint 1.
 
-- [ ] **1. Review the scaffold design.** Agree on directory layout, local development commands, configuration, and the minimal frontend-to-backend health flow. Record the design and short implementation plan before scaffolding. **Done when:** you approve the concrete scaffold scope.
+- [x] **1. Review the scaffold design.** Agree on directory layout, local development commands, configuration, and the minimal frontend-to-backend health flow. The owner approved an infrastructure/database-first slice in chat: full selected leagues, encountered players only, one owner, and current-season history backfill. See [database foundation](docs/designs/database-foundation.md) for the recorded design and next steps. Frontend, Connect, and AI are deferred.
 
 - [ ] **2. Create the project skeleton.** Add React/Vite and Go entry points, dependency manifests and lockfile, basic UI styling, configuration validation, and secret-free configuration examples. **Done when:** the frontend builds, the Go backend builds, and documented development commands work. No fantasy integration yet.
 
@@ -76,13 +76,38 @@ Dockerfile            Frontend build and Go runtime packaging
 
 ## Current state
 
-Git initialization, MIT licensing, repository housekeeping, local connection configuration, manual provider checks, and this checklist are complete. Application code, dependency installation, database setup, and deployment have not started.
+The repository includes the locally implemented Go/Postgres foundation described below, plus the earlier manual provider connection checks. Existing private provider credentials remain untouched. No application deployment has been performed.
 
 Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
 
-**Current:** repository preparation (checkpoint 0a) is complete and awaiting your review. The scaffold design remains paused.
+**Current:** the infrastructure/database foundation is implemented locally on `feat/database-foundation`. The source portion of checkpoint 4 is present; generation and application query wiring remain deferred. Checkpoints 2 and 3 are not complete because the frontend and Connect flow are deferred. No scaffold push or PR is authorized.
+
+Included: Go health server, Postgres Compose service, explicit Goose migrations, 12 domain tables, source SQL queries, sqlc configuration, and unit/integration tests. No generated bindings, authentication, provider imports/backfill execution, player-mapping downloads, frontend, background jobs, or AI are implemented yet.
+
+The schema supports full-league import and initial current-season backfill; those behaviors will run only when connector services are implemented. Prior seasons are preserved. Source query preparation has been tested against Postgres, but sqlc generation has deliberately not been run.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook setup.
+
+## Local database foundation
+
+Prerequisites: Go 1.26+ and Docker Compose. Node is not required for this slice.
+
+```sh
+make db-up
+export DATABASE_URL='postgres://league_lens:league_lens_local@127.0.0.1:54329/league_lens?sslmode=disable'
+make migrate-up
+make serve
+```
+
+The database port is loopback-only. The password shown is a local development default; configure your own values before any remote deployment. Go reads exported environment variables and does not automatically load `.env.local`. Do not overwrite the existing provider credential file with `.env.example`.
+
+- `GET http://127.0.0.1:8080/healthz`: process liveness.
+- `GET http://127.0.0.1:8080/readyz`: database connectivity, not migration/auth/provider readiness.
+- `make test`, `make check`, `make build`: unit tests, static checks, and Go binaries.
+- `TEST_DATABASE_URL=... make test-integration`: migration/schema/query tests in a temporary schema on a disposable database.
+- `make db-stop`: stop Postgres while retaining its volume.
+
+No build or test command invokes a generator. `sqlc.yaml` is source configuration only; generated packages do not exist yet. See [the database design and import plan](docs/designs/database-foundation.md) for history semantics and the transaction boundary. Public-facing authentication and data endpoints are not part of this scaffold.
 
 ## License
 

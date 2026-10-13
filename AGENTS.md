@@ -5,3 +5,9 @@
 - Follow the README checkpoint workflow: complete only the authorized checkpoint, report verification, and pause for review.
 - Follow CONTRIBUTING.md, including Conventional Commit subjects.
 - Never print, commit, or include local credentials in fixtures or build contexts. `.env.local` is private.
+
+## Current scaffold constraints
+
+- Keep scaffold changes local. Do not push branches or create PRs unless the user changes this instruction.
+- Do not run code generation (Buf, sqlc, go generate, or scaffold generators) until explicitly authorized.
+- Current implementation scope is the Go/Postgres foundation; frontend, Connect endpoints, provider import services, and AI are deferred.
