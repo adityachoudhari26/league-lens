@@ -1,4 +1,4 @@
-# Fantasy Dashboard
+# League Lens
 
 An open-source, self-hosted fantasy football dashboard for ESPN and Sleeper, with optional AI powered by your own credentials. The core dashboard should work without an AI subscription or mandatory paid data service. Yahoo is deferred.
 
