@@ -1,3 +1,43 @@
+# Local configuration and secrets
 .env
 .env.*
 !.env.example
+!.env.*.example
+*.pem
+*.key
+
+# JavaScript dependencies and build output
+node_modules/
+.pnpm-store/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Go build and test output
+/bin/
+/tmp/
+*.test
+coverage.out
+
+# Test reports and logs
+coverage/
+playwright-report/
+test-results/
+*.log
+
+# Local database storage
+/data/
+/postgres-data/
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
