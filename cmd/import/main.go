@@ -26,24 +26,14 @@ func main() {
 		os.Exit(1)
 	}
 }
+
 func run(args []string, out, errOut io.Writer) error {
-	if len(args) == 0 || args[0] != "sleeper" {
-		return errors.New("usage: import sleeper --username NAME --league-id ID [--owner-email EMAIL]")
+	options, err := parseImportOptions(args, errOut)
+	if errors.Is(err, flag.ErrHelp) {
+		return nil
 	}
-	flags := flag.NewFlagSet("import sleeper", flag.ContinueOnError)
-	flags.SetOutput(errOut)
-	username := flags.String("username", "", "Sleeper username or user ID")
-	league := flags.String("league-id", "", "selected Sleeper league ID")
-	owner := flags.String("owner-email", "owner@localhost", "local owner identity; not a login or verified email")
-	cache := flags.String("mapping-cache", "", "player ID CSV cache path (defaults to OS user cache)")
-	if err := flags.Parse(args[1:]); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			return nil
-		}
+	if err != nil {
 		return err
-	}
-	if flags.NArg() != 0 || *username == "" || *league == "" {
-		return errors.New("--username and --league-id are required; no positional arguments")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -61,22 +51,55 @@ func run(args []string, out, errOut io.Writer) error {
 	if err = db.Ping(ctx); err != nil {
 		return errors.New("cannot reach database; start Postgres and run migrations first")
 	}
-	if *cache == "" {
-		dir, e := os.UserCacheDir()
-		if e != nil {
-			return e
-		}
-		*cache = filepath.Join(dir, "league-lens", "playerids.csv")
+	cachePath, err := mappingCachePath(options.mappingCache)
+	if err != nil {
+		return err
 	}
-	catalog, version, err := playerids.Load(ctx, *cache)
+	catalog, version, err := playerids.Load(ctx, cachePath)
 	if err != nil {
 		fmt.Fprintln(errOut, "Player mapping unavailable; retaining Sleeper identities for this import.")
 	}
 	service := importer.Service{DB: db, Source: sleeper.NewClient(nil), Catalog: catalog, CatalogVersion: version}
-	result, err := service.Import(ctx, importer.Request{OwnerEmail: *owner, Username: *username, LeagueID: *league})
+	result, err := service.Import(ctx, options.request)
 	if err != nil {
 		return fmt.Errorf("import failed: %w", err)
 	}
 	fmt.Fprintf(out, "Imported %d teams, %d encountered players, and %d available matchup weeks.\n", result.Teams, result.Players, result.Weeks)
 	return nil
+}
+
+type importOptions struct {
+	request      importer.Request
+	mappingCache string
+}
+
+func parseImportOptions(args []string, errOut io.Writer) (importOptions, error) {
+	var options importOptions
+	if len(args) == 0 || args[0] != "sleeper" {
+		return options, errors.New("usage: import sleeper --username NAME --league-id ID [--owner-email EMAIL]")
+	}
+	flags := flag.NewFlagSet("import sleeper", flag.ContinueOnError)
+	flags.SetOutput(errOut)
+	flags.StringVar(&options.request.Username, "username", "", "Sleeper username or user ID")
+	flags.StringVar(&options.request.LeagueID, "league-id", "", "selected Sleeper league ID")
+	flags.StringVar(&options.request.OwnerEmail, "owner-email", "owner@localhost", "local owner identity; not a login or verified email")
+	flags.StringVar(&options.mappingCache, "mapping-cache", "", "player ID CSV cache path (defaults to OS user cache)")
+	if err := flags.Parse(args[1:]); err != nil {
+		return options, err
+	}
+	if flags.NArg() != 0 || options.request.Username == "" || options.request.LeagueID == "" {
+		return options, errors.New("--username and --league-id are required; no positional arguments")
+	}
+	return options, nil
+}
+
+func mappingCachePath(override string) (string, error) {
+	if override != "" {
+		return override, nil
+	}
+	directory, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(directory, "league-lens", "playerids.csv"), nil
 }

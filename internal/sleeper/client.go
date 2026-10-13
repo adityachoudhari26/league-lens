@@ -77,6 +77,7 @@ func NewClient(h *http.Client) *Client {
 	}
 	return &Client{HTTP: h, BaseURL: "https://api.sleeper.app/v1"}
 }
+
 func (c *Client) get(ctx context.Context, path string, out any) error {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
@@ -104,6 +105,7 @@ func (c *Client) get(ctx context.Context, path string, out any) error {
 	}
 	return nil
 }
+
 func (c *Client) Header(ctx context.Context, username, leagueID string) (Header, error) {
 	var h Header
 	if username == "" || leagueID == "" {
@@ -124,76 +126,51 @@ func (c *Client) Header(ctx context.Context, username, leagueID string) (Header,
 	}
 	return h, nil
 }
-func (c *Client) Fetch(ctx context.Context, h Header) (Data, error) {
-	d := Data{Header: h, Weeks: map[int][]Matchup{}, ObservedAt: time.Now().UTC()}
-	base := "/league/" + url.PathEscape(h.League.ID)
-	if err := c.get(ctx, "/state/nfl", &d.State); err != nil {
-		return d, err
+
+func (c *Client) Fetch(ctx context.Context, header Header) (Data, error) {
+	data := Data{Header: header, Weeks: map[int][]Matchup{}, ObservedAt: time.Now().UTC()}
+	base := "/league/" + url.PathEscape(header.League.ID)
+	if err := c.get(ctx, "/state/nfl", &data.State); err != nil {
+		return data, err
 	}
-	if d.State.Season != h.League.Season {
-		return d, fmt.Errorf("only the current NFL season is supported")
+	period, err := importPeriod(data.State, header.League.Season)
+	data.Period = period
+	if err != nil {
+		return data, err
 	}
-	switch d.State.SeasonType {
-	case "regular":
-		d.Period = d.State.Week
-	case "pre":
-		d.Period = 1
-	case "post":
-		d.Period = 18
-	default:
-		return d, fmt.Errorf("unsupported NFL season state")
+	if err = c.get(ctx, base+"/rosters", &data.Rosters); err != nil {
+		return data, err
 	}
-	if d.Period < 1 || d.Period > 18 {
-		return d, fmt.Errorf("invalid NFL week")
+	rosterIDs, err := validateLeagueRosters(data.Rosters, header)
+	if err != nil {
+		return data, err
 	}
-	if err := c.get(ctx, base+"/rosters", &d.Rosters); err != nil {
-		return d, err
+	if err = c.get(ctx, base+"/users", &data.Users); err != nil {
+		return data, err
 	}
-	if len(d.Rosters) != h.League.TotalRosters {
-		return d, fmt.Errorf("incomplete league rosters")
-	}
-	ids := map[int]bool{}
-	member := false
-	for _, r := range d.Rosters {
-		if r.ID <= 0 || ids[r.ID] {
-			return d, fmt.Errorf("invalid or duplicate roster ID")
-		}
-		ids[r.ID] = true
-		if r.OwnerID == h.User.ID {
-			member = true
-		}
-		for _, id := range r.CoOwners {
-			if id == h.User.ID {
-				member = true
-			}
+	if data.State.SeasonType != "pre" {
+		weeks, err := c.fetchMatchupWeeks(ctx, base, period, rosterIDs)
+		// Retain fetched weeks in partial results, matching the existing error contract.
+		data.Weeks = weeks
+		if err != nil {
+			return data, err
 		}
 	}
-	if !member {
-		return d, fmt.Errorf("Sleeper user does not own a team in this league")
-	}
-	if err := c.get(ctx, base+"/users", &d.Users); err != nil {
-		return d, err
-	}
-	// Fetch each week once, sequentially: bounded to 18 small requests per import.
-	if d.State.SeasonType != "pre" {
-		for week := 1; week <= d.Period; week++ {
-			var matches []Matchup
-			if err := c.get(ctx, base+"/matchups/"+strconv.Itoa(week), &matches); err != nil {
-				return d, err
-			}
-			seen := map[int]bool{}
-			for _, m := range matches {
-				if !ids[m.RosterID] || seen[m.RosterID] {
-					return d, fmt.Errorf("invalid weekly roster")
-				}
-				seen[m.RosterID] = true
-			}
-			// Empty weeks are unavailable history, never empty roster snapshots.
-			if len(matches) > 0 && len(matches) != len(d.Rosters) {
-				return d, fmt.Errorf("incomplete matchup week %d", week)
-			}
-			d.Weeks[week] = matches
+	return data, nil
+}
+
+// Fetch each week once, sequentially: bounded to 18 small requests per import.
+func (c *Client) fetchMatchupWeeks(ctx context.Context, base string, period int, rosterIDs map[int]bool) (map[int][]Matchup, error) {
+	weeks := map[int][]Matchup{}
+	for week := 1; week <= period; week++ {
+		var matchups []Matchup
+		if err := c.get(ctx, base+"/matchups/"+strconv.Itoa(week), &matchups); err != nil {
+			return weeks, err
 		}
+		if err := validateWeeklyRosters(matchups, rosterIDs, week); err != nil {
+			return weeks, err
+		}
+		weeks[week] = matchups
 	}
-	return d, nil
+	return weeks, nil
 }
