@@ -6,6 +6,8 @@ An open-source, self-hosted fantasy football dashboard for ESPN and Sleeper, wit
 
 We will build one checkpoint at a time. After each checkpoint, stop, show what changed, report the checks performed and any limitations, and wait for your approval before starting the next checkpoint. Approval applies only to the next checkpoint, not the entire roadmap.
 
+All changes must be made on feature branches and reviewed through pull requests. Never push directly to `main`.
+
 This README is the progress tracker. Check an item only when its acceptance criteria have been verified. Update the plan together if the scope changes. Do not publish, deploy to a public host, or choose a project license implicitly.
 
 ## Selected stack
@@ -29,6 +31,8 @@ Node is used for frontend development and builds. The production application run
 ## Checkpoints
 
 - [x] **0. Verify access and initialize Git.** Read-only ESPN and Sleeper requests successfully retrieved the selected teams, rosters, scoring settings, and current matchups. Git is initialized on `main`, and `.env.local` is ignored. These were manual connection checks; reusable connectors are still to be built.
+
+- [x] **0a. Prepare the repository.** Add Conventional Commit guidance and a local commit-message hook, editor and line-ending defaults, Git and Docker exclusions, and contribution instructions. **Done when:** commit validation accepts valid messages and rejects invalid ones, credentials remain excluded, and housekeeping files pass checks. Stop for review before checkpoint 1.
 
 - [ ] **1. Review the scaffold design.** Agree on directory layout, local development commands, configuration, and the minimal frontend-to-backend health flow. Record the design and short implementation plan before scaffolding. **Done when:** you approve the concrete scaffold scope.
 
@@ -72,11 +76,13 @@ Dockerfile            Frontend build and Go runtime packaging
 
 ## Current state
 
-Only Git initialization, MIT licensing, local connection configuration, manual provider checks, and this checklist are complete. Application code, dependency installation, database setup, and deployment have not started.
+Git initialization, MIT licensing, repository housekeeping, local connection configuration, manual provider checks, and this checklist are complete. Application code, dependency installation, database setup, and deployment have not started.
 
 Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
 
-**Next:** review checkpoint 1 together. Do not begin scaffolding until it is approved.
+**Current:** repository preparation (checkpoint 0a) is complete and awaiting your review. The scaffold design remains paused.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook setup.
 
 ## License
 
