@@ -4,13 +4,12 @@ package importer
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	migrations "github.com/adityachoudhari26/league-lens/db"
 	"github.com/adityachoudhari26/league-lens/internal/database"
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
-	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"net/url"
@@ -19,40 +18,39 @@ import (
 	"time"
 )
 
-func fixture(t *testing.T) sleeper.Data {
+func fixture(t *testing.T) fantasy.LeagueData {
 	t.Helper()
-	d := sleeper.Data{Period: 2, ObservedAt: time.Now().UTC(), Weeks: map[int][]sleeper.Matchup{}, State: sleeper.State{Season: "2026", SeasonType: "regular", Week: 2}}
-	d.User.ID = "owner"
-	for f, out := range map[string]any{"league.json": &d.League, "rosters.json": &d.Rosters} {
-		b, e := os.ReadFile("../sleeper/testdata/" + f)
-		if e != nil {
-			t.Fatal(e)
+	now := time.Now().UTC()
+	zero, ten := 0.0, 10.0
+	league := fantasy.League{Ref: fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "123", Season: 2026}, Name: "Fixture League", TeamCount: 2}
+	data := fantasy.LeagueData{League: league, FetchedAt: now, Teams: []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}}, CompleteMatchupPeriods: []fantasy.MatchupPeriod{1}}
+	for _, id := range []string{"10", "20", "30", "DET"} {
+		kind := fantasy.PlayerPerson
+		if id == "DET" {
+			kind = fantasy.PlayerTeamDefense
 		}
-		if e = json.Unmarshal(b, out); e != nil {
-			t.Fatal(e)
+		data.Players = append(data.Players, fantasy.Player{ExternalID: id, Name: "Fixture " + id, Kind: kind})
+	}
+	for _, week := range []fantasy.ScoringPeriod{2, 1} {
+		origin := fantasy.SnapshotObserved
+		if week == 1 {
+			origin = fantasy.SnapshotHistory
 		}
+		data.Rosters = append(data.Rosters, fantasy.RosterSnapshot{TeamID: "1", ScoringPeriod: week, Origin: origin, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{PlayerID: "10", Slot: fantasy.SlotQB}, {PlayerID: "20", Slot: fantasy.SlotIR}, {PlayerID: "DET", Slot: fantasy.SlotBench}}}, fantasy.RosterSnapshot{TeamID: "2", ScoringPeriod: week, Origin: origin, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{PlayerID: "30", Slot: fantasy.SlotQB}}})
 	}
-	b, e := os.ReadFile("../sleeper/testdata/week.json")
-	if e != nil {
-		t.Fatal(e)
-	}
-	var week []sleeper.Matchup
-	if e = json.Unmarshal(b, &week); e != nil {
-		t.Fatal(e)
-	}
-	d.Weeks[1] = week
-	return d
+	data.Matchups = []fantasy.Matchup{{ExternalID: "1", Period: 1, ScoringPeriods: []fantasy.ScoringPeriod{1}, TeamA: fantasy.MatchupSide{TeamID: "1", Score: &zero}, TeamB: &fantasy.MatchupSide{TeamID: "2", Score: &ten}, Status: fantasy.MatchupFinal}}
+	return data
 }
 
 type fixtureSource struct {
-	data sleeper.Data
+	data fantasy.LeagueData
 	err  error
 }
 
-func (f *fixtureSource) Header(context.Context, string, string) (sleeper.Header, error) {
-	return f.data.Header, nil
+func (f *fixtureSource) DescribeLeague(context.Context, string) (fantasy.League, error) {
+	return f.data.League, nil
 }
-func (f *fixtureSource) Fetch(context.Context, sleeper.Header) (sleeper.Data, error) {
+func (f *fixtureSource) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData, error) {
 	return f.data, f.err
 }
 func TestImportRoundTrip(t *testing.T) {
@@ -89,7 +87,7 @@ func TestImportRoundTrip(t *testing.T) {
 	defer db.Close()
 	src := &fixtureSource{data: fixture(t)}
 	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{"10": {Name: "Test QB", IDs: map[string]string{"sleeper": "10", "espn": "100"}}}}
-	req := Request{OwnerEmail: "local@example.test", Username: "test", LeagueID: "123"}
+	req := Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}}
 	count := func(table string) int {
 		t.Helper()
 		var n int
@@ -116,7 +114,7 @@ func TestImportRoundTrip(t *testing.T) {
 	}
 	// Provider corrections replace the historical source, keeping its snapshot ID/count.
 	corrected := 17.5
-	src.data.Weeks[1][0].CustomPoints = &corrected
+	src.data.Matchups[0].TeamA.Score = &corrected
 	if _, e = s.Import(ctx, req); e != nil {
 		t.Fatal(e)
 	}
@@ -127,15 +125,17 @@ func TestImportRoundTrip(t *testing.T) {
 		t.Fatalf("correction lost: %s %v", score, e)
 	}
 	// Missing history is not a deletion request; retain previously imported evidence.
-	saved := src.data.Weeks[1]
-	src.data.Weeks[1] = nil
+	saved := src.data.Matchups
+	src.data.Matchups = nil
+	src.data.CompleteMatchupPeriods = nil
 	if _, e = s.Import(ctx, req); e != nil {
 		t.Fatal(e)
 	}
 	if count("matchups") != 1 || count("team_snapshots") != 4 {
 		t.Fatal("missing history deleted evidence")
 	}
-	src.data.Weeks[1] = saved
+	src.data.Matchups = saved
+	src.data.CompleteMatchupPeriods = []fantasy.MatchupPeriod{1}
 	src.err = errors.New("upstream down")
 	if _, e = s.Import(ctx, req); e == nil {
 		t.Fatal("failure hidden")
@@ -154,7 +154,8 @@ func TestImportRoundTrip(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	src.data.Rosters[0].Players = append(src.data.Rosters[0].Players, "new")
+	src.data.Players = append(src.data.Players, fantasy.Player{ExternalID: "new", Name: "New", Kind: fantasy.PlayerPerson})
+	src.data.Rosters[0].Entries = append(src.data.Rosters[0].Entries, fantasy.RosterEntry{PlayerID: "new", Slot: fantasy.SlotBench})
 	if _, e = s.Import(ctx, req); e == nil {
 		t.Fatal("database failure hidden")
 	}
@@ -191,6 +192,55 @@ func TestImportRoundTrip(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("older import stuck")
 	}
+	// An explicit empty, complete period removes stale pairings. Missing history above did not.
+	src.data.Matchups = nil
+	if _, e = s.Import(ctx, req); e != nil {
+		t.Fatal(e)
+	}
+	if count("matchups") != 0 {
+		t.Fatal("complete empty schedule retained stale pairings")
+	}
+	src.data = fixture(t)
+	src.data.Rosters[0].Entries[0].PlayerID = "missing"
+	if _, e = s.Import(ctx, req); e == nil {
+		t.Fatal("unresolved roster reference accepted")
+	}
+	if count("players") != 4 {
+		t.Fatal("invalid payload wrote data")
+	}
+	// A second provider with opaque team IDs uses the same writer and shared player.
+	src.data = fixture(t)
+	src.data.League.Ref.Provider = fantasy.ProviderESPN
+	src.data.League.Ref.ExternalID = "opaque-league"
+	for index := range src.data.Teams {
+		src.data.Teams[index].ExternalID = "team-" + src.data.Teams[index].ExternalID
+	}
+	aliases := map[string]string{"10": "100", "20": "200", "30": "300", "DET": "defense"}
+	for index := range src.data.Players {
+		src.data.Players[index].ExternalID = aliases[src.data.Players[index].ExternalID]
+	}
+	for index := range src.data.Rosters {
+		roster := &src.data.Rosters[index]
+		roster.TeamID = "team-" + roster.TeamID
+		for entry := range roster.Entries {
+			roster.Entries[entry].PlayerID = aliases[roster.Entries[entry].PlayerID]
+		}
+	}
+	src.data.Matchups[0].TeamA.TeamID = "team-1"
+	src.data.Matchups[0].TeamB.TeamID = "team-2"
+	src.data.Matchups[0].ScoringPeriods = []fantasy.ScoringPeriod{1, 2}
+	other := Request{OwnerEmail: req.OwnerEmail, ExternalAccountID: "other-account", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"team-1"}}}
+	if _, e = s.Import(ctx, other); e != nil {
+		t.Fatal(e)
+	}
+	if count("players") != 7 {
+		t.Fatal("cross-provider identity was duplicated")
+	}
+	var span string
+	if e = sqlDB.QueryRow("SELECT scoring_periods_json::text FROM matchups").Scan(&span); e != nil || span != "[1, 2]" {
+		t.Fatalf("span lost: %s %v", span, e)
+	}
+
 }
 
 type blockedSource struct {
@@ -199,12 +249,12 @@ type blockedSource struct {
 	release chan struct{}
 }
 
-func (b *blockedSource) Fetch(ctx context.Context, h sleeper.Header) (sleeper.Data, error) {
+func (b *blockedSource) FetchLeague(ctx context.Context, h fantasy.League) (fantasy.LeagueData, error) {
 	close(b.entered)
 	select {
 	case <-b.release:
 		return b.data, nil
 	case <-ctx.Done():
-		return sleeper.Data{}, ctx.Err()
+		return fantasy.LeagueData{}, ctx.Err()
 	}
 }

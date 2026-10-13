@@ -8,9 +8,10 @@ identity resolution. Connection/team selection is application state, not provide
 ownership metadata or authentication.
 
 The contracts are ordinary Go types, written by hand. They are not Connect/Protobuf
-API definitions, generated database bindings, or a plugin framework. Neither
-provider has been adapted to them yet. The working Sleeper implementation remains
-unchanged during this checkpoint.
+API definitions, generated database bindings, or a plugin framework. Sleeper now implements this interface. Its normalization
+helpers translate API responses into these types; the importer depends only on
+`fantasy.Provider`. Username lookup lives in Sleeper connection-selection logic.
+The existing import command and arguments remain available.
 
 ## Data semantics
 
@@ -35,13 +36,17 @@ unchanged during this checkpoint.
   normalized scoring; a complete scoring engine is not part of this checkpoint.
 
 These contracts describe the import boundary rather than mirroring the current
-schema. Wiring them may require persistence decisions for fields such as matchup
-week spans and explicit byes. No database migration is introduced here.
+schema. Migration `00002_provider_contract_fields.sql` retains team records/ranks,
+matchup scoring-week spans, explicit byes, and nullable roster eligibility.
+It adds fields without changing existing league/player identities. Run
+`just migrate` before importing after this update. Existing live snapshot hashes
+used a different representation, so the first normalized import may add a new
+current observation; subsequent unchanged imports deduplicate normally.
 
 ## Next checkpoint
 
-Adapt Sleeper first and run its existing fixture and integration tests through
-this interface. Then implement ESPN against the same contract. Add runtime
-validation with that wiring so both implementations enforce the documented
-invariants before persistence. Avoid provider-specific branches in the shared
-importer; each adapter translates its own response semantics.
+Implement ESPN against the same contract. Sleeper fixture tests now exercise
+normalization and the interface; shared integration tests use normalized fixtures
+for both provider identities without importing either adapter. The importer
+validates references, coverage, periods, scores, and identity aliases before
+persistence. Future adapters must translate their own response semantics.

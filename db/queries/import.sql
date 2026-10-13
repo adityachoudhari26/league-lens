@@ -3,8 +3,8 @@
 -- name: LockImportWrites :exec
 SELECT pg_advisory_xact_lock(724361902);
 
--- name: FindSleeperConnection :one
-SELECT * FROM connections WHERE user_id=$1 AND provider='sleeper' AND external_user_id=$2
+-- name: FindProviderConnection :one
+SELECT * FROM connections WHERE user_id=$1 AND provider=$2 AND external_user_id=$3
 ORDER BY created_at LIMIT 1;
 
 -- name: EnsureLeagueSeason :one

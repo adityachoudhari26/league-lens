@@ -17,9 +17,9 @@ WHERE cl.user_id=$1 AND c.status<>'disabled'
 ORDER BY l.season DESC,l.name;
 
 -- name: UpsertTeam :one
-INSERT INTO teams (league_season_id,external_team_id,name) VALUES ($1,$2,$3)
+INSERT INTO teams (league_season_id,external_team_id,name,record_json,rank) VALUES ($1,$2,$3,$4,$5)
 ON CONFLICT (league_season_id,external_team_id)
-DO UPDATE SET name=EXCLUDED.name,updated_at=now() RETURNING *;
+DO UPDATE SET name=EXCLUDED.name,record_json=EXCLUDED.record_json,rank=EXCLUDED.rank,updated_at=now() RETURNING *;
 
 -- name: ListTeamsForUser :many
 SELECT t.* FROM teams t WHERE t.league_season_id=$2

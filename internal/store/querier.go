@@ -24,7 +24,7 @@ type Querier interface {
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
 	FailSync(ctx context.Context, arg FailSyncParams) (SyncRun, error)
 	FindPlayerByExternalID(ctx context.Context, arg FindPlayerByExternalIDParams) (Player, error)
-	FindSleeperConnection(ctx context.Context, arg FindSleeperConnectionParams) (Connection, error)
+	FindProviderConnection(ctx context.Context, arg FindProviderConnectionParams) (Connection, error)
 	GetConnectionForUser(ctx context.Context, arg GetConnectionForUserParams) (Connection, error)
 	GetLatestObservedSnapshot(ctx context.Context, arg GetLatestObservedSnapshotParams) (TeamSnapshot, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)

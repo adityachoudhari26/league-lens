@@ -82,7 +82,9 @@ The repository includes the locally implemented Go/Postgres foundation described
 
 Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
 
-**Current:** database queries and CI are merged. The Sleeper import checkpoint is implemented locally on `feat/sleeper-import` for review.
+**Current:** Sleeper implements the shared `fantasy.Provider` contract on
+`feat/provider-contracts`. The importer consumes normalized league data; provider
+HTTP formats stay inside adapters. See [provider contracts](docs/designs/provider-contracts.md).
 
 Included: a reusable Sleeper import service, a temporary flag-based import command,
 current rosters and team records, available current-season weekly rosters/matchups,
@@ -195,3 +197,11 @@ transactions, draft picks, future schedules, or previous seasons.
 
 Sources: [Sleeper API](https://docs.sleeper.com/) and
 [DynastyProcess player ID mappings](https://github.com/dynastyprocess/data).
+
+### Provider contract migration
+
+Run `just migrate` after this update. The additive migration retains normalized
+team records/ranks, matchup scoring-week spans and byes, and unknown eligibility.
+Existing historical data is retained. The first import after the change may
+create a fresh current observation because snapshot hashing now uses the shared
+model; later unchanged imports deduplicate as before. ESPN remains unimplemented.

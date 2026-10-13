@@ -40,11 +40,12 @@ AND EXISTS (
 ) ORDER BY e.slot_label,p.display_name;
 
 -- name: UpsertMatchup :one
-INSERT INTO matchups (league_season_id,external_matchup_id,period,team_a_id,team_b_id,score_a,score_b,status,fetched_at)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+INSERT INTO matchups (league_season_id,external_matchup_id,period,team_a_id,team_b_id,score_a,score_b,status,fetched_at,scoring_periods_json,is_bye)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 ON CONFLICT (league_season_id,period,external_matchup_id)
 DO UPDATE SET team_a_id=EXCLUDED.team_a_id,team_b_id=EXCLUDED.team_b_id,
- score_a=EXCLUDED.score_a,score_b=EXCLUDED.score_b,status=EXCLUDED.status,fetched_at=EXCLUDED.fetched_at
+ score_a=EXCLUDED.score_a,score_b=EXCLUDED.score_b,status=EXCLUDED.status,fetched_at=EXCLUDED.fetched_at,
+ scoring_periods_json=EXCLUDED.scoring_periods_json,is_bye=EXCLUDED.is_bye
 RETURNING *;
 
 -- name: ListMatchupsForUser :many

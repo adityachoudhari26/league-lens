@@ -76,7 +76,7 @@ func (q *Queries) GetLatestObservedSnapshot(ctx context.Context, arg GetLatestOb
 }
 
 const listMatchupsForUser = `-- name: ListMatchupsForUser :many
-SELECT m.id, m.league_season_id, m.external_matchup_id, m.period, m.team_a_id, m.team_b_id, m.score_a, m.score_b, m.status, m.fetched_at FROM matchups m WHERE m.league_season_id=$2 AND m.period=$3
+SELECT m.id, m.league_season_id, m.external_matchup_id, m.period, m.team_a_id, m.team_b_id, m.score_a, m.score_b, m.status, m.fetched_at, m.scoring_periods_json, m.is_bye FROM matchups m WHERE m.league_season_id=$2 AND m.period=$3
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
  WHERE cl.league_season_id=m.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
@@ -109,6 +109,8 @@ func (q *Queries) ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUs
 			&i.ScoreB,
 			&i.Status,
 			&i.FetchedAt,
+			&i.ScoringPeriodsJson,
+			&i.IsBye,
 		); err != nil {
 			return nil, err
 		}
@@ -224,24 +226,27 @@ func (q *Queries) ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsFor
 }
 
 const upsertMatchup = `-- name: UpsertMatchup :one
-INSERT INTO matchups (league_season_id,external_matchup_id,period,team_a_id,team_b_id,score_a,score_b,status,fetched_at)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+INSERT INTO matchups (league_season_id,external_matchup_id,period,team_a_id,team_b_id,score_a,score_b,status,fetched_at,scoring_periods_json,is_bye)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 ON CONFLICT (league_season_id,period,external_matchup_id)
 DO UPDATE SET team_a_id=EXCLUDED.team_a_id,team_b_id=EXCLUDED.team_b_id,
- score_a=EXCLUDED.score_a,score_b=EXCLUDED.score_b,status=EXCLUDED.status,fetched_at=EXCLUDED.fetched_at
-RETURNING id, league_season_id, external_matchup_id, period, team_a_id, team_b_id, score_a, score_b, status, fetched_at
+ score_a=EXCLUDED.score_a,score_b=EXCLUDED.score_b,status=EXCLUDED.status,fetched_at=EXCLUDED.fetched_at,
+ scoring_periods_json=EXCLUDED.scoring_periods_json,is_bye=EXCLUDED.is_bye
+RETURNING id, league_season_id, external_matchup_id, period, team_a_id, team_b_id, score_a, score_b, status, fetched_at, scoring_periods_json, is_bye
 `
 
 type UpsertMatchupParams struct {
-	LeagueSeasonID    pgtype.UUID
-	ExternalMatchupID string
-	Period            int32
-	TeamAID           pgtype.UUID
-	TeamBID           pgtype.UUID
-	ScoreA            pgtype.Numeric
-	ScoreB            pgtype.Numeric
-	Status            string
-	FetchedAt         pgtype.Timestamptz
+	LeagueSeasonID     pgtype.UUID
+	ExternalMatchupID  string
+	Period             int32
+	TeamAID            pgtype.UUID
+	TeamBID            pgtype.UUID
+	ScoreA             pgtype.Numeric
+	ScoreB             pgtype.Numeric
+	Status             string
+	FetchedAt          pgtype.Timestamptz
+	ScoringPeriodsJson []byte
+	IsBye              bool
 }
 
 func (q *Queries) UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (Matchup, error) {
@@ -255,6 +260,8 @@ func (q *Queries) UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (M
 		arg.ScoreB,
 		arg.Status,
 		arg.FetchedAt,
+		arg.ScoringPeriodsJson,
+		arg.IsBye,
 	)
 	var i Matchup
 	err := row.Scan(
@@ -268,6 +275,8 @@ func (q *Queries) UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (M
 		&i.ScoreB,
 		&i.Status,
 		&i.FetchedAt,
+		&i.ScoringPeriodsJson,
+		&i.IsBye,
 	)
 	return i, err
 }
