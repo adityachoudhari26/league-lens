@@ -46,7 +46,7 @@ Node is used for frontend development and builds. The production application run
 
 - [ ] **6. Build the ESPN connector.** Turn the verified read-only flow into reusable Go code; normalize league settings, teams, roster slots, players, and matchups. Add UI configuration and reconnect/error states. **Done when:** the selected ESPN team imports correctly, fixture tests verify normalization, and an expired or invalid connection leaves the last successful snapshot intact.
 
-- [ ] **7. Build the Sleeper connector.** Look up a username, select a league/team, and normalize the same data categories. Treat public username lookup as selection, not proof of account ownership. **Done when:** the selected Sleeper team imports correctly and fixture tests cover its mappings and missing-data cases.
+- [x] **7. Build the Sleeper connector.** Look up a username, select a league/team, and normalize the same data categories. Treat public username lookup as selection, not proof of account ownership. **Done when:** the selected Sleeper team imports correctly and fixture tests cover its mappings and missing-data cases.
 
 - [ ] **8. Build the combined dashboard.** Display both teams, rosters, matchups, scoring context, connection state, manual refresh, and last successful sync times. Introduce explicit cross-provider player ID mappings; do not merge by name alone. **Done when:** both real teams appear correctly, unresolved player mappings stay explicit, and stale or missing data is visibly distinguished from fresh data.
 
@@ -82,11 +82,14 @@ The repository includes the locally implemented Go/Postgres foundation described
 
 Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
 
-**Current:** the database foundation and development tools are merged. The typed-query checkpoint is implemented locally on `feat/typed-database-queries`. Generation is isolated in its own first commit, followed by handwritten transaction wiring. No push or PR is authorized for this checkpoint.
+**Current:** database queries and CI are merged. The Sleeper import checkpoint is implemented locally on `feat/sleeper-import` for review.
 
-Included: Go health server, Postgres Compose service, explicit Goose migrations, 12 domain tables, sqlc v1.30.0 bindings, pooled query access, transaction handling, and unit/integration tests. Authentication, provider imports/backfill execution, player-mapping downloads, frontend, background jobs, and AI remain deferred. Checkpoints 2 and 3 still await frontend/Connect work.
+Included: a reusable Sleeper import service, a temporary flag-based import command,
+current rosters and team records, available current-season weekly rosters/matchups,
+cached DynastyProcess identity lookup, and atomic persistence with sync status.
+Authentication, ESPN import, frontend/Connect work, scheduling, and AI remain deferred.
 
-The schema supports full-league import and initial current-season backfill; those behaviors will run only when connector services are implemented. Prior seasons are preserved. Generated queries and transaction behavior are tested against disposable Postgres.
+Sleeper now exercises full-league import and current-season backfill. Existing prior-season data is preserved. Generated queries and transaction behavior are tested against disposable Postgres.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook setup.
 
@@ -140,3 +143,55 @@ just gen-db
 `internal/database` owns the pool and exposes `Queries()` for individual operations and `InTx(ctx, callback)` for atomic writes. The callback receives transaction-bound generated queries. Use those queries for every operation in the transaction and do not retain them afterward. Errors, panics, and cancellation roll back; callbacks are not automatically retried. Do not call `Queries()` or nest `InTx` from inside the callback. Network fetches belong outside the transaction.
 
 `just test-db` now runs both schema checks and typed-query transaction tests in a disposable database. No real provider credentials are needed.
+
+## Import a Sleeper league locally
+
+```sh
+just setup        # once; creates ignored .env.development
+just db-up
+just migrate
+just import-sleeper YOUR_USERNAME YOUR_LEAGUE_ID
+```
+
+For a different local owner identity, pass an email as the third argument. The
+stable default is `owner@localhost`; this is a local identity label, not a login.
+Public Sleeper usernames select teams; they do not authenticate ownership.
+
+With `DATABASE_URL` already exported, the equivalent command is:
+
+```sh
+go run ./cmd/import sleeper --username YOUR_USERNAME --league-id YOUR_LEAGUE_ID
+```
+
+The command does not load dotenv files itself; `just` does. It does not migrate
+automatically. Use `--help` for options including `--mapping-cache`. The default
+mapping cache is the OS user cache under `league-lens/playerids.csv`, refreshed
+after 24 hours. An unavailable mapping dataset falls back to Sleeper identities;
+unknown player names display as `Sleeper <id>`. Only encountered players enter
+Postgres, and defenses remain distinct from people. Mapping conflicts fail the
+import rather than silently joining different existing players.
+
+Imports fetch the current NFL season through the current week (through week 18
+in postseason), including all teams and available weekly rosters. Current
+standings inputs are retained as roster records; past standings are not inferred.
+Historical missing benches produce lineup-only snapshots. Missing weeks are
+skipped and previous evidence retained. Current matchups have `unknown` status
+because the weekly response does not establish whether games have started.
+Commissioner score overrides, including zero, take precedence.
+
+Reruns update corrected matchups/history and add current observations only when
+roster content or records change. Provider requests run outside transactions;
+short database write phases serialize using an advisory lock to protect shared
+player identities. A failed write rolls back the whole season import and records
+a failed sync; its last successful data remains available. A newer completed
+import prevents an older in-flight import from overwriting it. Initial user or
+league lookup failures happen before a sync target exists and return directly.
+An interrupted process can leave a running sync record; recovery of abandoned
+runs belongs to the future job runner.
+
+The temporary command calls `internal/importer`, which can later be reused by
+Connect handlers or scheduled jobs. This checkpoint does not fetch news,
+transactions, draft picks, future schedules, or previous seasons.
+
+Sources: [Sleeper API](https://docs.sleeper.com/) and
+[DynastyProcess player ID mappings](https://github.com/dynastyprocess/data).

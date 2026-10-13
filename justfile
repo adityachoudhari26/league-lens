@@ -52,11 +52,12 @@ test:
 test-db:
     ./scripts/test-db.sh
 
-# Build the API and migration binaries.
+# Build the API, migration, and import binaries.
 build:
     mkdir -p bin
     go build -o bin/server ./cmd/server
     go build -o bin/migrate ./cmd/migrate
+    go build -o bin/import ./cmd/import
 
 # Check Go, shell syntax, formatting, and whitespace without changing files.
 check:
@@ -76,3 +77,7 @@ _require-env:
 [private]
 _require-air:
     @test -x ./bin/air || (echo 'Project Air is missing. Run just tools.' >&2; exit 1)
+
+# Import a public Sleeper league for the local owner (not authentication).
+import-sleeper username league_id owner_email="owner@localhost": _require-env
+    go run ./cmd/import sleeper --username {{quote(username)}} --league-id {{quote(league_id)}} --owner-email {{quote(owner_email)}}

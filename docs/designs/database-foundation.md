@@ -97,3 +97,25 @@ Tests exercise typed writes, commit visibility, rollback on callback/SQL failure
 ## Next implementation slice
 
 Review the typed query and transaction layer. Authentication and provider import services are separate future checkpoints. Initial-season backfill is part of connector implementation, not an already-running feature. No UI or AI work is needed to review this foundation.
+
+### Sleeper import checkpoint
+
+`internal/sleeper` owns bounded, contextual HTTP reads; `internal/importer`
+coordinates persistence and is called by the temporary `cmd/import` command.
+There are no HTTP import endpoints or background jobs yet. The local owner label
+is not authentication. Synthetic fixtures and disposable Postgres exercise the
+same persistence path as the command.
+
+This first implementation fetches up to 18 weeks outside a transaction, then
+commits the small season payload atomically. A transaction-scoped advisory lock
+serializes import writes (including shared identity creation), and newer completed
+runs prevent older fetches overwriting them. This intentionally favors a simple
+single-owner importer over per-period job orchestration; separate backfill jobs
+and finer-grained identity locks can follow if scale requires them. The existing
+pool remains available to readers during provider fetches.
+
+Only encountered identities are stored. A daily cached DynastyProcess CSV supplies
+exact external IDs and names. Missing or duplicate Sleeper mappings retain a
+provider-specific identity, while contradictory existing identity mappings fail
+without merging players. Defenses use distinct entities. The command reports
+mapping-download fallback; provider credentials are unnecessary.
