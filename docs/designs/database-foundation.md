@@ -1,6 +1,6 @@
 # Database foundation
 
-Status: implements the locally authorized infrastructure/database slice. No code generation, pushes, or PRs. Frontend, Connect handlers, authentication, connectors, and AI are outside this slice.
+Status: foundation merged; typed sqlc queries and transaction wiring implemented locally in a follow-up checkpoint. sqlc generation is authorized; pushes and PRs for the follow-up are not. Frontend, Connect handlers, authentication, connectors, and AI are outside this slice.
 
 ## Runtime
 
@@ -86,10 +86,14 @@ just test-db
 
 Integration tests validate migrations up/repeat/down/up, source-query preparation, identity uniqueness, access filtering, cross-season protection, partial historical coverage, null scores, and idempotent history corrections. Synthetic fixture data never contains real league details.
 
-## Generation is deferred
+## Typed queries and explicit generation
 
-`sqlc.yaml` and `db/queries/*.sql` are inputs only. No generated bindings are checked in or imported by the running health server. No command above invokes `sqlc generate`, `buf generate`, `go generate`, or a project generator. Query preparation by Postgres validates SQL, but is not proof that a future sqlc version can generate bindings; that check waits for explicit generation approval.
+`sqlc.yaml` and `db/queries/*.sql` generate committed Go bindings under `internal/store` with sqlc v1.30.0. `just gen-db` verifies that version and runs generation explicitly; startup, builds, and tests do not run it. Regenerating unchanged inputs must leave the generated files unchanged. Buf and other generators remain deferred.
+
+`internal/database.Open` creates a lazy pgx pool and binds generated queries. The server's readiness endpoint uses its Ping method. Application writes can use `InTx`: it supplies transaction-bound queries, commits on success, and defers rollback using an independent bounded context so cleanup survives request cancellation or panic. Panics propagate after rollback. Commit errors propagate; callbacks are not retried automatically. Callers must not retain transaction queries, use the nontransactional pool from inside the callback, or nest transactions.
+
+Tests exercise typed writes, commit visibility, rollback on callback/SQL failures, cancellation and panic cleanup with a one-connection pool, and query generation reproducibility. Import-specific league locking and scheduling remain part of connector implementation.
 
 ## Next implementation slice
 
-Review these tables and migration first. Then explicitly authorize generation/wiring of typed queries, authentication, and provider import services in separate checkpoints. Initial-season backfill is part of connector implementation, not an already-running feature. No UI or AI work is needed to review this foundation.
+Review the typed query and transaction layer. Authentication and provider import services are separate future checkpoints. Initial-season backfill is part of connector implementation, not an already-running feature. No UI or AI work is needed to review this foundation.

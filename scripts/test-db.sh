@@ -24,4 +24,4 @@ done
 binding=$(docker port "$container" 5432/tcp)
 port=${binding##*:}
 TEST_DATABASE_URL="postgres://league_lens_test:local_test_only@127.0.0.1:$port/league_lens_test?sslmode=disable" \
-  go test -tags=integration -count=1 ./db
+  go test -tags=integration -count=1 ./...

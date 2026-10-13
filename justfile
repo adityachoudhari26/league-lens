@@ -14,6 +14,11 @@ setup:
 tools:
     GOBIN="{{justfile_directory()}}/bin" go install github.com/air-verse/air@v1.65.3
 
+# Explicitly regenerate database bindings with the version used by this repository.
+gen-db:
+    @version="$(sqlc version)"; test "$version" = "v1.30.0" || { echo 'sqlc v1.30.0 is required; see README installation instructions.' >&2; exit 1; }
+    sqlc generate
+
 # Start local Postgres and wait for it to become healthy.
 db-up:
     docker compose up -d --wait postgres
