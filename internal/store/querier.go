@@ -14,16 +14,21 @@ type Querier interface {
 	AddPlayerExternalID(ctx context.Context, arg AddPlayerExternalIDParams) (PlayerExternalID, error)
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
 	AttachLeague(ctx context.Context, arg AttachLeagueParams) error
+	ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeamsParams) error
 	CompleteSync(ctx context.Context, id pgtype.UUID) (SyncRun, error)
 	CreateConnection(ctx context.Context, arg CreateConnectionParams) (Connection, error)
 	CreateEncounteredPlayer(ctx context.Context, arg CreateEncounteredPlayerParams) (Player, error)
 	CreateUser(ctx context.Context, email string) (User, error)
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
+	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
+	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
 	FailSync(ctx context.Context, arg FailSyncParams) (SyncRun, error)
 	FindPlayerByExternalID(ctx context.Context, arg FindPlayerByExternalIDParams) (Player, error)
+	FindSleeperConnection(ctx context.Context, arg FindSleeperConnectionParams) (Connection, error)
 	GetConnectionForUser(ctx context.Context, arg GetConnectionForUserParams) (Connection, error)
 	GetLatestObservedSnapshot(ctx context.Context, arg GetLatestObservedSnapshotParams) (TeamSnapshot, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
+	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
 	ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUserParams) ([]Matchup, error)
 	ListPlayerExternalIDs(ctx context.Context, playerID pgtype.UUID) ([]PlayerExternalID, error)
@@ -31,10 +36,14 @@ type Querier interface {
 	ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsForUserParams) ([]TeamSnapshot, error)
 	ListSyncRunsForUser(ctx context.Context, arg ListSyncRunsForUserParams) ([]SyncRun, error)
 	ListTeamsForUser(ctx context.Context, arg ListTeamsForUserParams) ([]Team, error)
+	// Serialize the brief write phase, including shared identity creation, across importers.
+	// No network calls run while this transaction lock is held.
+	LockImportWrites(ctx context.Context) error
 	MarkLeagueSynced(ctx context.Context, arg MarkLeagueSyncedParams) error
 	SelectUserTeam(ctx context.Context, arg SelectUserTeamParams) error
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)
+	UpdateMappedPlayerName(ctx context.Context, arg UpdateMappedPlayerNameParams) error
 	UpsertLeagueSeason(ctx context.Context, arg UpsertLeagueSeasonParams) (LeagueSeason, error)
 	UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (Matchup, error)
 	UpsertTeam(ctx context.Context, arg UpsertTeamParams) (Team, error)
