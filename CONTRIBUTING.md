@@ -37,7 +37,7 @@ This sets the hook path for this repository only. If you already use a custom ho
 ## Files and formatting
 
 - Follow `.editorconfig` and `.gitattributes` for UTF-8, LF line endings, and indentation.
-- Format Go with `gofmt` once Go files exist. Frontend lint dependencies are pinned in `web/package.json`; run `just check-web` for lint and type checks.
+- Format Go with `gofmt` once Go files exist. Frontend code is formatted with Prettier; run `just fmt-web` to apply it, and `just check-web` for lint, the format check, and type checks.
 - Commit dependency lockfiles, SQL migrations, and generated API/query bindings when introduced. Dependency directories and build artifacts are ignored.
 - Configuration examples must contain placeholders, never real tokens, cookies, or private league data. `.env.local` remains private; all environment files are excluded from Docker build contexts.
 - Ignore rules do not protect files already tracked by Git. Review staged changes before committing; never force-add credentials.
