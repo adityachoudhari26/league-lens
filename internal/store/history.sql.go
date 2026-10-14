@@ -39,12 +39,37 @@ func (q *Queries) AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) 
 	return err
 }
 
+const deleteMatchupLineup = `-- name: DeleteMatchupLineup :exec
+DELETE FROM matchup_lineups WHERE matchup_id=$1 AND team_id=$2
+`
+
+type DeleteMatchupLineupParams struct {
+	MatchupID pgtype.UUID
+	TeamID    pgtype.UUID
+}
+
+func (q *Queries) DeleteMatchupLineup(ctx context.Context, arg DeleteMatchupLineupParams) error {
+	_, err := q.db.Exec(ctx, deleteMatchupLineup, arg.MatchupID, arg.TeamID)
+	return err
+}
+
 const deleteSnapshotEntries = `-- name: DeleteSnapshotEntries :exec
 DELETE FROM roster_entries WHERE snapshot_id=$1
 `
 
 func (q *Queries) DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteSnapshotEntries, snapshotID)
+	return err
+}
+
+const deleteStaleMatchupLineupTeams = `-- name: DeleteStaleMatchupLineupTeams :exec
+DELETE FROM matchup_lineups l USING matchups m
+WHERE l.matchup_id=$1 AND m.id=l.matchup_id
+AND l.team_id<>m.team_a_id AND l.team_id IS DISTINCT FROM m.team_b_id
+`
+
+func (q *Queries) DeleteStaleMatchupLineupTeams(ctx context.Context, matchupID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteStaleMatchupLineupTeams, matchupID)
 	return err
 }
 
@@ -77,6 +102,34 @@ func (q *Queries) GetLatestObservedSnapshot(ctx context.Context, arg GetLatestOb
 		&i.ContentHash,
 	)
 	return i, err
+}
+
+const insertMatchupLineupEntry = `-- name: InsertMatchupLineupEntry :exec
+INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points)
+VALUES ($1,$2,$3,$4,$5,$6,$7)
+`
+
+type InsertMatchupLineupEntryParams struct {
+	MatchupID      pgtype.UUID
+	TeamID         pgtype.UUID
+	PlayerID       pgtype.UUID
+	ProviderSlotID pgtype.Text
+	SlotLabel      pgtype.Text
+	Starter        bool
+	Points         pgtype.Numeric
+}
+
+func (q *Queries) InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error {
+	_, err := q.db.Exec(ctx, insertMatchupLineupEntry,
+		arg.MatchupID,
+		arg.TeamID,
+		arg.PlayerID,
+		arg.ProviderSlotID,
+		arg.SlotLabel,
+		arg.Starter,
+		arg.Points,
+	)
+	return err
 }
 
 const listMatchupsForUser = `-- name: ListMatchupsForUser :many

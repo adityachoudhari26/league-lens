@@ -26,9 +26,11 @@ type Querier interface {
 	DashboardMatchupPeriods(ctx context.Context, arg DashboardMatchupPeriodsParams) ([]int32, error)
 	DashboardRoster(ctx context.Context, arg DashboardRosterParams) (TeamSnapshot, error)
 	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
+	DeleteMatchupLineup(ctx context.Context, arg DeleteMatchupLineupParams) error
 	DeleteNFLSeason(ctx context.Context, season int32) error
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
 	DeleteSourceNews(ctx context.Context, source string) error
+	DeleteStaleMatchupLineupTeams(ctx context.Context, matchupID pgtype.UUID) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
 	DismissAlert(ctx context.Context, arg DismissAlertParams) error
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
@@ -39,6 +41,7 @@ type Querier interface {
 	GetLatestObservedSnapshot(ctx context.Context, arg GetLatestObservedSnapshotParams) (TeamSnapshot, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
+	InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
 	ListDismissedAlerts(ctx context.Context, arg ListDismissedAlertsParams) ([]string, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)

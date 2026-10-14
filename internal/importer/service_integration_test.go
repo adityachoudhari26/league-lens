@@ -4,6 +4,7 @@ package importer
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	migrations "github.com/adityachoudhari26/league-lens/db"
@@ -12,6 +13,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
+	"maps"
 	"net/url"
 	"os"
 	"testing"
@@ -53,7 +55,11 @@ func (f *fixtureSource) DescribeLeague(context.Context, string) (fantasy.League,
 func (f *fixtureSource) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData, error) {
 	return f.data, f.err
 }
-func TestImportRoundTrip(t *testing.T) {
+
+// openTestDatabase migrates a fresh schema in TEST_DATABASE_URL and returns a
+// raw connection for assertions plus the application database handle.
+func openTestDatabase(t *testing.T) (*sql.DB, *database.DB) {
+	t.Helper()
 	ctx := context.Background()
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
@@ -64,15 +70,15 @@ func TestImportRoundTrip(t *testing.T) {
 		t.Fatal(e)
 	}
 	admin := stdlib.OpenDB(*cfg)
-	defer admin.Close()
+	t.Cleanup(func() { admin.Close() })
 	schema := fmt.Sprintf("import_%d", time.Now().UnixNano())
 	if _, e = admin.Exec("CREATE SCHEMA " + schema); e != nil {
 		t.Fatal(e)
 	}
-	defer admin.Exec("DROP SCHEMA " + schema + " CASCADE")
+	t.Cleanup(func() { admin.Exec("DROP SCHEMA " + schema + " CASCADE") })
 	cfg.RuntimeParams["search_path"] = schema
 	sqlDB := stdlib.OpenDB(*cfg)
-	defer sqlDB.Close()
+	t.Cleanup(func() { sqlDB.Close() })
 	if e = migrations.Migrate(ctx, sqlDB, "up"); e != nil {
 		t.Fatal(e)
 	}
@@ -84,7 +90,14 @@ func TestImportRoundTrip(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer db.Close()
+	t.Cleanup(db.Close)
+	return sqlDB, db
+}
+
+func TestImportRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	sqlDB, db := openTestDatabase(t)
+	var e error
 	src := &fixtureSource{data: fixture(t)}
 	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{"10": {Name: "Test QB", IDs: map[string]string{"sleeper": "10", "espn": "100"}}}}
 	req := Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}}
@@ -265,4 +278,113 @@ func (b *blockedSource) FetchLeague(ctx context.Context, h fantasy.League) (fant
 	case <-ctx.Done():
 		return fantasy.LeagueData{}, ctx.Err()
 	}
+}
+
+// lineupFixture gives team 1 a starter with points, an IR player without
+// points, and a bench player with a real zero; team 2 has one starter whose
+// provider slot is unknown.
+func lineupFixture() []fantasy.MatchupLineup {
+	twelve, zero := 12.5, 0.0
+	return []fantasy.MatchupLineup{
+		{Period: 1, MatchupID: "1", TeamID: "1", Entries: []fantasy.LineupEntry{
+			{PlayerID: "10", ProviderSlotID: "0", Slot: fantasy.SlotQB, Starter: true, Points: &twelve},
+			{PlayerID: "20", ProviderSlotID: "21", Slot: fantasy.SlotIR},
+			{PlayerID: "DET", ProviderSlotID: "20", Slot: fantasy.SlotBench, Points: &zero},
+		}},
+		{Period: 1, MatchupID: "1", TeamID: "2", Entries: []fantasy.LineupEntry{
+			{PlayerID: "30", Slot: fantasy.SlotQB, Starter: true, Points: &zero},
+		}},
+	}
+}
+
+func TestImportMatchupLineups(t *testing.T) {
+	ctx := context.Background()
+	sqlDB, db := openTestDatabase(t)
+	src := &fixtureSource{data: fixture(t)}
+	src.data.Lineups = lineupFixture()
+	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{}}
+	req := Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}}
+	importFixture := func() {
+		t.Helper()
+		if _, err := s.Import(ctx, req); err != nil {
+			t.Fatal(err)
+		}
+	}
+	team2Rows := map[string]string{"2/Fixture 30": "slot=<null> label=QB starter=true points=0.0000"}
+
+	importFixture()
+	assertLineupRows(t, sqlDB, mergeRows(map[string]string{
+		"1/Fixture 10":  "slot=0 label=QB starter=true points=12.5000",
+		"1/Fixture 20":  "slot=21 label=IR starter=false points=<null>",
+		"1/Fixture DET": "slot=20 label=BENCH starter=false points=0.0000",
+	}, team2Rows))
+
+	// A reported lineup replaces that side's rows.
+	src.data.Players = append(src.data.Players, fantasy.Player{ExternalID: "40", Name: "Fixture 40", Kind: fantasy.PlayerPerson})
+	src.data.Lineups[0].Entries[1] = fantasy.LineupEntry{PlayerID: "40", ProviderSlotID: "2", Slot: fantasy.SlotRB, Starter: true}
+	importFixture()
+	team1Rows := map[string]string{
+		"1/Fixture 10":  "slot=0 label=QB starter=true points=12.5000",
+		"1/Fixture 40":  "slot=2 label=RB starter=true points=<null>",
+		"1/Fixture DET": "slot=20 label=BENCH starter=false points=0.0000",
+	}
+	assertLineupRows(t, sqlDB, mergeRows(team1Rows, team2Rows))
+
+	// A missing lineup means unavailable, so team 2 keeps its stored rows.
+	src.data.Lineups = src.data.Lineups[:1]
+	importFixture()
+	assertLineupRows(t, sqlDB, mergeRows(team1Rows, team2Rows))
+
+	// When the matchup becomes a bye, the former opponent's rows are stale.
+	src.data.Matchups[0].TeamB = nil
+	src.data.Matchups[0].IsBye = true
+	importFixture()
+	assertLineupRows(t, sqlDB, team1Rows)
+
+	// A matchup removed from a complete period takes its lineups with it.
+	src.data.Matchups = nil
+	src.data.Lineups = nil
+	importFixture()
+	assertLineupRows(t, sqlDB, map[string]string{})
+}
+
+func mergeRows(groups ...map[string]string) map[string]string {
+	merged := map[string]string{}
+	for _, group := range groups {
+		maps.Copy(merged, group)
+	}
+	return merged
+}
+
+// assertLineupRows compares every stored lineup row, keyed by
+// "team external ID/player display name".
+func assertLineupRows(t *testing.T, sqlDB *sql.DB, want map[string]string) {
+	t.Helper()
+	got := readLineupRows(t, sqlDB)
+	if !maps.Equal(got, want) {
+		t.Fatalf("lineup rows:\n got %v\nwant %v", got, want)
+	}
+}
+
+func readLineupRows(t *testing.T, sqlDB *sql.DB) map[string]string {
+	t.Helper()
+	rows, err := sqlDB.Query(`SELECT t.external_team_id||'/'||p.display_name,
+	 'slot='||COALESCE(l.provider_slot_id,'<null>')||' label='||l.slot_label||' starter='||l.starter::text||' points='||COALESCE(l.points::text,'<null>')
+	 FROM matchup_lineups l JOIN teams t ON t.id=l.team_id JOIN players p ON p.id=l.player_id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	got := map[string]string{}
+	for rows.Next() {
+		var key, value string
+		if err = rows.Scan(&key, &value); err != nil {
+			t.Fatal(err)
+		}
+		got[key] = value
+	}
+	if err = rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return got
 }

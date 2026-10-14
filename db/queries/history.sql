@@ -48,6 +48,18 @@ DO UPDATE SET team_a_id=EXCLUDED.team_a_id,team_b_id=EXCLUDED.team_b_id,
  scoring_periods_json=EXCLUDED.scoring_periods_json,is_bye=EXCLUDED.is_bye
 RETURNING *;
 
+-- name: DeleteStaleMatchupLineupTeams :exec
+DELETE FROM matchup_lineups l USING matchups m
+WHERE l.matchup_id=$1 AND m.id=l.matchup_id
+AND l.team_id<>m.team_a_id AND l.team_id IS DISTINCT FROM m.team_b_id;
+
+-- name: DeleteMatchupLineup :exec
+DELETE FROM matchup_lineups WHERE matchup_id=$1 AND team_id=$2;
+
+-- name: InsertMatchupLineupEntry :exec
+INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points)
+VALUES ($1,$2,$3,$4,$5,$6,$7);
+
 -- name: ListMatchupsForUser :many
 SELECT m.* FROM matchups m WHERE m.league_season_id=$2 AND m.period=$3
 AND EXISTS (
