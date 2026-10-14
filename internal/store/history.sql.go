@@ -12,8 +12,8 @@ import (
 )
 
 const addRosterEntry = `-- name: AddRosterEntry :exec
-INSERT INTO roster_entries (snapshot_id,player_id,provider_slot_id,slot_label,eligible_positions_json)
-VALUES ($1,$2,$3,$4,$5)
+INSERT INTO roster_entries (snapshot_id,player_id,provider_slot_id,slot_label,eligible_positions_json,injury_status,pro_team)
+VALUES ($1,$2,$3,$4,$5,$6,$7)
 `
 
 type AddRosterEntryParams struct {
@@ -22,6 +22,8 @@ type AddRosterEntryParams struct {
 	ProviderSlotID        pgtype.Text
 	SlotLabel             pgtype.Text
 	EligiblePositionsJson []byte
+	InjuryStatus          pgtype.Text
+	ProTeam               pgtype.Text
 }
 
 func (q *Queries) AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error {
@@ -31,6 +33,8 @@ func (q *Queries) AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) 
 		arg.ProviderSlotID,
 		arg.SlotLabel,
 		arg.EligiblePositionsJson,
+		arg.InjuryStatus,
+		arg.ProTeam,
 	)
 	return err
 }
@@ -123,7 +127,7 @@ func (q *Queries) ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUs
 }
 
 const listSnapshotRosterForUser = `-- name: ListSnapshotRosterForUser :many
-SELECT e.snapshot_id, e.player_id, e.provider_slot_id, e.slot_label, e.eligible_positions_json,p.display_name,p.entity_type FROM roster_entries e
+SELECT e.snapshot_id, e.player_id, e.provider_slot_id, e.slot_label, e.eligible_positions_json, e.injury_status, e.pro_team,p.display_name,p.entity_type FROM roster_entries e
 JOIN players p ON p.id=e.player_id
 JOIN team_snapshots s ON s.id=e.snapshot_id
 JOIN sync_runs r ON r.id=s.sync_run_id
@@ -145,6 +149,8 @@ type ListSnapshotRosterForUserRow struct {
 	ProviderSlotID        pgtype.Text
 	SlotLabel             pgtype.Text
 	EligiblePositionsJson []byte
+	InjuryStatus          pgtype.Text
+	ProTeam               pgtype.Text
 	DisplayName           string
 	EntityType            string
 }
@@ -164,6 +170,8 @@ func (q *Queries) ListSnapshotRosterForUser(ctx context.Context, arg ListSnapsho
 			&i.ProviderSlotID,
 			&i.SlotLabel,
 			&i.EligiblePositionsJson,
+			&i.InjuryStatus,
+			&i.ProTeam,
 			&i.DisplayName,
 			&i.EntityType,
 		); err != nil {

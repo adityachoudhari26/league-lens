@@ -31,6 +31,13 @@ message LineupAlert {
   string severity = 5;
   string slot = 6;
   int32 empty_slots = 7;
+  // empty_slot | injury | bye
+  string kind = 8;
+  string player_name = 9;
+  // Normalized designation for injury alerts: questionable | doubtful | out | ir.
+  string injury_status = 10;
+  string pro_team = 11;
+  google.protobuf.Timestamp kickoff_at = 12;
 }
 message GetOverviewMatchupsRequest {}
 message GetOverviewMatchupsResponse {

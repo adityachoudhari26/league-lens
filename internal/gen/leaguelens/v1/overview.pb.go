@@ -264,14 +264,21 @@ func (x *GetOverviewAttentionResponse) GetAlerts() []*LineupAlert {
 }
 
 type LineupAlert struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Team          *OverviewTeam          `protobuf:"bytes,2,opt,name=team,proto3" json:"team,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Detail        string                 `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`
-	Severity      string                 `protobuf:"bytes,5,opt,name=severity,proto3" json:"severity,omitempty"`
-	Slot          string                 `protobuf:"bytes,6,opt,name=slot,proto3" json:"slot,omitempty"`
-	EmptySlots    int32                  `protobuf:"varint,7,opt,name=empty_slots,json=emptySlots,proto3" json:"empty_slots,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Team       *OverviewTeam          `protobuf:"bytes,2,opt,name=team,proto3" json:"team,omitempty"`
+	Title      string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Detail     string                 `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`
+	Severity   string                 `protobuf:"bytes,5,opt,name=severity,proto3" json:"severity,omitempty"`
+	Slot       string                 `protobuf:"bytes,6,opt,name=slot,proto3" json:"slot,omitempty"`
+	EmptySlots int32                  `protobuf:"varint,7,opt,name=empty_slots,json=emptySlots,proto3" json:"empty_slots,omitempty"`
+	// empty_slot | injury | bye
+	Kind       string `protobuf:"bytes,8,opt,name=kind,proto3" json:"kind,omitempty"`
+	PlayerName string `protobuf:"bytes,9,opt,name=player_name,json=playerName,proto3" json:"player_name,omitempty"`
+	// Normalized designation for injury alerts: questionable | doubtful | out | ir.
+	InjuryStatus  string                 `protobuf:"bytes,10,opt,name=injury_status,json=injuryStatus,proto3" json:"injury_status,omitempty"`
+	ProTeam       string                 `protobuf:"bytes,11,opt,name=pro_team,json=proTeam,proto3" json:"pro_team,omitempty"`
+	KickoffAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=kickoff_at,json=kickoffAt,proto3" json:"kickoff_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -353,6 +360,41 @@ func (x *LineupAlert) GetEmptySlots() int32 {
 		return x.EmptySlots
 	}
 	return 0
+}
+
+func (x *LineupAlert) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *LineupAlert) GetPlayerName() string {
+	if x != nil {
+		return x.PlayerName
+	}
+	return ""
+}
+
+func (x *LineupAlert) GetInjuryStatus() string {
+	if x != nil {
+		return x.InjuryStatus
+	}
+	return ""
+}
+
+func (x *LineupAlert) GetProTeam() string {
+	if x != nil {
+		return x.ProTeam
+	}
+	return ""
+}
+
+func (x *LineupAlert) GetKickoffAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.KickoffAt
+	}
+	return nil
 }
 
 type GetOverviewMatchupsRequest struct {
@@ -886,7 +928,7 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	"\x1bGetOverviewAttentionRequest\"\x8f\x01\n" +
 	"\x1cGetOverviewAttentionResponse\x12;\n" +
 	"\bcoverage\x18\x01 \x01(\v2\x1f.leaguelens.v1.OverviewCoverageR\bcoverage\x122\n" +
-	"\x06alerts\x18\x02 \x03(\v2\x1a.leaguelens.v1.LineupAlertR\x06alerts\"\xcd\x01\n" +
+	"\x06alerts\x18\x02 \x03(\v2\x1a.leaguelens.v1.LineupAlertR\x06alerts\"\xfd\x02\n" +
 	"\vLineupAlert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04team\x18\x02 \x01(\v2\x1b.leaguelens.v1.OverviewTeamR\x04team\x12\x14\n" +
@@ -895,7 +937,15 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	"\bseverity\x18\x05 \x01(\tR\bseverity\x12\x12\n" +
 	"\x04slot\x18\x06 \x01(\tR\x04slot\x12\x1f\n" +
 	"\vempty_slots\x18\a \x01(\x05R\n" +
-	"emptySlots\"\x1c\n" +
+	"emptySlots\x12\x12\n" +
+	"\x04kind\x18\b \x01(\tR\x04kind\x12\x1f\n" +
+	"\vplayer_name\x18\t \x01(\tR\n" +
+	"playerName\x12#\n" +
+	"\rinjury_status\x18\n" +
+	" \x01(\tR\finjuryStatus\x12\x19\n" +
+	"\bpro_team\x18\v \x01(\tR\aproTeam\x129\n" +
+	"\n" +
+	"kickoff_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tkickoffAt\"\x1c\n" +
 	"\x1aGetOverviewMatchupsRequest\"\x96\x01\n" +
 	"\x1bGetOverviewMatchupsResponse\x12;\n" +
 	"\bcoverage\x18\x01 \x01(\v2\x1f.leaguelens.v1.OverviewCoverageR\bcoverage\x12:\n" +
@@ -969,21 +1019,22 @@ var file_leaguelens_v1_overview_proto_depIdxs = []int32{
 	0,  // 1: leaguelens.v1.GetOverviewAttentionResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
 	4,  // 2: leaguelens.v1.GetOverviewAttentionResponse.alerts:type_name -> leaguelens.v1.LineupAlert
 	1,  // 3: leaguelens.v1.LineupAlert.team:type_name -> leaguelens.v1.OverviewTeam
-	0,  // 4: leaguelens.v1.GetOverviewMatchupsResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	7,  // 5: leaguelens.v1.GetOverviewMatchupsResponse.matchups:type_name -> leaguelens.v1.OverviewMatchup
-	1,  // 6: leaguelens.v1.OverviewMatchup.team:type_name -> leaguelens.v1.OverviewTeam
-	14, // 7: leaguelens.v1.OverviewMatchup.fetched_at:type_name -> google.protobuf.Timestamp
-	0,  // 8: leaguelens.v1.GetOverviewPlayerUpdatesResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	10, // 9: leaguelens.v1.GetOverviewPlayerUpdatesResponse.updates:type_name -> leaguelens.v1.PlayerUpdate
-	14, // 10: leaguelens.v1.PlayerUpdate.published_at:type_name -> google.protobuf.Timestamp
-	0,  // 11: leaguelens.v1.GetOverviewLookingAheadResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	13, // 12: leaguelens.v1.GetOverviewLookingAheadResponse.issues:type_name -> leaguelens.v1.UpcomingIssue
-	1,  // 13: leaguelens.v1.UpcomingIssue.team:type_name -> leaguelens.v1.OverviewTeam
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	14, // 4: leaguelens.v1.LineupAlert.kickoff_at:type_name -> google.protobuf.Timestamp
+	0,  // 5: leaguelens.v1.GetOverviewMatchupsResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
+	7,  // 6: leaguelens.v1.GetOverviewMatchupsResponse.matchups:type_name -> leaguelens.v1.OverviewMatchup
+	1,  // 7: leaguelens.v1.OverviewMatchup.team:type_name -> leaguelens.v1.OverviewTeam
+	14, // 8: leaguelens.v1.OverviewMatchup.fetched_at:type_name -> google.protobuf.Timestamp
+	0,  // 9: leaguelens.v1.GetOverviewPlayerUpdatesResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
+	10, // 10: leaguelens.v1.GetOverviewPlayerUpdatesResponse.updates:type_name -> leaguelens.v1.PlayerUpdate
+	14, // 11: leaguelens.v1.PlayerUpdate.published_at:type_name -> google.protobuf.Timestamp
+	0,  // 12: leaguelens.v1.GetOverviewLookingAheadResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
+	13, // 13: leaguelens.v1.GetOverviewLookingAheadResponse.issues:type_name -> leaguelens.v1.UpcomingIssue
+	1,  // 14: leaguelens.v1.UpcomingIssue.team:type_name -> leaguelens.v1.OverviewTeam
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_leaguelens_v1_overview_proto_init() }

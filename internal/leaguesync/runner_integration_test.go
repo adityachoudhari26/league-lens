@@ -49,6 +49,10 @@ func (s *fakeSource) FetchLeague(ctx context.Context, _ fantasy.League) (fantasy
 
 type fakeSources map[fantasy.ProviderID]fantasy.Provider
 
+func (f fakeSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error) {
+	return nil, errors.New("schedule unavailable in tests")
+}
+
 func (f fakeSources) SourceFor(target leaguesync.Target) (fantasy.Provider, error) {
 	return f[target.Selection.League.Provider], nil
 }

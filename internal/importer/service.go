@@ -43,6 +43,8 @@ type importTarget struct {
 
 func text(value string) pgtype.Text { return pgtype.Text{String: value, Valid: true} }
 
+func optionalText(value string) pgtype.Text { return pgtype.Text{String: value, Valid: value != ""} }
+
 func timestamp(value time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: value, Valid: true}
 }

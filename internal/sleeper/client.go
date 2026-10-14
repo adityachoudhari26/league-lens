@@ -69,6 +69,8 @@ type Data struct {
 type Client struct {
 	HTTP    *http.Client
 	BaseURL string
+	// PlayersCachePath enables injury status and NFL team on observed rosters.
+	PlayersCachePath string
 }
 
 func NewClient(h *http.Client) *Client {

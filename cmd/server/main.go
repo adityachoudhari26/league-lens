@@ -17,6 +17,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/httpserver"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
+	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 )
 
 func main() {
@@ -78,5 +79,10 @@ func newSyncRunner(data *database.DB, ownerEmail string) *leaguesync.Runner {
 	if err != nil {
 		slog.Warn("player mapping cache unavailable; syncs retain provider identities")
 	}
-	return leaguesync.New(data, ownerEmail, leaguesync.ProviderSources{ESPN: credentials}, catalogPath)
+	sleeperPlayersPath, err := sleeper.DefaultPlayersCachePath()
+	if err != nil {
+		slog.Warn("sleeper player directory cache unavailable; syncs omit Sleeper injury status")
+	}
+	sources := leaguesync.ProviderSources{ESPN: credentials, SleeperPlayersCachePath: sleeperPlayersPath}
+	return leaguesync.New(data, ownerEmail, sources, catalogPath)
 }

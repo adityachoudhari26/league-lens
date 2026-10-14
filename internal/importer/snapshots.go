@@ -83,7 +83,15 @@ func (w *leagueWriter) replaceSnapshotEntries(ctx context.Context, snapshotID pg
 		if err != nil {
 			return err
 		}
-		if err = w.queries.AddRosterEntry(ctx, store.AddRosterEntryParams{SnapshotID: snapshotID, PlayerID: w.players[entry.PlayerID], ProviderSlotID: slot, SlotLabel: text(string(entry.Slot)), EligiblePositionsJson: eligible}); err != nil {
+		if err = w.queries.AddRosterEntry(ctx, store.AddRosterEntryParams{
+			SnapshotID:            snapshotID,
+			PlayerID:              w.players[entry.PlayerID],
+			ProviderSlotID:        slot,
+			SlotLabel:             text(string(entry.Slot)),
+			EligiblePositionsJson: eligible,
+			InjuryStatus:          optionalText(string(entry.InjuryStatus)),
+			ProTeam:               optionalText(entry.ProTeam),
+		}); err != nil {
 			return err
 		}
 	}

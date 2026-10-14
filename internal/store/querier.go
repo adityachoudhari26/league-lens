@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	AddNFLGame(ctx context.Context, arg AddNFLGameParams) error
 	AddPlayerExternalID(ctx context.Context, arg AddPlayerExternalIDParams) (PlayerExternalID, error)
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
 	AttachLeague(ctx context.Context, arg AttachLeagueParams) error
@@ -24,6 +25,7 @@ type Querier interface {
 	DashboardMatchupPeriods(ctx context.Context, arg DashboardMatchupPeriodsParams) ([]int32, error)
 	DashboardRoster(ctx context.Context, arg DashboardRosterParams) (TeamSnapshot, error)
 	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
+	DeleteNFLSeason(ctx context.Context, season int32) error
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
@@ -36,6 +38,7 @@ type Querier interface {
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
 	ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUserParams) ([]Matchup, error)
+	ListNFLGamesForWeek(ctx context.Context, arg ListNFLGamesForWeekParams) ([]ListNFLGamesForWeekRow, error)
 	ListPlayerExternalIDs(ctx context.Context, playerID pgtype.UUID) ([]PlayerExternalID, error)
 	ListSnapshotRosterForUser(ctx context.Context, arg ListSnapshotRosterForUserParams) ([]ListSnapshotRosterForUserRow, error)
 	ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsForUserParams) ([]TeamSnapshot, error)
@@ -48,6 +51,7 @@ type Querier interface {
 	// No network calls run while this transaction lock is held.
 	LockImportWrites(ctx context.Context) error
 	MarkLeagueSynced(ctx context.Context, arg MarkLeagueSyncedParams) error
+	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)
 	// Match the latest observed scoring week, not the greatest (possibly future) round.
 	OverviewTeamMatchup(ctx context.Context, arg OverviewTeamMatchupParams) (OverviewTeamMatchupRow, error)
 	// Only selected teams, enabled connections, and the owner's latest imported season.

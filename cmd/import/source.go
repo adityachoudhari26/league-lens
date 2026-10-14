@@ -16,6 +16,7 @@ func prepareSource(ctx context.Context, options importOptions) (fantasy.Provider
 		return prepareESPN(ctx, options)
 	}
 	client := sleeper.NewClient(nil)
+	client.PlayersCachePath, _ = sleeper.DefaultPlayersCachePath()
 	league, err := client.DescribeLeague(ctx, options.leagueID)
 	if err != nil {
 		return nil, "", fantasy.ConnectionSelection{}, err

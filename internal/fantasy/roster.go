@@ -47,7 +47,25 @@ type RosterEntry struct {
 	ProviderSlotID    string // Retains unfamiliar provider slots without guessing.
 	Slot              RosterSlot
 	EligiblePositions []Position // nil means unavailable, not ineligible everywhere.
+
+	// Availability as reported by the provider when the snapshot was fetched.
+	// Empty values mean the provider did not supply them.
+	InjuryStatus InjuryStatus `json:",omitempty"`
+	ProTeam      string       `json:",omitempty"` // NFL team abbreviation, e.g. "KC".
 }
+
+// InjuryStatus is a provider injury designation reduced to the cases that
+// change a start/sit decision. Unfamiliar designations become InjuryUnknown.
+type InjuryStatus string
+
+const (
+	InjuryActive       InjuryStatus = "active"
+	InjuryQuestionable InjuryStatus = "questionable"
+	InjuryDoubtful     InjuryStatus = "doubtful"
+	InjuryOut          InjuryStatus = "out"
+	InjuryReserve      InjuryStatus = "ir"
+	InjuryUnknown      InjuryStatus = "unknown"
+)
 
 type RosterSlot string
 

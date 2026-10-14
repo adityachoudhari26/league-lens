@@ -6,25 +6,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/adityachoudhari26/league-lens/internal/diskcache"
 )
 
 // DefaultCachePath is the shared on-disk location of the daily catalog cache.
 func DefaultCachePath() (string, error) {
-	directory, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(directory, "league-lens", "playerids.csv"), nil
+	return diskcache.Path("playerids.csv")
 }
 
 // Load uses a daily disk cache; callers may fall back to provider-only identities
 // when this optional community dataset is unavailable. No player catalog is inserted.
 func Load(ctx context.Context, path string) (Catalog, string, error) {
-	contents, err := readFreshCache(path)
+	contents, err := diskcache.ReadFresh(path, 24*time.Hour)
 	if err != nil {
 		return nil, "", err
 	}
@@ -36,21 +32,13 @@ func Load(ctx context.Context, path string) (Catalog, string, error) {
 		if _, err = Parse(strings.NewReader(string(contents))); err != nil {
 			return nil, "", err
 		}
-		if err = replaceCache(path, contents); err != nil {
+		if err = diskcache.Replace(path, contents); err != nil {
 			return nil, "", err
 		}
 	}
 	catalog, err := Parse(strings.NewReader(string(contents)))
 	version := fmt.Sprintf("sha256:%x", sha256.Sum256(contents))
 	return catalog, version, err
-}
-
-func readFreshCache(path string) ([]byte, error) {
-	info, err := os.Stat(path)
-	if err != nil || time.Since(info.ModTime()) >= 24*time.Hour {
-		return nil, nil
-	}
-	return os.ReadFile(path)
 }
 
 func downloadCatalog(ctx context.Context) ([]byte, error) {
@@ -67,23 +55,4 @@ func downloadCatalog(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("mapping HTTP %d", response.StatusCode)
 	}
 	return io.ReadAll(io.LimitReader(response.Body, 8<<20))
-}
-
-func replaceCache(path string, contents []byte) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return err
-	}
-	temporary, err := os.CreateTemp(filepath.Dir(path), "ids-*")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(temporary.Name())
-	if _, err = temporary.Write(contents); err != nil {
-		temporary.Close()
-		return err
-	}
-	if err = temporary.Close(); err != nil {
-		return err
-	}
-	return os.Rename(temporary.Name(), path)
 }

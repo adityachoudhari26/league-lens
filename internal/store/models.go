@@ -54,6 +54,15 @@ type Matchup struct {
 	IsBye              bool
 }
 
+type NflGame struct {
+	Season    int32
+	Week      int32
+	Team      string
+	Opponent  string
+	KickoffAt pgtype.Timestamptz
+	FetchedAt pgtype.Timestamptz
+}
+
 type Player struct {
 	ID          pgtype.UUID
 	DisplayName string
@@ -77,6 +86,8 @@ type RosterEntry struct {
 	ProviderSlotID        pgtype.Text
 	SlotLabel             pgtype.Text
 	EligiblePositionsJson []byte
+	InjuryStatus          pgtype.Text
+	ProTeam               pgtype.Text
 }
 
 type SyncRun struct {

@@ -17,8 +17,8 @@ RETURNING *;
 DELETE FROM roster_entries WHERE snapshot_id=$1;
 
 -- name: AddRosterEntry :exec
-INSERT INTO roster_entries (snapshot_id,player_id,provider_slot_id,slot_label,eligible_positions_json)
-VALUES ($1,$2,$3,$4,$5);
+INSERT INTO roster_entries (snapshot_id,player_id,provider_slot_id,slot_label,eligible_positions_json,injury_status,pro_team)
+VALUES ($1,$2,$3,$4,$5,$6,$7);
 
 -- name: ListSnapshotsForUser :many
 SELECT s.* FROM team_snapshots s JOIN sync_runs r ON r.id=s.sync_run_id
