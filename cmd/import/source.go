@@ -16,12 +16,12 @@ func prepareSource(ctx context.Context, options importOptions) (fantasy.Provider
 		return prepareESPN(ctx, options)
 	}
 	client := sleeper.NewClient(nil)
-	client.PlayersCachePath, _ = sleeper.DefaultPlayersCachePath()
 	league, err := client.DescribeLeague(ctx, options.leagueID)
 	if err != nil {
 		return nil, "", fantasy.ConnectionSelection{}, err
 	}
 	accountID, selection, err := client.ResolveSelection(ctx, options.username, league)
+	client.AvailabilityTeamIDs = selection.SelectedTeamIDs
 	return client, accountID, selection, err
 }
 func prepareESPN(ctx context.Context, options importOptions) (fantasy.Provider, string, fantasy.ConnectionSelection, error) {

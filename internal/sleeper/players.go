@@ -2,108 +2,81 @@ package sleeper
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
-	"time"
+	"net/url"
 
-	"github.com/adityachoudhari26/league-lens/internal/diskcache"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
-// Sleeper asks clients to download /players/nfl at most once a day.
-const playersCacheMaxAge = 24 * time.Hour
-
-// directoryPlayer keeps only the /players/nfl fields League Lens uses.
-type directoryPlayer struct {
-	Team         string `json:"team,omitempty"`
-	InjuryStatus string `json:"injury_status,omitempty"`
+// playerRecord keeps only the /players/nfl/{id} fields League Lens uses.
+type playerRecord struct {
+	Team         *string `json:"team"`
+	InjuryStatus *string `json:"injury_status"`
 }
 
-// DefaultPlayersCachePath is the shared on-disk location of the daily player directory.
-func DefaultPlayersCachePath() (string, error) {
-	return diskcache.Path("sleeper-players.json")
-}
-
-// annotateAvailability adds injury status and NFL team to observed rosters.
-// History is left alone because today's status says nothing about past weeks.
-// When the directory is unavailable the sync continues without availability.
+// annotateAvailability adds injury status and NFL team to the observed rosters
+// of AvailabilityTeamIDs, looking up each player individually so statuses are
+// as current as the sync. History is left alone because today's status says
+// nothing about past weeks. A failed lookup leaves that player unknown.
 func (c *Client) annotateAvailability(ctx context.Context, data *fantasy.LeagueData) {
-	if c.PlayersCachePath == "" {
+	if len(c.AvailabilityTeamIDs) == 0 {
 		return
 	}
-	directory, err := c.playerDirectory(ctx)
-	if err != nil {
-		slog.Warn("sleeper player directory unavailable; availability omitted")
-		return
+	entries := c.availabilityEntries(data)
+	records := map[string]*playerRecord{}
+	for _, entry := range entries {
+		record, looked := records[entry.PlayerID]
+		if !looked {
+			record = c.lookupPlayer(ctx, entry.PlayerID)
+			records[entry.PlayerID] = record
+		}
+		applyAvailability(entry, record)
 	}
+}
 
+// availabilityEntries returns the observed roster entries of the teams that need availability.
+func (c *Client) availabilityEntries(data *fantasy.LeagueData) []*fantasy.RosterEntry {
+	selected := map[string]bool{}
+	for _, id := range c.AvailabilityTeamIDs {
+		selected[id] = true
+	}
+	var entries []*fantasy.RosterEntry
 	for i := range data.Rosters {
 		snapshot := &data.Rosters[i]
-		if snapshot.Origin != fantasy.SnapshotObserved {
+		if snapshot.Origin != fantasy.SnapshotObserved || !selected[snapshot.TeamID] {
 			continue
 		}
 		for j := range snapshot.Entries {
-			entry := &snapshot.Entries[j]
-			player, found := directory[entry.PlayerID]
-			if !found {
-				entry.InjuryStatus = fantasy.InjuryUnknown
-				continue
-			}
-			entry.InjuryStatus = injuryStatus(player.InjuryStatus)
-			entry.ProTeam = player.Team
+			entries = append(entries, &snapshot.Entries[j])
 		}
 	}
+	return entries
 }
 
-// playerDirectory reads the cached directory, downloading a fresh copy once it is a day old.
-func (c *Client) playerDirectory(ctx context.Context) (map[string]directoryPlayer, error) {
-	cached, err := diskcache.ReadFresh(c.PlayersCachePath, playersCacheMaxAge)
-	if err != nil {
-		return nil, err
+// lookupPlayer reads one player from Sleeper, returning nil when the lookup fails.
+func (c *Client) lookupPlayer(ctx context.Context, playerID string) *playerRecord {
+	var record playerRecord
+	if err := c.get(ctx, "/players/nfl/"+url.PathEscape(playerID), &record); err != nil {
+		slog.Warn("sleeper player lookup failed; availability unknown", "player_id", playerID)
+		return nil
 	}
-	if cached != nil {
-		var directory map[string]directoryPlayer
-		return directory, json.Unmarshal(cached, &directory)
-	}
-
-	directory, err := c.downloadPlayerDirectory(ctx)
-	if err != nil {
-		return nil, err
-	}
-	compact, err := json.Marshal(directory)
-	if err != nil {
-		return nil, err
-	}
-	return directory, diskcache.Replace(c.PlayersCachePath, compact)
+	return &record
 }
 
-func (c *Client) downloadPlayerDirectory(ctx context.Context) (map[string]directoryPlayer, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+"/players/nfl", nil)
-	if err != nil {
-		return nil, err
+func applyAvailability(entry *fantasy.RosterEntry, record *playerRecord) {
+	if record == nil {
+		entry.InjuryStatus = fantasy.InjuryUnknown
+		return
 	}
-	response, err := c.HTTP.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("Sleeper player directory request failed: %w", err)
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Sleeper player directory returned HTTP %d", response.StatusCode)
-	}
+	entry.InjuryStatus = injuryStatus(valueOf(record.InjuryStatus))
+	entry.ProTeam = valueOf(record.Team)
+}
 
-	var directory map[string]directoryPlayer
-	if err = json.NewDecoder(io.LimitReader(response.Body, 64<<20)).Decode(&directory); err != nil {
-		return nil, fmt.Errorf("invalid Sleeper player directory: %w", err)
+func valueOf(value *string) string {
+	if value == nil {
+		return ""
 	}
-	if len(directory) == 0 {
-		return nil, fmt.Errorf("empty Sleeper player directory")
-	}
-	return directory, nil
+	return *value
 }
 
 // injuryStatus maps Sleeper designations. No designation means the player is

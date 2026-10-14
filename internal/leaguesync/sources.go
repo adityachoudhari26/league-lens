@@ -18,8 +18,6 @@ type SourceFactory interface {
 // the server environment until encrypted connection credentials exist.
 type ProviderSources struct {
 	ESPN espn.Credentials
-	// SleeperPlayersCachePath enables Sleeper injury status; empty disables it.
-	SleeperPlayersCachePath string
 }
 
 // setupError is a stable, credential-free failure code raised before an import starts.
@@ -31,7 +29,7 @@ func (p ProviderSources) SourceFor(target Target) (fantasy.Provider, error) {
 	switch target.Selection.League.Provider {
 	case fantasy.ProviderSleeper:
 		client := sleeper.NewClient(nil)
-		client.PlayersCachePath = p.SleeperPlayersCachePath
+		client.AvailabilityTeamIDs = target.Selection.SelectedTeamIDs
 		return client, nil
 	case fantasy.ProviderESPN:
 		return p.espnSource(target)
