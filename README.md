@@ -371,7 +371,8 @@ The four overview RPCs are under `/leaguelens.v1.DashboardService/`:
 
 | RPC | Current behavior |
 | --- | --- |
-| `GetOverviewAttention` | Starter checks from the latest observed snapshot: empty slots, injury status, and byes (from `nfl_games`). Alerts carry an `AlertKind` and an `AlertSeverity` (`ACTION` or `MONITOR`), sorted by severity then kickoff, and dropped after kickoff. Coverage stays partial: statuses are as of the last sync. |
+| `GetOverviewAttention` | Starter checks from the latest observed snapshot: empty slots, injury status, and byes (from `nfl_games`). Alerts carry an `AlertKind` and an `AlertSeverity` (`ACTION` or `MONITOR`), sorted by severity then kickoff, and dropped after kickoff. Dismissed alerts are filtered and resurface on a new week or status. Coverage stays partial: statuses are as of the last sync. |
+| `DismissLineupAlert` / `RestoreLineupAlert` | Dismiss or restore an alert for the configured local owner using its server-computed fingerprint. |
 | `GetOverviewMatchups` | Selected teams, opponents, nullable actual scores, matchup status, and fetch timestamps. Matches scoring weeks to matchup rounds explicitly. |
 | `GetOverviewPlayerUpdates` | Returns the latest saved item from the past seven days per rostered player, deduplicated across teams. Injury designations and starter injury news rank first, followed by other starters and bench players; results include categories, source links, and rostered teams. |
 | `GetOverviewLookingAhead` | Returns unavailable coverage until NFL bye schedules are connected. |
@@ -413,7 +414,7 @@ proxy will also need to route `/api` to Connect; production packaging is deferre
 
 Matchup scores are imported observations, not a live feed. Each card displays
 its fetch timestamp. **Refresh** starts a provider sync; a status line shows
-which leagues are syncing, and a failed league keeps showing its last saved data. Attention shows three alerts before expanding inline, labeled Action needed or Monitor. Player updates show the top three saved RotoWire blurbs for rostered players; View all opens a side panel with the full list, filterable by league, player name, and injuries, with explicit limits for players ESPN cannot identify; looking-ahead checks retain the API's unavailable message. No sample data is used.
+which leagues are syncing, and a failed league keeps showing its last saved data. Attention shows three alerts before expanding inline, labeled Action needed or Monitor; alerts can be dismissed with a brief Undo. Player updates show the top three saved RotoWire blurbs for rostered players; View all opens a side panel with the full list, filterable by league, player name, and injuries, with explicit limits for players ESPN cannot identify; looking-ahead checks retain the API's unavailable message. No sample data is used.
 
 After editing proto contracts, run `just setup-web` then `just gen-web` to update
 `web/src/gen`. Go generation remains independently available through `just gen-api`.

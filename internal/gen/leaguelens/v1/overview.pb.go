@@ -479,6 +479,166 @@ func (x *GetOverviewAttentionResponse) GetAlerts() []*LineupAlert {
 	return nil
 }
 
+type DismissLineupAlertRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fingerprint   string                 `protobuf:"bytes,1,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DismissLineupAlertRequest) Reset() {
+	*x = DismissLineupAlertRequest{}
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DismissLineupAlertRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DismissLineupAlertRequest) ProtoMessage() {}
+
+func (x *DismissLineupAlertRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DismissLineupAlertRequest.ProtoReflect.Descriptor instead.
+func (*DismissLineupAlertRequest) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *DismissLineupAlertRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type DismissLineupAlertResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DismissLineupAlertResponse) Reset() {
+	*x = DismissLineupAlertResponse{}
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DismissLineupAlertResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DismissLineupAlertResponse) ProtoMessage() {}
+
+func (x *DismissLineupAlertResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DismissLineupAlertResponse.ProtoReflect.Descriptor instead.
+func (*DismissLineupAlertResponse) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{5}
+}
+
+type RestoreLineupAlertRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fingerprint   string                 `protobuf:"bytes,1,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreLineupAlertRequest) Reset() {
+	*x = RestoreLineupAlertRequest{}
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreLineupAlertRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreLineupAlertRequest) ProtoMessage() {}
+
+func (x *RestoreLineupAlertRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreLineupAlertRequest.ProtoReflect.Descriptor instead.
+func (*RestoreLineupAlertRequest) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RestoreLineupAlertRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type RestoreLineupAlertResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreLineupAlertResponse) Reset() {
+	*x = RestoreLineupAlertResponse{}
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreLineupAlertResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreLineupAlertResponse) ProtoMessage() {}
+
+func (x *RestoreLineupAlertResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreLineupAlertResponse.ProtoReflect.Descriptor instead.
+func (*RestoreLineupAlertResponse) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{7}
+}
+
 type LineupAlert struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -491,16 +651,18 @@ type LineupAlert struct {
 	Kind       AlertKind              `protobuf:"varint,8,opt,name=kind,proto3,enum=leaguelens.v1.AlertKind" json:"kind,omitempty"`
 	PlayerName string                 `protobuf:"bytes,9,opt,name=player_name,json=playerName,proto3" json:"player_name,omitempty"`
 	// Set only on injury alerts.
-	InjuryStatus  InjuryStatus           `protobuf:"varint,10,opt,name=injury_status,json=injuryStatus,proto3,enum=leaguelens.v1.InjuryStatus" json:"injury_status,omitempty"`
-	ProTeam       string                 `protobuf:"bytes,11,opt,name=pro_team,json=proTeam,proto3" json:"pro_team,omitempty"`
-	KickoffAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=kickoff_at,json=kickoffAt,proto3" json:"kickoff_at,omitempty"`
+	InjuryStatus InjuryStatus           `protobuf:"varint,10,opt,name=injury_status,json=injuryStatus,proto3,enum=leaguelens.v1.InjuryStatus" json:"injury_status,omitempty"`
+	ProTeam      string                 `protobuf:"bytes,11,opt,name=pro_team,json=proTeam,proto3" json:"pro_team,omitempty"`
+	KickoffAt    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=kickoff_at,json=kickoffAt,proto3" json:"kickoff_at,omitempty"`
+	// Opaque dismissal key; changes with the alert's week or status. Pass it to DismissLineupAlert.
+	Fingerprint   string `protobuf:"bytes,13,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LineupAlert) Reset() {
 	*x = LineupAlert{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[4]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -512,7 +674,7 @@ func (x *LineupAlert) String() string {
 func (*LineupAlert) ProtoMessage() {}
 
 func (x *LineupAlert) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[4]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -525,7 +687,7 @@ func (x *LineupAlert) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LineupAlert.ProtoReflect.Descriptor instead.
 func (*LineupAlert) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{4}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *LineupAlert) GetId() string {
@@ -612,6 +774,13 @@ func (x *LineupAlert) GetKickoffAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *LineupAlert) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
 type GetOverviewMatchupsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -620,7 +789,7 @@ type GetOverviewMatchupsRequest struct {
 
 func (x *GetOverviewMatchupsRequest) Reset() {
 	*x = GetOverviewMatchupsRequest{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[5]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -632,7 +801,7 @@ func (x *GetOverviewMatchupsRequest) String() string {
 func (*GetOverviewMatchupsRequest) ProtoMessage() {}
 
 func (x *GetOverviewMatchupsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[5]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -645,7 +814,7 @@ func (x *GetOverviewMatchupsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOverviewMatchupsRequest.ProtoReflect.Descriptor instead.
 func (*GetOverviewMatchupsRequest) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{5}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{9}
 }
 
 type GetOverviewMatchupsResponse struct {
@@ -658,7 +827,7 @@ type GetOverviewMatchupsResponse struct {
 
 func (x *GetOverviewMatchupsResponse) Reset() {
 	*x = GetOverviewMatchupsResponse{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[6]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -670,7 +839,7 @@ func (x *GetOverviewMatchupsResponse) String() string {
 func (*GetOverviewMatchupsResponse) ProtoMessage() {}
 
 func (x *GetOverviewMatchupsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[6]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -683,7 +852,7 @@ func (x *GetOverviewMatchupsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOverviewMatchupsResponse.ProtoReflect.Descriptor instead.
 func (*GetOverviewMatchupsResponse) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{6}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetOverviewMatchupsResponse) GetCoverage() *OverviewCoverage {
@@ -716,7 +885,7 @@ type OverviewMatchup struct {
 
 func (x *OverviewMatchup) Reset() {
 	*x = OverviewMatchup{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[7]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -728,7 +897,7 @@ func (x *OverviewMatchup) String() string {
 func (*OverviewMatchup) ProtoMessage() {}
 
 func (x *OverviewMatchup) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[7]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -741,7 +910,7 @@ func (x *OverviewMatchup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OverviewMatchup.ProtoReflect.Descriptor instead.
 func (*OverviewMatchup) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{7}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *OverviewMatchup) GetTeam() *OverviewTeam {
@@ -808,7 +977,7 @@ type GetOverviewPlayerUpdatesRequest struct {
 
 func (x *GetOverviewPlayerUpdatesRequest) Reset() {
 	*x = GetOverviewPlayerUpdatesRequest{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[8]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -820,7 +989,7 @@ func (x *GetOverviewPlayerUpdatesRequest) String() string {
 func (*GetOverviewPlayerUpdatesRequest) ProtoMessage() {}
 
 func (x *GetOverviewPlayerUpdatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[8]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -833,7 +1002,7 @@ func (x *GetOverviewPlayerUpdatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOverviewPlayerUpdatesRequest.ProtoReflect.Descriptor instead.
 func (*GetOverviewPlayerUpdatesRequest) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{8}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{12}
 }
 
 type GetOverviewPlayerUpdatesResponse struct {
@@ -846,7 +1015,7 @@ type GetOverviewPlayerUpdatesResponse struct {
 
 func (x *GetOverviewPlayerUpdatesResponse) Reset() {
 	*x = GetOverviewPlayerUpdatesResponse{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[9]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -858,7 +1027,7 @@ func (x *GetOverviewPlayerUpdatesResponse) String() string {
 func (*GetOverviewPlayerUpdatesResponse) ProtoMessage() {}
 
 func (x *GetOverviewPlayerUpdatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[9]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -871,7 +1040,7 @@ func (x *GetOverviewPlayerUpdatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOverviewPlayerUpdatesResponse.ProtoReflect.Descriptor instead.
 func (*GetOverviewPlayerUpdatesResponse) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{9}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetOverviewPlayerUpdatesResponse) GetCoverage() *OverviewCoverage {
@@ -911,7 +1080,7 @@ type PlayerUpdate struct {
 
 func (x *PlayerUpdate) Reset() {
 	*x = PlayerUpdate{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[10]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -923,7 +1092,7 @@ func (x *PlayerUpdate) String() string {
 func (*PlayerUpdate) ProtoMessage() {}
 
 func (x *PlayerUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[10]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -936,7 +1105,7 @@ func (x *PlayerUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerUpdate.ProtoReflect.Descriptor instead.
 func (*PlayerUpdate) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{10}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PlayerUpdate) GetId() string {
@@ -1031,7 +1200,7 @@ type GetOverviewLookingAheadRequest struct {
 
 func (x *GetOverviewLookingAheadRequest) Reset() {
 	*x = GetOverviewLookingAheadRequest{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[11]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1043,7 +1212,7 @@ func (x *GetOverviewLookingAheadRequest) String() string {
 func (*GetOverviewLookingAheadRequest) ProtoMessage() {}
 
 func (x *GetOverviewLookingAheadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[11]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1056,7 +1225,7 @@ func (x *GetOverviewLookingAheadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOverviewLookingAheadRequest.ProtoReflect.Descriptor instead.
 func (*GetOverviewLookingAheadRequest) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{11}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{15}
 }
 
 type GetOverviewLookingAheadResponse struct {
@@ -1069,7 +1238,7 @@ type GetOverviewLookingAheadResponse struct {
 
 func (x *GetOverviewLookingAheadResponse) Reset() {
 	*x = GetOverviewLookingAheadResponse{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[12]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1081,7 +1250,7 @@ func (x *GetOverviewLookingAheadResponse) String() string {
 func (*GetOverviewLookingAheadResponse) ProtoMessage() {}
 
 func (x *GetOverviewLookingAheadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[12]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1094,7 +1263,7 @@ func (x *GetOverviewLookingAheadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOverviewLookingAheadResponse.ProtoReflect.Descriptor instead.
 func (*GetOverviewLookingAheadResponse) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{12}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetOverviewLookingAheadResponse) GetCoverage() *OverviewCoverage {
@@ -1123,7 +1292,7 @@ type UpcomingIssue struct {
 
 func (x *UpcomingIssue) Reset() {
 	*x = UpcomingIssue{}
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[13]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1135,7 +1304,7 @@ func (x *UpcomingIssue) String() string {
 func (*UpcomingIssue) ProtoMessage() {}
 
 func (x *UpcomingIssue) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_overview_proto_msgTypes[13]
+	mi := &file_leaguelens_v1_overview_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1148,7 +1317,7 @@ func (x *UpcomingIssue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpcomingIssue.ProtoReflect.Descriptor instead.
 func (*UpcomingIssue) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{13}
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *UpcomingIssue) GetId() string {
@@ -1202,7 +1371,13 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	"\x1bGetOverviewAttentionRequest\"\x8f\x01\n" +
 	"\x1cGetOverviewAttentionResponse\x12;\n" +
 	"\bcoverage\x18\x01 \x01(\v2\x1f.leaguelens.v1.OverviewCoverageR\bcoverage\x122\n" +
-	"\x06alerts\x18\x02 \x03(\v2\x1a.leaguelens.v1.LineupAlertR\x06alerts\"\xd2\x03\n" +
+	"\x06alerts\x18\x02 \x03(\v2\x1a.leaguelens.v1.LineupAlertR\x06alerts\"=\n" +
+	"\x19DismissLineupAlertRequest\x12 \n" +
+	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\"\x1c\n" +
+	"\x1aDismissLineupAlertResponse\"=\n" +
+	"\x19RestoreLineupAlertRequest\x12 \n" +
+	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\"\x1c\n" +
+	"\x1aRestoreLineupAlertResponse\"\xf4\x03\n" +
 	"\vLineupAlert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04team\x18\x02 \x01(\v2\x1b.leaguelens.v1.OverviewTeamR\x04team\x12\x14\n" +
@@ -1219,7 +1394,8 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	" \x01(\x0e2\x1b.leaguelens.v1.InjuryStatusR\finjuryStatus\x12\x19\n" +
 	"\bpro_team\x18\v \x01(\tR\aproTeam\x129\n" +
 	"\n" +
-	"kickoff_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tkickoffAt\"\x1c\n" +
+	"kickoff_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tkickoffAt\x12 \n" +
+	"\vfingerprint\x18\r \x01(\tR\vfingerprint\"\x1c\n" +
 	"\x1aGetOverviewMatchupsRequest\"\x96\x01\n" +
 	"\x1bGetOverviewMatchupsResponse\x12;\n" +
 	"\bcoverage\x18\x01 \x01(\v2\x1f.leaguelens.v1.OverviewCoverageR\bcoverage\x12:\n" +
@@ -1302,7 +1478,7 @@ func file_leaguelens_v1_overview_proto_rawDescGZIP() []byte {
 }
 
 var file_leaguelens_v1_overview_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_leaguelens_v1_overview_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_leaguelens_v1_overview_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_leaguelens_v1_overview_proto_goTypes = []any{
 	(AlertSeverity)(0),                       // 0: leaguelens.v1.AlertSeverity
 	(AlertKind)(0),                           // 1: leaguelens.v1.AlertKind
@@ -1312,39 +1488,43 @@ var file_leaguelens_v1_overview_proto_goTypes = []any{
 	(*OverviewTeam)(nil),                     // 5: leaguelens.v1.OverviewTeam
 	(*GetOverviewAttentionRequest)(nil),      // 6: leaguelens.v1.GetOverviewAttentionRequest
 	(*GetOverviewAttentionResponse)(nil),     // 7: leaguelens.v1.GetOverviewAttentionResponse
-	(*LineupAlert)(nil),                      // 8: leaguelens.v1.LineupAlert
-	(*GetOverviewMatchupsRequest)(nil),       // 9: leaguelens.v1.GetOverviewMatchupsRequest
-	(*GetOverviewMatchupsResponse)(nil),      // 10: leaguelens.v1.GetOverviewMatchupsResponse
-	(*OverviewMatchup)(nil),                  // 11: leaguelens.v1.OverviewMatchup
-	(*GetOverviewPlayerUpdatesRequest)(nil),  // 12: leaguelens.v1.GetOverviewPlayerUpdatesRequest
-	(*GetOverviewPlayerUpdatesResponse)(nil), // 13: leaguelens.v1.GetOverviewPlayerUpdatesResponse
-	(*PlayerUpdate)(nil),                     // 14: leaguelens.v1.PlayerUpdate
-	(*GetOverviewLookingAheadRequest)(nil),   // 15: leaguelens.v1.GetOverviewLookingAheadRequest
-	(*GetOverviewLookingAheadResponse)(nil),  // 16: leaguelens.v1.GetOverviewLookingAheadResponse
-	(*UpcomingIssue)(nil),                    // 17: leaguelens.v1.UpcomingIssue
-	(*timestamppb.Timestamp)(nil),            // 18: google.protobuf.Timestamp
+	(*DismissLineupAlertRequest)(nil),        // 8: leaguelens.v1.DismissLineupAlertRequest
+	(*DismissLineupAlertResponse)(nil),       // 9: leaguelens.v1.DismissLineupAlertResponse
+	(*RestoreLineupAlertRequest)(nil),        // 10: leaguelens.v1.RestoreLineupAlertRequest
+	(*RestoreLineupAlertResponse)(nil),       // 11: leaguelens.v1.RestoreLineupAlertResponse
+	(*LineupAlert)(nil),                      // 12: leaguelens.v1.LineupAlert
+	(*GetOverviewMatchupsRequest)(nil),       // 13: leaguelens.v1.GetOverviewMatchupsRequest
+	(*GetOverviewMatchupsResponse)(nil),      // 14: leaguelens.v1.GetOverviewMatchupsResponse
+	(*OverviewMatchup)(nil),                  // 15: leaguelens.v1.OverviewMatchup
+	(*GetOverviewPlayerUpdatesRequest)(nil),  // 16: leaguelens.v1.GetOverviewPlayerUpdatesRequest
+	(*GetOverviewPlayerUpdatesResponse)(nil), // 17: leaguelens.v1.GetOverviewPlayerUpdatesResponse
+	(*PlayerUpdate)(nil),                     // 18: leaguelens.v1.PlayerUpdate
+	(*GetOverviewLookingAheadRequest)(nil),   // 19: leaguelens.v1.GetOverviewLookingAheadRequest
+	(*GetOverviewLookingAheadResponse)(nil),  // 20: leaguelens.v1.GetOverviewLookingAheadResponse
+	(*UpcomingIssue)(nil),                    // 21: leaguelens.v1.UpcomingIssue
+	(*timestamppb.Timestamp)(nil),            // 22: google.protobuf.Timestamp
 }
 var file_leaguelens_v1_overview_proto_depIdxs = []int32{
-	18, // 0: leaguelens.v1.OverviewTeam.observed_at:type_name -> google.protobuf.Timestamp
+	22, // 0: leaguelens.v1.OverviewTeam.observed_at:type_name -> google.protobuf.Timestamp
 	4,  // 1: leaguelens.v1.GetOverviewAttentionResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	8,  // 2: leaguelens.v1.GetOverviewAttentionResponse.alerts:type_name -> leaguelens.v1.LineupAlert
+	12, // 2: leaguelens.v1.GetOverviewAttentionResponse.alerts:type_name -> leaguelens.v1.LineupAlert
 	5,  // 3: leaguelens.v1.LineupAlert.team:type_name -> leaguelens.v1.OverviewTeam
 	0,  // 4: leaguelens.v1.LineupAlert.severity:type_name -> leaguelens.v1.AlertSeverity
 	1,  // 5: leaguelens.v1.LineupAlert.kind:type_name -> leaguelens.v1.AlertKind
 	2,  // 6: leaguelens.v1.LineupAlert.injury_status:type_name -> leaguelens.v1.InjuryStatus
-	18, // 7: leaguelens.v1.LineupAlert.kickoff_at:type_name -> google.protobuf.Timestamp
+	22, // 7: leaguelens.v1.LineupAlert.kickoff_at:type_name -> google.protobuf.Timestamp
 	4,  // 8: leaguelens.v1.GetOverviewMatchupsResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	11, // 9: leaguelens.v1.GetOverviewMatchupsResponse.matchups:type_name -> leaguelens.v1.OverviewMatchup
+	15, // 9: leaguelens.v1.GetOverviewMatchupsResponse.matchups:type_name -> leaguelens.v1.OverviewMatchup
 	5,  // 10: leaguelens.v1.OverviewMatchup.team:type_name -> leaguelens.v1.OverviewTeam
-	18, // 11: leaguelens.v1.OverviewMatchup.fetched_at:type_name -> google.protobuf.Timestamp
+	22, // 11: leaguelens.v1.OverviewMatchup.fetched_at:type_name -> google.protobuf.Timestamp
 	4,  // 12: leaguelens.v1.GetOverviewPlayerUpdatesResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	14, // 13: leaguelens.v1.GetOverviewPlayerUpdatesResponse.updates:type_name -> leaguelens.v1.PlayerUpdate
-	18, // 14: leaguelens.v1.PlayerUpdate.published_at:type_name -> google.protobuf.Timestamp
+	18, // 13: leaguelens.v1.GetOverviewPlayerUpdatesResponse.updates:type_name -> leaguelens.v1.PlayerUpdate
+	22, // 14: leaguelens.v1.PlayerUpdate.published_at:type_name -> google.protobuf.Timestamp
 	3,  // 15: leaguelens.v1.PlayerUpdate.category:type_name -> leaguelens.v1.NewsCategory
 	2,  // 16: leaguelens.v1.PlayerUpdate.injury_status:type_name -> leaguelens.v1.InjuryStatus
 	5,  // 17: leaguelens.v1.PlayerUpdate.teams:type_name -> leaguelens.v1.OverviewTeam
 	4,  // 18: leaguelens.v1.GetOverviewLookingAheadResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	17, // 19: leaguelens.v1.GetOverviewLookingAheadResponse.issues:type_name -> leaguelens.v1.UpcomingIssue
+	21, // 19: leaguelens.v1.GetOverviewLookingAheadResponse.issues:type_name -> leaguelens.v1.UpcomingIssue
 	5,  // 20: leaguelens.v1.UpcomingIssue.team:type_name -> leaguelens.v1.OverviewTeam
 	21, // [21:21] is the sub-list for method output_type
 	21, // [21:21] is the sub-list for method input_type
@@ -1359,14 +1539,14 @@ func file_leaguelens_v1_overview_proto_init() {
 		return
 	}
 	file_leaguelens_v1_overview_proto_msgTypes[1].OneofWrappers = []any{}
-	file_leaguelens_v1_overview_proto_msgTypes[7].OneofWrappers = []any{}
+	file_leaguelens_v1_overview_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leaguelens_v1_overview_proto_rawDesc), len(file_leaguelens_v1_overview_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   14,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

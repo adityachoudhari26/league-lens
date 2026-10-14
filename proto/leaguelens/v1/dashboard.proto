@@ -6,10 +6,13 @@ import "leaguelens/v1/overview.proto";
 
 option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
 
-// DashboardService reads imported data for the server's configured local owner.
-// It never calls a provider or accepts a caller-selected user identity.
+// DashboardService reads imported data and records alert dismissals for the
+// server's configured local owner. It never calls a provider or accepts a
+// caller-selected user identity.
 service DashboardService {
   rpc GetOverviewAttention(GetOverviewAttentionRequest) returns (GetOverviewAttentionResponse);
+  rpc DismissLineupAlert(DismissLineupAlertRequest) returns (DismissLineupAlertResponse);
+  rpc RestoreLineupAlert(RestoreLineupAlertRequest) returns (RestoreLineupAlertResponse);
   rpc GetOverviewMatchups(GetOverviewMatchupsRequest) returns (GetOverviewMatchupsResponse);
   rpc GetOverviewPlayerUpdates(GetOverviewPlayerUpdatesRequest) returns (GetOverviewPlayerUpdatesResponse);
   rpc GetOverviewLookingAhead(GetOverviewLookingAheadRequest) returns (GetOverviewLookingAheadResponse);

@@ -17,6 +17,10 @@ func (unavailableDB) InReadTx(context.Context, func(*store.Queries) error) error
 	return errors.New("password=secret")
 }
 
+func (unavailableDB) InTx(context.Context, func(*store.Queries) error) error {
+	return errors.New("password=secret")
+}
+
 func TestInvalidRequestsFailBeforeDatabaseRead(t *testing.T) {
 	s := New(unavailableDB{}, "owner@localhost")
 	calls := []func() error{
@@ -41,6 +45,14 @@ func TestInvalidRequestsFailBeforeDatabaseRead(t *testing.T) {
 			_, e := s.GetTeamRoster(context.Background(), &v1.GetTeamRosterRequest{TeamId: "00000000-0000-0000-0000-000000000001", ScoringPeriod: &week})
 			return e
 		},
+		func() error {
+			_, e := s.DismissLineupAlert(context.Background(), &v1.DismissLineupAlertRequest{})
+			return e
+		},
+		func() error {
+			_, e := s.RestoreLineupAlert(context.Background(), &v1.RestoreLineupAlertRequest{Fingerprint: strings.Repeat("x", 201)})
+			return e
+		},
 	}
 	for _, call := range calls {
 		if err := call(); connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -54,5 +66,9 @@ func TestDatabaseErrorsAreSanitized(t *testing.T) {
 	_, err := s.ListLeagues(context.Background(), &v1.ListLeaguesRequest{})
 	if connect.CodeOf(err) != connect.CodeInternal || strings.Contains(err.Error(), "secret") {
 		t.Fatalf("unsafe error: %v", err)
+	}
+	_, err = s.DismissLineupAlert(context.Background(), &v1.DismissLineupAlertRequest{Fingerprint: "alert:week1"})
+	if connect.CodeOf(err) != connect.CodeInternal || strings.Contains(err.Error(), "secret") {
+		t.Fatalf("unsafe write error: %v", err)
 	}
 }

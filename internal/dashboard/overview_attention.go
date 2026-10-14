@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
@@ -49,6 +51,21 @@ func (s *Service) GetOverviewAttention(ctx context.Context, _ *v1.GetOverviewAtt
 			response.Alerts = append(response.Alerts, starterAlerts(team, entries, schedule, now)...)
 		}
 
+		if len(response.Alerts) > 0 {
+			fingerprints := make([]string, 0, len(response.Alerts))
+			for _, alert := range response.Alerts {
+				fingerprints = append(fingerprints, alert.Fingerprint)
+			}
+			dismissedRows, err := q.ListDismissedAlerts(ctx, store.ListDismissedAlertsParams{UserID: owner, Fingerprints: fingerprints})
+			if err != nil {
+				return err
+			}
+			dismissed := make(map[string]bool, len(dismissedRows))
+			for _, fingerprint := range dismissedRows {
+				dismissed[fingerprint] = true
+			}
+			response.Alerts = withoutDismissed(response.Alerts, dismissed)
+		}
 		sortAlerts(response.Alerts)
 		response.Coverage = attentionCoverage(schedules.allLoaded())
 		return nil
@@ -66,7 +83,7 @@ func attentionCoverage(scheduleLoaded bool) *v1.OverviewCoverage {
 func emptySlotAlerts(team store.OverviewTeamsRow, settings fantasy.LeagueSettings, entries []store.ListSnapshotRosterForUserRow) []*v1.LineupAlert {
 	var alerts []*v1.LineupAlert
 	for _, gap := range emptyStarterSlots(settings, entries) {
-		alerts = append(alerts, &v1.LineupAlert{
+		alert := &v1.LineupAlert{
 			Id:         team.ID.String() + ":" + gap.slot,
 			Team:       overviewTeam(team),
 			Kind:       v1.AlertKind_ALERT_KIND_EMPTY_SLOT,
@@ -75,7 +92,9 @@ func emptySlotAlerts(team store.OverviewTeamsRow, settings fantasy.LeagueSetting
 			Severity:   v1.AlertSeverity_ALERT_SEVERITY_ACTION,
 			Slot:       gap.slot,
 			EmptySlots: int32(gap.count),
-		})
+		}
+		alert.Fingerprint = alertFingerprint(alert, team.Period)
+		alerts = append(alerts, alert)
 	}
 	return alerts
 }
@@ -110,7 +129,7 @@ func starterAlerts(team store.OverviewTeamsRow, entries []store.ListSnapshotRost
 }
 
 func byeAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUserRow, slot fantasy.RosterSlot) *v1.LineupAlert {
-	return &v1.LineupAlert{
+	alert := &v1.LineupAlert{
 		Id:         playerAlertID(team, entry, "bye"),
 		Team:       overviewTeam(team),
 		Kind:       v1.AlertKind_ALERT_KIND_BYE,
@@ -121,6 +140,8 @@ func byeAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUser
 		Title:      fmt.Sprintf("Your starting %s is on bye", slotName(slot)),
 		Detail:     fmt.Sprintf("%s (%s) has no game in week %d. Start someone else before your first kickoff.", entry.DisplayName, entry.ProTeam.String, team.Period),
 	}
+	alert.Fingerprint = alertFingerprint(alert, team.Period)
+	return alert
 }
 
 // injuryAlert maps designations to severity: out, IR, and doubtful need action;
@@ -154,10 +175,37 @@ func injuryAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForU
 		Title:        title,
 		Detail:       fmt.Sprintf("%s was listed %s by %s at the last sync.", entry.DisplayName, label, providerName(team.Provider)),
 	}
+	alert.Fingerprint = alertFingerprint(alert, team.Period)
 	if hasGame {
 		alert.KickoffAt = timestamp(game.KickoffAt)
 	}
 	return alert
+}
+
+// alertFingerprint changes when an alert's week or relevant condition changes.
+func alertFingerprint(alert *v1.LineupAlert, period int32) string {
+	fingerprint := fmt.Sprintf("%s:week%d", alert.Id, period)
+	var state string
+	switch alert.Kind {
+	case v1.AlertKind_ALERT_KIND_INJURY:
+		state = strings.ToLower(alert.InjuryStatus.String())
+	case v1.AlertKind_ALERT_KIND_EMPTY_SLOT:
+		state = strconv.FormatInt(int64(alert.EmptySlots), 10)
+	}
+	if state != "" {
+		fingerprint += ":" + state
+	}
+	return fingerprint
+}
+
+func withoutDismissed(alerts []*v1.LineupAlert, dismissed map[string]bool) []*v1.LineupAlert {
+	filtered := make([]*v1.LineupAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		if !dismissed[alert.Fingerprint] {
+			filtered = append(filtered, alert)
+		}
+	}
+	return filtered
 }
 
 func injuryStatusMessage(status fantasy.InjuryStatus) v1.InjuryStatus {
