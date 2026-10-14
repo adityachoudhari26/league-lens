@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import { dashboard } from "./client"
 
 // Reads saved snapshots. Provider syncs run through useLeagueSync, which reloads
-// these queries whenever a league finishes syncing.
+// these queries when syncing ends.
 export const overviewQueries = {
   attention: queryOptions({ queryKey: ["overview", "attention"], queryFn: ({ signal }) => dashboard.getOverviewAttention({}, { signal }) }),
   matchups: queryOptions({ queryKey: ["overview", "matchups"], queryFn: ({ signal }) => dashboard.getOverviewMatchups({}, { signal }) }),

@@ -12,7 +12,7 @@ import (
 )
 
 const listSyncTargets = `-- name: ListSyncTargets :many
-SELECT cl.connection_id,cl.league_season_id,c.provider,c.external_user_id,
+SELECT cl.league_season_id,c.provider,c.external_user_id,
  l.external_league_id,l.season,l.name,cl.last_successful_sync_at,
  ARRAY(SELECT t.external_team_id FROM user_teams ut JOIN teams t ON t.id=ut.team_id
   WHERE ut.connection_id=cl.connection_id AND ut.league_season_id=cl.league_season_id
@@ -31,7 +31,6 @@ ORDER BY l.provider,l.name,cl.connection_id
 `
 
 type ListSyncTargetsRow struct {
-	ConnectionID         pgtype.UUID
 	LeagueSeasonID       pgtype.UUID
 	Provider             string
 	ExternalUserID       pgtype.Text
@@ -54,7 +53,6 @@ func (q *Queries) ListSyncTargets(ctx context.Context, userID pgtype.UUID) ([]Li
 	for rows.Next() {
 		var i ListSyncTargetsRow
 		if err := rows.Scan(
-			&i.ConnectionID,
 			&i.LeagueSeasonID,
 			&i.Provider,
 			&i.ExternalUserID,

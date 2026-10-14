@@ -27,7 +27,10 @@ export function useLeagueSync() {
   const status = useQuery(syncStatusQuery)
   const start = useMutation({
     mutationFn: (onlyStale: boolean) => sync.startSync({ onlyStale }),
-    onSuccess: (response) => {
+    // Cancel any in-flight status read first so a pre-claim response can't
+    // overwrite the syncing state and skip the overview reload.
+    onSuccess: async (response) => {
+      await queryClient.cancelQueries({ queryKey: syncStatusQuery.queryKey })
       queryClient.setQueryData(syncStatusQuery.queryKey, create(GetSyncStatusResponseSchema, { leagues: response.leagues }))
     },
   })

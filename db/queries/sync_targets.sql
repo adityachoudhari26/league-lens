@@ -1,7 +1,7 @@
 -- Sync targets are the owner's attached leagues in the season the overview shows.
 -- Selected teams come from earlier imports.
 -- name: ListSyncTargets :many
-SELECT cl.connection_id,cl.league_season_id,c.provider,c.external_user_id,
+SELECT cl.league_season_id,c.provider,c.external_user_id,
  l.external_league_id,l.season,l.name,cl.last_successful_sync_at,
  ARRAY(SELECT t.external_team_id FROM user_teams ut JOIN teams t ON t.id=ut.team_id
   WHERE ut.connection_id=cl.connection_id AND ut.league_season_id=cl.league_season_id
