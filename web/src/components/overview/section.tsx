@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button"
 export function Section({
   title,
   count,
+  action,
   children,
 }: {
   title: string
-  count?: number
+  count?: ReactNode
+  action?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -20,6 +22,7 @@ export function Section({
             {count}
           </span>
         )}
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       {children}
     </section>

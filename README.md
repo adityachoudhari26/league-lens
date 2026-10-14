@@ -413,7 +413,7 @@ proxy will also need to route `/api` to Connect; production packaging is deferre
 
 Matchup scores are imported observations, not a live feed. Each card displays
 its fetch timestamp. **Refresh** starts a provider sync; a status line shows
-which leagues are syncing, and a failed league keeps showing its last saved data. Attention shows three alerts before expanding inline, labeled Action needed or Monitor. Player updates show saved RotoWire blurbs for rostered players, with explicit limits for players ESPN cannot identify; looking-ahead checks retain the API's unavailable message. No sample data is used.
+which leagues are syncing, and a failed league keeps showing its last saved data. Attention shows three alerts before expanding inline, labeled Action needed or Monitor. Player updates show the top five saved RotoWire blurbs for rostered players; View all opens a side panel with the full list, filterable by league, player name, and injuries, with explicit limits for players ESPN cannot identify; looking-ahead checks retain the API's unavailable message. No sample data is used.
 
 After editing proto contracts, run `just setup-web` then `just gen-web` to update
 `web/src/gen`. Go generation remains independently available through `just gen-api`.

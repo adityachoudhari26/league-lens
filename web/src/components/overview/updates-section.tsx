@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Activity, ArrowLeftRight, ChevronDown, Newspaper } from "lucide-react"
 import {
@@ -8,6 +8,15 @@ import {
 } from "@/gen/leaguelens/v1/overview_pb"
 import { overviewQueries } from "@/lib/api/overview"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import {
   Section,
   SectionLoading,
@@ -49,6 +58,42 @@ function designatedStatus(status: InjuryStatus) {
     default:
       return undefined
   }
+}
+
+const previewCount = 5
+
+/** Injured players: a designation or injury-category news. */
+function isInjuryUpdate(update: PlayerUpdate) {
+  return (
+    update.category === NewsCategory.INJURY ||
+    designatedStatus(update.injuryStatus) !== undefined
+  )
+}
+
+/** Key news is about an injured player or one of the owner's starters. */
+function isKeyUpdate(update: PlayerUpdate) {
+  return update.starter || isInjuryUpdate(update)
+}
+
+function newsLeagues(updates: PlayerUpdate[]) {
+  const leagues = new Map<string, string>()
+  for (const update of updates) {
+    for (const team of update.teams) leagues.set(team.leagueId, team.leagueName)
+  }
+  return [...leagues].map(([id, name]) => ({ id, name }))
+}
+
+type NewsFilters = { leagueId?: string; player: string; injuriesOnly: boolean }
+
+function filterUpdates(updates: PlayerUpdate[], filters: NewsFilters) {
+  const player = filters.player.trim().toLowerCase()
+  return updates.filter(
+    (update) =>
+      (!filters.leagueId ||
+        update.teams.some((team) => team.leagueId === filters.leagueId)) &&
+      (!player || update.playerName.toLowerCase().includes(player)) &&
+      (!filters.injuriesOnly || isInjuryUpdate(update)),
+  )
 }
 
 function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
@@ -104,17 +149,144 @@ function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
   )
 }
 
+function PlayerUpdateList({ updates }: { updates: PlayerUpdate[] }) {
+  return (
+    <div className="grid gap-3">
+      {updates.map((update) => (
+        <PlayerUpdateCard key={update.id} update={update} />
+      ))}
+    </div>
+  )
+}
+
+function FilterChip({
+  pressed,
+  onClick,
+  children,
+}: {
+  pressed: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <Button
+      variant={pressed ? "default" : "outline"}
+      size="sm"
+      aria-pressed={pressed}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  )
+}
+
+function NewsFilterBar({
+  leagues,
+  filters,
+  onChange,
+}: {
+  leagues: { id: string; name: string }[]
+  filters: NewsFilters
+  onChange: (filters: NewsFilters) => void
+}) {
+  return (
+    <div className="grid gap-2">
+      <Input
+        type="search"
+        placeholder="Search players"
+        aria-label="Search players"
+        value={filters.player}
+        onChange={(event) =>
+          onChange({ ...filters, player: event.target.value })
+        }
+      />
+      <div className="flex flex-wrap gap-1.5">
+        <FilterChip
+          pressed={!filters.leagueId}
+          onClick={() => onChange({ ...filters, leagueId: undefined })}
+        >
+          All leagues
+        </FilterChip>
+        {leagues.map((league) => (
+          <FilterChip
+            key={league.id}
+            pressed={filters.leagueId === league.id}
+            onClick={() => onChange({ ...filters, leagueId: league.id })}
+          >
+            {league.name}
+          </FilterChip>
+        ))}
+        <FilterChip
+          pressed={filters.injuriesOnly}
+          onClick={() =>
+            onChange({ ...filters, injuriesOnly: !filters.injuriesOnly })
+          }
+        >
+          Injuries only
+        </FilterChip>
+      </div>
+    </div>
+  )
+}
+
+function PlayerNewsSheet({ updates }: { updates: PlayerUpdate[] }) {
+  const [filters, setFilters] = useState<NewsFilters>({
+    player: "",
+    injuriesOnly: false,
+  })
+  const leagues = useMemo(() => newsLeagues(updates), [updates])
+  const filtered = filterUpdates(updates, filters)
+
+  return (
+    <Sheet>
+      <SheetTrigger render={<Button variant="ghost" size="sm" />}>
+        View all {updates.length}
+      </SheetTrigger>
+      <SheetContent className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-lg">
+        <SheetHeader className="gap-3 border-b">
+          <div>
+            <SheetTitle>Player updates</SheetTitle>
+            <SheetDescription>
+              {filtered.length} of {updates.length} players, ranked injuries and
+              starters first.
+            </SheetDescription>
+          </div>
+          <NewsFilterBar
+            leagues={leagues}
+            filters={filters}
+            onChange={setFilters}
+          />
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {filtered.length ? (
+            <PlayerUpdateList updates={filtered} />
+          ) : (
+            <SectionMessage>No news matches these filters.</SectionMessage>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+function newsCount(updates: PlayerUpdate[]) {
+  const key = updates.filter(isKeyUpdate).length
+  return key === updates.length
+    ? updates.length
+    : `${key} key · ${updates.length} total`
+}
+
 export function UpdatesSection() {
   const query = useQuery(overviewQueries.updates)
-  const [expanded, setExpanded] = useState(false)
   const updates = query.data?.updates ?? []
-  const shown = expanded ? updates : updates.slice(0, 5)
-  const hidden = updates.slice(5)
 
   return (
     <Section
       title="Player updates"
-      count={query.data ? updates.length : undefined}
+      count={query.data ? newsCount(updates) : undefined}
+      action={
+        updates.length > previewCount && <PlayerNewsSheet updates={updates} />
+      }
     >
       {query.isPending ? (
         <SectionLoading />
@@ -127,24 +299,9 @@ export function UpdatesSection() {
       ) : (
         <>
           {updates.length ? (
-            <div className="grid gap-3">
-              {shown.map((update) => (
-                <PlayerUpdateCard key={update.id} update={update} />
-              ))}
-            </div>
+            <PlayerUpdateList updates={updates.slice(0, previewCount)} />
           ) : (
             <SectionMessage>No recent news for your players.</SectionMessage>
-          )}
-          {updates.length > 5 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2"
-              aria-expanded={expanded}
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? "Show less" : `Show ${hidden.length} more`}
-            </Button>
           )}
           <CoverageNote coverage={query.data.coverage} />
         </>
