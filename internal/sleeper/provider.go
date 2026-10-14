@@ -47,7 +47,12 @@ func (c *Client) FetchLeague(ctx context.Context, league fantasy.League) (fantas
 	if err != nil {
 		return fantasy.LeagueData{}, err
 	}
-	return normalizeData(data)
+	normalized, err := normalizeData(data)
+	if err != nil {
+		return fantasy.LeagueData{}, err
+	}
+	c.annotateAvailability(ctx, &normalized)
+	return normalized, nil
 }
 
 // ResolveSelection is onboarding logic, separate from fetching league data.

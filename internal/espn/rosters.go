@@ -27,7 +27,14 @@ func appendRosters(data *fantasy.LeagueData, players map[string]fantasy.Player, 
 				players[player.ExternalID] = player
 			}
 			slot, _ := normalizeSlot(entry.Slot)
-			snapshot.Entries = append(snapshot.Entries, fantasy.RosterEntry{PlayerID: player.ExternalID, ProviderSlotID: strconv.Itoa(entry.Slot), Slot: slot, EligiblePositions: eligiblePositions(entry.Pool.Player.EligibleSlots)})
+			snapshot.Entries = append(snapshot.Entries, fantasy.RosterEntry{
+				PlayerID:          player.ExternalID,
+				ProviderSlotID:    strconv.Itoa(entry.Slot),
+				Slot:              slot,
+				EligiblePositions: eligiblePositions(entry.Pool.Player.EligibleSlots),
+				InjuryStatus:      injuryStatus(entry.Pool.Player.InjuryStatus),
+				ProTeam:           proTeamAbbreviation(entry.Pool.Player.ProTeam),
+			})
 		}
 		data.Rosters = append(data.Rosters, snapshot)
 	}
@@ -62,7 +69,7 @@ func normalizePlayer(entry entryResponse) (fantasy.Player, error) {
 	}
 	if raw.Position == 16 {
 		player.Kind = fantasy.PlayerTeamDefense
-		if alias := defenseTeam(raw.ProTeam); alias != "" {
+		if alias := proTeamAbbreviation(raw.ProTeam); alias != "" {
 			player.KnownIDs = []fantasy.PlayerID{{Namespace: fantasy.PlayerIDSleeper, ExternalID: alias}}
 		}
 	} else if raw.ID < 0 {
@@ -70,7 +77,30 @@ func normalizePlayer(entry entryResponse) (fantasy.Player, error) {
 	}
 	return player, nil
 }
-func defenseTeam(id int) string {
+
+// injuryStatus maps ESPN designations. DAY_TO_DAY is not an official NFL game
+// status, so it is treated as questionable (worth monitoring). A missing or
+// unfamiliar status is unknown rather than guessed.
+func injuryStatus(raw string) fantasy.InjuryStatus {
+	switch raw {
+	case "ACTIVE":
+		return fantasy.InjuryActive
+	case "QUESTIONABLE", "DAY_TO_DAY":
+		return fantasy.InjuryQuestionable
+	case "DOUBTFUL":
+		return fantasy.InjuryDoubtful
+	case "OUT", "SUSPENSION":
+		return fantasy.InjuryOut
+	case "INJURY_RESERVE":
+		return fantasy.InjuryReserve
+	default:
+		return fantasy.InjuryUnknown
+	}
+}
+
+// proTeamAbbreviation maps an ESPN proTeamId to the abbreviation Sleeper also
+// uses. Free agents (0) and unfamiliar IDs return "".
+func proTeamAbbreviation(id int) string {
 	// ESPN proTeamId identifies the franchise; never match a defense by name.
 	return map[int]string{1: "ATL", 2: "BUF", 3: "CHI", 4: "CIN", 5: "CLE", 6: "DAL", 7: "DEN", 8: "DET", 9: "GB", 10: "TEN", 11: "IND", 12: "KC", 13: "LV", 14: "LAR", 15: "MIA", 16: "MIN", 17: "NE", 18: "NO", 19: "NYG", 20: "NYJ", 21: "PHI", 22: "ARI", 23: "PIT", 24: "LAC", 25: "SF", 26: "SEA", 27: "TB", 28: "WAS", 29: "CAR", 30: "JAX", 33: "BAL", 34: "HOU"}[id]
 }

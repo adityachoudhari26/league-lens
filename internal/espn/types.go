@@ -52,6 +52,7 @@ type playerResponse struct {
 	Name          string `json:"fullName"`
 	Position      int    `json:"defaultPositionId"`
 	ProTeam       int    `json:"proTeamId"`
+	InjuryStatus  string `json:"injuryStatus"`
 	EligibleSlots []int  `json:"eligibleSlots"`
 }
 type matchupResponse struct {

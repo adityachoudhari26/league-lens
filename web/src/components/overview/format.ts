@@ -8,3 +8,7 @@ export function observedTime(value?: Timestamp) {
 export function scoreLabel(value?: number) {
   return value === undefined ? "—" : value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })
 }
+
+export function kickoffTime(value?: Timestamp) {
+  return value ? timestampDate(value).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }) : undefined
+}

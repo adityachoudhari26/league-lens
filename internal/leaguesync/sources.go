@@ -1,6 +1,8 @@
 package leaguesync
 
 import (
+	"context"
+
 	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/sleeper"
@@ -9,6 +11,7 @@ import (
 // SourceFactory builds the provider client used to refresh a target.
 type SourceFactory interface {
 	SourceFor(Target) (fantasy.Provider, error)
+	NFLSchedule(ctx context.Context, season int) ([]fantasy.NFLGame, error)
 }
 
 // ProviderSources builds live ESPN and Sleeper clients. ESPN cookies come from
@@ -25,12 +28,19 @@ func (e setupError) Error() string { return string(e) }
 func (p ProviderSources) SourceFor(target Target) (fantasy.Provider, error) {
 	switch target.Selection.League.Provider {
 	case fantasy.ProviderSleeper:
-		return sleeper.NewClient(nil), nil
+		client := sleeper.NewClient(nil)
+		client.AvailabilityTeamIDs = target.Selection.SelectedTeamIDs
+		return client, nil
 	case fantasy.ProviderESPN:
 		return p.espnSource(target)
 	default:
 		return nil, setupError("unsupported_provider")
 	}
+}
+
+// NFLSchedule reads ESPN's public schedule, which serves leagues from every provider.
+func (p ProviderSources) NFLSchedule(ctx context.Context, season int) ([]fantasy.NFLGame, error) {
+	return espn.FetchNFLSchedule(ctx, nil, season)
 }
 
 // espnSource refuses cookies for a different ESPN account than the one that

@@ -7,5 +7,5 @@ import (
 )
 
 func (s *Service) GetOverviewLookingAhead(context.Context, *v1.GetOverviewLookingAheadRequest) (*v1.GetOverviewLookingAheadResponse, error) {
-	return &v1.GetOverviewLookingAheadResponse{Coverage: coverage("unavailable", "NFL bye schedules are not connected yet. Upcoming roster conflicts have not been checked.")}, nil
+	return &v1.GetOverviewLookingAheadResponse{Coverage: coverage("unavailable", "Upcoming-week checks are not built yet. Byes for the current week appear under Needs attention.")}, nil
 }

@@ -78,5 +78,6 @@ func newSyncRunner(data *database.DB, ownerEmail string) *leaguesync.Runner {
 	if err != nil {
 		slog.Warn("player mapping cache unavailable; syncs retain provider identities")
 	}
-	return leaguesync.New(data, ownerEmail, leaguesync.ProviderSources{ESPN: credentials}, catalogPath)
+	sources := leaguesync.ProviderSources{ESPN: credentials}
+	return leaguesync.New(data, ownerEmail, sources, catalogPath)
 }
