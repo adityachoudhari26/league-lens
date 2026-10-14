@@ -41,12 +41,13 @@ type Roster struct {
 	Settings map[string]json.RawMessage `json:"settings"`
 }
 type Matchup struct {
-	RosterID     int      `json:"roster_id"`
-	MatchupID    *int     `json:"matchup_id"`
-	Players      []string `json:"players"`
-	Starters     []string `json:"starters"`
-	Points       *float64 `json:"points"`
-	CustomPoints *float64 `json:"custom_points"`
+	RosterID      int                `json:"roster_id"`
+	MatchupID     *int               `json:"matchup_id"`
+	Players       []string           `json:"players"`
+	Starters      []string           `json:"starters"`
+	PlayersPoints map[string]float64 `json:"players_points"`
+	Points        *float64           `json:"points"`
+	CustomPoints  *float64           `json:"custom_points"`
 }
 type State struct {
 	Season     string `json:"season"`

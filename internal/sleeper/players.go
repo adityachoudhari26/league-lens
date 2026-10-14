@@ -15,9 +15,10 @@ type playerRecord struct {
 }
 
 // annotateAvailability adds injury status and NFL team to the observed rosters
-// of AvailabilityTeamIDs, looking up each player individually so statuses are
-// as current as the sync. History is left alone because today's status says
-// nothing about past weeks. A failed lookup leaves that player unknown.
+// of AvailabilityTeamIDs and their current opponents, looking up each player
+// individually so statuses are as current as the sync. History is left alone
+// because today's status says nothing about past weeks. A failed lookup leaves
+// that player unknown.
 func (c *Client) annotateAvailability(ctx context.Context, data *fantasy.LeagueData) {
 	if len(c.AvailabilityTeamIDs) == 0 {
 		return
@@ -40,6 +41,9 @@ func (c *Client) availabilityEntries(data *fantasy.LeagueData) []*fantasy.Roster
 	for _, id := range c.AvailabilityTeamIDs {
 		selected[id] = true
 	}
+	for _, id := range currentOpponents(data, c.AvailabilityTeamIDs) {
+		selected[id] = true
+	}
 	var entries []*fantasy.RosterEntry
 	for i := range data.Rosters {
 		snapshot := &data.Rosters[i]
@@ -51,6 +55,37 @@ func (c *Client) availabilityEntries(data *fantasy.LeagueData) []*fantasy.Roster
 		}
 	}
 	return entries
+}
+
+// currentOpponents returns the opponent of each team in the matchup for that
+// team's observed week. Sleeper matchup periods are NFL weeks, so the observed
+// snapshot's scoring period names the matchup. Byes and unknown opponents add none.
+func currentOpponents(data *fantasy.LeagueData, teamIDs []string) []string {
+	observedPeriods := map[string]fantasy.MatchupPeriod{}
+	for _, snapshot := range data.Rosters {
+		if snapshot.Origin == fantasy.SnapshotObserved {
+			observedPeriods[snapshot.TeamID] = fantasy.MatchupPeriod(snapshot.ScoringPeriod)
+		}
+	}
+	var opponents []string
+	for _, teamID := range teamIDs {
+		period, observed := observedPeriods[teamID]
+		if !observed {
+			continue
+		}
+		for _, matchup := range data.Matchups {
+			if matchup.Period != period || matchup.TeamB == nil {
+				continue
+			}
+			switch teamID {
+			case matchup.TeamA.TeamID:
+				opponents = append(opponents, matchup.TeamB.TeamID)
+			case matchup.TeamB.TeamID:
+				opponents = append(opponents, matchup.TeamA.TeamID)
+			}
+		}
+	}
+	return opponents
 }
 
 // lookupPlayer reads one player from Sleeper, returning nil when the lookup fails.
