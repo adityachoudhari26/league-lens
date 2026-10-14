@@ -153,7 +153,8 @@ message MatchupLineup {
   TeamRecord record = 3; // Absent when unknown. Current record, not as of this round.
   optional double score = 4; // Absence and actual zero are distinct.
   int32 starters_left_to_play = 5; // Starters whose game has not kicked off.
-  // Starters in the provider's lineup order; bench includes IR.
+  // Starters by slot (QB, RB, WR, TE, FLEX, SUPERFLEX, DEF, K, then others); bench
+  // by BENCH, TAXI, IR, then others. Ties: points (highest first), then name, then player ID.
   repeated LineupPlayer starters = 6;
   repeated LineupPlayer bench = 7;
 }

@@ -31,14 +31,23 @@ func teamMessage(row store.Team, selected []string) (*v1.Team, error) {
 	if row.Rank.Valid {
 		result.Rank = &row.Rank.Int32
 	}
-	if len(row.RecordJson) > 0 {
-		var record fantasy.TeamRecord
-		if err := json.Unmarshal(row.RecordJson, &record); err != nil {
-			return nil, err
-		}
-		result.Record = &v1.TeamRecord{Wins: int32(record.Wins), Losses: int32(record.Losses), Ties: int32(record.Ties), PointsFor: record.PointsFor, PointsAgainst: record.PointsAgainst}
+	record, err := teamRecordMessage(row.RecordJson)
+	if err != nil {
+		return nil, err
 	}
+	result.Record = record
 	return result, nil
+}
+
+func teamRecordMessage(raw []byte) (*v1.TeamRecord, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	var record fantasy.TeamRecord
+	if err := json.Unmarshal(raw, &record); err != nil {
+		return nil, err
+	}
+	return &v1.TeamRecord{Wins: int32(record.Wins), Losses: int32(record.Losses), Ties: int32(record.Ties), PointsFor: record.PointsFor, PointsAgainst: record.PointsAgainst}, nil
 }
 
 // rosterMessage preserves snapshot provenance, coverage, and optional position data.
