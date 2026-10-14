@@ -16,7 +16,8 @@ import (
 const playerNewsCoverage = "Latest RotoWire news via ESPN from the past 7 days, saved at each sync. Players ESPN can't identify have no news."
 
 var (
-	injuryHeadline        = regexp.MustCompile(`(?i)injur|\((?:[a-z]+[ -]?){1,3}\)|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|quad|bruise|rib|ribs|wrist|finger|hand|elbow|neck|chest|thumb|achilles|oblique|pectoral|abdomen|illness|ruled out|questionable|doubtful|practice|sidelined|ir|injured reserve)\b`)
+	injuryHeadline        = regexp.MustCompile(`(?i)injur|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|quad|bruise|rib|ribs|wrist|finger|hand|elbow|neck|chest|thumb|achilles|oblique|pectoral|abdomen|illness|ruled out|questionable|doubtful|practice|sidelined|ir|injured reserve)\b`)
+	injuryParenthetical   = regexp.MustCompile(`\b[A-Z][A-Za-z'.-]+ \([a-z]+(?:[ -][a-z]+){0,2}\)`)
 	practiceSquadHeadline = regexp.MustCompile(`(?i)\bpractice\s+squad\b`)
 	transactionHeadline   = regexp.MustCompile(`(?i)\b(?:signed|re-signed|released|waived|traded|claimed|activated|promoted|elevated|cut|acquired|suspended|reinstated)\b`)
 )
@@ -210,8 +211,9 @@ func playerUpdateTier(summary *playerSummary, category v1.NewsCategory) int {
 }
 
 func categorize(headline string) v1.NewsCategory {
+	headlineWithoutPracticeSquad := practiceSquadHeadline.ReplaceAllString(headline, " ")
 	switch {
-	case injuryHeadline.MatchString(practiceSquadHeadline.ReplaceAllString(headline, " ")):
+	case injuryHeadline.MatchString(headlineWithoutPracticeSquad) || injuryParenthetical.MatchString(headlineWithoutPracticeSquad):
 		return v1.NewsCategory_NEWS_CATEGORY_INJURY
 	case transactionHeadline.MatchString(headline):
 		return v1.NewsCategory_NEWS_CATEGORY_TRANSACTION

@@ -24,6 +24,9 @@ func TestCategorizePlayerNews(t *testing.T) {
 		{headline: "Wilson (finger) ruled out", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
 		{headline: "Lamb dealing with quad bruise", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
 		{headline: "Smith (calf) limited Wednesday", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
+		{headline: "Coleman caught a seven-yard touchdown pass (on two targets) during the win", want: v1.NewsCategory_NEWS_CATEGORY_GENERAL},
+		{headline: "St. Brown (not injury related) won't practice", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
+		{headline: "Smith-Njigba (hamstring) limited", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
 		{headline: "IR role change discussed", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
 		{headline: "Their best week is ahead", want: v1.NewsCategory_NEWS_CATEGORY_GENERAL},
 	}
