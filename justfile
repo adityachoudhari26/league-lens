@@ -115,6 +115,10 @@ lint-web:
 fix-web:
     PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web lint:fix
 
+# Format frontend source with Prettier.
+fmt-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web format
+
 # Regenerate Go protobuf and Connect bindings.
 gen-api:
     go run github.com/bufbuild/buf/cmd/buf@v1.61.0 lint

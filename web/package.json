@@ -10,7 +10,9 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build",
-    "check": "pnpm lint && tsc --noEmit",
+    "check": "pnpm lint && pnpm format:check && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "preview": "vite preview --host 127.0.0.1",
     "dev:all": "concurrently --kill-others --names web,api \"pnpm dev\" \"just --justfile ../justfile dev-api\"",
     "lint": "eslint . --max-warnings 0",
@@ -47,6 +49,7 @@
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.13.0",
+    "prettier": "3.9.10",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.2",
