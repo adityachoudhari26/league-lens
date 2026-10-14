@@ -330,9 +330,43 @@ func TestOverviewSections(t *testing.T) {
 	if err != nil || attention.Coverage.State != "partial" || len(attention.Alerts) != 2 {
 		t.Fatalf("attention: %v %v", attention, err)
 	}
+	newsPlayers, err := db.Queries().ListNewsPlayers(ctx, "owner@test")
+	if err != nil || len(newsPlayers) == 0 {
+		t.Fatalf("news players: %v %v", newsPlayers, err)
+	}
+	playerID := newsPlayers[0].PlayerID
+	publishedAt := time.Now().UTC()
+	for _, item := range []store.AddPlayerNewsParams{
+		{
+			Source: "espn", SourceItemID: "recent", PlayerID: playerID, Headline: "Placed on injured reserve",
+			Summary: "The player was placed on IR.", Url: "https://www.espn.com/nfl/player/_/id/1",
+			SourceLabel: "RotoWire via ESPN", PublishedAt: pgtype.Timestamptz{Time: publishedAt, Valid: true},
+			FetchedAt: pgtype.Timestamptz{Time: publishedAt, Valid: true},
+		},
+		{
+			Source: "espn", SourceItemID: "old", PlayerID: playerID, Headline: "Old story",
+			Summary: "Outside the requested date range.", Url: "https://www.espn.com/nfl/player/_/id/1",
+			SourceLabel: "RotoWire via ESPN", PublishedAt: pgtype.Timestamptz{Time: publishedAt.Add(-8 * 24 * time.Hour), Valid: true},
+			FetchedAt: pgtype.Timestamptz{Time: publishedAt, Valid: true},
+		},
+	} {
+		if err := db.Queries().AddPlayerNews(ctx, item); err != nil {
+			t.Fatal(err)
+		}
+	}
 	updates, err := client.GetOverviewPlayerUpdates(ctx, &v1.GetOverviewPlayerUpdatesRequest{})
-	if err != nil || updates.Coverage.State != "unavailable" || len(updates.Updates) != 0 {
-		t.Fatalf("news falsely available: %v %v", updates, err)
+	if err != nil || updates.Coverage.State != "partial" || len(updates.Updates) != 1 {
+		t.Fatalf("player updates: %v %v", updates, err)
+	}
+	update := updates.Updates[0]
+	if update.PlayerId != playerID.String() || update.Category != v1.NewsCategory_NEWS_CATEGORY_INJURY ||
+		update.PlayerName != "Fixture Player" || len(update.Teams) != 1 || update.Teams[0].Name != "Home" ||
+		update.Id != "espn:recent:"+playerID.String() {
+		t.Fatalf("player update lost roster/news fields: %v", update)
+	}
+	hiddenUpdates, err := other.GetOverviewPlayerUpdates(ctx, &v1.GetOverviewPlayerUpdatesRequest{})
+	if err != nil || len(hiddenUpdates.Updates) != 0 || hiddenUpdates.Coverage.State != "empty" {
+		t.Fatalf("player news owner isolation: %v %v", hiddenUpdates, err)
 	}
 	ahead, err := client.GetOverviewLookingAhead(ctx, &v1.GetOverviewLookingAheadRequest{})
 	if err != nil || ahead.Coverage.State != "unavailable" || len(ahead.Issues) != 0 {

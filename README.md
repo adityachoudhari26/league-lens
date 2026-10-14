@@ -76,8 +76,9 @@ remain stable even though the API and frontend work happened before owner setup.
 
 - [ ] **10. Add player news and supported alerts.**
   - [x] Empty starter-slot checks based on observed full/lineup snapshots; coverage explicitly remains partial.
-  - [ ] Choose permitted news sources with useful free coverage. NFL byes and kickoffs come from ESPN's public schedule, refreshed daily during sync into `nfl_games`.
-  - [ ] Match and deduplicate player news, with source links and publication times.
+  - [x] Choose permitted news sources with useful free coverage. NFL byes and kickoffs come from ESPN's public schedule, refreshed daily during sync into `nfl_games`.
+  - [x] Match and deduplicate player news, with source links and publication times.
+    - Player news uses ESPN's undocumented public fantasy feed for reporter-credited RotoWire blurbs; Sleeper has no news endpoint, X has no free read access, and Story roundups are skipped.
   - [x] Starter injury (Out/Doubtful/IR = action, Questionable = monitor) and bye checks from statuses captured at sync; alerts drop once the player's game kicks off. Unknown status or a missing schedule never produces an alert.
   - [ ] Upcoming-week lineup checks and bench projection warnings.
   - [ ] Verify league-rule handling and disclose missing coverage; paid feeds remain optional.
@@ -372,7 +373,7 @@ The four overview RPCs are under `/leaguelens.v1.DashboardService/`:
 | --- | --- |
 | `GetOverviewAttention` | Starter checks from the latest observed snapshot: empty slots, injury status, and byes (from `nfl_games`). Alerts carry an `AlertKind` and an `AlertSeverity` (`ACTION` or `MONITOR`), sorted by severity then kickoff, and dropped after kickoff. Coverage stays partial: statuses are as of the last sync. |
 | `GetOverviewMatchups` | Selected teams, opponents, nullable actual scores, matchup status, and fetch timestamps. Matches scoring weeks to matchup rounds explicitly. |
-| `GetOverviewPlayerUpdates` | Returns unavailable coverage and no invented articles until a news source is connected. |
+| `GetOverviewPlayerUpdates` | Returns the latest saved item from the past seven days per rostered player, deduplicated across teams. Injury designations and starter injury news rank first, followed by other starters and bench players; results include categories, source links, and rostered teams. |
 | `GetOverviewLookingAhead` | Returns unavailable coverage until NFL bye schedules are connected. |
 
 Each RPC accepts an empty request. Attention and matchup queries use selected
@@ -412,8 +413,7 @@ proxy will also need to route `/api` to Connect; production packaging is deferre
 
 Matchup scores are imported observations, not a live feed. Each card displays
 its fetch timestamp. **Refresh** starts a provider sync; a status line shows
-which leagues are syncing, and a failed league keeps showing its last saved data. Attention shows three alerts before expanding inline, labeled Action needed or Monitor. News and looking-ahead
-checks retain the API's explicit unavailable messages. No sample data is used.
+which leagues are syncing, and a failed league keeps showing its last saved data. Attention shows three alerts before expanding inline, labeled Action needed or Monitor. Player updates show saved RotoWire blurbs for rostered players, with explicit limits for players ESPN cannot identify; looking-ahead checks retain the API's unavailable message. No sample data is used.
 
 After editing proto contracts, run `just setup-web` then `just gen-web` to update
 `web/src/gen`. Go generation remains independently available through `just gen-api`.

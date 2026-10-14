@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	AddNFLGame(ctx context.Context, arg AddNFLGameParams) error
 	AddPlayerExternalID(ctx context.Context, arg AddPlayerExternalIDParams) (PlayerExternalID, error)
+	AddPlayerNews(ctx context.Context, arg AddPlayerNewsParams) error
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
 	AttachLeague(ctx context.Context, arg AttachLeagueParams) error
 	ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeamsParams) error
@@ -27,6 +28,7 @@ type Querier interface {
 	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
 	DeleteNFLSeason(ctx context.Context, season int32) error
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
+	DeleteSourceNews(ctx context.Context, source string) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
 	FailSync(ctx context.Context, arg FailSyncParams) (SyncRun, error)
@@ -39,7 +41,10 @@ type Querier interface {
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
 	ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUserParams) ([]Matchup, error)
 	ListNFLGamesForWeek(ctx context.Context, arg ListNFLGamesForWeekParams) ([]ListNFLGamesForWeekRow, error)
+	// Players on the owner's selected teams' latest succeeded observed snapshot, with every known external ID.
+	ListNewsPlayers(ctx context.Context, lower string) ([]ListNewsPlayersRow, error)
 	ListPlayerExternalIDs(ctx context.Context, playerID pgtype.UUID) ([]PlayerExternalID, error)
+	ListRecentPlayerNews(ctx context.Context, arg ListRecentPlayerNewsParams) ([]PlayerNews, error)
 	ListSnapshotRosterForUser(ctx context.Context, arg ListSnapshotRosterForUserParams) ([]ListSnapshotRosterForUserRow, error)
 	ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsForUserParams) ([]TeamSnapshot, error)
 	ListSyncRunsForUser(ctx context.Context, arg ListSyncRunsForUserParams) ([]SyncRun, error)

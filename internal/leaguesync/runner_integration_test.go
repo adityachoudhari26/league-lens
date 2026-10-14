@@ -17,8 +17,10 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
+	"github.com/adityachoudhari26/league-lens/internal/news"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -53,8 +55,54 @@ func (f fakeSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error
 	return nil, errors.New("schedule unavailable in tests")
 }
 
+func (fakeSources) NewsSource() news.Source { return emptyNewsSource{} }
+
 func (f fakeSources) SourceFor(target leaguesync.Target) (fantasy.Provider, error) {
 	return f[target.Selection.League.Provider], nil
+}
+
+type fakeNewsSources struct {
+	fakeSources
+	news news.Source
+}
+
+func (f fakeNewsSources) NewsSource() news.Source { return f.news }
+
+type fakeNewsSource struct {
+	err   error
+	done  chan struct{}
+	label string
+}
+
+type emptyNewsSource struct{}
+
+func (emptyNewsSource) Name() string { return "empty" }
+
+func (emptyNewsSource) PlayerNews(context.Context, []news.Player) ([]news.Item, error) {
+	return nil, nil
+}
+
+func (s fakeNewsSource) Name() string { return "fake" }
+
+func (s fakeNewsSource) PlayerNews(_ context.Context, players []news.Player) ([]news.Item, error) {
+	if s.done != nil {
+		defer close(s.done)
+	}
+	if s.err != nil {
+		return nil, s.err
+	}
+	if len(players) == 0 {
+		return nil, nil
+	}
+	return []news.Item{{
+		PlayerID:     players[0].ID,
+		SourceItemID: "item-1",
+		Headline:     s.label,
+		Summary:      "A saved fixture summary.",
+		URL:          "https://example.test/player",
+		SourceLabel:  "Fixture source",
+		PublishedAt:  time.Now().UTC(),
+	}}, nil
 }
 
 func openDatabase(t *testing.T) *database.DB {
@@ -257,4 +305,101 @@ func TestMissingESPNCredentialsFailWithoutLosingData(t *testing.T) {
 	if got := homeTeamName(t, db, fantasy.ProviderESPN); got != "Home" {
 		t.Errorf("espn team = %q, want last successful data", got)
 	}
+}
+
+func TestRunnerStoresPlayerNews(t *testing.T) {
+	db := openDatabase(t)
+	seedLeague(t, db, fantasy.ProviderSleeper)
+	source := fakeNewsSource{label: "Saved news", done: make(chan struct{})}
+	runner := leaguesync.New(db, owner, fakeNewsSources{
+		fakeSources: fakeSources{fantasy.ProviderSleeper: &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home")}},
+		news:        source,
+	}, "")
+	t.Cleanup(runner.Close)
+
+	if _, err := runner.Start(context.Background(), false); err != nil {
+		t.Fatal(err)
+	}
+	waitUntilIdle(t, runner)
+	<-source.done
+	playerID := waitForPlayerNews(t, db, "Saved news")
+	rows, err := db.Queries().ListRecentPlayerNews(context.Background(), store.ListRecentPlayerNewsParams{
+		PlayerIds: []pgtype.UUID{playerID},
+		Since:     pgtype.Timestamptz{Time: time.Now().Add(-time.Hour), Valid: true},
+	})
+	if err != nil || len(rows) != 1 || rows[0].Summary != "A saved fixture summary." || rows[0].FetchedAt.Time.IsZero() {
+		t.Fatalf("saved news = %+v, %v", rows, err)
+	}
+}
+
+func TestFailedPlayerNewsRefreshKeepsSavedNewsAndLeagueSucceeds(t *testing.T) {
+	db := openDatabase(t)
+	seedLeague(t, db, fantasy.ProviderSleeper)
+	playerRows, err := db.Queries().ListNewsPlayers(context.Background(), owner)
+	if err != nil || len(playerRows) != 1 {
+		t.Fatalf("news players = %v, %v", playerRows, err)
+	}
+	playerID := playerRows[0].PlayerID
+	if err := db.Queries().AddPlayerNews(context.Background(), store.AddPlayerNewsParams{
+		Source:       "fake",
+		SourceItemID: "saved-item",
+		PlayerID:     playerID,
+		Headline:     "Previously saved",
+		Summary:      "Keep me on a failed refresh.",
+		Url:          "https://example.test/saved",
+		SourceLabel:  "Fixture source",
+		PublishedAt:  pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true},
+		FetchedAt:    pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	source := fakeNewsSource{err: errors.New("news unavailable"), done: make(chan struct{})}
+	runner := leaguesync.New(db, owner, fakeNewsSources{
+		fakeSources: fakeSources{fantasy.ProviderSleeper: &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home Updated")}},
+		news:        source,
+	}, "")
+	t.Cleanup(runner.Close)
+
+	if _, err := runner.Start(context.Background(), false); err != nil {
+		t.Fatal(err)
+	}
+	statuses := waitUntilIdle(t, runner)
+	<-source.done
+	runner.Close()
+	if got := statuses[fantasy.ProviderSleeper].State; got != leaguesync.StateSucceeded {
+		t.Fatalf("league state = %s, want succeeded", got)
+	}
+	rows, err := db.Queries().ListRecentPlayerNews(context.Background(), store.ListRecentPlayerNewsParams{
+		PlayerIds: []pgtype.UUID{playerID},
+		Since:     pgtype.Timestamptz{Time: time.Now().Add(-time.Hour), Valid: true},
+	})
+	if err != nil || len(rows) != 1 || rows[0].SourceItemID != "saved-item" || rows[0].Headline != "Previously saved" {
+		t.Fatalf("saved news after failed refresh = %+v, %v", rows, err)
+	}
+}
+
+func waitForPlayerNews(t *testing.T, db *database.DB, headline string) pgtype.UUID {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		players, err := db.Queries().ListNewsPlayers(context.Background(), owner)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, player := range players {
+			rows, err := db.Queries().ListRecentPlayerNews(context.Background(), store.ListRecentPlayerNewsParams{
+				PlayerIds: []pgtype.UUID{player.PlayerID},
+				Since:     pgtype.Timestamptz{Time: time.Now().Add(-time.Hour), Valid: true},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(rows) == 1 && rows[0].Headline == headline {
+				return player.PlayerID
+			}
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("player news with headline %q was not saved", headline)
+	return pgtype.UUID{}
 }

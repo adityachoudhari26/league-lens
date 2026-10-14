@@ -1,0 +1,40 @@
+{
+  "feed": [
+    {
+      "id": 64220528,
+      "type": "Rotowire",
+      "headline": "Head coach Jesse Minter said Monday that Jackson is \"definitely doing better\" in his recovery from a sprained left ankle, Jamison Hensley of ESPN.com reports.",
+      "story": "Jackson was held out of Sunday's 30-23 overtime win over the Falcons due to a left ankle sprain. Minter added that he wasn't sure whether Jackson would be cleared to practice Wednesday.",
+      "published": "2026-10-12T19:13:43Z",
+      "premium": false,
+      "playerId": 3916387
+    },
+    {
+      "id": 64150328,
+      "type": "Rotowire",
+      "headline": "Lamb is believed to be dealing with a \"quad bruise\" that is \"not considered to be serious,\" Ian Rapoport of NFL Network reports.",
+      "story": "Lamb was deemed questionable to return to Thursday's loss after taking a hit on the same quad that got hit last week. He does not appear to be facing an extended absence.",
+      "published": "2026-10-09T12:44:11Z",
+      "premium": false,
+      "playerId": 4241389
+    },
+    {
+      "id": 50174803,
+      "type": "Story",
+      "headline": "Knockout league pickups: Walker, Lamb, McMillan among big names available",
+      "story": "A multi-player fantasy roundup with waiver recommendations.",
+      "published": "2026-10-13T18:17:51Z",
+      "premium": false,
+      "playerId": 3916387
+    },
+    {
+      "id": 64220529,
+      "type": "Rotowire",
+      "headline": "Premium RotoWire item that is excluded.",
+      "story": "Premium summary.",
+      "published": "2026-10-12T19:13:43Z",
+      "premium": true,
+      "playerId": 3916387
+    }
+  ]
+}
