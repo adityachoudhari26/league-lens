@@ -20,6 +20,7 @@ service DashboardService {
   rpc GetLeague(GetLeagueRequest) returns (GetLeagueResponse);
   rpc GetTeamRoster(GetTeamRosterRequest) returns (GetTeamRosterResponse);
   rpc ListMatchups(ListMatchupsRequest) returns (ListMatchupsResponse);
+  rpc GetMatchupDetail(GetMatchupDetailRequest) returns (GetMatchupDetailResponse);
 }
 message ListLeaguesRequest {
   int32 page_size = 1; // Default 25, maximum 100.
@@ -116,4 +117,62 @@ message ScoringPeriods {
 message MatchupSide {
   string team_id = 1;
   optional double score = 2; // Absence and actual zero are distinct.
+}
+
+message GetMatchupDetailRequest {
+  // The owner's team is the league's selected team; user_teams allows at most one.
+  string league_season_id = 1;
+  // Omit for the round containing the observed scoring week (as on Overview).
+  optional int32 matchup_period = 2;
+}
+message GetMatchupDetailResponse {
+  // Absent means no matchup is stored for the owner's team and round.
+  MatchupDetail matchup = 1;
+}
+// MatchupDetail is oriented around the owner: team is always the
+// owner's side, opponent the other side.
+message MatchupDetail {
+  string id = 1;
+  int32 matchup_period = 2;
+  MatchupStatus status = 3;
+  bool is_bye = 4;
+  MatchupLineup team = 5;
+  MatchupLineup opponent = 6; // Absent on a bye.
+  google.protobuf.Timestamp fetched_at = 7;
+}
+enum MatchupStatus {
+  MATCHUP_STATUS_UNSPECIFIED = 0;
+  MATCHUP_STATUS_SCHEDULED = 1;
+  MATCHUP_STATUS_IN_PROGRESS = 2;
+  MATCHUP_STATUS_FINAL = 3;
+  MATCHUP_STATUS_UNKNOWN = 4;
+}
+message MatchupLineup {
+  string team_id = 1;
+  string team_name = 2;
+  TeamRecord record = 3; // Absent when unknown. Current record, not as of this round.
+  optional double score = 4; // Absence and actual zero are distinct.
+  int32 starters_left_to_play = 5; // Starters whose game has not kicked off.
+  // Starters in the provider's lineup order; bench includes IR.
+  repeated LineupPlayer starters = 6;
+  repeated LineupPlayer bench = 7;
+}
+message LineupPlayer {
+  string player_id = 1;
+  string player_name = 2;
+  string slot = 3;
+  optional double points = 4; // Absent means not reported, distinct from zero.
+  InjuryStatus injury_status = 5; // Current status, not as of this round.
+  string pro_team = 6; // Empty when unknown.
+  GameState game_state = 7;
+  google.protobuf.Timestamp kickoff_at = 8; // Absent unless a game is scheduled.
+}
+// GameState is derived from nfl_games kickoffs. Live and final are not
+// distinguished; both are KICKED_OFF.
+enum GameState {
+  GAME_STATE_UNSPECIFIED = 0;
+  GAME_STATE_NOT_STARTED = 1;
+  GAME_STATE_KICKED_OFF = 2;
+  GAME_STATE_BYE = 3;
+  GAME_STATE_UNKNOWN = 4; // No NFL team or no schedule for the week.
 }

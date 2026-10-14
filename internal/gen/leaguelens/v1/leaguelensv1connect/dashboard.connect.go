@@ -53,6 +53,9 @@ const (
 	// DashboardServiceListMatchupsProcedure is the procedure name of the DashboardService's
 	// ListMatchups RPC.
 	DashboardServiceListMatchupsProcedure = "/leaguelens.v1.DashboardService/ListMatchups"
+	// DashboardServiceGetMatchupDetailProcedure is the procedure name of the DashboardService's
+	// GetMatchupDetail RPC.
+	DashboardServiceGetMatchupDetailProcedure = "/leaguelens.v1.DashboardService/GetMatchupDetail"
 )
 
 var (
@@ -126,6 +129,13 @@ var (
 			Procedure:  DashboardServiceListMatchupsProcedure,
 		}
 	})
+	dashboardServiceGetMatchupDetailSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_leaguelens_v1_dashboard_proto.Services().ByName("DashboardService").Methods().ByName("GetMatchupDetail"),
+			Procedure:  DashboardServiceGetMatchupDetailProcedure,
+		}
+	})
 )
 
 // DashboardServiceClient is a client for the leaguelens.v1.DashboardService service.
@@ -140,6 +150,7 @@ type DashboardServiceClient interface {
 	GetLeague(context.Context, *v1.GetLeagueRequest) (*v1.GetLeagueResponse, error)
 	GetTeamRoster(context.Context, *v1.GetTeamRosterRequest) (*v1.GetTeamRosterResponse, error)
 	ListMatchups(context.Context, *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error)
+	GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error)
 }
 
 // NewDashboardServiceClient constructs a client for the leaguelens.v1.DashboardService service.
@@ -160,6 +171,7 @@ type DashboardServiceHandler interface {
 	GetLeague(context.Context, *v1.GetLeagueRequest) (*v1.GetLeagueResponse, error)
 	GetTeamRoster(context.Context, *v1.GetTeamRosterRequest) (*v1.GetTeamRosterResponse, error)
 	ListMatchups(context.Context, *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error)
+	GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error)
 }
 
 // RegisterDashboardServiceHandler registers svc as the leaguelens.v1.DashboardService
@@ -177,6 +189,7 @@ func RegisterDashboardServiceHandler(server *connect.Server, svc DashboardServic
 		connect.Method{Spec: dashboardServiceGetLeagueSpec(), Handler: adapter.getLeague},
 		connect.Method{Spec: dashboardServiceGetTeamRosterSpec(), Handler: adapter.getTeamRoster},
 		connect.Method{Spec: dashboardServiceListMatchupsSpec(), Handler: adapter.listMatchups},
+		connect.Method{Spec: dashboardServiceGetMatchupDetailSpec(), Handler: adapter.getMatchupDetail},
 	)
 }
 
@@ -221,6 +234,10 @@ func (UnimplementedDashboardServiceHandler) GetTeamRoster(context.Context, *v1.G
 
 func (UnimplementedDashboardServiceHandler) ListMatchups(context.Context, *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.DashboardService.ListMatchups is not implemented")
+}
+
+func (UnimplementedDashboardServiceHandler) GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.DashboardService.GetMatchupDetail is not implemented")
 }
 
 type dashboardServiceClient struct {
@@ -302,6 +319,14 @@ func (c *dashboardServiceClient) GetTeamRoster(ctx context.Context, req *v1.GetT
 func (c *dashboardServiceClient) ListMatchups(ctx context.Context, req *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error) {
 	var res v1.ListMatchupsResponse
 	if err := c.client.CallUnary(ctx, dashboardServiceListMatchupsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *dashboardServiceClient) GetMatchupDetail(ctx context.Context, req *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error) {
+	var res v1.GetMatchupDetailResponse
+	if err := c.client.CallUnary(ctx, dashboardServiceGetMatchupDetailSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -423,6 +448,18 @@ func (h dashboardServiceHandler) listMatchups(ctx context.Context, _ connect.Spe
 		return err
 	}
 	res, err := h.svc.ListMatchups(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h dashboardServiceHandler) getMatchupDetail(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetMatchupDetailRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetMatchupDetail(ctx, &req)
 	if err != nil {
 		return err
 	}
