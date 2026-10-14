@@ -13,6 +13,8 @@
 
 Dismissible attention alerts are authorized: owner-scoped `alert_dismissals` keyed by an alert fingerprint (ID, week, status), filtered in `GetOverviewAttention`, with Dismiss/Restore RPCs.
 
+The Matchups detail backend is authorized: a `matchup_lineups` table with per-player league-scored points from ESPN `mBoxscore` and Sleeper `/matchups`, Sleeper availability lookups extended to the current opponent, and an owner-scoped `GetMatchupDetail` RPC for the owner's matchup in one round. Projections and win probability remain deferred.
+
 ## Code organization and readability
 
 - Prefer focused, modular functions that each do one recognizable thing. A helper with only four lines is worthwhile when its name expresses a meaningful operation; reuse and line count are not prerequisites for extraction.
