@@ -76,19 +76,19 @@ func TestFetchLineups(t *testing.T) {
 	}
 
 	expected := map[string]expectedLineupEntry{
-		"101": {floatPointer(10), true, fantasy.SlotQB},
-		"102": {floatPointer(5), true, fantasy.SlotFlex},
-		"103": {floatPointer(4), false, fantasy.SlotBench},
-		"104": {floatPointer(2), false, fantasy.SlotIR},
-		"105": {floatPointer(0), true, fantasy.SlotRB},
-		"106": {nil, false, fantasy.SlotBench},
-		"108": {nil, false, fantasy.SlotBench},
-		"111": {floatPointer(8), true, fantasy.SlotQB},
-		"112": {floatPointer(4), true, fantasy.SlotFlex},
-		"201": {nil, true, fantasy.SlotQB},
-		"202": {nil, true, fantasy.SlotFlex},
-		"211": {nil, true, fantasy.SlotQB},
-		"212": {nil, true, fantasy.SlotFlex},
+		"101": {floatPointer(10), floatPointer(12.5), true, fantasy.SlotQB}, // finished week keeps its projection
+		"102": {floatPointer(5), nil, true, fantasy.SlotFlex},
+		"103": {floatPointer(4), nil, false, fantasy.SlotBench},
+		"104": {floatPointer(2), nil, false, fantasy.SlotIR},
+		"105": {floatPointer(0), nil, true, fantasy.SlotRB},
+		"106": {nil, nil, false, fantasy.SlotBench},
+		"108": {nil, nil, false, fantasy.SlotBench},
+		"111": {floatPointer(8), nil, true, fantasy.SlotQB},
+		"112": {floatPointer(4), floatPointer(-1.5), true, fantasy.SlotFlex}, // season line ignored; negative kept
+		"201": {nil, floatPointer(18.25), true, fantasy.SlotQB},
+		"202": {nil, floatPointer(0), true, fantasy.SlotFlex}, // zero projection is real
+		"211": {nil, nil, true, fantasy.SlotQB},               // projected line without appliedTotal
+		"212": {nil, nil, true, fantasy.SlotFlex},
 	}
 	assertLineupEntries(t, data.Lineups, expected)
 	assertStartersSumToMatchupScore(t, data, 1)
@@ -138,9 +138,10 @@ func TestMultiweekMatchupsHaveNoLineups(t *testing.T) {
 }
 
 type expectedLineupEntry struct {
-	points  *float64
-	starter bool
-	slot    fantasy.RosterSlot
+	points    *float64
+	projected *float64
+	starter   bool
+	slot      fantasy.RosterSlot
 }
 
 func matchupForLineup(matchups []fantasy.Matchup, lineup fantasy.MatchupLineup) (fantasy.Matchup, bool) {
@@ -213,6 +214,9 @@ func assertLineupEntries(t *testing.T, lineups []fantasy.MatchupLineup, expected
 			seen[entry.PlayerID] = true
 			if !pointsEqual(entry.Points, want.points) {
 				t.Errorf("player %s points = %v, want %v", entry.PlayerID, entry.Points, want.points)
+			}
+			if !pointsEqual(entry.ProjectedPoints, want.projected) {
+				t.Errorf("player %s projected points = %v, want %v", entry.PlayerID, entry.ProjectedPoints, want.projected)
 			}
 			if entry.Starter != want.starter || entry.Slot != want.slot {
 				t.Errorf("player %s starter/slot = %v/%s, want %v/%s", entry.PlayerID, entry.Starter, entry.Slot, want.starter, want.slot)

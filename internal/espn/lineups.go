@@ -9,6 +9,10 @@ import (
 const (
 	espnBenchSlotID = 20
 	espnIRSlotID    = 21
+
+	espnActualStatSource    = 0
+	espnProjectedStatSource = 1
+	espnSingleWeekStatSplit = 1
 )
 
 type matchupKey struct {
@@ -112,11 +116,12 @@ func addMissingPlayer(players map[string]fantasy.Player, player fantasy.Player) 
 func normalizeLineupEntry(playerID string, entry entryResponse, week int) fantasy.LineupEntry {
 	slot, _ := normalizeSlot(entry.Slot)
 	return fantasy.LineupEntry{
-		PlayerID:       playerID,
-		ProviderSlotID: strconv.Itoa(entry.Slot),
-		Slot:           slot,
-		Starter:        isStarterSlot(entry.Slot),
-		Points:         actualPoints(entry, week),
+		PlayerID:        playerID,
+		ProviderSlotID:  strconv.Itoa(entry.Slot),
+		Slot:            slot,
+		Starter:         isStarterSlot(entry.Slot),
+		Points:          actualPoints(entry, week),
+		ProjectedPoints: projectedPoints(entry.Pool.Player.Stats, week),
 	}
 }
 
@@ -130,19 +135,30 @@ func isStarterSlot(slot int) bool {
 // appliedStatTotal as 0 for unplayed weeks and bye weeks, so the value counts
 // only when the player has an actual stat line for week.
 func actualPoints(entry entryResponse, week int) *float64 {
-	if !hasActualStatLine(entry.Pool.Player.Stats, week) {
+	if _, found := weekStatLine(entry.Pool.Player.Stats, espnActualStatSource, week); !found {
 		return nil
 	}
 	return entry.Pool.AppliedStatTotal
 }
 
-// hasActualStatLine reports whether stats include ESPN's actual (source 0)
-// single-week (split 1) stat line for week.
-func hasActualStatLine(stats []statResponse, week int) bool {
+// projectedPoints returns ESPN's league-scored projection for week, the
+// appliedTotal of its projected stat line. ESPN keeps that line after the game,
+// so finished weeks keep their projection. Nil when ESPN has no projected
+// line for week.
+func projectedPoints(stats []statResponse, week int) *float64 {
+	projection, found := weekStatLine(stats, espnProjectedStatSource, week)
+	if !found {
+		return nil
+	}
+	return projection.AppliedTotal
+}
+
+// weekStatLine finds the single-week stat line from source for week.
+func weekStatLine(stats []statResponse, source, week int) (statResponse, bool) {
 	for _, stat := range stats {
-		if stat.SourceID == 0 && stat.SplitTypeID == 1 && stat.ScoringPeriodID == week {
-			return true
+		if stat.SourceID == source && stat.SplitTypeID == espnSingleWeekStatSplit && stat.ScoringPeriodID == week {
+			return stat, true
 		}
 	}
-	return false
+	return statResponse{}, false
 }

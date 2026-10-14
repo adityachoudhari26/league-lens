@@ -44,8 +44,8 @@
         "teamId": 1,
         "totalPoints": 0,
         "rosterForCurrentScoringPeriod": {"entries": [
-          {"playerId": 201, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 201, "fullName": "Week Two QB", "defaultPositionId": 1, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2}]}}},
-          {"playerId": 202, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 202, "fullName": "Week Two Flex", "defaultPositionId": 2, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2}]}}}
+          {"playerId": 201, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 201, "fullName": "Week Two QB", "defaultPositionId": 1, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2, "appliedTotal": 18.25}]}}},
+          {"playerId": 202, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 202, "fullName": "Week Two Flex", "defaultPositionId": 2, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2, "appliedTotal": 0}]}}}
         ]}
       },
       "away": {

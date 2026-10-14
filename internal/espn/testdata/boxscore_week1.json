@@ -41,7 +41,7 @@
         "teamId": 1,
         "totalPoints": 15,
         "rosterForCurrentScoringPeriod": {"entries": [
-          {"playerId": 101, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 10, "player": {"id": 101, "fullName": "Week One QB", "defaultPositionId": 1, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+          {"playerId": 101, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 10, "player": {"id": 101, "fullName": "Week One QB", "defaultPositionId": 1, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1, "appliedTotal": 10}, {"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 1, "appliedTotal": 12.5}, {"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2, "appliedTotal": 30}]}}},
           {"playerId": 102, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 5, "player": {"id": 102, "fullName": "Week One Flex", "defaultPositionId": 2, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
           {"playerId": 103, "lineupSlotId": 20, "playerPoolEntry": {"appliedStatTotal": 4, "player": {"id": 103, "fullName": "Week One Bench", "defaultPositionId": 3, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
           {"playerId": 104, "lineupSlotId": 21, "playerPoolEntry": {"appliedStatTotal": 2, "player": {"id": 104, "fullName": "Week One IR", "defaultPositionId": 4, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
@@ -55,7 +55,7 @@
         "totalPoints": 12,
         "rosterForCurrentScoringPeriod": {"entries": [
           {"playerId": 111, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 8, "player": {"id": 111, "fullName": "Away QB", "defaultPositionId": 1, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
-          {"playerId": 112, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 4, "player": {"id": 112, "fullName": "Away Flex", "defaultPositionId": 3, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}}
+          {"playerId": 112, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 4, "player": {"id": 112, "fullName": "Away Flex", "defaultPositionId": 3, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}, {"statSourceId": 1, "statSplitTypeId": 0, "scoringPeriodId": 0, "appliedTotal": 150}, {"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 1, "appliedTotal": -1.5}]}}}
         ]}
       }
     },
