@@ -4,8 +4,20 @@ import { dashboard } from "./client"
 // Reads saved snapshots. Provider syncs run through useLeagueSync, which reloads
 // these queries when syncing ends.
 export const overviewQueries = {
-  attention: queryOptions({ queryKey: ["overview", "attention"], queryFn: ({ signal }) => dashboard.getOverviewAttention({}, { signal }) }),
-  matchups: queryOptions({ queryKey: ["overview", "matchups"], queryFn: ({ signal }) => dashboard.getOverviewMatchups({}, { signal }) }),
-  updates: queryOptions({ queryKey: ["overview", "updates"], queryFn: ({ signal }) => dashboard.getOverviewPlayerUpdates({}, { signal }) }),
-  ahead: queryOptions({ queryKey: ["overview", "ahead"], queryFn: ({ signal }) => dashboard.getOverviewLookingAhead({}, { signal }) }),
+  attention: queryOptions({
+    queryKey: ["overview", "attention"],
+    queryFn: ({ signal }) => dashboard.getOverviewAttention({}, { signal }),
+  }),
+  matchups: queryOptions({
+    queryKey: ["overview", "matchups"],
+    queryFn: ({ signal }) => dashboard.getOverviewMatchups({}, { signal }),
+  }),
+  updates: queryOptions({
+    queryKey: ["overview", "updates"],
+    queryFn: ({ signal }) => dashboard.getOverviewPlayerUpdates({}, { signal }),
+  }),
+  ahead: queryOptions({
+    queryKey: ["overview", "ahead"],
+    queryFn: ({ signal }) => dashboard.getOverviewLookingAhead({}, { signal }),
+  }),
 }
