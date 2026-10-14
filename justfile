@@ -114,3 +114,8 @@ lint-web:
 # Apply safe automatic frontend lint fixes.
 fix-web:
     PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web lint:fix
+
+# Regenerate Go protobuf and Connect bindings.
+gen-api:
+    go run github.com/bufbuild/buf/cmd/buf@v1.61.0 lint
+    go run github.com/bufbuild/buf/cmd/buf@v1.61.0 generate

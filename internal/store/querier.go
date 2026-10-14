@@ -19,6 +19,11 @@ type Querier interface {
 	CreateConnection(ctx context.Context, arg CreateConnectionParams) (Connection, error)
 	CreateEncounteredPlayer(ctx context.Context, arg CreateEncounteredPlayerParams) (Player, error)
 	CreateUser(ctx context.Context, email string) (User, error)
+	DashboardLeague(ctx context.Context, arg DashboardLeagueParams) (DashboardLeagueRow, error)
+	DashboardLeagues(ctx context.Context, arg DashboardLeaguesParams) ([]DashboardLeaguesRow, error)
+	DashboardMatchupPeriods(ctx context.Context, arg DashboardMatchupPeriodsParams) ([]int32, error)
+	DashboardRoster(ctx context.Context, arg DashboardRosterParams) (TeamSnapshot, error)
+	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
@@ -40,6 +45,10 @@ type Querier interface {
 	// No network calls run while this transaction lock is held.
 	LockImportWrites(ctx context.Context) error
 	MarkLeagueSynced(ctx context.Context, arg MarkLeagueSyncedParams) error
+	// Match the latest observed scoring week, not the greatest (possibly future) round.
+	OverviewTeamMatchup(ctx context.Context, arg OverviewTeamMatchupParams) (OverviewTeamMatchupRow, error)
+	// Only selected teams, enabled connections, and the owner's latest imported season.
+	OverviewTeams(ctx context.Context, userID pgtype.UUID) ([]OverviewTeamsRow, error)
 	SelectUserTeam(ctx context.Context, arg SelectUserTeamParams) error
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)

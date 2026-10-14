@@ -3,8 +3,10 @@ module github.com/adityachoudhari26/league-lens
 go 1.26.0
 
 require (
+	connectrpc.com/connect/v2 v2.0.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/pressly/goose/v3 v3.29.0
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
@@ -16,4 +18,9 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
+)
+
+tool (
+	connectrpc.com/connect/v2/cmd/protoc-gen-connect-go
+	google.golang.org/protobuf/cmd/protoc-gen-go
 )

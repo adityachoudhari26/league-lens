@@ -1,0 +1,72 @@
+syntax = "proto3";
+package leaguelens.v1;
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
+
+// Sections report coverage explicitly: an empty array is not proof of no issues.
+message OverviewCoverage {
+  string state = 1; // available, partial, unavailable, or empty
+  string explanation = 2;
+}
+message OverviewTeam {
+  string id = 1;
+  string name = 2;
+  string league_id = 3;
+  string league_name = 4;
+  string provider = 5;
+  int32 season = 6;
+  optional int32 scoring_period = 7;
+  google.protobuf.Timestamp observed_at = 8;
+}
+message GetOverviewAttentionRequest {}
+message GetOverviewAttentionResponse {
+  OverviewCoverage coverage = 1;
+  repeated LineupAlert alerts = 2;
+}
+message LineupAlert {
+  string id = 1;
+  OverviewTeam team = 2;
+  string title = 3;
+  string detail = 4;
+  string severity = 5;
+  string slot = 6;
+  int32 empty_slots = 7;
+}
+message GetOverviewMatchupsRequest {}
+message GetOverviewMatchupsResponse {
+  OverviewCoverage coverage = 1;
+  repeated OverviewMatchup matchups = 2;
+}
+message OverviewMatchup {
+  OverviewTeam team = 1;
+  string opponent_name = 2;
+  optional double score = 3;
+  optional double opponent_score = 4;
+  optional int32 matchup_period = 5;
+  string status = 6;
+  bool is_bye = 7;
+  google.protobuf.Timestamp fetched_at = 8;
+}
+message GetOverviewPlayerUpdatesRequest {}
+message GetOverviewPlayerUpdatesResponse {
+  OverviewCoverage coverage = 1;
+  repeated PlayerUpdate updates = 2;
+}
+message PlayerUpdate {
+  string id = 1;
+  string player_id = 2;
+  string headline = 3;
+  string source_url = 4;
+  google.protobuf.Timestamp published_at = 5;
+}
+message GetOverviewLookingAheadRequest {}
+message GetOverviewLookingAheadResponse {
+  OverviewCoverage coverage = 1;
+  repeated UpcomingIssue issues = 2;
+}
+message UpcomingIssue {
+  string id = 1;
+  OverviewTeam team = 2;
+  string description = 3;
+  int32 scoring_period = 4;
+}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/config"
+	"github.com/adityachoudhari26/league-lens/internal/dashboard"
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/httpserver"
 )
@@ -35,7 +36,7 @@ func run() error {
 	}
 	defer data.Close()
 	srv := &http.Server{
-		Addr: cfg.HTTPAddr, Handler: httpserver.NewHandler(data.Ping),
+		Addr: cfg.HTTPAddr, Handler: httpserver.NewHandler(data.Ping, dashboard.New(data, cfg.LocalOwnerEmail)),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
 		WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
