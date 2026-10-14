@@ -13,7 +13,9 @@
 
 Dismissible attention alerts are authorized: owner-scoped `alert_dismissals` keyed by an alert fingerprint (ID, week, status), filtered in `GetOverviewAttention`, with Dismiss/Restore RPCs.
 
-The Matchups detail backend is authorized: a `matchup_lineups` table with per-player league-scored points from ESPN `mBoxscore` and Sleeper `/matchups`, Sleeper availability lookups extended to the current opponent, and an owner-scoped `GetMatchupDetail` RPC for the owner's matchup in one round. Projections and win probability remain deferred.
+The Matchups detail backend is authorized: a `matchup_lineups` table with per-player league-scored points from ESPN `mBoxscore` and Sleeper `/matchups`, Sleeper availability lookups extended to the current opponent, and an owner-scoped `GetMatchupDetail` RPC for the owner's matchup in one round. Win probability remains deferred.
+
+Matchup projections are authorized: per-player league-scored projections stored as `matchup_lineups.projected_points` (latest only, replaced each sync), from ESPN `mBoxscore` projected stat rows and, for Sleeper, the `/projections/nfl/{season}/{week}` stat lines for every synced week scored with the league's `scoring_settings`; optional `LineupPlayer.projected_points` and server-computed `MatchupLineup.projected_score` in `GetMatchupDetail`; and their Matchups display.
 
 ## Code organization and readability
 
