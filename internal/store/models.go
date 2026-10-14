@@ -60,6 +60,16 @@ type Matchup struct {
 	IsBye              bool
 }
 
+type MatchupLineup struct {
+	MatchupID      pgtype.UUID
+	TeamID         pgtype.UUID
+	PlayerID       pgtype.UUID
+	ProviderSlotID pgtype.Text
+	SlotLabel      pgtype.Text
+	Starter        bool
+	Points         pgtype.Numeric
+}
+
 type NflGame struct {
 	Season    int32
 	Week      int32
