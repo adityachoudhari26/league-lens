@@ -7,8 +7,18 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { router } from "./router"
 import "./index.css"
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } })
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+})
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode><QueryClientProvider client={queryClient}><ThemeProvider><TooltipProvider><RouterProvider router={router} /></TooltipProvider></ThemeProvider></QueryClientProvider></StrictMode>,
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </StrictMode>,
 )

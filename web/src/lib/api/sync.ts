@@ -1,7 +1,15 @@
 import { useEffect, useRef } from "react"
 import { create } from "@bufbuild/protobuf"
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { GetSyncStatusResponseSchema, type LeagueSyncStatus } from "@/gen/leaguelens/v1/sync_pb"
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import {
+  GetSyncStatusResponseSchema,
+  type LeagueSyncStatus,
+} from "@/gen/leaguelens/v1/sync_pb"
 import { sync } from "./client"
 
 const syncPollIntervalMs = 2000
@@ -14,7 +22,10 @@ export function syncingLeagues(leagues: LeagueSyncStatus[] = []) {
 export const syncStatusQuery = queryOptions({
   queryKey: ["sync", "status"],
   queryFn: ({ signal }) => sync.getSyncStatus({}, { signal }),
-  refetchInterval: (query) => (syncingLeagues(query.state.data?.leagues).length ? syncPollIntervalMs : false),
+  refetchInterval: (query) =>
+    syncingLeagues(query.state.data?.leagues).length
+      ? syncPollIntervalMs
+      : false,
 })
 
 /**
@@ -31,7 +42,10 @@ export function useLeagueSync() {
     // overwrite the syncing state and skip the overview reload.
     onSuccess: async (response) => {
       await queryClient.cancelQueries({ queryKey: syncStatusQuery.queryKey })
-      queryClient.setQueryData(syncStatusQuery.queryKey, create(GetSyncStatusResponseSchema, { leagues: response.leagues }))
+      queryClient.setQueryData(
+        syncStatusQuery.queryKey,
+        create(GetSyncStatusResponseSchema, { leagues: response.leagues }),
+      )
     },
   })
   useStaleSyncOnMount(start.mutate)
@@ -43,7 +57,9 @@ export function useLeagueSync() {
     leagues,
     syncing: start.isPending || leaguesSyncing,
     syncUnavailable: start.isError || status.isError,
-    refresh: () => { start.mutate(false) },
+    refresh: () => {
+      start.mutate(false)
+    },
   }
 }
 
@@ -62,7 +78,8 @@ function useOverviewReloadWhenSyncEnds(syncing: boolean) {
   const wasSyncing = useRef(false)
 
   useEffect(() => {
-    if (wasSyncing.current && !syncing) void queryClient.invalidateQueries({ queryKey: ["overview"] })
+    if (wasSyncing.current && !syncing)
+      void queryClient.invalidateQueries({ queryKey: ["overview"] })
     wasSyncing.current = syncing
   }, [syncing, queryClient])
 }

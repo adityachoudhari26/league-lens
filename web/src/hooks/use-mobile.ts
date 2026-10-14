@@ -17,5 +17,9 @@ function serverViewport() {
 }
 
 export function useIsMobile() {
-  return useSyncExternalStore(subscribeToViewport, isMobileViewport, serverViewport)
+  return useSyncExternalStore(
+    subscribeToViewport,
+    isMobileViewport,
+    serverViewport,
+  )
 }
