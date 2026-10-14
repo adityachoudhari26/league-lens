@@ -119,3 +119,7 @@ fix-web:
 gen-api:
     go run github.com/bufbuild/buf/cmd/buf@v1.61.0 lint
     go run github.com/bufbuild/buf/cmd/buf@v1.61.0 generate
+
+# Regenerate TypeScript API contracts after just setup-web.
+gen-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" go run github.com/bufbuild/buf/cmd/buf@v1.61.0 generate --template buf.gen.web.yaml

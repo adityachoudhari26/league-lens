@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter, Link } from "@tanstack/react-router"
 import { AppShell } from "@/components/layout/app-shell"
 import { navigation } from "@/components/layout/navigation"
+import { OverviewPage } from "@/pages/overview-page"
 import { WorkspacePage } from "@/pages/workspace-page"
 
 const rootRoute = createRootRoute({
@@ -10,7 +11,7 @@ const rootRoute = createRootRoute({
 const pages = navigation.map((item) => createRoute({
   getParentRoute: () => rootRoute,
   path: item.path,
-  component: () => <WorkspacePage item={item} />,
+  component: () => item.path === "/" ? <OverviewPage /> : <WorkspacePage item={item} />,
 }))
 export const router = createRouter({ routeTree: rootRoute.addChildren(pages), scrollRestoration: true })
 

@@ -346,3 +346,20 @@ Generated files can combine methods; application logic stays in focused files.
 
 Run `just gen-api` for Go protobuf/Connect bindings and `just gen-db` for SQL
 bindings. No frontend or TypeScript generation is required by this branch.
+
+### Connected overview
+
+The overview reads the four owner-scoped section endpoints using generated
+Connect TypeScript contracts and TanStack Query. Vite proxies `/api` to the local
+Go server at `127.0.0.1:8080`; use `just dev` to run both. `just dev-web` alone
+shows per-section errors if the API is unavailable. A deployed server/reverse
+proxy will also need to route `/api` to Connect; production packaging is deferred.
+
+Matchup scores are imported observations, not a live feed. Each card displays
+its fetch timestamp; **Refresh view** reloads the database view without syncing
+providers. Attention shows three alerts before expanding inline. News and bye
+checks retain the API's explicit unavailable messages. No sample data is used.
+
+After editing proto contracts, run `just setup-web` then `just gen-web` to update
+`web/src/gen`. Go generation remains independently available through `just gen-api`.
+Generated TypeScript is type-checked but excluded from handwritten-code linting.

@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from "vite"
 
 export default defineConfig({
+  server: { proxy: { "/api": { target: "http://127.0.0.1:8080", rewrite: (path) => path.replace(/^\/api/, "") } } },
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
 })

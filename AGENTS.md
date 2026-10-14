@@ -11,7 +11,7 @@
 
 - Keep scaffold changes local. Do not push branches or create PRs unless the user changes this instruction.
 - sqlc generation is authorized for database queries via `just gen-db` (v1.30.0). Frontend scaffolding and shadcn component generation are authorized for the shell. Buf generation is authorized for dashboard contracts via `just gen-api`. Other Go/scaffold generators still require explicit authorization.
-- Current implementation scope includes the Go/Postgres foundation and provider-independent import contracts with the Sleeper and ESPN adapters/commands. The Vite/React frontend shell and shadcn components are authorized. Owner-scoped Connect dashboard and overview endpoints are authorized. Frontend overview work belongs in a separate PR. Background scheduling and AI remain deferred.
+- Current implementation scope includes the Go/Postgres foundation and provider-independent import contracts with the Sleeper and ESPN adapters/commands. The Vite/React frontend shell and shadcn components are authorized. Owner-scoped Connect dashboard and overview endpoints are authorized. Frontend overview integration is authorized in its separate PR, including TypeScript contract generation via `just gen-web`. Background scheduling and AI remain deferred.
 
 ## Code organization and readability
 
