@@ -81,3 +81,46 @@ func TestAnnotateAvailabilityDisabledWithoutTeams(t *testing.T) {
 		t.Fatalf("entry = %+v, want no lookup", entry)
 	}
 }
+
+func TestAnnotateAvailabilityIncludesCurrentOpponent(t *testing.T) {
+	var lookups atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		lookups.Add(1)
+		_, _ = w.Write([]byte(`{"team":"KC","injury_status":"Questionable"}`))
+	}))
+	defer server.Close()
+	client := &Client{HTTP: server.Client(), BaseURL: server.URL, AvailabilityTeamIDs: []string{"7"}}
+
+	data := fantasy.LeagueData{
+		Rosters: []fantasy.RosterSnapshot{
+			{TeamID: "7", Origin: fantasy.SnapshotObserved, ScoringPeriod: 3, Entries: []fantasy.RosterEntry{{PlayerID: "1"}}},
+			{TeamID: "8", Origin: fantasy.SnapshotObserved, ScoringPeriod: 3, Entries: []fantasy.RosterEntry{{PlayerID: "2"}}},
+			{TeamID: "9", Origin: fantasy.SnapshotObserved, ScoringPeriod: 3, Entries: []fantasy.RosterEntry{{PlayerID: "3"}}},
+			{TeamID: "8", Origin: fantasy.SnapshotHistory, ScoringPeriod: 2, Entries: []fantasy.RosterEntry{{PlayerID: "4"}}},
+		},
+		Matchups: []fantasy.Matchup{
+			{ExternalID: "1", Period: 2, TeamA: fantasy.MatchupSide{TeamID: "7"}, TeamB: &fantasy.MatchupSide{TeamID: "9"}},
+			{ExternalID: "1", Period: 3, TeamA: fantasy.MatchupSide{TeamID: "8"}, TeamB: &fantasy.MatchupSide{TeamID: "7"}},
+		},
+	}
+	client.annotateAvailability(context.Background(), &data)
+
+	for i, want := range []fantasy.InjuryStatus{fantasy.InjuryQuestionable, fantasy.InjuryQuestionable, "", ""} {
+		if got := data.Rosters[i].Entries[0].InjuryStatus; got != want {
+			t.Fatalf("roster %d (team %s) status = %q, want %q", i, data.Rosters[i].TeamID, got, want)
+		}
+	}
+	if got := lookups.Load(); got != 2 {
+		t.Fatalf("lookups = %d, want 2 (selected team + current opponent)", got)
+	}
+}
+
+func TestCurrentOpponentsIgnoresByes(t *testing.T) {
+	data := fantasy.LeagueData{
+		Rosters:  []fantasy.RosterSnapshot{{TeamID: "7", Origin: fantasy.SnapshotObserved, ScoringPeriod: 3}},
+		Matchups: []fantasy.Matchup{{ExternalID: "bye-7", Period: 3, TeamA: fantasy.MatchupSide{TeamID: "7"}}},
+	}
+	if opponents := currentOpponents(&data, []string{"7"}); len(opponents) != 0 {
+		t.Fatalf("opponents = %v, want none", opponents)
+	}
+}

@@ -1,0 +1,10 @@
+{
+  "1": [
+    {"roster_id":1,"matchup_id":1,"players":["10","20","40"],"starters":["10","40"],"players_points":{"10":12.5,"20":3,"40":7.25},"starters_points":[12.5,7.25],"points":19.75},
+    {"roster_id":2,"matchup_id":1,"players":["30","DET"],"starters":["30","0"],"players_points":{"30":10},"starters_points":[10,0],"points":10}
+  ],
+  "2": [
+    {"roster_id":1,"matchup_id":1,"players":["10","20","DET"],"starters":["10","0"],"players_points":{"10":0,"20":0,"DET":0},"starters_points":[0,0],"points":0},
+    {"roster_id":2,"matchup_id":1,"players":["30"],"starters":["30","0"],"players_points":{"30":0},"starters_points":[0,0],"points":0}
+  ]
+}

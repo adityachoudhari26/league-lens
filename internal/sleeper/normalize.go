@@ -55,6 +55,7 @@ func normalizeData(raw Data) (fantasy.LeagueData, error) {
 		snapshot.Record = team.Record
 		data.Rosters = append(data.Rosters, snapshot)
 	}
+	currentRosters := rostersByID(raw.Rosters)
 	for week := 1; week <= raw.Period; week++ {
 		rows := raw.Weeks[week]
 		if len(rows) == 0 {
@@ -81,9 +82,18 @@ func normalizeData(raw Data) (fantasy.LeagueData, error) {
 			return data, err
 		}
 		data.Matchups = append(data.Matchups, matchups...)
+		designations := currentRosters
+		if historical {
+			designations = nil
+		}
+		lineups, err := normalizeLineups(rows, matchups, raw.League.Positions, designations)
+		if err != nil {
+			return data, err
+		}
+		data.Lineups = append(data.Lineups, lineups...)
 		data.CompleteMatchupPeriods = append(data.CompleteMatchupPeriods, fantasy.MatchupPeriod(week))
 	}
-	data.Players = encounteredPlayers(data.Rosters)
+	data.Players = encounteredPlayers(data.Rosters, data.Lineups)
 	return data, nil
 }
 func normalizeTeam(roster Roster, name string) (fantasy.Team, error) {
@@ -143,17 +153,19 @@ func normalizeRoster(roster Roster, positions []string) (fantasy.RosterSnapshot,
 	}
 	return snapshot, nil
 }
-func encounteredPlayers(rosters []fantasy.RosterSnapshot) []fantasy.Player {
+
+// encounteredPlayers lists every player on a roster or in a lineup. Lineups
+// matter on their own: a player dropped after a past week may appear only there.
+func encounteredPlayers(rosters []fantasy.RosterSnapshot, lineups []fantasy.MatchupLineup) []fantasy.Player {
 	byID := map[string]fantasy.Player{}
-	defenses := " ARI ATL BAL BUF CAR CHI CIN CLE DAL DEN DET GB HOU IND JAX KC LAC LAR LV MIA MIN NE NO NYG NYJ PHI PIT SEA SF TB TEN WAS "
 	for _, roster := range rosters {
 		for _, entry := range roster.Entries {
-			player := fantasy.Player{ExternalID: entry.PlayerID, Name: "Sleeper " + entry.PlayerID, Kind: fantasy.PlayerPerson}
-			if strings.Contains(defenses, " "+entry.PlayerID+" ") {
-				player.Kind = fantasy.PlayerTeamDefense
-				player.Name = entry.PlayerID + " defense"
-			}
-			byID[entry.PlayerID] = player
+			byID[entry.PlayerID] = placeholderPlayer(entry.PlayerID)
+		}
+	}
+	for _, lineup := range lineups {
+		for _, entry := range lineup.Entries {
+			byID[entry.PlayerID] = placeholderPlayer(entry.PlayerID)
 		}
 	}
 	players := make([]fantasy.Player, 0, len(byID))
@@ -162,4 +174,20 @@ func encounteredPlayers(rosters []fantasy.RosterSnapshot) []fantasy.Player {
 	}
 	sort.Slice(players, func(i, j int) bool { return players[i].ExternalID < players[j].ExternalID })
 	return players
+}
+
+func placeholderPlayer(id string) fantasy.Player {
+	const defenses = " ARI ATL BAL BUF CAR CHI CIN CLE DAL DEN DET GB HOU IND JAX KC LAC LAR LV MIA MIN NE NO NYG NYJ PHI PIT SEA SF TB TEN WAS "
+	if strings.Contains(defenses, " "+id+" ") {
+		return fantasy.Player{ExternalID: id, Name: id + " defense", Kind: fantasy.PlayerTeamDefense}
+	}
+	return fantasy.Player{ExternalID: id, Name: "Sleeper " + id, Kind: fantasy.PlayerPerson}
+}
+
+func rostersByID(rosters []Roster) map[int]Roster {
+	byID := make(map[int]Roster, len(rosters))
+	for _, roster := range rosters {
+		byID[roster.ID] = roster
+	}
+	return byID
 }
