@@ -29,7 +29,18 @@ func NewClient(client *http.Client, credentials Credentials, season int) *Client
 	privateClient := *client
 	// Never forward private league cookies through redirects.
 	privateClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	credentials.SWID = normalizeSWID(credentials.SWID)
 	return &Client{http: &privateClient, credentials: credentials, season: season, baseURL: "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl"}
+}
+
+// normalizeSWID restores the braces ESPN requires around the SWID cookie value;
+// copying the value from browser tools often drops them.
+func normalizeSWID(swid string) string {
+	swid = strings.TrimSpace(swid)
+	if swid == "" || strings.HasPrefix(swid, "{") {
+		return swid
+	}
+	return "{" + swid + "}"
 }
 
 // AccountID identifies the local connection without storing the SWID cookie.

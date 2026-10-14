@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+// DefaultCachePath is the shared on-disk location of the daily catalog cache.
+func DefaultCachePath() (string, error) {
+	directory, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(directory, "league-lens", "playerids.csv"), nil
+}
+
 // Load uses a daily disk cache; callers may fall back to provider-only identities
 // when this optional community dataset is unavailable. No player catalog is inserted.
 func Load(ctx context.Context, path string) (Catalog, string, error) {

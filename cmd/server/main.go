@@ -13,7 +13,10 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/config"
 	"github.com/adityachoudhari26/league-lens/internal/dashboard"
 	"github.com/adityachoudhari26/league-lens/internal/database"
+	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/httpserver"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
+	"github.com/adityachoudhari26/league-lens/internal/playerids"
 )
 
 func main() {
@@ -35,8 +38,15 @@ func run() error {
 		return errors.New("could not configure database pool; check DATABASE_URL")
 	}
 	defer data.Close()
+	syncRunner := newSyncRunner(data, cfg.LocalOwnerEmail)
+	defer syncRunner.Close()
 	srv := &http.Server{
-		Addr: cfg.HTTPAddr, Handler: httpserver.NewHandler(data.Ping, dashboard.New(data, cfg.LocalOwnerEmail)),
+		Addr: cfg.HTTPAddr,
+		Handler: httpserver.NewHandler(
+			data.Ping,
+			dashboard.New(data, cfg.LocalOwnerEmail),
+			leaguesync.NewHandler(syncRunner),
+		),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
 		WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
@@ -58,4 +68,15 @@ func run() error {
 		}
 		return nil
 	}
+}
+
+// newSyncRunner reads ESPN cookies from the environment, as the import CLI does,
+// until encrypted connection credentials exist. Sleeper needs no credentials.
+func newSyncRunner(data *database.DB, ownerEmail string) *leaguesync.Runner {
+	credentials := espn.Credentials{S2: os.Getenv("ESPN_S2"), SWID: os.Getenv("ESPN_SWID")}
+	catalogPath, err := playerids.DefaultCachePath()
+	if err != nil {
+		slog.Warn("player mapping cache unavailable; syncs retain provider identities")
+	}
+	return leaguesync.New(data, ownerEmail, leaguesync.ProviderSources{ESPN: credentials}, catalogPath)
 }

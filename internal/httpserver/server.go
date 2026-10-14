@@ -10,8 +10,13 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1/leaguelensv1connect"
 )
 
-// NewHandler mounts health checks and the configured local-owner dashboard.
-func NewHandler(ping func(context.Context) error, dashboard leaguelensv1connect.DashboardServiceHandler) http.Handler {
+// NewHandler mounts health checks plus the configured local-owner dashboard and
+// sync services. A nil service is not mounted.
+func NewHandler(
+	ping func(context.Context) error,
+	dashboard leaguelensv1connect.DashboardServiceHandler,
+	sync leaguelensv1connect.SyncServiceHandler,
+) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -30,9 +35,14 @@ func NewHandler(ping func(context.Context) error, dashboard leaguelensv1connect.
 		}
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
-	if dashboard != nil {
+	if dashboard != nil || sync != nil {
 		server := connect.NewServer()
-		leaguelensv1connect.RegisterDashboardServiceHandler(server, dashboard)
+		if dashboard != nil {
+			leaguelensv1connect.RegisterDashboardServiceHandler(server, dashboard)
+		}
+		if sync != nil {
+			leaguelensv1connect.RegisterSyncServiceHandler(server, sync)
+		}
 		connecthttp.Mount(mux, server, connecthttp.WithReadMaxBytes(64<<10))
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

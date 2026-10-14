@@ -200,3 +200,14 @@ func TestDecidedCurrentPeriodIsFinal(t *testing.T) {
 		t.Fatal("decided current matchup was not final")
 	}
 }
+
+func TestNewClientRestoresSWIDBraces(t *testing.T) {
+	braced := NewClient(nil, Credentials{S2: "private-token", SWID: "{ACCOUNT}"}, 2026)
+	bare := NewClient(nil, Credentials{S2: "private-token", SWID: " ACCOUNT "}, 2026)
+	if bare.credentials.SWID != "{ACCOUNT}" {
+		t.Fatalf("SWID = %q, want braces restored", bare.credentials.SWID)
+	}
+	if bare.AccountID() != braced.AccountID() {
+		t.Fatal("bare and braced SWID must identify the same account")
+	}
+}
