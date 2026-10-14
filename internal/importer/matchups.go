@@ -8,6 +8,18 @@ import (
 	"strconv"
 )
 
+// matchupKey identifies a matchup within a league season; external matchup IDs
+// are only unique within their period.
+type matchupKey struct {
+	period     fantasy.MatchupPeriod
+	externalID string
+}
+
+type lineupKey struct {
+	matchup matchupKey
+	teamID  string
+}
+
 func (w *leagueWriter) writeMatchups(ctx context.Context) error {
 	keys := map[fantasy.MatchupPeriod][]string{}
 	for _, matchup := range w.data.Matchups {
@@ -46,8 +58,54 @@ func (w *leagueWriter) writeMatchup(ctx context.Context, matchup fantasy.Matchup
 			return err
 		}
 	}
-	_, err = w.queries.UpsertMatchup(ctx, params)
-	return err
+	stored, err := w.queries.UpsertMatchup(ctx, params)
+	if err != nil {
+		return err
+	}
+	w.matchups[matchupKey{period: matchup.Period, externalID: matchup.ExternalID}] = stored.ID
+	return w.queries.DeleteStaleMatchupLineupTeams(ctx, stored.ID)
+}
+
+// writeLineups replaces the stored lineup of every side the provider reported.
+// Sides without a lineup in the payload keep their rows, because a missing
+// lineup means unavailable rather than empty.
+func (w *leagueWriter) writeLineups(ctx context.Context) error {
+	for _, lineup := range w.data.Lineups {
+		if err := w.replaceLineup(ctx, lineup); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *leagueWriter) replaceLineup(ctx context.Context, lineup fantasy.MatchupLineup) error {
+	matchupID := w.matchups[matchupKey{period: lineup.Period, externalID: lineup.MatchupID}]
+	teamID := w.teams[lineup.TeamID].ID
+	if err := w.queries.DeleteMatchupLineup(ctx, store.DeleteMatchupLineupParams{MatchupID: matchupID, TeamID: teamID}); err != nil {
+		return err
+	}
+	for _, entry := range lineup.Entries {
+		if err := w.insertLineupEntry(ctx, matchupID, teamID, entry); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *leagueWriter) insertLineupEntry(ctx context.Context, matchupID, teamID pgtype.UUID, entry fantasy.LineupEntry) error {
+	points, err := score(entry.Points)
+	if err != nil {
+		return err
+	}
+	return w.queries.InsertMatchupLineupEntry(ctx, store.InsertMatchupLineupEntryParams{
+		MatchupID:      matchupID,
+		TeamID:         teamID,
+		PlayerID:       w.players[entry.PlayerID],
+		ProviderSlotID: optionalText(entry.ProviderSlotID),
+		SlotLabel:      text(string(entry.Slot)),
+		Starter:        entry.Starter,
+		Points:         points,
+	})
 }
 func score(points *float64) (pgtype.Numeric, error) {
 	var numeric pgtype.Numeric

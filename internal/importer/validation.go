@@ -57,16 +57,52 @@ func validateData(data fantasy.LeagueData, described fantasy.League, selection f
 		}
 		periods[period] = true
 	}
-	matchups := map[string]bool{}
+	matchups := map[matchupKey]fantasy.Matchup{}
 	for _, matchup := range data.Matchups {
 		if err = validateMatchup(matchup, teams); err != nil {
 			return err
 		}
-		key := fmt.Sprintf("%d:%s", matchup.Period, matchup.ExternalID)
-		if matchups[key] {
+		key := matchupKey{period: matchup.Period, externalID: matchup.ExternalID}
+		if _, duplicate := matchups[key]; duplicate {
 			return fmt.Errorf("duplicate matchup")
 		}
-		matchups[key] = true
+		matchups[key] = matchup
+	}
+	return validateLineups(data.Lineups, matchups, players)
+}
+
+// validateLineups requires each lineup to belong to a side of a matchup in the
+// same payload, at most once per side. An empty lineup is a valid report.
+func validateLineups(lineups []fantasy.MatchupLineup, matchups map[matchupKey]fantasy.Matchup, players map[string]bool) error {
+	seen := map[lineupKey]bool{}
+	for _, lineup := range lineups {
+		key := lineupKey{matchup: matchupKey{period: lineup.Period, externalID: lineup.MatchupID}, teamID: lineup.TeamID}
+		matchup, found := matchups[key.matchup]
+		if !found || !isMatchupSide(matchup, lineup.TeamID) {
+			return fmt.Errorf("invalid matchup lineup")
+		}
+		if seen[key] {
+			return fmt.Errorf("duplicate matchup lineup")
+		}
+		seen[key] = true
+		if err := validateLineupEntries(lineup.Entries, players); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isMatchupSide(matchup fantasy.Matchup, teamID string) bool {
+	return matchup.TeamA.TeamID == teamID || (matchup.TeamB != nil && matchup.TeamB.TeamID == teamID)
+}
+
+func validateLineupEntries(entries []fantasy.LineupEntry, players map[string]bool) error {
+	seen := map[string]bool{}
+	for _, entry := range entries {
+		if !players[entry.PlayerID] || seen[entry.PlayerID] || entry.Slot == "" || !finiteScore(entry.Points) {
+			return fmt.Errorf("invalid matchup lineup entry")
+		}
+		seen[entry.PlayerID] = true
 	}
 	return nil
 }

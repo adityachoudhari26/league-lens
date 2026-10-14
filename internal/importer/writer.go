@@ -11,16 +11,17 @@ import (
 // leagueWriter is scoped to the import transaction; adapters have already
 // resolved provider response semantics into explicit league data.
 type leagueWriter struct {
-	service *Service
-	queries *store.Queries
-	target  importTarget
-	data    fantasy.LeagueData
-	teams   map[string]store.Team
-	players map[string]pgtype.UUID
+	service  *Service
+	queries  *store.Queries
+	target   importTarget
+	data     fantasy.LeagueData
+	teams    map[string]store.Team
+	players  map[string]pgtype.UUID
+	matchups map[matchupKey]pgtype.UUID
 }
 
 func newLeagueWriter(service *Service, queries *store.Queries, target importTarget, data fantasy.LeagueData) *leagueWriter {
-	return &leagueWriter{service: service, queries: queries, target: target, data: data, teams: map[string]store.Team{}, players: map[string]pgtype.UUID{}}
+	return &leagueWriter{service: service, queries: queries, target: target, data: data, teams: map[string]store.Team{}, players: map[string]pgtype.UUID{}, matchups: map[matchupKey]pgtype.UUID{}}
 }
 func (w *leagueWriter) write(ctx context.Context) (int, int, int, error) {
 	if err := w.writeTeams(ctx); err != nil {
@@ -39,6 +40,9 @@ func (w *leagueWriter) write(ctx context.Context) (int, int, int, error) {
 		}
 	}
 	if err := w.writeMatchups(ctx); err != nil {
+		return 0, 0, 0, err
+	}
+	if err := w.writeLineups(ctx); err != nil {
 		return 0, 0, 0, err
 	}
 	periods := map[fantasy.MatchupPeriod]bool{}
