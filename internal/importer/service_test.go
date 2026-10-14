@@ -3,8 +3,21 @@ package importer
 import (
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
+	"strings"
 	"testing"
 )
+
+func TestRejectMultipleSelectedTeams(t *testing.T) {
+	ref := fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "league", Season: 2026}
+	league := fantasy.League{Ref: ref}
+	data := fantasy.LeagueData{League: league}
+	selection := fantasy.ConnectionSelection{League: ref, SelectedTeamIDs: []string{"1", "2"}}
+
+	err := validateData(data, league, selection)
+	if err == nil || !strings.Contains(err.Error(), "more than one selected team") {
+		t.Fatalf("expected multiple selected teams to be rejected, got %v", err)
+	}
+}
 
 func TestMissingScore(t *testing.T) {
 	n, err := score(nil)
