@@ -64,12 +64,12 @@ remain stable even though the API and frontend work happened before owner setup.
   - [x] All-league overview with real imported scores, fetch timestamps, three attention items before expansion, and explicit unavailable news/schedule coverage. No mock data.
   - [x] Exact cross-provider player mapping with provider-ID fallback; only encountered players are stored, and uncertain identities are not joined by name.
   - [ ] Build Roster, Matchups, and Standings pages one at a time, with league selection where useful.
-  - [ ] Show connection health and stale-data state, and connect Refresh to provider synchronization.
+  - [ ] Show connection health and stale-data state. (Refresh now runs provider sync; see checkpoint 9.)
 
-- [ ] **9. Make synchronization automatic.** Proposed next slice; not implemented yet.
-  - [ ] Reuse the import service behind a server-side sync operation; keep the CLI as a development tool.
-  - [ ] On dashboard load, show saved data immediately and refresh stale provider data in the background.
-  - [ ] Make explicit Refresh fetch provider data, save it, and update the view; distinguish refreshing from a failed sync.
+- [ ] **9. Make synchronization automatic.** In progress: on-demand sync is implemented; scheduling remains.
+  - [x] Reuse the import service behind a server-side sync operation (`SyncService`); keep the CLI as a development tool.
+  - [x] On dashboard load, show saved data immediately and refresh stale provider data in the background.
+  - [x] Make explicit Refresh fetch provider data, save it, and update the view; distinguish refreshing from a failed sync.
   - [ ] Define freshness intervals, duplicate prevention, bounded retries, and per-provider request limits.
   - [ ] Add persistent scheduled jobs using River so sync continues without an open browser and recovers after restart.
   - [ ] Verify a failed provider preserves its last successful data and does not stop other leagues from updating.
@@ -127,11 +127,15 @@ persists full leagues, encountered players, and available current-season history
 atomically. DynastyProcess mappings are cached; unmapped players retain provider
 identities. Earlier stored seasons are preserved.
 
-The overview reads saved database observations. **Refresh view currently reloads
-our API; it does not contact ESPN or Sleeper.** Imports still run through the CLI.
-Automatic provider sync is proposed next work. News and upcoming bye checks show
+The overview reads saved database observations. Opening it syncs leagues whose
+data is older than 15 minutes in the background, and **Refresh** syncs every
+league from ESPN and Sleeper through the shared importer. The first import of a
+league still runs through the CLI; syncs refresh leagues that are already
+imported. The server reads `ESPN_S2` and `ESPN_SWID` from its environment, the
+same as the CLI, until encrypted connection credentials exist. Scheduled sync
+without an open browser (River) is next. News and upcoming bye checks show
 unavailable coverage; Roster, Matchups, and Standings pages remain placeholders.
-Authentication, in-app connection setup, scheduling, production packaging, and AI
+Authentication, in-app connection setup, scheduled sync, production packaging, and AI
 are not implemented.
 
 Credentials live in ignored `.env.local` and are excluded from Docker build
@@ -406,8 +410,8 @@ shows per-section errors if the API is unavailable. A deployed server/reverse
 proxy will also need to route `/api` to Connect; production packaging is deferred.
 
 Matchup scores are imported observations, not a live feed. Each card displays
-its fetch timestamp; **Refresh view** reloads the database view without syncing
-providers. Attention shows three alerts before expanding inline. News and bye
+its fetch timestamp. **Refresh** starts a provider sync; a status line shows
+which leagues are syncing, and a failed league keeps showing its last saved data. Attention shows three alerts before expanding inline. News and bye
 checks retain the API's explicit unavailable messages. No sample data is used.
 
 After editing proto contracts, run `just setup-web` then `just gen-web` to update

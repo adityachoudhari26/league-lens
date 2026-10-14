@@ -40,6 +40,9 @@ type Querier interface {
 	ListSnapshotRosterForUser(ctx context.Context, arg ListSnapshotRosterForUserParams) ([]ListSnapshotRosterForUserRow, error)
 	ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsForUserParams) ([]TeamSnapshot, error)
 	ListSyncRunsForUser(ctx context.Context, arg ListSyncRunsForUserParams) ([]SyncRun, error)
+	// Sync targets are the owner's attached leagues in the season the overview shows.
+	// Selected teams come from earlier imports.
+	ListSyncTargets(ctx context.Context, userID pgtype.UUID) ([]ListSyncTargetsRow, error)
 	ListTeamsForUser(ctx context.Context, arg ListTeamsForUserParams) ([]Team, error)
 	// Serialize the brief write phase, including shared identity creation, across importers.
 	// No network calls run while this transaction lock is held.

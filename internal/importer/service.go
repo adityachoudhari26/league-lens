@@ -185,6 +185,17 @@ func completeImport(ctx context.Context, queries *store.Queries, target importTa
 	return queries.MarkLeagueSynced(ctx, store.MarkLeagueSyncedParams{ConnectionID: target.connection.ID, LeagueSeasonID: target.league.ID, LastSuccessfulSyncAt: completedRun.CompletedAt})
 }
 
+// RecordedSyncError is an import failure saved on its sync run, carrying the
+// stable, credential-free code that was recorded.
+type RecordedSyncError struct {
+	Code string
+	Err  error
+}
+
+func (e *RecordedSyncError) Error() string { return e.Err.Error() }
+
+func (e *RecordedSyncError) Unwrap() error { return e.Err }
+
 func (s *Service) recordFailure(runID pgtype.UUID, cause error, code string) error {
 	cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -192,5 +203,5 @@ func (s *Service) recordFailure(runID pgtype.UUID, cause error, code string) err
 	if err != nil {
 		return errors.Join(cause, fmt.Errorf("record failed sync: %w", err))
 	}
-	return cause
+	return &RecordedSyncError{Code: code, Err: cause}
 }

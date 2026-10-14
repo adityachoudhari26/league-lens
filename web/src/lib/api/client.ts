@@ -1,5 +1,10 @@
 import { createClient } from "@connectrpc/connect"
 import { createConnectTransport } from "@connectrpc/connect-web"
 import { DashboardService } from "@/gen/leaguelens/v1/dashboard_pb"
+import { SyncService } from "@/gen/leaguelens/v1/sync_pb"
 
-export const dashboard = createClient(DashboardService, createConnectTransport({ baseUrl: "/api" }))
+const transport = createConnectTransport({ baseUrl: "/api" })
+
+export const dashboard = createClient(DashboardService, transport)
+
+export const sync = createClient(SyncService, transport)

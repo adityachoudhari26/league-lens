@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -75,9 +74,5 @@ func mappingCachePath(override string) (string, error) {
 	if override != "" {
 		return override, nil
 	}
-	directory, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(directory, "league-lens", "playerids.csv"), nil
+	return playerids.DefaultCachePath()
 }

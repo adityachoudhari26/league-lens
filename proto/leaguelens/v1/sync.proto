@@ -1,0 +1,37 @@
+syntax = "proto3";
+package leaguelens.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
+
+// SyncService refreshes the configured local owner's leagues from their providers.
+// Syncs run in the background; poll GetSyncStatus to observe progress.
+service SyncService {
+  rpc StartSync(StartSyncRequest) returns (StartSyncResponse);
+  rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse);
+}
+message StartSyncRequest {
+  // When true, only leagues whose saved data is stale are synced.
+  bool only_stale = 1;
+}
+message StartSyncResponse {
+  repeated LeagueSyncStatus leagues = 1;
+}
+message GetSyncStatusRequest {}
+message GetSyncStatusResponse {
+  repeated LeagueSyncStatus leagues = 1;
+}
+message LeagueSyncStatus {
+  string league_season_id = 1;
+  string league_name = 2;
+  string provider = 3;
+  int32 season = 4;
+  string state = 5; // syncing, succeeded, failed, or never_synced
+  // Absent when the league has never synced successfully.
+  google.protobuf.Timestamp last_successful_sync_at = 6;
+  // Present only when state is failed.
+  google.protobuf.Timestamp failed_at = 7;
+  // Stable, credential-free failure code such as provider_fetch_failed.
+  string error_code = 8;
+}
