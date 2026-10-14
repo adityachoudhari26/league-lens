@@ -38,7 +38,7 @@ export function SyncStatus({ leagues, syncing, syncUnavailable }: { leagues: Lea
   const showLastSynced = !syncing && !failed.length && !syncUnavailable && lastSynced
   if (!syncUnavailable && !active.length && !failed.length && !showLastSynced) return null
 
-  return <div className="mb-6 grid gap-2 text-sm">
+  return <div className="mb-4 grid gap-2 text-sm">
     {syncUnavailable && <p role="alert" className="text-muted-foreground">Couldn’t reach the sync service. Showing saved data.</p>}
     {active.length > 0 && <p role="status" className="text-muted-foreground">Syncing {active.map((league) => league.leagueName).join(", ")}…</p>}
     {failed.map((league) => <SyncFailure key={league.leagueSeasonId} league={league} />)}

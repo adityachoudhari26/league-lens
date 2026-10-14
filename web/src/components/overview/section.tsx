@@ -3,11 +3,11 @@ import { type OverviewCoverage } from "@/gen/leaguelens/v1/overview_pb"
 import { Button } from "@/components/ui/button"
 
 export function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
-  return <section aria-label={title}><div className="mb-3 flex items-center gap-2"><h2 className="text-base font-semibold tracking-tight">{title}</h2>{count !== undefined && <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{count}</span>}</div>{children}</section>
+  return <section aria-label={title}><div className="mb-2 flex items-center gap-2"><h2 className="text-base font-semibold tracking-tight">{title}</h2>{count !== undefined && <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{count}</span>}</div>{children}</section>
 }
 
 export function SectionMessage({ children }: { children: ReactNode }) {
-  return <div className="rounded-lg border bg-card p-4 text-sm leading-6 text-muted-foreground">{children}</div>
+  return <div className="rounded-lg border bg-card px-3 py-2.5 text-sm leading-6 text-muted-foreground">{children}</div>
 }
 
 export function SectionLoading() {
@@ -19,5 +19,5 @@ export function SectionError({ retry }: { retry: () => void }) {
 }
 
 export function CoverageNote({ coverage }: { coverage?: OverviewCoverage }) {
-  return coverage?.explanation ? <p className="mt-3 text-xs leading-5 text-muted-foreground">{coverage.explanation}</p> : null
+  return coverage?.explanation ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{coverage.explanation}</p> : null
 }
