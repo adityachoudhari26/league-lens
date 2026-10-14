@@ -18,24 +18,23 @@ func (r *Runner) refreshPlayerNews() {
 	ctx, cancel := context.WithTimeout(r.ctx, time.Minute)
 	defer cancel()
 
-	source := r.sources.NewsSource()
-	if source == nil {
-		slog.Warn("player news refresh failed; showing saved news", "error", fmt.Errorf("player news source unavailable"))
-		return
+	if err := r.updatePlayerNews(ctx); err != nil {
+		slog.Warn("player news refresh failed; showing saved news", "error", err)
 	}
+}
+
+// updatePlayerNews fetches items for rostered players and saves them atomically.
+func (r *Runner) updatePlayerNews(ctx context.Context) error {
+	source := r.sources.NewsSource()
 	players, err := r.listNewsPlayers(ctx)
 	if err != nil {
-		slog.Warn("player news refresh failed; showing saved news", "error", err)
-		return
+		return err
 	}
 	items, err := source.PlayerNews(ctx, players)
 	if err != nil {
-		slog.Warn("player news refresh failed; showing saved news", "error", err)
-		return
+		return err
 	}
-	if err := r.savePlayerNews(ctx, source.Name(), items); err != nil {
-		slog.Warn("player news refresh failed; showing saved news", "error", err)
-	}
+	return r.savePlayerNews(ctx, source.Name(), items)
 }
 
 func (r *Runner) listNewsPlayers(ctx context.Context) ([]news.Player, error) {

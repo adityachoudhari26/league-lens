@@ -17,8 +17,10 @@ func TestCategorizePlayerNews(t *testing.T) {
 		{headline: "Backup returns to practice", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
 		{headline: "The backup is expected to start", want: v1.NewsCategory_NEWS_CATEGORY_GENERAL},
 		{headline: "Placed on injured reserve", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
-		{headline: "Player signed to the practice squad", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
+		{headline: "Player signed to the practice squad", want: v1.NewsCategory_NEWS_CATEGORY_TRANSACTION},
 		{headline: "Player signed by the team", want: v1.NewsCategory_NEWS_CATEGORY_TRANSACTION},
+		{headline: "Bounces back with two scores", want: v1.NewsCategory_NEWS_CATEGORY_GENERAL},
+		{headline: "Moore (back) didn't practice", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
 		{headline: "IR role change discussed", want: v1.NewsCategory_NEWS_CATEGORY_INJURY},
 		{headline: "Their best week is ahead", want: v1.NewsCategory_NEWS_CATEGORY_GENERAL},
 	}
@@ -38,6 +40,7 @@ func TestPlayerUpdateTierOrderingAndDedupe(t *testing.T) {
 		playerNewsRow(3, "starter-injury-latest", "Starter outlook improves", now),
 		playerNewsRow(4, "designated-bench", "Roster update", now.Add(-time.Minute)),
 		playerNewsRow(5, "general-bench-new", "Another bench player update", now),
+		playerNewsRow(6, "designated-starter", "Starter is out", now.Add(-time.Hour)),
 	}
 	summaries := map[string]*playerSummary{
 		playerNewsRow(1, "", "", now).PlayerID.String(): {name: "Bench A", injuryStatus: v1.InjuryStatus_INJURY_STATUS_ACTIVE},
@@ -45,20 +48,21 @@ func TestPlayerUpdateTierOrderingAndDedupe(t *testing.T) {
 		playerNewsRow(3, "", "", now).PlayerID.String(): {name: "Starter B", starter: true, injuryStatus: v1.InjuryStatus_INJURY_STATUS_UNKNOWN},
 		playerNewsRow(4, "", "", now).PlayerID.String(): {name: "Bench B", injuryStatus: v1.InjuryStatus_INJURY_STATUS_DOUBTFUL},
 		playerNewsRow(5, "", "", now).PlayerID.String(): {name: "Bench C", injuryStatus: v1.InjuryStatus_INJURY_STATUS_UNKNOWN},
+		playerNewsRow(6, "", "", now).PlayerID.String(): {name: "Designated starter", starter: true, injuryStatus: v1.InjuryStatus_INJURY_STATUS_OUT},
 	}
 
 	updates := rankPlayerUpdates(players, summaries)
-	if len(updates) != 5 {
+	if len(updates) != 6 {
 		t.Fatalf("updates = %d, want one update per player", len(updates))
 	}
-	wantPlayers := []string{"Bench B", "Starter B", "Starter A", "Bench C", "Bench A"}
+	wantPlayers := []string{"Designated starter", "Bench B", "Starter B", "Starter A", "Bench C", "Bench A"}
 	for i, update := range updates {
 		if update.PlayerName != wantPlayers[i] {
 			t.Errorf("update %d player = %q, want %q", i, update.PlayerName, wantPlayers[i])
 		}
 	}
-	if updates[1].Id != "espn:starter-injury-latest:"+updates[1].PlayerId {
-		t.Fatalf("deduplicated update = %s, want the latest item", updates[1].Id)
+	if updates[2].Id != "espn:starter-injury-latest:"+updates[2].PlayerId {
+		t.Fatalf("deduplicated update = %s, want the latest item", updates[2].Id)
 	}
 }
 

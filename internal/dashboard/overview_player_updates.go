@@ -16,11 +16,13 @@ import (
 const playerNewsCoverage = "Latest RotoWire news via ESPN from the past 7 days, saved at each sync. Players ESPN can't identify have no news."
 
 var (
-	injuryHeadline      = regexp.MustCompile(`(?i)injur|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|back|illness|ruled out|questionable|doubtful|practice|sidelined|ir|injured reserve)\b`)
-	transactionHeadline = regexp.MustCompile(`(?i)\b(?:signed|re-signed|released|waived|traded|claimed|activated|promoted|elevated|cut|acquired|suspended|reinstated)\b`)
+	injuryHeadline        = regexp.MustCompile(`(?i)injur|\(back\)|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|illness|ruled out|questionable|doubtful|practice|sidelined|ir|injured reserve)\b`)
+	practiceSquadHeadline = regexp.MustCompile(`(?i)\bpractice\s+squad\b`)
+	transactionHeadline   = regexp.MustCompile(`(?i)\b(?:signed|re-signed|released|waived|traded|claimed|activated|promoted|elevated|cut|acquired|suspended|reinstated)\b`)
 )
 
 type playerSummary struct {
+	id           pgtype.UUID
 	name         string
 	teams        []*v1.OverviewTeam
 	starter      bool
@@ -56,12 +58,8 @@ func (s *Service) GetOverviewPlayerUpdates(ctx context.Context, _ *v1.GetOvervie
 				addPlayerSummary(summaries, team, entry)
 			}
 		}
-		for playerID := range summaries {
-			id, err := parseID(playerID)
-			if err != nil {
-				return err
-			}
-			playerIDs = append(playerIDs, id)
+		for _, summary := range summaries {
+			playerIDs = append(playerIDs, summary.id)
 		}
 		newsRows, err := q.ListRecentPlayerNews(ctx, store.ListRecentPlayerNewsParams{
 			PlayerIds: playerIDs,
@@ -81,7 +79,7 @@ func addPlayerSummary(summaries map[string]*playerSummary, team store.OverviewTe
 	playerID := entry.PlayerID.String()
 	summary := summaries[playerID]
 	if summary == nil {
-		summary = &playerSummary{name: entry.DisplayName, injuryStatus: v1.InjuryStatus_INJURY_STATUS_UNKNOWN}
+		summary = &playerSummary{id: entry.PlayerID, name: entry.DisplayName, injuryStatus: v1.InjuryStatus_INJURY_STATUS_UNKNOWN}
 		summaries[playerID] = summary
 	}
 
@@ -183,6 +181,9 @@ func rankPlayerUpdates(rows []store.PlayerNews, summaries map[string]*playerSumm
 		if ranked[i].tier != ranked[j].tier {
 			return ranked[i].tier < ranked[j].tier
 		}
+		if ranked[i].update.Starter != ranked[j].update.Starter {
+			return ranked[i].update.Starter
+		}
 		iPublished := ranked[i].update.PublishedAt.AsTime()
 		jPublished := ranked[j].update.PublishedAt.AsTime()
 		if !iPublished.Equal(jPublished) {
@@ -210,7 +211,7 @@ func playerUpdateTier(summary *playerSummary, category v1.NewsCategory) int {
 
 func categorize(headline string) v1.NewsCategory {
 	switch {
-	case injuryHeadline.MatchString(headline):
+	case injuryHeadline.MatchString(practiceSquadHeadline.ReplaceAllString(headline, " ")):
 		return v1.NewsCategory_NEWS_CATEGORY_INJURY
 	case transactionHeadline.MatchString(headline):
 		return v1.NewsCategory_NEWS_CATEGORY_TRANSACTION

@@ -36,10 +36,10 @@ function designatedStatus(status: InjuryStatus) {
 function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
   const category = categoryPresentation(update.category)
   const status = designatedStatus(update.injuryStatus)
-  const teams = update.teams.map((team) => `${team.provider.toUpperCase()} / ${team.leagueName}`).join(", ")
+  const teams = update.teams.map((team) => team.leagueName).join(", ")
 
   return <details className="group rounded-lg border border-border bg-card">
-    <summary className="flex cursor-pointer list-none items-start gap-3 rounded-lg p-4 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+    <summary className="flex cursor-pointer list-none items-start gap-3 rounded-lg px-3 py-2.5 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
       <category.Icon aria-hidden="true" className={`mt-0.5 size-4 shrink-0 ${category.accent}`} />
       <div className="min-w-0 flex-1">
         <p className="mb-1 text-xs text-muted-foreground">
@@ -47,13 +47,13 @@ function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
           {status && <> · {status}</>}
           {teams && <> · {teams}</>}
         </p>
-        <p className="text-sm font-semibold">{update.playerName}</p>
+        <p className="text-sm font-semibold text-foreground/80">{update.playerName}</p>
         <h3 className="mt-0.5 text-sm font-medium">{update.headline}</h3>
         {update.summary && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground group-open:hidden">{update.summary}</p>}
       </div>
       <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-muted-foreground group-open:rotate-180" />
     </summary>
-    <div className="border-t p-4 text-sm leading-6 text-muted-foreground">
+    <div className="border-t px-3 py-2.5 text-sm leading-6 text-muted-foreground">
       {update.summary && <p>{update.summary}</p>}
       <p className="mt-2 text-xs">{update.sourceLabel} · {observedTime(update.publishedAt)}</p>
       <a className="mt-2 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline" href={update.sourceUrl} target="_blank" rel="noreferrer">
