@@ -141,10 +141,19 @@ func parsePlayerNews(body []byte, playerIDs map[string]string) ([]news.Item, err
 			SourceItemID: strconv.FormatInt(record.ID, 10),
 			Headline:     record.Headline,
 			Summary:      record.Story,
-			URL:          "https://www.espn.com/nfl/player/_/id/" + externalID,
+			URL:          storyURL(record.ID, externalID),
 			SourceLabel:  "RotoWire via ESPN",
 			PublishedAt:  publishedAt,
 		})
 	}
 	return items, nil
+}
+
+// storyURL links a RotoWire blurb to its page on rotowire.com. ESPN's item ID is
+// the RotoWire news ID followed by "28"; other IDs use the ESPN player page.
+func storyURL(itemID int64, espnPlayerID string) string {
+	if itemID%100 == 28 && itemID >= 100 {
+		return "https://www.rotowire.com/football/headlines/news-" + strconv.FormatInt(itemID/100, 10)
+	}
+	return "https://www.espn.com/nfl/player/_/id/" + espnPlayerID
 }

@@ -141,7 +141,7 @@ function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
           target="_blank"
           rel="noreferrer"
         >
-          Read on ESPN
+          Read more
         </a>
       </div>
     </details>

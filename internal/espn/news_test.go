@@ -30,12 +30,41 @@ func TestParsePlayerNewsFiltersAndMapsFeed(t *testing.T) {
 		t.Fatalf("items = %d, want 2", len(items))
 	}
 	if items[0].PlayerID != "league-player-jackson" || items[0].SourceItemID != "64220528" ||
-		items[0].SourceLabel != "RotoWire via ESPN" || items[0].URL != "https://www.espn.com/nfl/player/_/id/3916387" ||
+		items[0].SourceLabel != "RotoWire via ESPN" || items[0].URL != "https://www.rotowire.com/football/headlines/news-642205" ||
 		items[0].Headline == "" || items[0].Summary == "" || !items[0].PublishedAt.Equal(time.Date(2026, 10, 12, 19, 13, 43, 0, time.UTC)) {
 		t.Fatalf("first item = %+v", items[0])
 	}
 	if items[1].PlayerID != "league-player-lamb" || items[1].SourceItemID != "64150328" {
 		t.Fatalf("second item = %+v", items[1])
+	}
+}
+
+func TestStoryURL(t *testing.T) {
+	tests := []struct {
+		name         string
+		itemID       int64
+		espnPlayerID string
+		want         string
+	}{
+		{
+			name:         "RotoWire item",
+			itemID:       64239328,
+			espnPlayerID: "3916387",
+			want:         "https://www.rotowire.com/football/headlines/news-642393",
+		},
+		{
+			name:         "other item",
+			itemID:       12345,
+			espnPlayerID: "3916387",
+			want:         "https://www.espn.com/nfl/player/_/id/3916387",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := storyURL(test.itemID, test.espnPlayerID); got != test.want {
+				t.Errorf("storyURL(%d, %q) = %q, want %q", test.itemID, test.espnPlayerID, got, test.want)
+			}
+		})
 	}
 }
 
