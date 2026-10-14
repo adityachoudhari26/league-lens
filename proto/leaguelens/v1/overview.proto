@@ -28,16 +28,37 @@ message LineupAlert {
   OverviewTeam team = 2;
   string title = 3;
   string detail = 4;
-  string severity = 5;
+  AlertSeverity severity = 5;
   string slot = 6;
   int32 empty_slots = 7;
-  // empty_slot | injury | bye
-  string kind = 8;
+  AlertKind kind = 8;
   string player_name = 9;
-  // Normalized designation for injury alerts: questionable | doubtful | out | ir.
-  string injury_status = 10;
+  // Set only on injury alerts.
+  InjuryStatus injury_status = 10;
   string pro_team = 11;
   google.protobuf.Timestamp kickoff_at = 12;
+}
+// ACTION means the lineup should change before kickoff; MONITOR is worth watching.
+enum AlertSeverity {
+  ALERT_SEVERITY_UNSPECIFIED = 0;
+  ALERT_SEVERITY_ACTION = 1;
+  ALERT_SEVERITY_MONITOR = 2;
+}
+enum AlertKind {
+  ALERT_KIND_UNSPECIFIED = 0;
+  ALERT_KIND_EMPTY_SLOT = 1;
+  ALERT_KIND_INJURY = 2;
+  ALERT_KIND_BYE = 3;
+}
+// Provider injury designations normalized across ESPN and Sleeper.
+enum InjuryStatus {
+  INJURY_STATUS_UNSPECIFIED = 0;
+  INJURY_STATUS_ACTIVE = 1;
+  INJURY_STATUS_QUESTIONABLE = 2;
+  INJURY_STATUS_DOUBTFUL = 3;
+  INJURY_STATUS_OUT = 4;
+  INJURY_STATUS_INJURED_RESERVE = 5;
+  INJURY_STATUS_UNKNOWN = 6;
 }
 message GetOverviewMatchupsRequest {}
 message GetOverviewMatchupsResponse {

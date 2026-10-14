@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"testing"
 	"time"
 
@@ -37,9 +38,9 @@ func TestStarterAlerts(t *testing.T) {
 	sortAlerts(alerts)
 	got := []string{}
 	for _, alert := range alerts {
-		got = append(got, alert.Severity+":"+alert.Kind+":"+alert.Slot)
+		got = append(got, alert.Severity.String()+":"+alert.Kind.String()+":"+alert.Slot)
 	}
-	want := []string{"action:injury:QB", "action:bye:TE", "monitor:injury:WR"}
+	want := []string{"ALERT_SEVERITY_ACTION:ALERT_KIND_INJURY:QB", "ALERT_SEVERITY_ACTION:ALERT_KIND_BYE:TE", "ALERT_SEVERITY_MONITOR:ALERT_KIND_INJURY:WR"}
 	if len(got) != len(want) {
 		t.Fatalf("alerts = %v, want %v", got, want)
 	}
@@ -54,7 +55,7 @@ func TestStarterAlerts(t *testing.T) {
 
 	withoutSchedule := starterAlerts(team, entries, weekSchedule{}, now)
 	for _, alert := range withoutSchedule {
-		if alert.Kind == "bye" {
+		if alert.Kind == v1.AlertKind_ALERT_KIND_BYE {
 			t.Fatalf("bye inferred without a schedule: %+v", alert)
 		}
 	}

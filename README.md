@@ -370,7 +370,7 @@ The four overview RPCs are under `/leaguelens.v1.DashboardService/`:
 
 | RPC | Current behavior |
 | --- | --- |
-| `GetOverviewAttention` | Starter checks from the latest observed snapshot: empty slots, injury status, and byes (from `nfl_games`). Alerts are `action` or `monitor`, sorted by severity then kickoff, and dropped after kickoff. Coverage stays partial: statuses are as of the last sync. |
+| `GetOverviewAttention` | Starter checks from the latest observed snapshot: empty slots, injury status, and byes (from `nfl_games`). Alerts carry an `AlertKind` and an `AlertSeverity` (`ACTION` or `MONITOR`), sorted by severity then kickoff, and dropped after kickoff. Coverage stays partial: statuses are as of the last sync. |
 | `GetOverviewMatchups` | Selected teams, opponents, nullable actual scores, matchup status, and fetch timestamps. Matches scoring weeks to matchup rounds explicitly. |
 | `GetOverviewPlayerUpdates` | Returns unavailable coverage and no invented articles until a news source is connected. |
 | `GetOverviewLookingAhead` | Returns unavailable coverage until NFL bye schedules are connected. |

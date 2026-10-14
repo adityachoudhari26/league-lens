@@ -69,10 +69,10 @@ func emptySlotAlerts(team store.OverviewTeamsRow, settings fantasy.LeagueSetting
 		alerts = append(alerts, &v1.LineupAlert{
 			Id:         team.ID.String() + ":" + gap.slot,
 			Team:       overviewTeam(team),
-			Kind:       "empty_slot",
+			Kind:       v1.AlertKind_ALERT_KIND_EMPTY_SLOT,
 			Title:      fmt.Sprintf("%d empty %s starting slot(s)", gap.count, gap.slot),
 			Detail:     "This slot was empty at the last sync. Fill it in your fantasy provider before kickoff.",
-			Severity:   "action",
+			Severity:   v1.AlertSeverity_ALERT_SEVERITY_ACTION,
 			Slot:       gap.slot,
 			EmptySlots: int32(gap.count),
 		})
@@ -110,8 +110,8 @@ func byeAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUser
 	return &v1.LineupAlert{
 		Id:         playerAlertID(team, entry, "bye"),
 		Team:       overviewTeam(team),
-		Kind:       "bye",
-		Severity:   "action",
+		Kind:       v1.AlertKind_ALERT_KIND_BYE,
+		Severity:   v1.AlertSeverity_ALERT_SEVERITY_ACTION,
 		Slot:       string(slot),
 		PlayerName: entry.DisplayName,
 		ProTeam:    entry.ProTeam.String,
@@ -129,25 +129,25 @@ func injuryAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForU
 		fantasy.InjuryReserve:      "on IR",
 		fantasy.InjuryDoubtful:     "doubtful",
 		fantasy.InjuryQuestionable: "questionable",
-	}[status], "action"
+	}[status], v1.AlertSeverity_ALERT_SEVERITY_ACTION
 	if label == "" {
 		return nil
 	}
 
 	title := fmt.Sprintf("Your starting %s is %s", slotName(slot), label)
 	if status == fantasy.InjuryQuestionable {
-		severity = "monitor"
+		severity = v1.AlertSeverity_ALERT_SEVERITY_MONITOR
 		title = fmt.Sprintf("Keep an eye on your starting %s", slotName(slot))
 	}
 	alert := &v1.LineupAlert{
 		Id:           playerAlertID(team, entry, "injury"),
 		Team:         overviewTeam(team),
-		Kind:         "injury",
+		Kind:         v1.AlertKind_ALERT_KIND_INJURY,
 		Severity:     severity,
 		Slot:         string(slot),
 		PlayerName:   entry.DisplayName,
 		ProTeam:      entry.ProTeam.String,
-		InjuryStatus: string(status),
+		InjuryStatus: injuryStatusMessage(status),
 		Title:        title,
 		Detail:       fmt.Sprintf("%s was listed %s by %s at the last sync.", entry.DisplayName, label, providerName(team.Provider)),
 	}
@@ -155,6 +155,18 @@ func injuryAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForU
 		alert.KickoffAt = timestamp(game.KickoffAt)
 	}
 	return alert
+}
+
+func injuryStatusMessage(status fantasy.InjuryStatus) v1.InjuryStatus {
+	statuses := map[fantasy.InjuryStatus]v1.InjuryStatus{
+		fantasy.InjuryActive:       v1.InjuryStatus_INJURY_STATUS_ACTIVE,
+		fantasy.InjuryQuestionable: v1.InjuryStatus_INJURY_STATUS_QUESTIONABLE,
+		fantasy.InjuryDoubtful:     v1.InjuryStatus_INJURY_STATUS_DOUBTFUL,
+		fantasy.InjuryOut:          v1.InjuryStatus_INJURY_STATUS_OUT,
+		fantasy.InjuryReserve:      v1.InjuryStatus_INJURY_STATUS_INJURED_RESERVE,
+		fantasy.InjuryUnknown:      v1.InjuryStatus_INJURY_STATUS_UNKNOWN,
+	}
+	return statuses[status]
 }
 
 func playerAlertID(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUserRow, kind string) string {
@@ -181,7 +193,7 @@ func slotName(slot fantasy.RosterSlot) string {
 // kickoff, so the three alerts shown by default are the most urgent ones.
 func sortAlerts(alerts []*v1.LineupAlert) {
 	rank := func(alert *v1.LineupAlert) int {
-		if alert.Severity == "action" {
+		if alert.Severity == v1.AlertSeverity_ALERT_SEVERITY_ACTION {
 			return 0
 		}
 		return 1

@@ -2,8 +2,8 @@
 // @generated from file leaguelens/v1/overview.proto (package leaguelens.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/overview.proto.
  */
 export const file_leaguelens_v1_overview: GenFile = /*@__PURE__*/
-  fileDesc("ChxsZWFndWVsZW5zL3YxL292ZXJ2aWV3LnByb3RvEg1sZWFndWVsZW5zLnYxIjYKEE92ZXJ2aWV3Q292ZXJhZ2USDQoFc3RhdGUYASABKAkSEwoLZXhwbGFuYXRpb24YAiABKAki0wEKDE92ZXJ2aWV3VGVhbRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCWxlYWd1ZV9pZBgDIAEoCRITCgtsZWFndWVfbmFtZRgEIAEoCRIQCghwcm92aWRlchgFIAEoCRIOCgZzZWFzb24YBiABKAUSGwoOc2NvcmluZ19wZXJpb2QYByABKAVIAIgBARIvCgtvYnNlcnZlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCEQoPX3Njb3JpbmdfcGVyaW9kIh0KG0dldE92ZXJ2aWV3QXR0ZW50aW9uUmVxdWVzdCJ9ChxHZXRPdmVydmlld0F0dGVudGlvblJlc3BvbnNlEjEKCGNvdmVyYWdlGAEgASgLMh8ubGVhZ3VlbGVucy52MS5PdmVydmlld0NvdmVyYWdlEioKBmFsZXJ0cxgCIAMoCzIaLmxlYWd1ZWxlbnMudjEuTGluZXVwQWxlcnQilAIKC0xpbmV1cEFsZXJ0EgoKAmlkGAEgASgJEikKBHRlYW0YAiABKAsyGy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3VGVhbRINCgV0aXRsZRgDIAEoCRIOCgZkZXRhaWwYBCABKAkSEAoIc2V2ZXJpdHkYBSABKAkSDAoEc2xvdBgGIAEoCRITCgtlbXB0eV9zbG90cxgHIAEoBRIMCgRraW5kGAggASgJEhMKC3BsYXllcl9uYW1lGAkgASgJEhUKDWluanVyeV9zdGF0dXMYCiABKAkSEAoIcHJvX3RlYW0YCyABKAkSLgoKa2lja29mZl9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiHAoaR2V0T3ZlcnZpZXdNYXRjaHVwc1JlcXVlc3QiggEKG0dldE92ZXJ2aWV3TWF0Y2h1cHNSZXNwb25zZRIxCghjb3ZlcmFnZRgBIAEoCzIfLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdDb3ZlcmFnZRIwCghtYXRjaHVwcxgCIAMoCzIeLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdNYXRjaHVwIqECCg9PdmVydmlld01hdGNodXASKQoEdGVhbRgBIAEoCzIbLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdUZWFtEhUKDW9wcG9uZW50X25hbWUYAiABKAkSEgoFc2NvcmUYAyABKAFIAIgBARIbCg5vcHBvbmVudF9zY29yZRgEIAEoAUgBiAEBEhsKDm1hdGNodXBfcGVyaW9kGAUgASgFSAKIAQESDgoGc3RhdHVzGAYgASgJEg4KBmlzX2J5ZRgHIAEoCBIuCgpmZXRjaGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIICgZfc2NvcmVCEQoPX29wcG9uZW50X3Njb3JlQhEKD19tYXRjaHVwX3BlcmlvZCIhCh9HZXRPdmVydmlld1BsYXllclVwZGF0ZXNSZXF1ZXN0IoMBCiBHZXRPdmVydmlld1BsYXllclVwZGF0ZXNSZXNwb25zZRIxCghjb3ZlcmFnZRgBIAEoCzIfLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdDb3ZlcmFnZRIsCgd1cGRhdGVzGAIgAygLMhsubGVhZ3VlbGVucy52MS5QbGF5ZXJVcGRhdGUihQEKDFBsYXllclVwZGF0ZRIKCgJpZBgBIAEoCRIRCglwbGF5ZXJfaWQYAiABKAkSEAoIaGVhZGxpbmUYAyABKAkSEgoKc291cmNlX3VybBgEIAEoCRIwCgxwdWJsaXNoZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiAKHkdldE92ZXJ2aWV3TG9va2luZ0FoZWFkUmVxdWVzdCKCAQofR2V0T3ZlcnZpZXdMb29raW5nQWhlYWRSZXNwb25zZRIxCghjb3ZlcmFnZRgBIAEoCzIfLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdDb3ZlcmFnZRIsCgZpc3N1ZXMYAiADKAsyHC5sZWFndWVsZW5zLnYxLlVwY29taW5nSXNzdWUicwoNVXBjb21pbmdJc3N1ZRIKCgJpZBgBIAEoCRIpCgR0ZWFtGAIgASgLMhsubGVhZ3VlbGVucy52MS5PdmVydmlld1RlYW0SEwoLZGVzY3JpcHRpb24YAyABKAkSFgoOc2NvcmluZ19wZXJpb2QYBCABKAVCUlpQZ2l0aHViLmNvbS9hZGl0eWFjaG91ZGhhcmkyNi9sZWFndWUtbGVucy9pbnRlcm5hbC9nZW4vbGVhZ3VlbGVucy92MTtsZWFndWVsZW5zdjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChxsZWFndWVsZW5zL3YxL292ZXJ2aWV3LnByb3RvEg1sZWFndWVsZW5zLnYxIjYKEE92ZXJ2aWV3Q292ZXJhZ2USDQoFc3RhdGUYASABKAkSEwoLZXhwbGFuYXRpb24YAiABKAki0wEKDE92ZXJ2aWV3VGVhbRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCWxlYWd1ZV9pZBgDIAEoCRITCgtsZWFndWVfbmFtZRgEIAEoCRIQCghwcm92aWRlchgFIAEoCRIOCgZzZWFzb24YBiABKAUSGwoOc2NvcmluZ19wZXJpb2QYByABKAVIAIgBARIvCgtvYnNlcnZlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCEQoPX3Njb3JpbmdfcGVyaW9kIh0KG0dldE92ZXJ2aWV3QXR0ZW50aW9uUmVxdWVzdCJ9ChxHZXRPdmVydmlld0F0dGVudGlvblJlc3BvbnNlEjEKCGNvdmVyYWdlGAEgASgLMh8ubGVhZ3VlbGVucy52MS5PdmVydmlld0NvdmVyYWdlEioKBmFsZXJ0cxgCIAMoCzIaLmxlYWd1ZWxlbnMudjEuTGluZXVwQWxlcnQi6QIKC0xpbmV1cEFsZXJ0EgoKAmlkGAEgASgJEikKBHRlYW0YAiABKAsyGy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3VGVhbRINCgV0aXRsZRgDIAEoCRIOCgZkZXRhaWwYBCABKAkSLgoIc2V2ZXJpdHkYBSABKA4yHC5sZWFndWVsZW5zLnYxLkFsZXJ0U2V2ZXJpdHkSDAoEc2xvdBgGIAEoCRITCgtlbXB0eV9zbG90cxgHIAEoBRImCgRraW5kGAggASgOMhgubGVhZ3VlbGVucy52MS5BbGVydEtpbmQSEwoLcGxheWVyX25hbWUYCSABKAkSMgoNaW5qdXJ5X3N0YXR1cxgKIAEoDjIbLmxlYWd1ZWxlbnMudjEuSW5qdXJ5U3RhdHVzEhAKCHByb190ZWFtGAsgASgJEi4KCmtpY2tvZmZfYXQYDCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIhwKGkdldE92ZXJ2aWV3TWF0Y2h1cHNSZXF1ZXN0IoIBChtHZXRPdmVydmlld01hdGNodXBzUmVzcG9uc2USMQoIY292ZXJhZ2UYASABKAsyHy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3Q292ZXJhZ2USMAoIbWF0Y2h1cHMYAiADKAsyHi5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3TWF0Y2h1cCKhAgoPT3ZlcnZpZXdNYXRjaHVwEikKBHRlYW0YASABKAsyGy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3VGVhbRIVCg1vcHBvbmVudF9uYW1lGAIgASgJEhIKBXNjb3JlGAMgASgBSACIAQESGwoOb3Bwb25lbnRfc2NvcmUYBCABKAFIAYgBARIbCg5tYXRjaHVwX3BlcmlvZBgFIAEoBUgCiAEBEg4KBnN0YXR1cxgGIAEoCRIOCgZpc19ieWUYByABKAgSLgoKZmV0Y2hlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCCAoGX3Njb3JlQhEKD19vcHBvbmVudF9zY29yZUIRCg9fbWF0Y2h1cF9wZXJpb2QiIQofR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVxdWVzdCKDAQogR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVzcG9uc2USMQoIY292ZXJhZ2UYASABKAsyHy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3Q292ZXJhZ2USLAoHdXBkYXRlcxgCIAMoCzIbLmxlYWd1ZWxlbnMudjEuUGxheWVyVXBkYXRlIoUBCgxQbGF5ZXJVcGRhdGUSCgoCaWQYASABKAkSEQoJcGxheWVyX2lkGAIgASgJEhAKCGhlYWRsaW5lGAMgASgJEhIKCnNvdXJjZV91cmwYBCABKAkSMAoMcHVibGlzaGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIgCh5HZXRPdmVydmlld0xvb2tpbmdBaGVhZFJlcXVlc3QiggEKH0dldE92ZXJ2aWV3TG9va2luZ0FoZWFkUmVzcG9uc2USMQoIY292ZXJhZ2UYASABKAsyHy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3Q292ZXJhZ2USLAoGaXNzdWVzGAIgAygLMhwubGVhZ3VlbGVucy52MS5VcGNvbWluZ0lzc3VlInMKDVVwY29taW5nSXNzdWUSCgoCaWQYASABKAkSKQoEdGVhbRgCIAEoCzIbLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdUZWFtEhMKC2Rlc2NyaXB0aW9uGAMgASgJEhYKDnNjb3JpbmdfcGVyaW9kGAQgASgFKmYKDUFsZXJ0U2V2ZXJpdHkSHgoaQUxFUlRfU0VWRVJJVFlfVU5TUEVDSUZJRUQQABIZChVBTEVSVF9TRVZFUklUWV9BQ1RJT04QARIaChZBTEVSVF9TRVZFUklUWV9NT05JVE9SEAIqbQoJQWxlcnRLaW5kEhoKFkFMRVJUX0tJTkRfVU5TUEVDSUZJRUQQABIZChVBTEVSVF9LSU5EX0VNUFRZX1NMT1QQARIVChFBTEVSVF9LSU5EX0lOSlVSWRACEhIKDkFMRVJUX0tJTkRfQllFEAMq2AEKDEluanVyeVN0YXR1cxIdChlJTkpVUllfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGAoUSU5KVVJZX1NUQVRVU19BQ1RJVkUQARIeChpJTkpVUllfU1RBVFVTX1FVRVNUSU9OQUJMRRACEhoKFklOSlVSWV9TVEFUVVNfRE9VQlRGVUwQAxIVChFJTkpVUllfU1RBVFVTX09VVBAEEiEKHUlOSlVSWV9TVEFUVVNfSU5KVVJFRF9SRVNFUlZFEAUSGQoVSU5KVVJZX1NUQVRVU19VTktOT1dOEAZCUlpQZ2l0aHViLmNvbS9hZGl0eWFjaG91ZGhhcmkyNi9sZWFndWUtbGVucy9pbnRlcm5hbC9nZW4vbGVhZ3VlbGVucy92MTtsZWFndWVsZW5zdjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * Sections report coverage explicitly: an empty array is not proof of no issues.
@@ -152,9 +152,9 @@ export type LineupAlert = Message<"leaguelens.v1.LineupAlert"> & {
   detail: string;
 
   /**
-   * @generated from field: string severity = 5;
+   * @generated from field: leaguelens.v1.AlertSeverity severity = 5;
    */
-  severity: string;
+  severity: AlertSeverity;
 
   /**
    * @generated from field: string slot = 6;
@@ -167,11 +167,9 @@ export type LineupAlert = Message<"leaguelens.v1.LineupAlert"> & {
   emptySlots: number;
 
   /**
-   * empty_slot | injury | bye
-   *
-   * @generated from field: string kind = 8;
+   * @generated from field: leaguelens.v1.AlertKind kind = 8;
    */
-  kind: string;
+  kind: AlertKind;
 
   /**
    * @generated from field: string player_name = 9;
@@ -179,11 +177,11 @@ export type LineupAlert = Message<"leaguelens.v1.LineupAlert"> & {
   playerName: string;
 
   /**
-   * Normalized designation for injury alerts: questionable | doubtful | out | ir.
+   * Set only on injury alerts.
    *
-   * @generated from field: string injury_status = 10;
+   * @generated from field: leaguelens.v1.InjuryStatus injury_status = 10;
    */
-  injuryStatus: string;
+  injuryStatus: InjuryStatus;
 
   /**
    * @generated from field: string pro_team = 11;
@@ -428,4 +426,111 @@ export type UpcomingIssue = Message<"leaguelens.v1.UpcomingIssue"> & {
  */
 export const UpcomingIssueSchema: GenMessage<UpcomingIssue> = /*@__PURE__*/
   messageDesc(file_leaguelens_v1_overview, 13);
+
+/**
+ * ACTION means the lineup should change before kickoff; MONITOR is worth watching.
+ *
+ * @generated from enum leaguelens.v1.AlertSeverity
+ */
+export enum AlertSeverity {
+  /**
+   * @generated from enum value: ALERT_SEVERITY_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: ALERT_SEVERITY_ACTION = 1;
+   */
+  ACTION = 1,
+
+  /**
+   * @generated from enum value: ALERT_SEVERITY_MONITOR = 2;
+   */
+  MONITOR = 2,
+}
+
+/**
+ * Describes the enum leaguelens.v1.AlertSeverity.
+ */
+export const AlertSeveritySchema: GenEnum<AlertSeverity> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_overview, 0);
+
+/**
+ * @generated from enum leaguelens.v1.AlertKind
+ */
+export enum AlertKind {
+  /**
+   * @generated from enum value: ALERT_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: ALERT_KIND_EMPTY_SLOT = 1;
+   */
+  EMPTY_SLOT = 1,
+
+  /**
+   * @generated from enum value: ALERT_KIND_INJURY = 2;
+   */
+  INJURY = 2,
+
+  /**
+   * @generated from enum value: ALERT_KIND_BYE = 3;
+   */
+  BYE = 3,
+}
+
+/**
+ * Describes the enum leaguelens.v1.AlertKind.
+ */
+export const AlertKindSchema: GenEnum<AlertKind> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_overview, 1);
+
+/**
+ * Provider injury designations normalized across ESPN and Sleeper.
+ *
+ * @generated from enum leaguelens.v1.InjuryStatus
+ */
+export enum InjuryStatus {
+  /**
+   * @generated from enum value: INJURY_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: INJURY_STATUS_ACTIVE = 1;
+   */
+  ACTIVE = 1,
+
+  /**
+   * @generated from enum value: INJURY_STATUS_QUESTIONABLE = 2;
+   */
+  QUESTIONABLE = 2,
+
+  /**
+   * @generated from enum value: INJURY_STATUS_DOUBTFUL = 3;
+   */
+  DOUBTFUL = 3,
+
+  /**
+   * @generated from enum value: INJURY_STATUS_OUT = 4;
+   */
+  OUT = 4,
+
+  /**
+   * @generated from enum value: INJURY_STATUS_INJURED_RESERVE = 5;
+   */
+  INJURED_RESERVE = 5,
+
+  /**
+   * @generated from enum value: INJURY_STATUS_UNKNOWN = 6;
+   */
+  UNKNOWN = 6,
+}
+
+/**
+ * Describes the enum leaguelens.v1.InjuryStatus.
+ */
+export const InjuryStatusSchema: GenEnum<InjuryStatus> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_overview, 2);
 

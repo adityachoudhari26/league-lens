@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { CircleAlert, ChevronDown, Eye } from "lucide-react"
-import { type LineupAlert } from "@/gen/leaguelens/v1/overview_pb"
+import { AlertSeverity, type LineupAlert } from "@/gen/leaguelens/v1/overview_pb"
 import { overviewQueries } from "@/lib/api/overview"
 import { Button } from "@/components/ui/button"
 import { Section, SectionLoading, SectionError, SectionMessage, CoverageNote } from "./section"
@@ -23,7 +23,7 @@ const severityStyles = {
 }
 
 function AlertCard({ alert }: { alert: LineupAlert }) {
-  const style = alert.severity === "action" ? severityStyles.action : severityStyles.monitor
+  const style = alert.severity === AlertSeverity.ACTION ? severityStyles.action : severityStyles.monitor
   const kickoff = kickoffTime(alert.kickoffAt)
   return <details className={`group rounded-lg border ${style.card}`}>
     <summary className="flex cursor-pointer list-none items-start gap-3 rounded-lg p-4 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
@@ -48,7 +48,7 @@ export function AttentionSection() {
   const alerts = query.data?.alerts ?? []
   const shown = expanded ? alerts : alerts.slice(0, 3)
   const hidden = alerts.slice(3)
-  const urgent = hidden.filter((alert) => alert.severity === "action").length
+  const urgent = hidden.filter((alert) => alert.severity === AlertSeverity.ACTION).length
 
   return <Section title="Needs attention" count={query.data ? alerts.length : undefined}>
     {query.isPending ? <SectionLoading /> : query.isError ? <SectionError retry={() => { void query.refetch() }} /> : <>
