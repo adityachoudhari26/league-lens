@@ -220,7 +220,7 @@ func (r *Runner) recordOutcome(target Target, err error) {
 
 	code := failureCode(err)
 	r.failures[target.ID] = failure{code: code, at: r.now()}
-	slog.Warn("league sync failed", "league", target.ID, "provider", target.Selection.League.Provider, "code", code)
+	slog.Warn("league sync failed", "league", target.ID, "provider", target.Selection.League.Provider, "code", code, "error", err)
 }
 
 func (r *Runner) release(id string) {
