@@ -12,16 +12,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Reader interface {
+type Store interface {
 	InReadTx(context.Context, func(*store.Queries) error) error
+	InTx(context.Context, func(*store.Queries) error) error
 }
 
 type Service struct {
-	db         Reader
+	db         Store
 	ownerEmail string
 }
 
-func New(db Reader, ownerEmail string) *Service { return &Service{db: db, ownerEmail: ownerEmail} }
+func New(db Store, ownerEmail string) *Service { return &Service{db: db, ownerEmail: ownerEmail} }
 
 // read resolves the configured local owner and runs scoped queries within one
 // consistent read-only transaction, bounded by a five-second deadline.
@@ -38,6 +39,21 @@ func (s *Service) read(ctx context.Context, fn func(context.Context, *store.Quer
 	return readError(err)
 }
 
+// write resolves the configured local owner and runs scoped queries in a
+// transaction bounded by a five-second deadline.
+func (s *Service) write(ctx context.Context, fn func(context.Context, *store.Queries, pgtype.UUID) error) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	err := s.db.InTx(ctx, func(q *store.Queries) error {
+		owner, err := q.GetUserByEmail(ctx, s.ownerEmail)
+		if err != nil {
+			return err
+		}
+		return fn(ctx, q, owner.ID)
+	})
+	return writeError(err)
+}
+
 // readError maps storage failures to RPC codes without exposing database details.
 func readError(err error) error {
 	switch {
@@ -51,6 +67,19 @@ func readError(err error) error {
 		return connect.NewError(connect.CodeDeadlineExceeded, "read timed out")
 	default:
 		return connect.NewError(connect.CodeInternal, "could not read dashboard data")
+	}
+}
+
+func writeError(err error) error {
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, pgx.ErrNoRows), errors.Is(err, context.Canceled):
+		return readError(err)
+	case errors.Is(err, context.DeadlineExceeded):
+		return connect.NewError(connect.CodeDeadlineExceeded, "write timed out")
+	default:
+		return connect.NewError(connect.CodeInternal, "could not save dashboard data")
 	}
 }
 

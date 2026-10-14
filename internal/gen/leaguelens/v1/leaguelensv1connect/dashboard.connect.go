@@ -27,6 +27,12 @@ const (
 	// DashboardServiceGetOverviewAttentionProcedure is the procedure name of the DashboardService's
 	// GetOverviewAttention RPC.
 	DashboardServiceGetOverviewAttentionProcedure = "/leaguelens.v1.DashboardService/GetOverviewAttention"
+	// DashboardServiceDismissLineupAlertProcedure is the procedure name of the DashboardService's
+	// DismissLineupAlert RPC.
+	DashboardServiceDismissLineupAlertProcedure = "/leaguelens.v1.DashboardService/DismissLineupAlert"
+	// DashboardServiceRestoreLineupAlertProcedure is the procedure name of the DashboardService's
+	// RestoreLineupAlert RPC.
+	DashboardServiceRestoreLineupAlertProcedure = "/leaguelens.v1.DashboardService/RestoreLineupAlert"
 	// DashboardServiceGetOverviewMatchupsProcedure is the procedure name of the DashboardService's
 	// GetOverviewMatchups RPC.
 	DashboardServiceGetOverviewMatchupsProcedure = "/leaguelens.v1.DashboardService/GetOverviewMatchups"
@@ -55,6 +61,20 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_leaguelens_v1_dashboard_proto.Services().ByName("DashboardService").Methods().ByName("GetOverviewAttention"),
 			Procedure:  DashboardServiceGetOverviewAttentionProcedure,
+		}
+	})
+	dashboardServiceDismissLineupAlertSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_leaguelens_v1_dashboard_proto.Services().ByName("DashboardService").Methods().ByName("DismissLineupAlert"),
+			Procedure:  DashboardServiceDismissLineupAlertProcedure,
+		}
+	})
+	dashboardServiceRestoreLineupAlertSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_leaguelens_v1_dashboard_proto.Services().ByName("DashboardService").Methods().ByName("RestoreLineupAlert"),
+			Procedure:  DashboardServiceRestoreLineupAlertProcedure,
 		}
 	})
 	dashboardServiceGetOverviewMatchupsSpec = sync.OnceValue(func() connect.Spec {
@@ -111,6 +131,8 @@ var (
 // DashboardServiceClient is a client for the leaguelens.v1.DashboardService service.
 type DashboardServiceClient interface {
 	GetOverviewAttention(context.Context, *v1.GetOverviewAttentionRequest) (*v1.GetOverviewAttentionResponse, error)
+	DismissLineupAlert(context.Context, *v1.DismissLineupAlertRequest) (*v1.DismissLineupAlertResponse, error)
+	RestoreLineupAlert(context.Context, *v1.RestoreLineupAlertRequest) (*v1.RestoreLineupAlertResponse, error)
 	GetOverviewMatchups(context.Context, *v1.GetOverviewMatchupsRequest) (*v1.GetOverviewMatchupsResponse, error)
 	GetOverviewPlayerUpdates(context.Context, *v1.GetOverviewPlayerUpdatesRequest) (*v1.GetOverviewPlayerUpdatesResponse, error)
 	GetOverviewLookingAhead(context.Context, *v1.GetOverviewLookingAheadRequest) (*v1.GetOverviewLookingAheadResponse, error)
@@ -129,6 +151,8 @@ func NewDashboardServiceClient(client *connect.Client) DashboardServiceClient {
 // DashboardServiceHandler is an implementation of the leaguelens.v1.DashboardService service.
 type DashboardServiceHandler interface {
 	GetOverviewAttention(context.Context, *v1.GetOverviewAttentionRequest) (*v1.GetOverviewAttentionResponse, error)
+	DismissLineupAlert(context.Context, *v1.DismissLineupAlertRequest) (*v1.DismissLineupAlertResponse, error)
+	RestoreLineupAlert(context.Context, *v1.RestoreLineupAlertRequest) (*v1.RestoreLineupAlertResponse, error)
 	GetOverviewMatchups(context.Context, *v1.GetOverviewMatchupsRequest) (*v1.GetOverviewMatchupsResponse, error)
 	GetOverviewPlayerUpdates(context.Context, *v1.GetOverviewPlayerUpdatesRequest) (*v1.GetOverviewPlayerUpdatesResponse, error)
 	GetOverviewLookingAhead(context.Context, *v1.GetOverviewLookingAheadRequest) (*v1.GetOverviewLookingAheadResponse, error)
@@ -144,6 +168,8 @@ func RegisterDashboardServiceHandler(server *connect.Server, svc DashboardServic
 	adapter := dashboardServiceHandler{svc: svc}
 	server.Register(
 		connect.Method{Spec: dashboardServiceGetOverviewAttentionSpec(), Handler: adapter.getOverviewAttention},
+		connect.Method{Spec: dashboardServiceDismissLineupAlertSpec(), Handler: adapter.dismissLineupAlert},
+		connect.Method{Spec: dashboardServiceRestoreLineupAlertSpec(), Handler: adapter.restoreLineupAlert},
 		connect.Method{Spec: dashboardServiceGetOverviewMatchupsSpec(), Handler: adapter.getOverviewMatchups},
 		connect.Method{Spec: dashboardServiceGetOverviewPlayerUpdatesSpec(), Handler: adapter.getOverviewPlayerUpdates},
 		connect.Method{Spec: dashboardServiceGetOverviewLookingAheadSpec(), Handler: adapter.getOverviewLookingAhead},
@@ -159,6 +185,14 @@ type UnimplementedDashboardServiceHandler struct{}
 
 func (UnimplementedDashboardServiceHandler) GetOverviewAttention(context.Context, *v1.GetOverviewAttentionRequest) (*v1.GetOverviewAttentionResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.DashboardService.GetOverviewAttention is not implemented")
+}
+
+func (UnimplementedDashboardServiceHandler) DismissLineupAlert(context.Context, *v1.DismissLineupAlertRequest) (*v1.DismissLineupAlertResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.DashboardService.DismissLineupAlert is not implemented")
+}
+
+func (UnimplementedDashboardServiceHandler) RestoreLineupAlert(context.Context, *v1.RestoreLineupAlertRequest) (*v1.RestoreLineupAlertResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.DashboardService.RestoreLineupAlert is not implemented")
 }
 
 func (UnimplementedDashboardServiceHandler) GetOverviewMatchups(context.Context, *v1.GetOverviewMatchupsRequest) (*v1.GetOverviewMatchupsResponse, error) {
@@ -196,6 +230,22 @@ type dashboardServiceClient struct {
 func (c *dashboardServiceClient) GetOverviewAttention(ctx context.Context, req *v1.GetOverviewAttentionRequest) (*v1.GetOverviewAttentionResponse, error) {
 	var res v1.GetOverviewAttentionResponse
 	if err := c.client.CallUnary(ctx, dashboardServiceGetOverviewAttentionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *dashboardServiceClient) DismissLineupAlert(ctx context.Context, req *v1.DismissLineupAlertRequest) (*v1.DismissLineupAlertResponse, error) {
+	var res v1.DismissLineupAlertResponse
+	if err := c.client.CallUnary(ctx, dashboardServiceDismissLineupAlertSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *dashboardServiceClient) RestoreLineupAlert(ctx context.Context, req *v1.RestoreLineupAlertRequest) (*v1.RestoreLineupAlertResponse, error) {
+	var res v1.RestoreLineupAlertResponse
+	if err := c.client.CallUnary(ctx, dashboardServiceRestoreLineupAlertSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -265,6 +315,30 @@ func (h dashboardServiceHandler) getOverviewAttention(ctx context.Context, _ con
 		return err
 	}
 	res, err := h.svc.GetOverviewAttention(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h dashboardServiceHandler) dismissLineupAlert(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DismissLineupAlertRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DismissLineupAlert(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h dashboardServiceHandler) restoreLineupAlert(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RestoreLineupAlertRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RestoreLineupAlert(ctx, &req)
 	if err != nil {
 		return err
 	}

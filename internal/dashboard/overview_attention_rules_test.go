@@ -1,13 +1,65 @@
 package dashboard
 
 import (
-	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
+	"reflect"
 	"testing"
 	"time"
 
+	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+func TestAlertFingerprintTracksCurrentSituation(t *testing.T) {
+	injury := &v1.LineupAlert{
+		Id:           "team:player:injury",
+		Kind:         v1.AlertKind_ALERT_KIND_INJURY,
+		InjuryStatus: v1.InjuryStatus_INJURY_STATUS_QUESTIONABLE,
+	}
+	questionable := alertFingerprint(injury, 3)
+	if got, want := questionable, "team:player:injury:week3:questionable"; got != want {
+		t.Fatalf("questionable fingerprint = %q, want %q", got, want)
+	}
+	if got := alertFingerprint(injury, 3); got != questionable {
+		t.Fatalf("same alert fingerprint = %q, want %q", got, questionable)
+	}
+	injury.InjuryStatus = v1.InjuryStatus_INJURY_STATUS_OUT
+	if got := alertFingerprint(injury, 3); got == questionable {
+		t.Fatalf("changed injury status kept fingerprint %q", got)
+	}
+	if got := alertFingerprint(injury, 4); got == alertFingerprint(injury, 3) {
+		t.Fatalf("changed week kept fingerprint %q", got)
+	}
+
+	emptySlots := &v1.LineupAlert{
+		Id:         "team:QB",
+		Kind:       v1.AlertKind_ALERT_KIND_EMPTY_SLOT,
+		EmptySlots: 1,
+	}
+	oneEmptySlot := alertFingerprint(emptySlots, 3)
+	emptySlots.EmptySlots = 2
+	if got := alertFingerprint(emptySlots, 3); got == oneEmptySlot {
+		t.Fatalf("changed empty-slot count kept fingerprint %q", got)
+	}
+
+	bye := &v1.LineupAlert{Id: "team:player:bye", Kind: v1.AlertKind_ALERT_KIND_BYE}
+	if got, want := alertFingerprint(bye, 3), "team:player:bye:week3"; got != want {
+		t.Fatalf("bye fingerprint = %q, want %q", got, want)
+	}
+}
+
+func TestWithoutDismissedPreservesUndismissedOrder(t *testing.T) {
+	alerts := []*v1.LineupAlert{
+		{Id: "first", Fingerprint: "first:week1"},
+		{Id: "second", Fingerprint: "second:week1"},
+		{Id: "third", Fingerprint: "third:week1"},
+	}
+	got := withoutDismissed(alerts, map[string]bool{"second:week1": true})
+	want := []*v1.LineupAlert{alerts[0], alerts[2]}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("withoutDismissed = %v, want %v", got, want)
+	}
+}
 
 func TestStarterAlerts(t *testing.T) {
 	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)

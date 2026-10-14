@@ -30,6 +30,7 @@ type Querier interface {
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
 	DeleteSourceNews(ctx context.Context, source string) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
+	DismissAlert(ctx context.Context, arg DismissAlertParams) error
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
 	FailSync(ctx context.Context, arg FailSyncParams) (SyncRun, error)
 	FindPlayerByExternalID(ctx context.Context, arg FindPlayerByExternalIDParams) (Player, error)
@@ -38,6 +39,8 @@ type Querier interface {
 	GetLatestObservedSnapshot(ctx context.Context, arg GetLatestObservedSnapshotParams) (TeamSnapshot, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
+	// Only the fingerprints of alerts currently shown, so old dismissals never load.
+	ListDismissedAlerts(ctx context.Context, arg ListDismissedAlertsParams) ([]string, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
 	ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUserParams) ([]Matchup, error)
 	ListNFLGamesForWeek(ctx context.Context, arg ListNFLGamesForWeekParams) ([]ListNFLGamesForWeekRow, error)
@@ -61,6 +64,7 @@ type Querier interface {
 	OverviewTeamMatchup(ctx context.Context, arg OverviewTeamMatchupParams) (OverviewTeamMatchupRow, error)
 	// Only selected teams, enabled connections, and the owner's latest imported season.
 	OverviewTeams(ctx context.Context, userID pgtype.UUID) ([]OverviewTeamsRow, error)
+	RestoreAlert(ctx context.Context, arg RestoreAlertParams) error
 	SelectUserTeam(ctx context.Context, arg SelectUserTeamParams) error
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)

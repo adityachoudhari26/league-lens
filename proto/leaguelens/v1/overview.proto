@@ -23,6 +23,14 @@ message GetOverviewAttentionResponse {
   OverviewCoverage coverage = 1;
   repeated LineupAlert alerts = 2;
 }
+message DismissLineupAlertRequest {
+  string fingerprint = 1;
+}
+message DismissLineupAlertResponse {}
+message RestoreLineupAlertRequest {
+  string fingerprint = 1;
+}
+message RestoreLineupAlertResponse {}
 message LineupAlert {
   string id = 1;
   OverviewTeam team = 2;
@@ -37,6 +45,8 @@ message LineupAlert {
   InjuryStatus injury_status = 10;
   string pro_team = 11;
   google.protobuf.Timestamp kickoff_at = 12;
+  // Opaque dismissal key; changes with the alert's week or status. Pass it to DismissLineupAlert.
+  string fingerprint = 13;
 }
 // ACTION means the lineup should change before kickoff; MONITOR is worth watching.
 enum AlertSeverity {

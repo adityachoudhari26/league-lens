@@ -8,6 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AlertDismissal struct {
+	UserID      pgtype.UUID
+	Fingerprint string
+	DismissedAt pgtype.Timestamptz
+}
+
 type Connection struct {
 	ID                   pgtype.UUID
 	UserID               pgtype.UUID

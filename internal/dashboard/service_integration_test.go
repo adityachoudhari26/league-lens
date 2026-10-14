@@ -374,6 +374,76 @@ func TestOverviewSections(t *testing.T) {
 	}
 }
 
+func TestDismissLineupAlert(t *testing.T) {
+	db := openDatabase(t)
+	ctx := context.Background()
+	importLeague(t, db, "owner@test", fantasy.ProviderESPN)
+	importLeague(t, db, "owner@test", fantasy.ProviderSleeper)
+	owner := clientFor(t, db, "owner@test")
+
+	initial, err := owner.GetOverviewAttention(ctx, &v1.GetOverviewAttentionRequest{})
+	if err != nil || len(initial.Alerts) != 2 {
+		t.Fatalf("initial attention: %v %v", initial, err)
+	}
+	dismissedAlert := initial.Alerts[0]
+	if dismissedAlert.Fingerprint == "" {
+		t.Fatal("attention alert has no fingerprint")
+	}
+
+	ownerRow, err := db.Queries().GetUserByEmail(ctx, "owner@test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	staleFingerprint := "stale:" + dismissedAlert.Fingerprint
+	if err := db.Queries().DismissAlert(ctx, store.DismissAlertParams{UserID: ownerRow.ID, Fingerprint: staleFingerprint}); err != nil {
+		t.Fatal(err)
+	}
+	currentDismissals, err := db.Queries().ListDismissedAlerts(ctx, store.ListDismissedAlertsParams{
+		UserID: ownerRow.ID, Fingerprints: []string{dismissedAlert.Fingerprint},
+	})
+	if err != nil || len(currentDismissals) != 0 {
+		t.Fatalf("stale dismissal matched current alert: %v %v", currentDismissals, err)
+	}
+
+	request := &v1.DismissLineupAlertRequest{Fingerprint: dismissedAlert.Fingerprint}
+	for range 2 {
+		if _, err := owner.DismissLineupAlert(ctx, request); err != nil {
+			t.Fatalf("dismiss alert: %v", err)
+		}
+	}
+	remaining, err := owner.GetOverviewAttention(ctx, &v1.GetOverviewAttentionRequest{})
+	if err != nil || len(remaining.Alerts) != 1 || remaining.Alerts[0].Fingerprint == dismissedAlert.Fingerprint {
+		t.Fatalf("dismissed alert remained visible: %v %v", remaining, err)
+	}
+
+	if _, err := db.Queries().CreateUser(ctx, "other@test"); err != nil {
+		t.Fatal(err)
+	}
+	other := clientFor(t, db, "other@test")
+	if _, err := other.DismissLineupAlert(ctx, request); err != nil {
+		t.Fatalf("other owner dismiss: %v", err)
+	}
+	remaining, err = owner.GetOverviewAttention(ctx, &v1.GetOverviewAttentionRequest{})
+	if err != nil || len(remaining.Alerts) != 1 {
+		t.Fatalf("other owner's dismissal affected owner: %v %v", remaining, err)
+	}
+
+	if _, err := owner.RestoreLineupAlert(ctx, &v1.RestoreLineupAlertRequest{Fingerprint: dismissedAlert.Fingerprint}); err != nil {
+		t.Fatalf("restore alert: %v", err)
+	}
+	restored, err := owner.GetOverviewAttention(ctx, &v1.GetOverviewAttentionRequest{})
+	if err != nil || len(restored.Alerts) != 2 {
+		t.Fatalf("restored attention: %v %v", restored, err)
+	}
+
+	if _, err := owner.DismissLineupAlert(ctx, &v1.DismissLineupAlertRequest{}); connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("empty dismiss fingerprint error = %v, want invalid argument", err)
+	}
+	if _, err := owner.RestoreLineupAlert(ctx, &v1.RestoreLineupAlertRequest{}); connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("empty restore fingerprint error = %v, want invalid argument", err)
+	}
+}
+
 func TestOverviewMissingSnapshot(t *testing.T) {
 	db := openDatabase(t)
 	ctx := context.Background()

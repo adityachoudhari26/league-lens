@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/overview.proto.
  */
 export const file_leaguelens_v1_overview: GenFile = /*@__PURE__*/
-  fileDesc("ChxsZWFndWVsZW5zL3YxL292ZXJ2aWV3LnByb3RvEg1sZWFndWVsZW5zLnYxIjYKEE92ZXJ2aWV3Q292ZXJhZ2USDQoFc3RhdGUYASABKAkSEwoLZXhwbGFuYXRpb24YAiABKAki0wEKDE92ZXJ2aWV3VGVhbRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCWxlYWd1ZV9pZBgDIAEoCRITCgtsZWFndWVfbmFtZRgEIAEoCRIQCghwcm92aWRlchgFIAEoCRIOCgZzZWFzb24YBiABKAUSGwoOc2NvcmluZ19wZXJpb2QYByABKAVIAIgBARIvCgtvYnNlcnZlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCEQoPX3Njb3JpbmdfcGVyaW9kIh0KG0dldE92ZXJ2aWV3QXR0ZW50aW9uUmVxdWVzdCJ9ChxHZXRPdmVydmlld0F0dGVudGlvblJlc3BvbnNlEjEKCGNvdmVyYWdlGAEgASgLMh8ubGVhZ3VlbGVucy52MS5PdmVydmlld0NvdmVyYWdlEioKBmFsZXJ0cxgCIAMoCzIaLmxlYWd1ZWxlbnMudjEuTGluZXVwQWxlcnQi6QIKC0xpbmV1cEFsZXJ0EgoKAmlkGAEgASgJEikKBHRlYW0YAiABKAsyGy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3VGVhbRINCgV0aXRsZRgDIAEoCRIOCgZkZXRhaWwYBCABKAkSLgoIc2V2ZXJpdHkYBSABKA4yHC5sZWFndWVsZW5zLnYxLkFsZXJ0U2V2ZXJpdHkSDAoEc2xvdBgGIAEoCRITCgtlbXB0eV9zbG90cxgHIAEoBRImCgRraW5kGAggASgOMhgubGVhZ3VlbGVucy52MS5BbGVydEtpbmQSEwoLcGxheWVyX25hbWUYCSABKAkSMgoNaW5qdXJ5X3N0YXR1cxgKIAEoDjIbLmxlYWd1ZWxlbnMudjEuSW5qdXJ5U3RhdHVzEhAKCHByb190ZWFtGAsgASgJEi4KCmtpY2tvZmZfYXQYDCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIhwKGkdldE92ZXJ2aWV3TWF0Y2h1cHNSZXF1ZXN0IoIBChtHZXRPdmVydmlld01hdGNodXBzUmVzcG9uc2USMQoIY292ZXJhZ2UYASABKAsyHy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3Q292ZXJhZ2USMAoIbWF0Y2h1cHMYAiADKAsyHi5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3TWF0Y2h1cCKhAgoPT3ZlcnZpZXdNYXRjaHVwEikKBHRlYW0YASABKAsyGy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3VGVhbRIVCg1vcHBvbmVudF9uYW1lGAIgASgJEhIKBXNjb3JlGAMgASgBSACIAQESGwoOb3Bwb25lbnRfc2NvcmUYBCABKAFIAYgBARIbCg5tYXRjaHVwX3BlcmlvZBgFIAEoBUgCiAEBEg4KBnN0YXR1cxgGIAEoCRIOCgZpc19ieWUYByABKAgSLgoKZmV0Y2hlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCCAoGX3Njb3JlQhEKD19vcHBvbmVudF9zY29yZUIRCg9fbWF0Y2h1cF9wZXJpb2QiIQofR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVxdWVzdCKDAQogR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVzcG9uc2USMQoIY292ZXJhZ2UYASABKAsyHy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3Q292ZXJhZ2USLAoHdXBkYXRlcxgCIAMoCzIbLmxlYWd1ZWxlbnMudjEuUGxheWVyVXBkYXRlIuECCgxQbGF5ZXJVcGRhdGUSCgoCaWQYASABKAkSEQoJcGxheWVyX2lkGAIgASgJEhAKCGhlYWRsaW5lGAMgASgJEhIKCnNvdXJjZV91cmwYBCABKAkSMAoMcHVibGlzaGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBITCgtwbGF5ZXJfbmFtZRgGIAEoCRIPCgdzdW1tYXJ5GAcgASgJEhQKDHNvdXJjZV9sYWJlbBgIIAEoCRItCghjYXRlZ29yeRgJIAEoDjIbLmxlYWd1ZWxlbnMudjEuTmV3c0NhdGVnb3J5EjIKDWluanVyeV9zdGF0dXMYCiABKA4yGy5sZWFndWVsZW5zLnYxLkluanVyeVN0YXR1cxIPCgdzdGFydGVyGAsgASgIEioKBXRlYW1zGAwgAygLMhsubGVhZ3VlbGVucy52MS5PdmVydmlld1RlYW0iIAoeR2V0T3ZlcnZpZXdMb29raW5nQWhlYWRSZXF1ZXN0IoIBCh9HZXRPdmVydmlld0xvb2tpbmdBaGVhZFJlc3BvbnNlEjEKCGNvdmVyYWdlGAEgASgLMh8ubGVhZ3VlbGVucy52MS5PdmVydmlld0NvdmVyYWdlEiwKBmlzc3VlcxgCIAMoCzIcLmxlYWd1ZWxlbnMudjEuVXBjb21pbmdJc3N1ZSJzCg1VcGNvbWluZ0lzc3VlEgoKAmlkGAEgASgJEikKBHRlYW0YAiABKAsyGy5sZWFndWVsZW5zLnYxLk92ZXJ2aWV3VGVhbRITCgtkZXNjcmlwdGlvbhgDIAEoCRIWCg5zY29yaW5nX3BlcmlvZBgEIAEoBSpmCg1BbGVydFNldmVyaXR5Eh4KGkFMRVJUX1NFVkVSSVRZX1VOU1BFQ0lGSUVEEAASGQoVQUxFUlRfU0VWRVJJVFlfQUNUSU9OEAESGgoWQUxFUlRfU0VWRVJJVFlfTU9OSVRPUhACKm0KCUFsZXJ0S2luZBIaChZBTEVSVF9LSU5EX1VOU1BFQ0lGSUVEEAASGQoVQUxFUlRfS0lORF9FTVBUWV9TTE9UEAESFQoRQUxFUlRfS0lORF9JTkpVUlkQAhISCg5BTEVSVF9LSU5EX0JZRRADKtgBCgxJbmp1cnlTdGF0dXMSHQoZSU5KVVJZX1NUQVRVU19VTlNQRUNJRklFRBAAEhgKFElOSlVSWV9TVEFUVVNfQUNUSVZFEAESHgoaSU5KVVJZX1NUQVRVU19RVUVTVElPTkFCTEUQAhIaChZJTkpVUllfU1RBVFVTX0RPVUJURlVMEAMSFQoRSU5KVVJZX1NUQVRVU19PVVQQBBIhCh1JTkpVUllfU1RBVFVTX0lOSlVSRURfUkVTRVJWRRAFEhkKFUlOSlVSWV9TVEFUVVNfVU5LTk9XThAGKoEBCgxOZXdzQ2F0ZWdvcnkSHQoZTkVXU19DQVRFR09SWV9VTlNQRUNJRklFRBAAEhgKFE5FV1NfQ0FURUdPUllfSU5KVVJZEAESHQoZTkVXU19DQVRFR09SWV9UUkFOU0FDVElPThACEhkKFU5FV1NfQ0FURUdPUllfR0VORVJBTBADQlJaUGdpdGh1Yi5jb20vYWRpdHlhY2hvdWRoYXJpMjYvbGVhZ3VlLWxlbnMvaW50ZXJuYWwvZ2VuL2xlYWd1ZWxlbnMvdjE7bGVhZ3VlbGVuc3YxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChxsZWFndWVsZW5zL3YxL292ZXJ2aWV3LnByb3RvEg1sZWFndWVsZW5zLnYxIjYKEE92ZXJ2aWV3Q292ZXJhZ2USDQoFc3RhdGUYASABKAkSEwoLZXhwbGFuYXRpb24YAiABKAki0wEKDE92ZXJ2aWV3VGVhbRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCWxlYWd1ZV9pZBgDIAEoCRITCgtsZWFndWVfbmFtZRgEIAEoCRIQCghwcm92aWRlchgFIAEoCRIOCgZzZWFzb24YBiABKAUSGwoOc2NvcmluZ19wZXJpb2QYByABKAVIAIgBARIvCgtvYnNlcnZlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCEQoPX3Njb3JpbmdfcGVyaW9kIh0KG0dldE92ZXJ2aWV3QXR0ZW50aW9uUmVxdWVzdCJ9ChxHZXRPdmVydmlld0F0dGVudGlvblJlc3BvbnNlEjEKCGNvdmVyYWdlGAEgASgLMh8ubGVhZ3VlbGVucy52MS5PdmVydmlld0NvdmVyYWdlEioKBmFsZXJ0cxgCIAMoCzIaLmxlYWd1ZWxlbnMudjEuTGluZXVwQWxlcnQiMAoZRGlzbWlzc0xpbmV1cEFsZXJ0UmVxdWVzdBITCgtmaW5nZXJwcmludBgBIAEoCSIcChpEaXNtaXNzTGluZXVwQWxlcnRSZXNwb25zZSIwChlSZXN0b3JlTGluZXVwQWxlcnRSZXF1ZXN0EhMKC2ZpbmdlcnByaW50GAEgASgJIhwKGlJlc3RvcmVMaW5ldXBBbGVydFJlc3BvbnNlIv4CCgtMaW5ldXBBbGVydBIKCgJpZBgBIAEoCRIpCgR0ZWFtGAIgASgLMhsubGVhZ3VlbGVucy52MS5PdmVydmlld1RlYW0SDQoFdGl0bGUYAyABKAkSDgoGZGV0YWlsGAQgASgJEi4KCHNldmVyaXR5GAUgASgOMhwubGVhZ3VlbGVucy52MS5BbGVydFNldmVyaXR5EgwKBHNsb3QYBiABKAkSEwoLZW1wdHlfc2xvdHMYByABKAUSJgoEa2luZBgIIAEoDjIYLmxlYWd1ZWxlbnMudjEuQWxlcnRLaW5kEhMKC3BsYXllcl9uYW1lGAkgASgJEjIKDWluanVyeV9zdGF0dXMYCiABKA4yGy5sZWFndWVsZW5zLnYxLkluanVyeVN0YXR1cxIQCghwcm9fdGVhbRgLIAEoCRIuCgpraWNrb2ZmX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBITCgtmaW5nZXJwcmludBgNIAEoCSIcChpHZXRPdmVydmlld01hdGNodXBzUmVxdWVzdCKCAQobR2V0T3ZlcnZpZXdNYXRjaHVwc1Jlc3BvbnNlEjEKCGNvdmVyYWdlGAEgASgLMh8ubGVhZ3VlbGVucy52MS5PdmVydmlld0NvdmVyYWdlEjAKCG1hdGNodXBzGAIgAygLMh4ubGVhZ3VlbGVucy52MS5PdmVydmlld01hdGNodXAioQIKD092ZXJ2aWV3TWF0Y2h1cBIpCgR0ZWFtGAEgASgLMhsubGVhZ3VlbGVucy52MS5PdmVydmlld1RlYW0SFQoNb3Bwb25lbnRfbmFtZRgCIAEoCRISCgVzY29yZRgDIAEoAUgAiAEBEhsKDm9wcG9uZW50X3Njb3JlGAQgASgBSAGIAQESGwoObWF0Y2h1cF9wZXJpb2QYBSABKAVIAogBARIOCgZzdGF0dXMYBiABKAkSDgoGaXNfYnllGAcgASgIEi4KCmZldGNoZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQggKBl9zY29yZUIRCg9fb3Bwb25lbnRfc2NvcmVCEQoPX21hdGNodXBfcGVyaW9kIiEKH0dldE92ZXJ2aWV3UGxheWVyVXBkYXRlc1JlcXVlc3QigwEKIEdldE92ZXJ2aWV3UGxheWVyVXBkYXRlc1Jlc3BvbnNlEjEKCGNvdmVyYWdlGAEgASgLMh8ubGVhZ3VlbGVucy52MS5PdmVydmlld0NvdmVyYWdlEiwKB3VwZGF0ZXMYAiADKAsyGy5sZWFndWVsZW5zLnYxLlBsYXllclVwZGF0ZSLhAgoMUGxheWVyVXBkYXRlEgoKAmlkGAEgASgJEhEKCXBsYXllcl9pZBgCIAEoCRIQCghoZWFkbGluZRgDIAEoCRISCgpzb3VyY2VfdXJsGAQgASgJEjAKDHB1Ymxpc2hlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEwoLcGxheWVyX25hbWUYBiABKAkSDwoHc3VtbWFyeRgHIAEoCRIUCgxzb3VyY2VfbGFiZWwYCCABKAkSLQoIY2F0ZWdvcnkYCSABKA4yGy5sZWFndWVsZW5zLnYxLk5ld3NDYXRlZ29yeRIyCg1pbmp1cnlfc3RhdHVzGAogASgOMhsubGVhZ3VlbGVucy52MS5Jbmp1cnlTdGF0dXMSDwoHc3RhcnRlchgLIAEoCBIqCgV0ZWFtcxgMIAMoCzIbLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdUZWFtIiAKHkdldE92ZXJ2aWV3TG9va2luZ0FoZWFkUmVxdWVzdCKCAQofR2V0T3ZlcnZpZXdMb29raW5nQWhlYWRSZXNwb25zZRIxCghjb3ZlcmFnZRgBIAEoCzIfLmxlYWd1ZWxlbnMudjEuT3ZlcnZpZXdDb3ZlcmFnZRIsCgZpc3N1ZXMYAiADKAsyHC5sZWFndWVsZW5zLnYxLlVwY29taW5nSXNzdWUicwoNVXBjb21pbmdJc3N1ZRIKCgJpZBgBIAEoCRIpCgR0ZWFtGAIgASgLMhsubGVhZ3VlbGVucy52MS5PdmVydmlld1RlYW0SEwoLZGVzY3JpcHRpb24YAyABKAkSFgoOc2NvcmluZ19wZXJpb2QYBCABKAUqZgoNQWxlcnRTZXZlcml0eRIeChpBTEVSVF9TRVZFUklUWV9VTlNQRUNJRklFRBAAEhkKFUFMRVJUX1NFVkVSSVRZX0FDVElPThABEhoKFkFMRVJUX1NFVkVSSVRZX01PTklUT1IQAiptCglBbGVydEtpbmQSGgoWQUxFUlRfS0lORF9VTlNQRUNJRklFRBAAEhkKFUFMRVJUX0tJTkRfRU1QVFlfU0xPVBABEhUKEUFMRVJUX0tJTkRfSU5KVVJZEAISEgoOQUxFUlRfS0lORF9CWUUQAyrYAQoMSW5qdXJ5U3RhdHVzEh0KGUlOSlVSWV9TVEFUVVNfVU5TUEVDSUZJRUQQABIYChRJTkpVUllfU1RBVFVTX0FDVElWRRABEh4KGklOSlVSWV9TVEFUVVNfUVVFU1RJT05BQkxFEAISGgoWSU5KVVJZX1NUQVRVU19ET1VCVEZVTBADEhUKEUlOSlVSWV9TVEFUVVNfT1VUEAQSIQodSU5KVVJZX1NUQVRVU19JTkpVUkVEX1JFU0VSVkUQBRIZChVJTkpVUllfU1RBVFVTX1VOS05PV04QBiqBAQoMTmV3c0NhdGVnb3J5Eh0KGU5FV1NfQ0FURUdPUllfVU5TUEVDSUZJRUQQABIYChRORVdTX0NBVEVHT1JZX0lOSlVSWRABEh0KGU5FV1NfQ0FURUdPUllfVFJBTlNBQ1RJT04QAhIZChVORVdTX0NBVEVHT1JZX0dFTkVSQUwQA0JSWlBnaXRodWIuY29tL2FkaXR5YWNob3VkaGFyaTI2L2xlYWd1ZS1sZW5zL2ludGVybmFsL2dlbi9sZWFndWVsZW5zL3YxO2xlYWd1ZWxlbnN2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * Sections report coverage explicitly: an empty array is not proof of no issues.
@@ -128,6 +128,66 @@ export const GetOverviewAttentionResponseSchema: GenMessage<GetOverviewAttention
   messageDesc(file_leaguelens_v1_overview, 3);
 
 /**
+ * @generated from message leaguelens.v1.DismissLineupAlertRequest
+ */
+export type DismissLineupAlertRequest = Message<"leaguelens.v1.DismissLineupAlertRequest"> & {
+  /**
+   * @generated from field: string fingerprint = 1;
+   */
+  fingerprint: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.DismissLineupAlertRequest.
+ * Use `create(DismissLineupAlertRequestSchema)` to create a new message.
+ */
+export const DismissLineupAlertRequestSchema: GenMessage<DismissLineupAlertRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_overview, 4);
+
+/**
+ * @generated from message leaguelens.v1.DismissLineupAlertResponse
+ */
+export type DismissLineupAlertResponse = Message<"leaguelens.v1.DismissLineupAlertResponse"> & {
+};
+
+/**
+ * Describes the message leaguelens.v1.DismissLineupAlertResponse.
+ * Use `create(DismissLineupAlertResponseSchema)` to create a new message.
+ */
+export const DismissLineupAlertResponseSchema: GenMessage<DismissLineupAlertResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_overview, 5);
+
+/**
+ * @generated from message leaguelens.v1.RestoreLineupAlertRequest
+ */
+export type RestoreLineupAlertRequest = Message<"leaguelens.v1.RestoreLineupAlertRequest"> & {
+  /**
+   * @generated from field: string fingerprint = 1;
+   */
+  fingerprint: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.RestoreLineupAlertRequest.
+ * Use `create(RestoreLineupAlertRequestSchema)` to create a new message.
+ */
+export const RestoreLineupAlertRequestSchema: GenMessage<RestoreLineupAlertRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_overview, 6);
+
+/**
+ * @generated from message leaguelens.v1.RestoreLineupAlertResponse
+ */
+export type RestoreLineupAlertResponse = Message<"leaguelens.v1.RestoreLineupAlertResponse"> & {
+};
+
+/**
+ * Describes the message leaguelens.v1.RestoreLineupAlertResponse.
+ * Use `create(RestoreLineupAlertResponseSchema)` to create a new message.
+ */
+export const RestoreLineupAlertResponseSchema: GenMessage<RestoreLineupAlertResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_overview, 7);
+
+/**
  * @generated from message leaguelens.v1.LineupAlert
  */
 export type LineupAlert = Message<"leaguelens.v1.LineupAlert"> & {
@@ -192,6 +252,13 @@ export type LineupAlert = Message<"leaguelens.v1.LineupAlert"> & {
    * @generated from field: google.protobuf.Timestamp kickoff_at = 12;
    */
   kickoffAt?: Timestamp | undefined;
+
+  /**
+   * Opaque dismissal key; changes with the alert's week or status. Pass it to DismissLineupAlert.
+   *
+   * @generated from field: string fingerprint = 13;
+   */
+  fingerprint: string;
 };
 
 /**
@@ -199,7 +266,7 @@ export type LineupAlert = Message<"leaguelens.v1.LineupAlert"> & {
  * Use `create(LineupAlertSchema)` to create a new message.
  */
 export const LineupAlertSchema: GenMessage<LineupAlert> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 4);
+  messageDesc(file_leaguelens_v1_overview, 8);
 
 /**
  * @generated from message leaguelens.v1.GetOverviewMatchupsRequest
@@ -212,7 +279,7 @@ export type GetOverviewMatchupsRequest = Message<"leaguelens.v1.GetOverviewMatch
  * Use `create(GetOverviewMatchupsRequestSchema)` to create a new message.
  */
 export const GetOverviewMatchupsRequestSchema: GenMessage<GetOverviewMatchupsRequest> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 5);
+  messageDesc(file_leaguelens_v1_overview, 9);
 
 /**
  * @generated from message leaguelens.v1.GetOverviewMatchupsResponse
@@ -234,7 +301,7 @@ export type GetOverviewMatchupsResponse = Message<"leaguelens.v1.GetOverviewMatc
  * Use `create(GetOverviewMatchupsResponseSchema)` to create a new message.
  */
 export const GetOverviewMatchupsResponseSchema: GenMessage<GetOverviewMatchupsResponse> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 6);
+  messageDesc(file_leaguelens_v1_overview, 10);
 
 /**
  * @generated from message leaguelens.v1.OverviewMatchup
@@ -286,7 +353,7 @@ export type OverviewMatchup = Message<"leaguelens.v1.OverviewMatchup"> & {
  * Use `create(OverviewMatchupSchema)` to create a new message.
  */
 export const OverviewMatchupSchema: GenMessage<OverviewMatchup> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 7);
+  messageDesc(file_leaguelens_v1_overview, 11);
 
 /**
  * @generated from message leaguelens.v1.GetOverviewPlayerUpdatesRequest
@@ -299,7 +366,7 @@ export type GetOverviewPlayerUpdatesRequest = Message<"leaguelens.v1.GetOverview
  * Use `create(GetOverviewPlayerUpdatesRequestSchema)` to create a new message.
  */
 export const GetOverviewPlayerUpdatesRequestSchema: GenMessage<GetOverviewPlayerUpdatesRequest> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 8);
+  messageDesc(file_leaguelens_v1_overview, 12);
 
 /**
  * @generated from message leaguelens.v1.GetOverviewPlayerUpdatesResponse
@@ -321,7 +388,7 @@ export type GetOverviewPlayerUpdatesResponse = Message<"leaguelens.v1.GetOvervie
  * Use `create(GetOverviewPlayerUpdatesResponseSchema)` to create a new message.
  */
 export const GetOverviewPlayerUpdatesResponseSchema: GenMessage<GetOverviewPlayerUpdatesResponse> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 9);
+  messageDesc(file_leaguelens_v1_overview, 13);
 
 /**
  * One update per player: his latest news item from the past week.
@@ -399,7 +466,7 @@ export type PlayerUpdate = Message<"leaguelens.v1.PlayerUpdate"> & {
  * Use `create(PlayerUpdateSchema)` to create a new message.
  */
 export const PlayerUpdateSchema: GenMessage<PlayerUpdate> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 10);
+  messageDesc(file_leaguelens_v1_overview, 14);
 
 /**
  * @generated from message leaguelens.v1.GetOverviewLookingAheadRequest
@@ -412,7 +479,7 @@ export type GetOverviewLookingAheadRequest = Message<"leaguelens.v1.GetOverviewL
  * Use `create(GetOverviewLookingAheadRequestSchema)` to create a new message.
  */
 export const GetOverviewLookingAheadRequestSchema: GenMessage<GetOverviewLookingAheadRequest> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 11);
+  messageDesc(file_leaguelens_v1_overview, 15);
 
 /**
  * @generated from message leaguelens.v1.GetOverviewLookingAheadResponse
@@ -434,7 +501,7 @@ export type GetOverviewLookingAheadResponse = Message<"leaguelens.v1.GetOverview
  * Use `create(GetOverviewLookingAheadResponseSchema)` to create a new message.
  */
 export const GetOverviewLookingAheadResponseSchema: GenMessage<GetOverviewLookingAheadResponse> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 12);
+  messageDesc(file_leaguelens_v1_overview, 16);
 
 /**
  * @generated from message leaguelens.v1.UpcomingIssue
@@ -466,7 +533,7 @@ export type UpcomingIssue = Message<"leaguelens.v1.UpcomingIssue"> & {
  * Use `create(UpcomingIssueSchema)` to create a new message.
  */
 export const UpcomingIssueSchema: GenMessage<UpcomingIssue> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_overview, 13);
+  messageDesc(file_leaguelens_v1_overview, 17);
 
 /**
  * ACTION means the lineup should change before kickoff; MONITOR is worth watching.
