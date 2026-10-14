@@ -460,3 +460,264 @@ func TestOverviewMissingSnapshot(t *testing.T) {
 		t.Fatalf("missing snapshot: %v %v", result, err)
 	}
 }
+
+func TestMatchupDetail(t *testing.T) {
+	db := openDatabase(t)
+	ctx := context.Background()
+	leagueSeasonID := importMatchupDetailFixture(t, db)
+	now := time.Now().UTC()
+	addMatchupDetailSchedule(t, db, now)
+
+	client := clientFor(t, db, "matchup-owner@test")
+	detail, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertDefaultMatchupDetail(t, detail.Matchup)
+
+	period := int32(1)
+	firstPeriod, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertMatchupWithoutSchedule(t, firstPeriod.Matchup)
+
+	period = 3
+	bye, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertByeMatchupDetail(t, bye.Matchup)
+
+	period = 5
+	missing, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
+	if err != nil || missing.Matchup != nil {
+		t.Fatalf("missing round response = %v, error = %v", missing, err)
+	}
+
+	assertMatchupDetailAccessErrors(t, db, client, leagueSeasonID)
+}
+
+func addMatchupDetailSchedule(t *testing.T, db *database.DB, now time.Time) {
+	t.Helper()
+	for _, game := range []store.AddNFLGameParams{
+		{
+			Season: 2026, Week: 2, Team: "KC", Opponent: "BUF",
+			KickoffAt: pgtype.Timestamptz{Time: now.Add(48 * time.Hour), Valid: true},
+			FetchedAt: pgtype.Timestamptz{Time: now, Valid: true},
+		},
+		{
+			Season: 2026, Week: 2, Team: "BUF", Opponent: "KC",
+			KickoffAt: pgtype.Timestamptz{Time: now.Add(-48 * time.Hour), Valid: true},
+			FetchedAt: pgtype.Timestamptz{Time: now, Valid: true},
+		},
+	} {
+		if err := db.Queries().AddNFLGame(context.Background(), game); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func assertMatchupDetailAccessErrors(t *testing.T, db *database.DB, client leaguelensv1connect.DashboardServiceClient, leagueSeasonID string) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := db.Queries().CreateUser(ctx, "matchup-other@test"); err != nil {
+		t.Fatal(err)
+	}
+	other := clientFor(t, db, "matchup-other@test")
+	if _, err := other.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID}); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("other owner access error = %v, want not found", err)
+	}
+	if _, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: "bad-id"}); connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("invalid league ID error = %v, want invalid argument", err)
+	}
+}
+
+func importMatchupDetailFixture(t *testing.T, db *database.DB) string {
+	t.Helper()
+	ctx := context.Background()
+	now := time.Now().UTC()
+	zero, eightAndHalf, twelveAndHalf := 0.0, 8.5, 12.5
+	league := fantasy.League{
+		Ref:       fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "matchup-detail", Season: 2026},
+		Name:      "Matchup Detail",
+		TeamCount: 2,
+	}
+	data := fantasy.LeagueData{
+		League:    league,
+		FetchedAt: now,
+		Teams: []fantasy.Team{
+			{ExternalID: "1", Name: "Home", Record: &fantasy.TeamRecord{Wins: 8, Losses: 2, PointsFor: &eightAndHalf}},
+			{ExternalID: "2", Name: "Away"},
+		},
+		Players: []fantasy.Player{
+			{ExternalID: "qb", Name: "Quarterback", Kind: fantasy.PlayerPerson},
+			{ExternalID: "rb", Name: "Running Back", Kind: fantasy.PlayerPerson},
+			{ExternalID: "wr", Name: "Dropped Receiver", Kind: fantasy.PlayerPerson},
+			{ExternalID: "flex", Name: "Bye Week Starter", Kind: fantasy.PlayerPerson},
+			{ExternalID: "bench", Name: "Bench Player", Kind: fantasy.PlayerPerson},
+			{ExternalID: "ir", Name: "IR Player", Kind: fantasy.PlayerPerson},
+		},
+		Rosters: []fantasy.RosterSnapshot{
+			{
+				TeamID: "1", ScoringPeriod: 2, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now,
+				Entries: []fantasy.RosterEntry{
+					{PlayerID: "qb", Slot: fantasy.SlotQB, InjuryStatus: fantasy.InjuryQuestionable, ProTeam: "KC"},
+					{PlayerID: "rb", Slot: fantasy.SlotRB, InjuryStatus: fantasy.InjuryActive, ProTeam: "BUF"},
+					{PlayerID: "flex", Slot: fantasy.SlotFlex, InjuryStatus: fantasy.InjuryActive, ProTeam: "NYJ"},
+					{PlayerID: "bench", Slot: fantasy.SlotBench},
+					{PlayerID: "ir", Slot: fantasy.SlotIR},
+				},
+			},
+			{TeamID: "2", ScoringPeriod: 2, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now},
+		},
+		Matchups: []fantasy.Matchup{
+			{
+				ExternalID: "period-2", Period: 2, ScoringPeriods: []fantasy.ScoringPeriod{2},
+				TeamA: fantasy.MatchupSide{TeamID: "2", Score: &twelveAndHalf},
+				TeamB: &fantasy.MatchupSide{TeamID: "1", Score: &zero}, Status: fantasy.MatchupInProgress,
+			},
+			{
+				ExternalID: "period-1", Period: 1, ScoringPeriods: []fantasy.ScoringPeriod{1},
+				TeamA: fantasy.MatchupSide{TeamID: "1"}, TeamB: &fantasy.MatchupSide{TeamID: "2"}, Status: fantasy.MatchupScheduled,
+			},
+			{
+				ExternalID: "period-3", Period: 3, ScoringPeriods: []fantasy.ScoringPeriod{3},
+				TeamA: fantasy.MatchupSide{TeamID: "1"}, IsBye: true, Status: fantasy.MatchupScheduled,
+			},
+		},
+		Lineups: []fantasy.MatchupLineup{
+			{
+				Period: 2, MatchupID: "period-2", TeamID: "1",
+				Entries: []fantasy.LineupEntry{
+					{PlayerID: "qb", Slot: fantasy.SlotQB, Starter: true, Points: &zero},
+					{PlayerID: "rb", Slot: fantasy.SlotRB, Starter: true, Points: &eightAndHalf},
+					{PlayerID: "wr", Slot: fantasy.SlotWR, Starter: true},
+					{PlayerID: "flex", Slot: fantasy.SlotFlex, Starter: true},
+					{PlayerID: "bench", Slot: fantasy.SlotBench},
+					{PlayerID: "ir", Slot: fantasy.SlotIR, Points: &zero},
+				},
+			},
+			{
+				Period: 1, MatchupID: "period-1", TeamID: "1",
+				Entries: []fantasy.LineupEntry{{PlayerID: "qb", Slot: fantasy.SlotQB, Starter: true}},
+			},
+		},
+		CompleteMatchupPeriods: []fantasy.MatchupPeriod{1, 2, 3},
+	}
+	service := importer.Service{DB: db, Source: source{data}}
+	if _, err := service.Import(ctx, importer.Request{
+		OwnerEmail: "matchup-owner@test", ExternalAccountID: "matchup-detail-account",
+		Selection: fantasy.ConnectionSelection{League: league.Ref, SelectedTeamIDs: []string{"1"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	client := clientFor(t, db, "matchup-owner@test")
+	leagues, err := client.ListLeagues(ctx, &v1.ListLeaguesRequest{})
+	if err != nil || len(leagues.Leagues) != 1 {
+		t.Fatalf("fixture league lookup = %v, error = %v", leagues, err)
+	}
+	return leagues.Leagues[0].Id
+}
+
+func assertDefaultMatchupDetail(t *testing.T, detail *v1.MatchupDetail) {
+	t.Helper()
+	if detail == nil {
+		t.Fatal("default matchup is absent")
+	}
+	if detail.MatchupPeriod != 2 || detail.Status != v1.MatchupStatus_MATCHUP_STATUS_IN_PROGRESS ||
+		detail.IsBye || detail.Id == "" || detail.FetchedAt == nil {
+		t.Fatalf("matchup fields = %v", detail)
+	}
+	if detail.Team == nil || detail.Team.TeamName != "Home" || detail.Team.Score == nil || *detail.Team.Score != 0 ||
+		detail.Team.Record == nil || detail.Team.Record.Wins != 8 || detail.Team.Record.PointsFor == nil ||
+		*detail.Team.Record.PointsFor != 8.5 {
+		t.Fatalf("owner orientation or record lost: %v", detail.Team)
+	}
+	if detail.Opponent == nil || detail.Opponent.TeamName != "Away" || detail.Opponent.Score == nil ||
+		*detail.Opponent.Score != 12.5 || detail.Opponent.Record != nil {
+		t.Fatalf("opponent orientation or record lost: %v", detail.Opponent)
+	}
+	assertHomeMatchupLineup(t, detail.Team)
+	if len(detail.Opponent.Starters) != 0 || len(detail.Opponent.Bench) != 0 {
+		t.Fatalf("missing opponent lineup was invented: %v", detail.Opponent)
+	}
+}
+
+func assertHomeMatchupLineup(t *testing.T, team *v1.MatchupLineup) {
+	t.Helper()
+	if team.StartersLeftToPlay != 1 {
+		t.Fatalf("starters left to play = %d, want 1", team.StartersLeftToPlay)
+	}
+	if len(team.Starters) != 4 {
+		t.Fatalf("starter count = %d, want 4", len(team.Starters))
+	}
+	assertLineupSlots(t, team.Starters, []string{"QB", "RB", "WR", "FLEX"})
+	assertLineupPlayer(t, team.Starters[0], "Quarterback", "KC", v1.InjuryStatus_INJURY_STATUS_QUESTIONABLE, v1.GameState_GAME_STATE_NOT_STARTED, true, 0)
+	assertLineupPlayer(t, team.Starters[1], "Running Back", "BUF", v1.InjuryStatus_INJURY_STATUS_ACTIVE, v1.GameState_GAME_STATE_KICKED_OFF, true, 8.5)
+	if player := team.Starters[2]; player.PlayerName != "Dropped Receiver" || player.PlayerId == "" || player.ProTeam != "" ||
+		player.InjuryStatus != v1.InjuryStatus_INJURY_STATUS_UNSPECIFIED || player.GameState != v1.GameState_GAME_STATE_UNKNOWN ||
+		player.Points != nil || player.KickoffAt != nil {
+		t.Fatalf("dropped player current metadata or nil score lost: %v", player)
+	}
+	if player := team.Starters[3]; player.PlayerName != "Bye Week Starter" || player.GameState != v1.GameState_GAME_STATE_BYE {
+		t.Fatalf("no-game starter state = %v, want bye", player)
+	}
+	if team.Starters[0].KickoffAt == nil || !team.Starters[0].KickoffAt.AsTime().After(time.Now()) {
+		t.Fatalf("future kickoff missing: %v", team.Starters[0].KickoffAt)
+	}
+	if len(team.Bench) != 2 {
+		t.Fatalf("bench count = %d, want 2", len(team.Bench))
+	}
+	assertLineupSlots(t, team.Bench, []string{"BENCH", "IR"})
+	if team.Bench[0].PlayerName != "Bench Player" || team.Bench[0].Points != nil {
+		t.Fatalf("nil bench points lost: %v", team.Bench[0])
+	}
+	if team.Bench[1].PlayerName != "IR Player" || team.Bench[1].Points == nil || *team.Bench[1].Points != 0 {
+		t.Fatalf("zero IR points lost: %v", team.Bench[1])
+	}
+}
+
+func assertMatchupWithoutSchedule(t *testing.T, detail *v1.MatchupDetail) {
+	t.Helper()
+	if detail == nil || detail.MatchupPeriod != 1 || detail.Team == nil || len(detail.Team.Starters) != 1 {
+		t.Fatalf("period one matchup missing: %v", detail)
+	}
+	player := detail.Team.Starters[0]
+	if player.GameState != v1.GameState_GAME_STATE_UNKNOWN || player.KickoffAt != nil {
+		t.Fatalf("missing schedule state = %v, kickoff = %v", player.GameState, player.KickoffAt)
+	}
+	if detail.Team.Score != nil || detail.Opponent == nil || detail.Opponent.Score != nil {
+		t.Fatalf("unknown scores became present: %v", detail)
+	}
+}
+
+func assertByeMatchupDetail(t *testing.T, detail *v1.MatchupDetail) {
+	t.Helper()
+	if detail == nil || !detail.IsBye || detail.Opponent != nil || detail.Team == nil || detail.Team.TeamName != "Home" {
+		t.Fatalf("bye matchup detail = %v", detail)
+	}
+}
+
+func assertLineupSlots(t *testing.T, players []*v1.LineupPlayer, want []string) {
+	t.Helper()
+	if len(players) != len(want) {
+		t.Fatalf("lineup player count = %d, want %d", len(players), len(want))
+	}
+	for index, player := range players {
+		if player.Slot != want[index] {
+			t.Fatalf("lineup slot[%d] = %q, want %q", index, player.Slot, want[index])
+		}
+	}
+}
+
+func assertLineupPlayer(t *testing.T, player *v1.LineupPlayer, name, proTeam string, injury v1.InjuryStatus, game v1.GameState, hasPoints bool, points float64) {
+	t.Helper()
+	if player.PlayerId == "" || player.PlayerName != name || player.ProTeam != proTeam ||
+		player.InjuryStatus != injury || player.GameState != game {
+		t.Fatalf("lineup player fields lost: %v", player)
+	}
+	if (player.Points != nil) != hasPoints || (hasPoints && *player.Points != points) {
+		t.Fatalf("lineup player points = %v, want present %t value %v", player.Points, hasPoints, points)
+	}
+}

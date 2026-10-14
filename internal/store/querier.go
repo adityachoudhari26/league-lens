@@ -62,6 +62,15 @@ type Querier interface {
 	// No network calls run while this transaction lock is held.
 	LockImportWrites(ctx context.Context) error
 	MarkLeagueSynced(ctx context.Context, arg MarkLeagueSyncedParams) error
+	// Injury and NFL team are current: they come from the team's latest observed
+	// snapshot, so players dropped since then have neither.
+	MatchupDetailLineup(ctx context.Context, arg MatchupDetailLineupParams) ([]MatchupDetailLineupRow, error)
+	// The owner's selected team in the league (user_teams allows at most one) and
+	// the scoring week of its latest observed snapshot (0 when none).
+	MatchupDetailOwnerTeam(ctx context.Context, arg MatchupDetailOwnerTeamParams) (MatchupDetailOwnerTeamRow, error)
+	// A period of 0 means omitted: the round containing the observed scoring week,
+	// matching OverviewTeamMatchup.
+	MatchupDetailRound(ctx context.Context, arg MatchupDetailRoundParams) (Matchup, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)
 	// Match the latest observed scoring week, not the greatest (possibly future) round.
 	OverviewTeamMatchup(ctx context.Context, arg OverviewTeamMatchupParams) (OverviewTeamMatchupRow, error)

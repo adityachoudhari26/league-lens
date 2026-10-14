@@ -1421,7 +1421,8 @@ type MatchupLineup struct {
 	Record             *TeamRecord            `protobuf:"bytes,3,opt,name=record,proto3" json:"record,omitempty"`                                                        // Absent when unknown. Current record, not as of this round.
 	Score              *float64               `protobuf:"fixed64,4,opt,name=score,proto3,oneof" json:"score,omitempty"`                                                  // Absence and actual zero are distinct.
 	StartersLeftToPlay int32                  `protobuf:"varint,5,opt,name=starters_left_to_play,json=startersLeftToPlay,proto3" json:"starters_left_to_play,omitempty"` // Starters whose game has not kicked off.
-	// Starters in the provider's lineup order; bench includes IR.
+	// Starters by slot (QB, RB, WR, TE, FLEX, SUPERFLEX, DEF, K, then others); bench
+	// by BENCH, TAXI, IR, then others. Ties: points (highest first), then name, then player ID.
 	Starters      []*LineupPlayer `protobuf:"bytes,6,rep,name=starters,proto3" json:"starters,omitempty"`
 	Bench         []*LineupPlayer `protobuf:"bytes,7,rep,name=bench,proto3" json:"bench,omitempty"`
 	unknownFields protoimpl.UnknownFields

@@ -2,11 +2,11 @@
 // @generated from file leaguelens/v1/dashboard.proto (package leaguelens.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
-import type { DismissLineupAlertRequestSchema, DismissLineupAlertResponseSchema, GetOverviewAttentionRequestSchema, GetOverviewAttentionResponseSchema, GetOverviewLookingAheadRequestSchema, GetOverviewLookingAheadResponseSchema, GetOverviewMatchupsRequestSchema, GetOverviewMatchupsResponseSchema, GetOverviewPlayerUpdatesRequestSchema, GetOverviewPlayerUpdatesResponseSchema, RestoreLineupAlertRequestSchema, RestoreLineupAlertResponseSchema } from "./overview_pb";
+import type { DismissLineupAlertRequestSchema, DismissLineupAlertResponseSchema, GetOverviewAttentionRequestSchema, GetOverviewAttentionResponseSchema, GetOverviewLookingAheadRequestSchema, GetOverviewLookingAheadResponseSchema, GetOverviewMatchupsRequestSchema, GetOverviewMatchupsResponseSchema, GetOverviewPlayerUpdatesRequestSchema, GetOverviewPlayerUpdatesResponseSchema, InjuryStatus, RestoreLineupAlertRequestSchema, RestoreLineupAlertResponseSchema } from "./overview_pb";
 import { file_leaguelens_v1_overview } from "./overview_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/dashboard.proto.
  */
 export const file_leaguelens_v1_dashboard: GenFile = /*@__PURE__*/
-  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Rhc2hib2FyZC5wcm90bxINbGVhZ3VlbGVucy52MSI7ChJMaXN0TGVhZ3Vlc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiVgoTTGlzdExlYWd1ZXNSZXNwb25zZRImCgdsZWFndWVzGAEgAygLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIiwKEEdldExlYWd1ZVJlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCSKBAQoRR2V0TGVhZ3VlUmVzcG9uc2USJQoGbGVhZ3VlGAEgASgLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSIgoFdGVhbXMYAiADKAsyEy5sZWFndWVsZW5zLnYxLlRlYW0SIQoZYXZhaWxhYmxlX21hdGNodXBfcGVyaW9kcxgDIAMoBSKxAQoGTGVhZ3VlEgoKAmlkGAEgASgJEhAKCHByb3ZpZGVyGAIgASgJEhMKC2V4dGVybmFsX2lkGAMgASgJEg4KBnNlYXNvbhgEIAEoBRIMCgRuYW1lGAUgASgJEhkKEXNlbGVjdGVkX3RlYW1faWRzGAYgAygJEjsKF2xhc3Rfc3VjY2Vzc2Z1bF9zeW5jX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKOAQoEVGVhbRIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEhAKCHNlbGVjdGVkGAQgASgIEikKBnJlY29yZBgFIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBIRCgRyYW5rGAYgASgFSACIAQFCBwoFX3JhbmsikAEKClRlYW1SZWNvcmQSDAoEd2lucxgBIAEoBRIOCgZsb3NzZXMYAiABKAUSDAoEdGllcxgDIAEoBRIXCgpwb2ludHNfZm9yGAQgASgBSACIAQESGwoOcG9pbnRzX2FnYWluc3QYBSABKAFIAYgBAUINCgtfcG9pbnRzX2ZvckIRCg9fcG9pbnRzX2FnYWluc3QiVwoUR2V0VGVhbVJvc3RlclJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIbCg5zY29yaW5nX3BlcmlvZBgCIAEoBUgAiAEBQhEKD19zY29yaW5nX3BlcmlvZCJIChVHZXRUZWFtUm9zdGVyUmVzcG9uc2USLwoIc25hcHNob3QYASABKAsyHS5sZWFndWVsZW5zLnYxLlJvc3RlclNuYXBzaG90IvcBCg5Sb3N0ZXJTbmFwc2hvdBIKCgJpZBgBIAEoCRIPCgd0ZWFtX2lkGAIgASgJEhYKDnNjb3JpbmdfcGVyaW9kGAMgASgFEg4KBm9yaWdpbhgEIAEoCRIQCghjb3ZlcmFnZRgFIAEoCRIvCgtvYnNlcnZlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMZWZmZWN0aXZlX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbnRyaWVzGAggAygLMhoubGVhZ3VlbGVucy52MS5Sb3N0ZXJFbnRyeSKoAQoLUm9zdGVyRW50cnkSEQoJcGxheWVyX2lkGAEgASgJEhMKC3BsYXllcl9uYW1lGAIgASgJEhMKC3BsYXllcl9raW5kGAMgASgJEgwKBHNsb3QYBCABKAkSGAoQcHJvdmlkZXJfc2xvdF9pZBgFIAEoCRI0ChJlbGlnaWJsZV9wb3NpdGlvbnMYBiABKAsyGC5sZWFndWVsZW5zLnYxLlBvc2l0aW9ucyIbCglQb3NpdGlvbnMSDgoGdmFsdWVzGAEgAygJIkcKE0xpc3RNYXRjaHVwc1JlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgCIAEoBSJAChRMaXN0TWF0Y2h1cHNSZXNwb25zZRIoCghtYXRjaHVwcxgBIAMoCzIWLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cCKiAgoHTWF0Y2h1cBIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgDIAEoBRI2Cg9zY29yaW5nX3BlcmlvZHMYBCABKAsyHS5sZWFndWVsZW5zLnYxLlNjb3JpbmdQZXJpb2RzEioKBnRlYW1fYRgFIAEoCzIaLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cFNpZGUSKgoGdGVhbV9iGAYgASgLMhoubGVhZ3VlbGVucy52MS5NYXRjaHVwU2lkZRIOCgZpc19ieWUYByABKAgSDgoGc3RhdHVzGAggASgJEi4KCmZldGNoZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiAKDlNjb3JpbmdQZXJpb2RzEg4KBnZhbHVlcxgBIAMoBSI8CgtNYXRjaHVwU2lkZRIPCgd0ZWFtX2lkGAEgASgJEhIKBXNjb3JlGAIgASgBSACIAQFCCAoGX3Njb3JlMpkIChBEYXNoYm9hcmRTZXJ2aWNlEm8KFEdldE92ZXJ2aWV3QXR0ZW50aW9uEioubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld0F0dGVudGlvblJlcXVlc3QaKy5sZWFndWVsZW5zLnYxLkdldE92ZXJ2aWV3QXR0ZW50aW9uUmVzcG9uc2USaQoSRGlzbWlzc0xpbmV1cEFsZXJ0EigubGVhZ3VlbGVucy52MS5EaXNtaXNzTGluZXVwQWxlcnRSZXF1ZXN0GikubGVhZ3VlbGVucy52MS5EaXNtaXNzTGluZXVwQWxlcnRSZXNwb25zZRJpChJSZXN0b3JlTGluZXVwQWxlcnQSKC5sZWFndWVsZW5zLnYxLlJlc3RvcmVMaW5ldXBBbGVydFJlcXVlc3QaKS5sZWFndWVsZW5zLnYxLlJlc3RvcmVMaW5ldXBBbGVydFJlc3BvbnNlEmwKE0dldE92ZXJ2aWV3TWF0Y2h1cHMSKS5sZWFndWVsZW5zLnYxLkdldE92ZXJ2aWV3TWF0Y2h1cHNSZXF1ZXN0GioubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld01hdGNodXBzUmVzcG9uc2USewoYR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzEi4ubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld1BsYXllclVwZGF0ZXNSZXF1ZXN0Gi8ubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld1BsYXllclVwZGF0ZXNSZXNwb25zZRJ4ChdHZXRPdmVydmlld0xvb2tpbmdBaGVhZBItLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdMb29raW5nQWhlYWRSZXF1ZXN0Gi4ubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld0xvb2tpbmdBaGVhZFJlc3BvbnNlElQKC0xpc3RMZWFndWVzEiEubGVhZ3VlbGVucy52MS5MaXN0TGVhZ3Vlc1JlcXVlc3QaIi5sZWFndWVsZW5zLnYxLkxpc3RMZWFndWVzUmVzcG9uc2USTgoJR2V0TGVhZ3VlEh8ubGVhZ3VlbGVucy52MS5HZXRMZWFndWVSZXF1ZXN0GiAubGVhZ3VlbGVucy52MS5HZXRMZWFndWVSZXNwb25zZRJaCg1HZXRUZWFtUm9zdGVyEiMubGVhZ3VlbGVucy52MS5HZXRUZWFtUm9zdGVyUmVxdWVzdBokLmxlYWd1ZWxlbnMudjEuR2V0VGVhbVJvc3RlclJlc3BvbnNlElcKDExpc3RNYXRjaHVwcxIiLmxlYWd1ZWxlbnMudjEuTGlzdE1hdGNodXBzUmVxdWVzdBojLmxlYWd1ZWxlbnMudjEuTGlzdE1hdGNodXBzUmVzcG9uc2VCUlpQZ2l0aHViLmNvbS9hZGl0eWFjaG91ZGhhcmkyNi9sZWFndWUtbGVucy9pbnRlcm5hbC9nZW4vbGVhZ3VlbGVucy92MTtsZWFndWVsZW5zdjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_leaguelens_v1_overview]);
+  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Rhc2hib2FyZC5wcm90bxINbGVhZ3VlbGVucy52MSI7ChJMaXN0TGVhZ3Vlc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiVgoTTGlzdExlYWd1ZXNSZXNwb25zZRImCgdsZWFndWVzGAEgAygLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIiwKEEdldExlYWd1ZVJlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCSKBAQoRR2V0TGVhZ3VlUmVzcG9uc2USJQoGbGVhZ3VlGAEgASgLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSIgoFdGVhbXMYAiADKAsyEy5sZWFndWVsZW5zLnYxLlRlYW0SIQoZYXZhaWxhYmxlX21hdGNodXBfcGVyaW9kcxgDIAMoBSKxAQoGTGVhZ3VlEgoKAmlkGAEgASgJEhAKCHByb3ZpZGVyGAIgASgJEhMKC2V4dGVybmFsX2lkGAMgASgJEg4KBnNlYXNvbhgEIAEoBRIMCgRuYW1lGAUgASgJEhkKEXNlbGVjdGVkX3RlYW1faWRzGAYgAygJEjsKF2xhc3Rfc3VjY2Vzc2Z1bF9zeW5jX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKOAQoEVGVhbRIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEhAKCHNlbGVjdGVkGAQgASgIEikKBnJlY29yZBgFIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBIRCgRyYW5rGAYgASgFSACIAQFCBwoFX3JhbmsikAEKClRlYW1SZWNvcmQSDAoEd2lucxgBIAEoBRIOCgZsb3NzZXMYAiABKAUSDAoEdGllcxgDIAEoBRIXCgpwb2ludHNfZm9yGAQgASgBSACIAQESGwoOcG9pbnRzX2FnYWluc3QYBSABKAFIAYgBAUINCgtfcG9pbnRzX2ZvckIRCg9fcG9pbnRzX2FnYWluc3QiVwoUR2V0VGVhbVJvc3RlclJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIbCg5zY29yaW5nX3BlcmlvZBgCIAEoBUgAiAEBQhEKD19zY29yaW5nX3BlcmlvZCJIChVHZXRUZWFtUm9zdGVyUmVzcG9uc2USLwoIc25hcHNob3QYASABKAsyHS5sZWFndWVsZW5zLnYxLlJvc3RlclNuYXBzaG90IvcBCg5Sb3N0ZXJTbmFwc2hvdBIKCgJpZBgBIAEoCRIPCgd0ZWFtX2lkGAIgASgJEhYKDnNjb3JpbmdfcGVyaW9kGAMgASgFEg4KBm9yaWdpbhgEIAEoCRIQCghjb3ZlcmFnZRgFIAEoCRIvCgtvYnNlcnZlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMZWZmZWN0aXZlX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbnRyaWVzGAggAygLMhoubGVhZ3VlbGVucy52MS5Sb3N0ZXJFbnRyeSKoAQoLUm9zdGVyRW50cnkSEQoJcGxheWVyX2lkGAEgASgJEhMKC3BsYXllcl9uYW1lGAIgASgJEhMKC3BsYXllcl9raW5kGAMgASgJEgwKBHNsb3QYBCABKAkSGAoQcHJvdmlkZXJfc2xvdF9pZBgFIAEoCRI0ChJlbGlnaWJsZV9wb3NpdGlvbnMYBiABKAsyGC5sZWFndWVsZW5zLnYxLlBvc2l0aW9ucyIbCglQb3NpdGlvbnMSDgoGdmFsdWVzGAEgAygJIkcKE0xpc3RNYXRjaHVwc1JlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgCIAEoBSJAChRMaXN0TWF0Y2h1cHNSZXNwb25zZRIoCghtYXRjaHVwcxgBIAMoCzIWLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cCKiAgoHTWF0Y2h1cBIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgDIAEoBRI2Cg9zY29yaW5nX3BlcmlvZHMYBCABKAsyHS5sZWFndWVsZW5zLnYxLlNjb3JpbmdQZXJpb2RzEioKBnRlYW1fYRgFIAEoCzIaLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cFNpZGUSKgoGdGVhbV9iGAYgASgLMhoubGVhZ3VlbGVucy52MS5NYXRjaHVwU2lkZRIOCgZpc19ieWUYByABKAgSDgoGc3RhdHVzGAggASgJEi4KCmZldGNoZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiAKDlNjb3JpbmdQZXJpb2RzEg4KBnZhbHVlcxgBIAMoBSI8CgtNYXRjaHVwU2lkZRIPCgd0ZWFtX2lkGAEgASgJEhIKBXNjb3JlGAIgASgBSACIAQFCCAoGX3Njb3JlImMKF0dldE1hdGNodXBEZXRhaWxSZXF1ZXN0EhgKEGxlYWd1ZV9zZWFzb25faWQYASABKAkSGwoObWF0Y2h1cF9wZXJpb2QYAiABKAVIAIgBAUIRCg9fbWF0Y2h1cF9wZXJpb2QiSQoYR2V0TWF0Y2h1cERldGFpbFJlc3BvbnNlEi0KB21hdGNodXAYASABKAsyHC5sZWFndWVsZW5zLnYxLk1hdGNodXBEZXRhaWwi/QEKDU1hdGNodXBEZXRhaWwSCgoCaWQYASABKAkSFgoObWF0Y2h1cF9wZXJpb2QYAiABKAUSLAoGc3RhdHVzGAMgASgOMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwU3RhdHVzEg4KBmlzX2J5ZRgEIAEoCBIqCgR0ZWFtGAUgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCG9wcG9uZW50GAYgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCmZldGNoZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIvYBCg1NYXRjaHVwTGluZXVwEg8KB3RlYW1faWQYASABKAkSEQoJdGVhbV9uYW1lGAIgASgJEikKBnJlY29yZBgDIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBISCgVzY29yZRgEIAEoAUgAiAEBEh0KFXN0YXJ0ZXJzX2xlZnRfdG9fcGxheRgFIAEoBRItCghzdGFydGVycxgGIAMoCzIbLmxlYWd1ZWxlbnMudjEuTGluZXVwUGxheWVyEioKBWJlbmNoGAcgAygLMhsubGVhZ3VlbGVucy52MS5MaW5ldXBQbGF5ZXJCCAoGX3Njb3JlIogCCgxMaW5ldXBQbGF5ZXISEQoJcGxheWVyX2lkGAEgASgJEhMKC3BsYXllcl9uYW1lGAIgASgJEgwKBHNsb3QYAyABKAkSEwoGcG9pbnRzGAQgASgBSACIAQESMgoNaW5qdXJ5X3N0YXR1cxgFIAEoDjIbLmxlYWd1ZWxlbnMudjEuSW5qdXJ5U3RhdHVzEhAKCHByb190ZWFtGAYgASgJEiwKCmdhbWVfc3RhdGUYByABKA4yGC5sZWFndWVsZW5zLnYxLkdhbWVTdGF0ZRIuCgpraWNrb2ZmX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIJCgdfcG9pbnRzKqMBCg1NYXRjaHVwU3RhdHVzEh4KGk1BVENIVVBfU1RBVFVTX1VOU1BFQ0lGSUVEEAASHAoYTUFUQ0hVUF9TVEFUVVNfU0NIRURVTEVEEAESHgoaTUFUQ0hVUF9TVEFUVVNfSU5fUFJPR1JFU1MQAhIYChRNQVRDSFVQX1NUQVRVU19GSU5BTBADEhoKFk1BVENIVVBfU1RBVFVTX1VOS05PV04QBCqKAQoJR2FtZVN0YXRlEhoKFkdBTUVfU1RBVEVfVU5TUEVDSUZJRUQQABIaChZHQU1FX1NUQVRFX05PVF9TVEFSVEVEEAESGQoVR0FNRV9TVEFURV9LSUNLRURfT0ZGEAISEgoOR0FNRV9TVEFURV9CWUUQAxIWChJHQU1FX1NUQVRFX1VOS05PV04QBDL+CAoQRGFzaGJvYXJkU2VydmljZRJvChRHZXRPdmVydmlld0F0dGVudGlvbhIqLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdBdHRlbnRpb25SZXF1ZXN0GisubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld0F0dGVudGlvblJlc3BvbnNlEmkKEkRpc21pc3NMaW5ldXBBbGVydBIoLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0xpbmV1cEFsZXJ0UmVxdWVzdBopLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0xpbmV1cEFsZXJ0UmVzcG9uc2USaQoSUmVzdG9yZUxpbmV1cEFsZXJ0EigubGVhZ3VlbGVucy52MS5SZXN0b3JlTGluZXVwQWxlcnRSZXF1ZXN0GikubGVhZ3VlbGVucy52MS5SZXN0b3JlTGluZXVwQWxlcnRSZXNwb25zZRJsChNHZXRPdmVydmlld01hdGNodXBzEikubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld01hdGNodXBzUmVxdWVzdBoqLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdNYXRjaHVwc1Jlc3BvbnNlEnsKGEdldE92ZXJ2aWV3UGxheWVyVXBkYXRlcxIuLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVxdWVzdBovLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVzcG9uc2USeAoXR2V0T3ZlcnZpZXdMb29raW5nQWhlYWQSLS5sZWFndWVsZW5zLnYxLkdldE92ZXJ2aWV3TG9va2luZ0FoZWFkUmVxdWVzdBouLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdMb29raW5nQWhlYWRSZXNwb25zZRJUCgtMaXN0TGVhZ3VlcxIhLmxlYWd1ZWxlbnMudjEuTGlzdExlYWd1ZXNSZXF1ZXN0GiIubGVhZ3VlbGVucy52MS5MaXN0TGVhZ3Vlc1Jlc3BvbnNlEk4KCUdldExlYWd1ZRIfLmxlYWd1ZWxlbnMudjEuR2V0TGVhZ3VlUmVxdWVzdBogLmxlYWd1ZWxlbnMudjEuR2V0TGVhZ3VlUmVzcG9uc2USWgoNR2V0VGVhbVJvc3RlchIjLmxlYWd1ZWxlbnMudjEuR2V0VGVhbVJvc3RlclJlcXVlc3QaJC5sZWFndWVsZW5zLnYxLkdldFRlYW1Sb3N0ZXJSZXNwb25zZRJXCgxMaXN0TWF0Y2h1cHMSIi5sZWFndWVsZW5zLnYxLkxpc3RNYXRjaHVwc1JlcXVlc3QaIy5sZWFndWVsZW5zLnYxLkxpc3RNYXRjaHVwc1Jlc3BvbnNlEmMKEEdldE1hdGNodXBEZXRhaWwSJi5sZWFndWVsZW5zLnYxLkdldE1hdGNodXBEZXRhaWxSZXF1ZXN0GicubGVhZ3VlbGVucy52MS5HZXRNYXRjaHVwRGV0YWlsUmVzcG9uc2VCUlpQZ2l0aHViLmNvbS9hZGl0eWFjaG91ZGhhcmkyNi9sZWFndWUtbGVucy9pbnRlcm5hbC9nZW4vbGVhZ3VlbGVucy92MTtsZWFndWVsZW5zdjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_leaguelens_v1_overview]);
 
 /**
  * @generated from message leaguelens.v1.ListLeaguesRequest
@@ -536,6 +536,296 @@ export const MatchupSideSchema: GenMessage<MatchupSide> = /*@__PURE__*/
   messageDesc(file_leaguelens_v1_dashboard, 16);
 
 /**
+ * @generated from message leaguelens.v1.GetMatchupDetailRequest
+ */
+export type GetMatchupDetailRequest = Message<"leaguelens.v1.GetMatchupDetailRequest"> & {
+  /**
+   * The owner's team is the league's selected team; user_teams allows at most one.
+   *
+   * @generated from field: string league_season_id = 1;
+   */
+  leagueSeasonId: string;
+
+  /**
+   * Omit for the round containing the observed scoring week (as on Overview).
+   *
+   * @generated from field: optional int32 matchup_period = 2;
+   */
+  matchupPeriod?: number | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.GetMatchupDetailRequest.
+ * Use `create(GetMatchupDetailRequestSchema)` to create a new message.
+ */
+export const GetMatchupDetailRequestSchema: GenMessage<GetMatchupDetailRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 17);
+
+/**
+ * @generated from message leaguelens.v1.GetMatchupDetailResponse
+ */
+export type GetMatchupDetailResponse = Message<"leaguelens.v1.GetMatchupDetailResponse"> & {
+  /**
+   * Absent means no matchup is stored for the owner's team and round.
+   *
+   * @generated from field: leaguelens.v1.MatchupDetail matchup = 1;
+   */
+  matchup?: MatchupDetail | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.GetMatchupDetailResponse.
+ * Use `create(GetMatchupDetailResponseSchema)` to create a new message.
+ */
+export const GetMatchupDetailResponseSchema: GenMessage<GetMatchupDetailResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 18);
+
+/**
+ * MatchupDetail is oriented around the owner: team is always the
+ * owner's side, opponent the other side.
+ *
+ * @generated from message leaguelens.v1.MatchupDetail
+ */
+export type MatchupDetail = Message<"leaguelens.v1.MatchupDetail"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: int32 matchup_period = 2;
+   */
+  matchupPeriod: number;
+
+  /**
+   * @generated from field: leaguelens.v1.MatchupStatus status = 3;
+   */
+  status: MatchupStatus;
+
+  /**
+   * @generated from field: bool is_bye = 4;
+   */
+  isBye: boolean;
+
+  /**
+   * @generated from field: leaguelens.v1.MatchupLineup team = 5;
+   */
+  team?: MatchupLineup | undefined;
+
+  /**
+   * Absent on a bye.
+   *
+   * @generated from field: leaguelens.v1.MatchupLineup opponent = 6;
+   */
+  opponent?: MatchupLineup | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp fetched_at = 7;
+   */
+  fetchedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.MatchupDetail.
+ * Use `create(MatchupDetailSchema)` to create a new message.
+ */
+export const MatchupDetailSchema: GenMessage<MatchupDetail> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 19);
+
+/**
+ * @generated from message leaguelens.v1.MatchupLineup
+ */
+export type MatchupLineup = Message<"leaguelens.v1.MatchupLineup"> & {
+  /**
+   * @generated from field: string team_id = 1;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: string team_name = 2;
+   */
+  teamName: string;
+
+  /**
+   * Absent when unknown. Current record, not as of this round.
+   *
+   * @generated from field: leaguelens.v1.TeamRecord record = 3;
+   */
+  record?: TeamRecord | undefined;
+
+  /**
+   * Absence and actual zero are distinct.
+   *
+   * @generated from field: optional double score = 4;
+   */
+  score?: number | undefined;
+
+  /**
+   * Starters whose game has not kicked off.
+   *
+   * @generated from field: int32 starters_left_to_play = 5;
+   */
+  startersLeftToPlay: number;
+
+  /**
+   * Starters by slot (QB, RB, WR, TE, FLEX, SUPERFLEX, DEF, K, then others); bench
+   * by BENCH, TAXI, IR, then others. Ties: points (highest first), then name, then player ID.
+   *
+   * @generated from field: repeated leaguelens.v1.LineupPlayer starters = 6;
+   */
+  starters: LineupPlayer[];
+
+  /**
+   * @generated from field: repeated leaguelens.v1.LineupPlayer bench = 7;
+   */
+  bench: LineupPlayer[];
+};
+
+/**
+ * Describes the message leaguelens.v1.MatchupLineup.
+ * Use `create(MatchupLineupSchema)` to create a new message.
+ */
+export const MatchupLineupSchema: GenMessage<MatchupLineup> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 20);
+
+/**
+ * @generated from message leaguelens.v1.LineupPlayer
+ */
+export type LineupPlayer = Message<"leaguelens.v1.LineupPlayer"> & {
+  /**
+   * @generated from field: string player_id = 1;
+   */
+  playerId: string;
+
+  /**
+   * @generated from field: string player_name = 2;
+   */
+  playerName: string;
+
+  /**
+   * @generated from field: string slot = 3;
+   */
+  slot: string;
+
+  /**
+   * Absent means not reported, distinct from zero.
+   *
+   * @generated from field: optional double points = 4;
+   */
+  points?: number | undefined;
+
+  /**
+   * Current status, not as of this round.
+   *
+   * @generated from field: leaguelens.v1.InjuryStatus injury_status = 5;
+   */
+  injuryStatus: InjuryStatus;
+
+  /**
+   * Empty when unknown.
+   *
+   * @generated from field: string pro_team = 6;
+   */
+  proTeam: string;
+
+  /**
+   * @generated from field: leaguelens.v1.GameState game_state = 7;
+   */
+  gameState: GameState;
+
+  /**
+   * Absent unless a game is scheduled.
+   *
+   * @generated from field: google.protobuf.Timestamp kickoff_at = 8;
+   */
+  kickoffAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.LineupPlayer.
+ * Use `create(LineupPlayerSchema)` to create a new message.
+ */
+export const LineupPlayerSchema: GenMessage<LineupPlayer> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 21);
+
+/**
+ * @generated from enum leaguelens.v1.MatchupStatus
+ */
+export enum MatchupStatus {
+  /**
+   * @generated from enum value: MATCHUP_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: MATCHUP_STATUS_SCHEDULED = 1;
+   */
+  SCHEDULED = 1,
+
+  /**
+   * @generated from enum value: MATCHUP_STATUS_IN_PROGRESS = 2;
+   */
+  IN_PROGRESS = 2,
+
+  /**
+   * @generated from enum value: MATCHUP_STATUS_FINAL = 3;
+   */
+  FINAL = 3,
+
+  /**
+   * @generated from enum value: MATCHUP_STATUS_UNKNOWN = 4;
+   */
+  UNKNOWN = 4,
+}
+
+/**
+ * Describes the enum leaguelens.v1.MatchupStatus.
+ */
+export const MatchupStatusSchema: GenEnum<MatchupStatus> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_dashboard, 0);
+
+/**
+ * GameState is derived from nfl_games kickoffs. Live and final are not
+ * distinguished; both are KICKED_OFF.
+ *
+ * @generated from enum leaguelens.v1.GameState
+ */
+export enum GameState {
+  /**
+   * @generated from enum value: GAME_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: GAME_STATE_NOT_STARTED = 1;
+   */
+  NOT_STARTED = 1,
+
+  /**
+   * @generated from enum value: GAME_STATE_KICKED_OFF = 2;
+   */
+  KICKED_OFF = 2,
+
+  /**
+   * @generated from enum value: GAME_STATE_BYE = 3;
+   */
+  BYE = 3,
+
+  /**
+   * No NFL team or no schedule for the week.
+   *
+   * @generated from enum value: GAME_STATE_UNKNOWN = 4;
+   */
+  UNKNOWN = 4,
+}
+
+/**
+ * Describes the enum leaguelens.v1.GameState.
+ */
+export const GameStateSchema: GenEnum<GameState> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_dashboard, 1);
+
+/**
  * DashboardService reads imported data and records alert dismissals for the
  * server's configured local owner. It never calls a provider or accepts a
  * caller-selected user identity.
@@ -622,6 +912,14 @@ export const DashboardService: GenService<{
     methodKind: "unary";
     input: typeof ListMatchupsRequestSchema;
     output: typeof ListMatchupsResponseSchema;
+  },
+  /**
+   * @generated from rpc leaguelens.v1.DashboardService.GetMatchupDetail
+   */
+  getMatchupDetail: {
+    methodKind: "unary";
+    input: typeof GetMatchupDetailRequestSchema;
+    output: typeof GetMatchupDetailResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_leaguelens_v1_dashboard, 0);
