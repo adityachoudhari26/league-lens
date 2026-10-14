@@ -19,14 +19,6 @@ type Target struct {
 	ExternalAccountID    string
 	Selection            fantasy.ConnectionSelection
 	LastSuccessfulSyncAt time.Time
-	LastRun              CompletedRun
-}
-
-// CompletedRun is the most recent finished sync run for a target.
-type CompletedRun struct {
-	Status      string
-	ErrorCode   string
-	CompletedAt time.Time
 }
 
 func targetFromRow(row store.ListSyncTargetsRow) Target {
@@ -41,11 +33,6 @@ func targetFromRow(row store.ListSyncTargetsRow) Target {
 		ExternalAccountID:    row.ExternalUserID.String,
 		Selection:            fantasy.ConnectionSelection{League: league, SelectedTeamIDs: row.SelectedTeamIds},
 		LastSuccessfulSyncAt: timeOf(row.LastSuccessfulSyncAt),
-		LastRun: CompletedRun{
-			Status:      row.LastRunStatus,
-			ErrorCode:   row.LastRunErrorCode.String,
-			CompletedAt: timeOf(row.LastRunCompletedAt),
-		},
 	}
 }
 

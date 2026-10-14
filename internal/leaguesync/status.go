@@ -32,11 +32,11 @@ func (r *Runner) statuses(targets []Target) []Status {
 // statusOf derives a league's state. Callers must hold r.mu.
 func (r *Runner) statusOf(target Target) Status {
 	status := Status{Target: target}
-	lastFailure := r.latestFailure(target)
+	lastFailure, failed := r.failures[target.ID]
 	switch {
 	case r.running[target.ID]:
 		status.State = StateSyncing
-	case !lastFailure.at.IsZero():
+	case failed:
 		status.State = StateFailed
 		status.FailedAt = lastFailure.at
 		status.ErrorCode = lastFailure.code
@@ -46,18 +46,4 @@ func (r *Runner) statusOf(target Target) Status {
 		status.State = StateNeverSynced
 	}
 	return status
-}
-
-// latestFailure returns the newest failure since the last success, whether it
-// happened before the import started (memory) or during it (saved sync run).
-// Callers must hold r.mu.
-func (r *Runner) latestFailure(target Target) failure {
-	latest := r.failures[target.ID]
-	if target.LastRun.Status == "failed" && target.LastRun.CompletedAt.After(latest.at) {
-		latest = failure{code: target.LastRun.ErrorCode, at: target.LastRun.CompletedAt}
-	}
-	if !latest.at.After(target.LastSuccessfulSyncAt) {
-		return failure{}
-	}
-	return latest
 }

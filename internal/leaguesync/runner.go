@@ -17,16 +17,13 @@ const (
 	// StaleAfter is how old saved data may be before a load-triggered sync refreshes it.
 	StaleAfter = 15 * time.Minute
 
-	// failureCooldown stops load-triggered syncs from retrying a failing league on every page view.
-	failureCooldown = 5 * time.Minute
-
 	leagueSyncTimeout = 5 * time.Minute
 	targetReadTimeout = 5 * time.Second
 )
 
 // Runner refreshes the local owner's leagues in the background through the
-// shared importer. Each league has at most one sync in flight; in-flight state
-// lives in memory, so it does not survive a restart.
+// shared importer. Each league has at most one sync in flight. In-flight and
+// failure state live in memory, so they do not survive a restart.
 type Runner struct {
 	db          *database.DB
 	ownerEmail  string
@@ -43,7 +40,7 @@ type Runner struct {
 	failures map[string]failure
 }
 
-// failure is a sync failure that happened before the importer started a sync run.
+// failure is the most recent failed sync of a league since its last success.
 type failure struct {
 	code string
 	at   time.Time
@@ -72,7 +69,7 @@ func (r *Runner) Close() {
 }
 
 // Start begins background syncs and returns each league's status immediately.
-// With onlyStale, leagues with fresh data or a recent failure are skipped.
+// With onlyStale, leagues whose data is still fresh are skipped.
 func (r *Runner) Start(ctx context.Context, onlyStale bool) ([]Status, error) {
 	targets, err := r.listTargets(ctx)
 	if err != nil {
@@ -126,7 +123,7 @@ func (r *Runner) claimTargets(targets []Target, onlyStale bool) []Target {
 	now := r.now()
 	var claimed []Target
 	for _, target := range targets {
-		if r.running[target.ID] || (onlyStale && !r.dueForRefresh(target, now)) {
+		if r.running[target.ID] || (onlyStale && !isStale(target, now)) {
 			continue
 		}
 		r.running[target.ID] = true
@@ -135,13 +132,8 @@ func (r *Runner) claimTargets(targets []Target, onlyStale bool) []Target {
 	return claimed
 }
 
-// dueForRefresh reports whether saved data is stale, unless the league failed
-// within the cooldown. Callers must hold r.mu.
-func (r *Runner) dueForRefresh(target Target, now time.Time) bool {
-	lastFailure := r.latestFailure(target)
-	if !lastFailure.at.IsZero() && now.Sub(lastFailure.at) < failureCooldown {
-		return false
-	}
+// isStale reports whether a league has never synced or its saved data is older than StaleAfter.
+func isStale(target Target, now time.Time) bool {
 	return target.LastSuccessfulSyncAt.IsZero() || now.Sub(target.LastSuccessfulSyncAt) >= StaleAfter
 }
 
@@ -213,25 +205,19 @@ func (r *Runner) importTarget(ctx context.Context, target Target, catalog player
 	return err
 }
 
-// recordOutcome keeps failures the importer could not save on a sync run.
-// Saved failures and successes are read back from Postgres instead.
+// recordOutcome remembers a league's failure until its next successful sync.
 func (r *Runner) recordOutcome(target Target, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var recorded *importer.RecordedSyncError
-	switch {
-	case err == nil:
+	if err == nil {
 		delete(r.failures, target.ID)
 		return
-	case errors.As(err, &recorded):
-		delete(r.failures, target.ID)
-		slog.Warn("league sync failed", "league", target.ID, "provider", target.Selection.League.Provider, "code", recorded.Code)
-	default:
-		code := failureCode(err)
-		r.failures[target.ID] = failure{code: code, at: r.now()}
-		slog.Warn("league sync failed", "league", target.ID, "provider", target.Selection.League.Provider, "code", code)
 	}
+
+	code := failureCode(err)
+	r.failures[target.ID] = failure{code: code, at: r.now()}
+	slog.Warn("league sync failed", "league", target.ID, "provider", target.Selection.League.Provider, "code", code)
 }
 
 func (r *Runner) release(id string) {
@@ -240,11 +226,15 @@ func (r *Runner) release(id string) {
 	delete(r.running, id)
 }
 
+// failureCode maps a sync error to a stable, credential-free code.
 func failureCode(err error) string {
 	var setup setupError
+	var recorded *importer.RecordedSyncError
 	switch {
 	case errors.As(err, &setup):
 		return string(setup)
+	case errors.As(err, &recorded):
+		return recorded.Code
 	case errors.Is(err, context.DeadlineExceeded):
 		return "sync_timed_out"
 	case errors.Is(err, context.Canceled):

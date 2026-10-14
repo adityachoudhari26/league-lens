@@ -185,8 +185,8 @@ func completeImport(ctx context.Context, queries *store.Queries, target importTa
 	return queries.MarkLeagueSynced(ctx, store.MarkLeagueSyncedParams{ConnectionID: target.connection.ID, LeagueSeasonID: target.league.ID, LastSuccessfulSyncAt: completedRun.CompletedAt})
 }
 
-// RecordedSyncError is an import failure already saved on its sync run, so
-// callers can read its stable code back from Postgres.
+// RecordedSyncError is an import failure saved on its sync run, carrying the
+// stable, credential-free code that was recorded.
 type RecordedSyncError struct {
 	Code string
 	Err  error

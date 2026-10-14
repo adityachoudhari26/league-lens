@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/adityachoudhari26/league-lens/internal/importer"
 )
 
 var testNow = time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
@@ -23,23 +25,21 @@ func targetIDs(targets []Target) []string {
 	return ids
 }
 
-func TestClaimTargetsSkipsFreshFailedAndRunningLeagues(t *testing.T) {
+func TestClaimTargetsSkipsFreshAndRunningLeagues(t *testing.T) {
 	runner := testRunner()
 	targets := []Target{
 		{ID: "fresh", LastSuccessfulSyncAt: testNow.Add(-time.Minute)},
 		{ID: "stale", LastSuccessfulSyncAt: testNow.Add(-StaleAfter)},
 		{ID: "never"},
-		{ID: "recently-failed", LastSuccessfulSyncAt: testNow.Add(-time.Hour), LastRun: CompletedRun{Status: "failed", CompletedAt: testNow.Add(-time.Minute)}},
-		{ID: "failed-long-ago", LastSuccessfulSyncAt: testNow.Add(-time.Hour), LastRun: CompletedRun{Status: "failed", CompletedAt: testNow.Add(-failureCooldown)}},
 	}
 
 	staleClaims := runner.claimTargets(targets, true)
-	if got, want := targetIDs(staleClaims), []string{"stale", "never", "failed-long-ago"}; !slices.Equal(got, want) {
+	if got, want := targetIDs(staleClaims), []string{"stale", "never"}; !slices.Equal(got, want) {
 		t.Fatalf("stale claims = %v, want %v", got, want)
 	}
 
 	explicitClaims := runner.claimTargets(targets, false)
-	if got, want := targetIDs(explicitClaims), []string{"fresh", "recently-failed"}; !slices.Equal(got, want) {
+	if got, want := targetIDs(explicitClaims), []string{"fresh"}; !slices.Equal(got, want) {
 		t.Fatalf("explicit claims = %v, want %v (running leagues must not be claimed twice)", got, want)
 	}
 }
@@ -47,25 +47,23 @@ func TestClaimTargetsSkipsFreshFailedAndRunningLeagues(t *testing.T) {
 func TestStatusOfDerivesState(t *testing.T) {
 	succeeded := testNow.Add(-time.Hour)
 	for _, tc := range []struct {
-		name          string
-		target        Target
-		running       bool
-		memoryFailure *failure
-		wantState     string
-		wantCode      string
+		name      string
+		target    Target
+		running   bool
+		failure   *failure
+		wantState string
+		wantCode  string
 	}{
 		{name: "never synced", target: Target{ID: "x"}, wantState: StateNeverSynced},
 		{name: "succeeded", target: Target{ID: "x", LastSuccessfulSyncAt: succeeded}, wantState: StateSucceeded},
-		{name: "syncing wins over failure", target: Target{ID: "x", LastRun: CompletedRun{Status: "failed", CompletedAt: testNow}}, running: true, wantState: StateSyncing},
-		{name: "saved failure", target: Target{ID: "x", LastSuccessfulSyncAt: succeeded, LastRun: CompletedRun{Status: "failed", ErrorCode: "provider_fetch_failed", CompletedAt: testNow}}, wantState: StateFailed, wantCode: "provider_fetch_failed"},
-		{name: "setup failure", target: Target{ID: "x", LastSuccessfulSyncAt: succeeded}, memoryFailure: &failure{code: "espn_credentials_missing", at: testNow}, wantState: StateFailed, wantCode: "espn_credentials_missing"},
-		{name: "failure before last success", target: Target{ID: "x", LastSuccessfulSyncAt: succeeded}, memoryFailure: &failure{code: "sync_timed_out", at: succeeded.Add(-time.Minute)}, wantState: StateSucceeded},
+		{name: "syncing wins over failure", target: Target{ID: "x"}, running: true, failure: &failure{code: "provider_fetch_failed", at: testNow}, wantState: StateSyncing},
+		{name: "failed", target: Target{ID: "x", LastSuccessfulSyncAt: succeeded}, failure: &failure{code: "espn_credentials_missing", at: testNow}, wantState: StateFailed, wantCode: "espn_credentials_missing"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			runner := testRunner()
 			runner.running[tc.target.ID] = tc.running
-			if tc.memoryFailure != nil {
-				runner.failures[tc.target.ID] = *tc.memoryFailure
+			if tc.failure != nil {
+				runner.failures[tc.target.ID] = *tc.failure
 			}
 
 			status := runner.statusOf(tc.target)
@@ -82,6 +80,7 @@ func TestFailureCodeNeverExposesErrorText(t *testing.T) {
 		want string
 	}{
 		{setupError("espn_account_mismatch"), "espn_account_mismatch"},
+		{fmt.Errorf("import: %w", &importer.RecordedSyncError{Code: "provider_fetch_failed", Err: errors.New("espn 500")}), "provider_fetch_failed"},
 		{fmt.Errorf("fetch: %w", context.DeadlineExceeded), "sync_timed_out"},
 		{errors.New("espn returned 401 for cookie=private"), "provider_unavailable"},
 	} {

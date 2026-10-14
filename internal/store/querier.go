@@ -41,7 +41,7 @@ type Querier interface {
 	ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsForUserParams) ([]TeamSnapshot, error)
 	ListSyncRunsForUser(ctx context.Context, arg ListSyncRunsForUserParams) ([]SyncRun, error)
 	// Sync targets are the owner's attached leagues in their latest imported season.
-	// Selected teams and the latest completed run come from earlier imports.
+	// Selected teams come from earlier imports.
 	ListSyncTargets(ctx context.Context, userID pgtype.UUID) ([]ListSyncTargetsRow, error)
 	ListTeamsForUser(ctx context.Context, arg ListTeamsForUserParams) ([]Team, error)
 	// Serialize the brief write phase, including shared identity creation, across importers.

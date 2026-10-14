@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
+import { create } from "@bufbuild/protobuf"
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { type LeagueSyncStatus } from "@/gen/leaguelens/v1/sync_pb"
+import { GetSyncStatusResponseSchema, type LeagueSyncStatus } from "@/gen/leaguelens/v1/sync_pb"
 import { sync } from "./client"
 
 const syncPollIntervalMs = 2000
@@ -18,26 +19,26 @@ export const syncStatusQuery = queryOptions({
 
 /**
  * Keeps provider data current: opening the page syncs stale leagues in the
- * background, refresh syncs every league, and the overview reloads as each
- * league finishes. Saved data stays visible throughout.
+ * background, refresh syncs every league, and the overview reloads when
+ * syncing ends. Saved data stays visible throughout.
  */
 export function useLeagueSync() {
   const queryClient = useQueryClient()
   const status = useQuery(syncStatusQuery)
-  const trackSyncingLeagues = useOverviewReloadOnSyncFinish(status.data?.leagues)
   const start = useMutation({
     mutationFn: (onlyStale: boolean) => sync.startSync({ onlyStale }),
     onSuccess: (response) => {
-      trackSyncingLeagues(response.leagues)
-      return queryClient.invalidateQueries({ queryKey: syncStatusQuery.queryKey })
+      queryClient.setQueryData(syncStatusQuery.queryKey, create(GetSyncStatusResponseSchema, { leagues: response.leagues }))
     },
   })
   useStaleSyncOnMount(start.mutate)
 
   const leagues = status.data?.leagues ?? []
+  const leaguesSyncing = syncingLeagues(leagues).length > 0
+  useOverviewReloadWhenSyncEnds(leaguesSyncing)
   return {
     leagues,
-    syncing: start.isPending || syncingLeagues(leagues).length > 0,
+    syncing: start.isPending || leaguesSyncing,
     syncUnavailable: start.isError || status.isError,
     refresh: () => { start.mutate(false) },
   }
@@ -52,19 +53,13 @@ function useStaleSyncOnMount(startSync: (onlyStale: boolean) => void) {
   }, [startSync])
 }
 
-// Reloads overview sections once any tracked league leaves the syncing state.
-function useOverviewReloadOnSyncFinish(leagues?: LeagueSyncStatus[]) {
+// Reloads overview sections when the last syncing league finishes.
+function useOverviewReloadWhenSyncEnds(syncing: boolean) {
   const queryClient = useQueryClient()
-  const syncingIds = useRef(new Set<string>())
+  const wasSyncing = useRef(false)
 
   useEffect(() => {
-    const stillSyncing = new Set(syncingLeagues(leagues).map((league) => league.leagueSeasonId))
-    const finished = [...syncingIds.current].some((id) => !stillSyncing.has(id))
-    syncingIds.current = stillSyncing
-    if (finished) void queryClient.invalidateQueries({ queryKey: ["overview"] })
-  }, [leagues, queryClient])
-
-  return useCallback((started: LeagueSyncStatus[]) => {
-    for (const league of syncingLeagues(started)) syncingIds.current.add(league.leagueSeasonId)
-  }, [])
+    if (wasSyncing.current && !syncing) void queryClient.invalidateQueries({ queryKey: ["overview"] })
+    wasSyncing.current = syncing
+  }, [syncing, queryClient])
 }
