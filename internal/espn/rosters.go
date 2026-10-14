@@ -78,13 +78,14 @@ func normalizePlayer(entry entryResponse) (fantasy.Player, error) {
 	return player, nil
 }
 
-// injuryStatus maps ESPN designations; anything else, including a missing
-// status or DAY_TO_DAY, is unknown rather than guessed.
+// injuryStatus maps ESPN designations. DAY_TO_DAY is not an official NFL game
+// status, so it is treated as questionable (worth monitoring). A missing or
+// unfamiliar status is unknown rather than guessed.
 func injuryStatus(raw string) fantasy.InjuryStatus {
 	switch raw {
 	case "ACTIVE":
 		return fantasy.InjuryActive
-	case "QUESTIONABLE":
+	case "QUESTIONABLE", "DAY_TO_DAY":
 		return fantasy.InjuryQuestionable
 	case "DOUBTFUL":
 		return fantasy.InjuryDoubtful

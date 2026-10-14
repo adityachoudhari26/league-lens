@@ -14,7 +14,7 @@ func TestInjuryStatusMapsKnownDesignations(t *testing.T) {
 		"OUT":            fantasy.InjuryOut,
 		"SUSPENSION":     fantasy.InjuryOut,
 		"INJURY_RESERVE": fantasy.InjuryReserve,
-		"DAY_TO_DAY":     fantasy.InjuryUnknown,
+		"DAY_TO_DAY":     fantasy.InjuryQuestionable,
 		"":               fantasy.InjuryUnknown,
 	}
 	for raw, want := range cases {
