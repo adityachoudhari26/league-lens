@@ -80,12 +80,28 @@ message GetOverviewPlayerUpdatesResponse {
   OverviewCoverage coverage = 1;
   repeated PlayerUpdate updates = 2;
 }
+// One update per player: his latest news item from the past week.
 message PlayerUpdate {
   string id = 1;
   string player_id = 2;
   string headline = 3;
   string source_url = 4;
   google.protobuf.Timestamp published_at = 5;
+  string player_name = 6;
+  string summary = 7;
+  string source_label = 8;
+  NewsCategory category = 9;
+  // The player's worst injury designation across your teams at the last sync.
+  InjuryStatus injury_status = 10;
+  bool starter = 11;
+  // Every selected team of yours that rosters this player.
+  repeated OverviewTeam teams = 12;
+}
+enum NewsCategory {
+  NEWS_CATEGORY_UNSPECIFIED = 0;
+  NEWS_CATEGORY_INJURY = 1;
+  NEWS_CATEGORY_TRANSACTION = 2;
+  NEWS_CATEGORY_GENERAL = 3;
 }
 message GetOverviewLookingAheadRequest {}
 message GetOverviewLookingAheadResponse {

@@ -80,6 +80,18 @@ type PlayerExternalID struct {
 	LastVerifiedAt pgtype.Timestamptz
 }
 
+type PlayerNews struct {
+	Source       string
+	SourceItemID string
+	PlayerID     pgtype.UUID
+	Headline     string
+	Summary      string
+	Url          string
+	SourceLabel  string
+	PublishedAt  pgtype.Timestamptz
+	FetchedAt    pgtype.Timestamptz
+}
+
 type RosterEntry struct {
 	SnapshotID            pgtype.UUID
 	PlayerID              pgtype.UUID

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -55,7 +56,7 @@ func TestSchemaAndQueries(t *testing.T) {
 			}
 			for _, part := range strings.Split(string(content), "-- name: ")[1:] {
 				header, query, _ := strings.Cut(part, "\n")
-				stmt, err := conn.PrepareContext(ctx, query)
+				stmt, err := conn.PrepareContext(ctx, postgresParameters(query))
 				if err != nil {
 					t.Errorf("%s: %v", header, err)
 					continue
@@ -192,6 +193,21 @@ func TestSchemaAndQueries(t *testing.T) {
 	if err := Migrate(ctx, conn, "up"); err != nil {
 		t.Fatalf("reapply migration: %v", err)
 	}
+}
+
+var sqlcParameter = regexp.MustCompile(`@([a-zA-Z_][a-zA-Z0-9_]*)`)
+
+func postgresParameters(query string) string {
+	positions := make(map[string]int)
+	return sqlcParameter.ReplaceAllStringFunc(query, func(parameter string) string {
+		name := strings.TrimPrefix(parameter, "@")
+		position, exists := positions[name]
+		if !exists {
+			position = len(positions) + 1
+			positions[name] = position
+		}
+		return fmt.Sprintf("$%d", position)
+	})
 }
 
 func loadQueries(t *testing.T) map[string]string {

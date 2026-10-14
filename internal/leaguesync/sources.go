@@ -5,6 +5,7 @@ import (
 
 	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/news"
 	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 )
 
@@ -12,6 +13,7 @@ import (
 type SourceFactory interface {
 	SourceFor(Target) (fantasy.Provider, error)
 	NFLSchedule(ctx context.Context, season int) ([]fantasy.NFLGame, error)
+	NewsSource() news.Source
 }
 
 // ProviderSources builds live ESPN and Sleeper clients. ESPN cookies come from
@@ -42,6 +44,9 @@ func (p ProviderSources) SourceFor(target Target) (fantasy.Provider, error) {
 func (p ProviderSources) NFLSchedule(ctx context.Context, season int) ([]fantasy.NFLGame, error) {
 	return espn.FetchNFLSchedule(ctx, nil, season)
 }
+
+// NewsSource returns ESPN's public fantasy player-news feed adapter.
+func (ProviderSources) NewsSource() news.Source { return espn.NewsSource{} }
 
 // espnSource refuses cookies for a different ESPN account than the one that
 // imported the league, so one account's view never overwrites another's.

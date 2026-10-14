@@ -186,6 +186,58 @@ func (InjuryStatus) EnumDescriptor() ([]byte, []int) {
 	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{2}
 }
 
+type NewsCategory int32
+
+const (
+	NewsCategory_NEWS_CATEGORY_UNSPECIFIED NewsCategory = 0
+	NewsCategory_NEWS_CATEGORY_INJURY      NewsCategory = 1
+	NewsCategory_NEWS_CATEGORY_TRANSACTION NewsCategory = 2
+	NewsCategory_NEWS_CATEGORY_GENERAL     NewsCategory = 3
+)
+
+// Enum value maps for NewsCategory.
+var (
+	NewsCategory_name = map[int32]string{
+		0: "NEWS_CATEGORY_UNSPECIFIED",
+		1: "NEWS_CATEGORY_INJURY",
+		2: "NEWS_CATEGORY_TRANSACTION",
+		3: "NEWS_CATEGORY_GENERAL",
+	}
+	NewsCategory_value = map[string]int32{
+		"NEWS_CATEGORY_UNSPECIFIED": 0,
+		"NEWS_CATEGORY_INJURY":      1,
+		"NEWS_CATEGORY_TRANSACTION": 2,
+		"NEWS_CATEGORY_GENERAL":     3,
+	}
+)
+
+func (x NewsCategory) Enum() *NewsCategory {
+	p := new(NewsCategory)
+	*p = x
+	return p
+}
+
+func (x NewsCategory) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (NewsCategory) Descriptor() protoreflect.EnumDescriptor {
+	return file_leaguelens_v1_overview_proto_enumTypes[3].Descriptor()
+}
+
+func (NewsCategory) Type() protoreflect.EnumType {
+	return &file_leaguelens_v1_overview_proto_enumTypes[3]
+}
+
+func (x NewsCategory) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use NewsCategory.Descriptor instead.
+func (NewsCategory) EnumDescriptor() ([]byte, []int) {
+	return file_leaguelens_v1_overview_proto_rawDescGZIP(), []int{3}
+}
+
 // Sections report coverage explicitly: an empty array is not proof of no issues.
 type OverviewCoverage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -836,13 +888,23 @@ func (x *GetOverviewPlayerUpdatesResponse) GetUpdates() []*PlayerUpdate {
 	return nil
 }
 
+// One update per player: his latest news item from the past week.
 type PlayerUpdate struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	PlayerId      string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	Headline      string                 `protobuf:"bytes,3,opt,name=headline,proto3" json:"headline,omitempty"`
-	SourceUrl     string                 `protobuf:"bytes,4,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
-	PublishedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	PlayerId    string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Headline    string                 `protobuf:"bytes,3,opt,name=headline,proto3" json:"headline,omitempty"`
+	SourceUrl   string                 `protobuf:"bytes,4,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	PublishedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
+	PlayerName  string                 `protobuf:"bytes,6,opt,name=player_name,json=playerName,proto3" json:"player_name,omitempty"`
+	Summary     string                 `protobuf:"bytes,7,opt,name=summary,proto3" json:"summary,omitempty"`
+	SourceLabel string                 `protobuf:"bytes,8,opt,name=source_label,json=sourceLabel,proto3" json:"source_label,omitempty"`
+	Category    NewsCategory           `protobuf:"varint,9,opt,name=category,proto3,enum=leaguelens.v1.NewsCategory" json:"category,omitempty"`
+	// The player's worst injury designation across your teams at the last sync.
+	InjuryStatus InjuryStatus `protobuf:"varint,10,opt,name=injury_status,json=injuryStatus,proto3,enum=leaguelens.v1.InjuryStatus" json:"injury_status,omitempty"`
+	Starter      bool         `protobuf:"varint,11,opt,name=starter,proto3" json:"starter,omitempty"`
+	// Every selected team of yours that rosters this player.
+	Teams         []*OverviewTeam `protobuf:"bytes,12,rep,name=teams,proto3" json:"teams,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -908,6 +970,55 @@ func (x *PlayerUpdate) GetSourceUrl() string {
 func (x *PlayerUpdate) GetPublishedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.PublishedAt
+	}
+	return nil
+}
+
+func (x *PlayerUpdate) GetPlayerName() string {
+	if x != nil {
+		return x.PlayerName
+	}
+	return ""
+}
+
+func (x *PlayerUpdate) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *PlayerUpdate) GetSourceLabel() string {
+	if x != nil {
+		return x.SourceLabel
+	}
+	return ""
+}
+
+func (x *PlayerUpdate) GetCategory() NewsCategory {
+	if x != nil {
+		return x.Category
+	}
+	return NewsCategory_NEWS_CATEGORY_UNSPECIFIED
+}
+
+func (x *PlayerUpdate) GetInjuryStatus() InjuryStatus {
+	if x != nil {
+		return x.InjuryStatus
+	}
+	return InjuryStatus_INJURY_STATUS_UNSPECIFIED
+}
+
+func (x *PlayerUpdate) GetStarter() bool {
+	if x != nil {
+		return x.Starter
+	}
+	return false
+}
+
+func (x *PlayerUpdate) GetTeams() []*OverviewTeam {
+	if x != nil {
+		return x.Teams
 	}
 	return nil
 }
@@ -1129,14 +1240,23 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	"\x1fGetOverviewPlayerUpdatesRequest\"\x96\x01\n" +
 	" GetOverviewPlayerUpdatesResponse\x12;\n" +
 	"\bcoverage\x18\x01 \x01(\v2\x1f.leaguelens.v1.OverviewCoverageR\bcoverage\x125\n" +
-	"\aupdates\x18\x02 \x03(\v2\x1b.leaguelens.v1.PlayerUpdateR\aupdates\"\xb5\x01\n" +
+	"\aupdates\x18\x02 \x03(\v2\x1b.leaguelens.v1.PlayerUpdateR\aupdates\"\xdb\x03\n" +
 	"\fPlayerUpdate\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\x12\x1a\n" +
 	"\bheadline\x18\x03 \x01(\tR\bheadline\x12\x1d\n" +
 	"\n" +
 	"source_url\x18\x04 \x01(\tR\tsourceUrl\x12=\n" +
-	"\fpublished_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedAt\" \n" +
+	"\fpublished_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedAt\x12\x1f\n" +
+	"\vplayer_name\x18\x06 \x01(\tR\n" +
+	"playerName\x12\x18\n" +
+	"\asummary\x18\a \x01(\tR\asummary\x12!\n" +
+	"\fsource_label\x18\b \x01(\tR\vsourceLabel\x127\n" +
+	"\bcategory\x18\t \x01(\x0e2\x1b.leaguelens.v1.NewsCategoryR\bcategory\x12@\n" +
+	"\rinjury_status\x18\n" +
+	" \x01(\x0e2\x1b.leaguelens.v1.InjuryStatusR\finjuryStatus\x12\x18\n" +
+	"\astarter\x18\v \x01(\bR\astarter\x121\n" +
+	"\x05teams\x18\f \x03(\v2\x1b.leaguelens.v1.OverviewTeamR\x05teams\" \n" +
 	"\x1eGetOverviewLookingAheadRequest\"\x94\x01\n" +
 	"\x1fGetOverviewLookingAheadResponse\x12;\n" +
 	"\bcoverage\x18\x01 \x01(\v2\x1f.leaguelens.v1.OverviewCoverageR\bcoverage\x124\n" +
@@ -1162,7 +1282,12 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	"\x16INJURY_STATUS_DOUBTFUL\x10\x03\x12\x15\n" +
 	"\x11INJURY_STATUS_OUT\x10\x04\x12!\n" +
 	"\x1dINJURY_STATUS_INJURED_RESERVE\x10\x05\x12\x19\n" +
-	"\x15INJURY_STATUS_UNKNOWN\x10\x06BRZPgithub.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1b\x06proto3"
+	"\x15INJURY_STATUS_UNKNOWN\x10\x06*\x81\x01\n" +
+	"\fNewsCategory\x12\x1d\n" +
+	"\x19NEWS_CATEGORY_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14NEWS_CATEGORY_INJURY\x10\x01\x12\x1d\n" +
+	"\x19NEWS_CATEGORY_TRANSACTION\x10\x02\x12\x19\n" +
+	"\x15NEWS_CATEGORY_GENERAL\x10\x03BRZPgithub.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1b\x06proto3"
 
 var (
 	file_leaguelens_v1_overview_proto_rawDescOnce sync.Once
@@ -1176,52 +1301,56 @@ func file_leaguelens_v1_overview_proto_rawDescGZIP() []byte {
 	return file_leaguelens_v1_overview_proto_rawDescData
 }
 
-var file_leaguelens_v1_overview_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_leaguelens_v1_overview_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_leaguelens_v1_overview_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_leaguelens_v1_overview_proto_goTypes = []any{
 	(AlertSeverity)(0),                       // 0: leaguelens.v1.AlertSeverity
 	(AlertKind)(0),                           // 1: leaguelens.v1.AlertKind
 	(InjuryStatus)(0),                        // 2: leaguelens.v1.InjuryStatus
-	(*OverviewCoverage)(nil),                 // 3: leaguelens.v1.OverviewCoverage
-	(*OverviewTeam)(nil),                     // 4: leaguelens.v1.OverviewTeam
-	(*GetOverviewAttentionRequest)(nil),      // 5: leaguelens.v1.GetOverviewAttentionRequest
-	(*GetOverviewAttentionResponse)(nil),     // 6: leaguelens.v1.GetOverviewAttentionResponse
-	(*LineupAlert)(nil),                      // 7: leaguelens.v1.LineupAlert
-	(*GetOverviewMatchupsRequest)(nil),       // 8: leaguelens.v1.GetOverviewMatchupsRequest
-	(*GetOverviewMatchupsResponse)(nil),      // 9: leaguelens.v1.GetOverviewMatchupsResponse
-	(*OverviewMatchup)(nil),                  // 10: leaguelens.v1.OverviewMatchup
-	(*GetOverviewPlayerUpdatesRequest)(nil),  // 11: leaguelens.v1.GetOverviewPlayerUpdatesRequest
-	(*GetOverviewPlayerUpdatesResponse)(nil), // 12: leaguelens.v1.GetOverviewPlayerUpdatesResponse
-	(*PlayerUpdate)(nil),                     // 13: leaguelens.v1.PlayerUpdate
-	(*GetOverviewLookingAheadRequest)(nil),   // 14: leaguelens.v1.GetOverviewLookingAheadRequest
-	(*GetOverviewLookingAheadResponse)(nil),  // 15: leaguelens.v1.GetOverviewLookingAheadResponse
-	(*UpcomingIssue)(nil),                    // 16: leaguelens.v1.UpcomingIssue
-	(*timestamppb.Timestamp)(nil),            // 17: google.protobuf.Timestamp
+	(NewsCategory)(0),                        // 3: leaguelens.v1.NewsCategory
+	(*OverviewCoverage)(nil),                 // 4: leaguelens.v1.OverviewCoverage
+	(*OverviewTeam)(nil),                     // 5: leaguelens.v1.OverviewTeam
+	(*GetOverviewAttentionRequest)(nil),      // 6: leaguelens.v1.GetOverviewAttentionRequest
+	(*GetOverviewAttentionResponse)(nil),     // 7: leaguelens.v1.GetOverviewAttentionResponse
+	(*LineupAlert)(nil),                      // 8: leaguelens.v1.LineupAlert
+	(*GetOverviewMatchupsRequest)(nil),       // 9: leaguelens.v1.GetOverviewMatchupsRequest
+	(*GetOverviewMatchupsResponse)(nil),      // 10: leaguelens.v1.GetOverviewMatchupsResponse
+	(*OverviewMatchup)(nil),                  // 11: leaguelens.v1.OverviewMatchup
+	(*GetOverviewPlayerUpdatesRequest)(nil),  // 12: leaguelens.v1.GetOverviewPlayerUpdatesRequest
+	(*GetOverviewPlayerUpdatesResponse)(nil), // 13: leaguelens.v1.GetOverviewPlayerUpdatesResponse
+	(*PlayerUpdate)(nil),                     // 14: leaguelens.v1.PlayerUpdate
+	(*GetOverviewLookingAheadRequest)(nil),   // 15: leaguelens.v1.GetOverviewLookingAheadRequest
+	(*GetOverviewLookingAheadResponse)(nil),  // 16: leaguelens.v1.GetOverviewLookingAheadResponse
+	(*UpcomingIssue)(nil),                    // 17: leaguelens.v1.UpcomingIssue
+	(*timestamppb.Timestamp)(nil),            // 18: google.protobuf.Timestamp
 }
 var file_leaguelens_v1_overview_proto_depIdxs = []int32{
-	17, // 0: leaguelens.v1.OverviewTeam.observed_at:type_name -> google.protobuf.Timestamp
-	3,  // 1: leaguelens.v1.GetOverviewAttentionResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	7,  // 2: leaguelens.v1.GetOverviewAttentionResponse.alerts:type_name -> leaguelens.v1.LineupAlert
-	4,  // 3: leaguelens.v1.LineupAlert.team:type_name -> leaguelens.v1.OverviewTeam
+	18, // 0: leaguelens.v1.OverviewTeam.observed_at:type_name -> google.protobuf.Timestamp
+	4,  // 1: leaguelens.v1.GetOverviewAttentionResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
+	8,  // 2: leaguelens.v1.GetOverviewAttentionResponse.alerts:type_name -> leaguelens.v1.LineupAlert
+	5,  // 3: leaguelens.v1.LineupAlert.team:type_name -> leaguelens.v1.OverviewTeam
 	0,  // 4: leaguelens.v1.LineupAlert.severity:type_name -> leaguelens.v1.AlertSeverity
 	1,  // 5: leaguelens.v1.LineupAlert.kind:type_name -> leaguelens.v1.AlertKind
 	2,  // 6: leaguelens.v1.LineupAlert.injury_status:type_name -> leaguelens.v1.InjuryStatus
-	17, // 7: leaguelens.v1.LineupAlert.kickoff_at:type_name -> google.protobuf.Timestamp
-	3,  // 8: leaguelens.v1.GetOverviewMatchupsResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	10, // 9: leaguelens.v1.GetOverviewMatchupsResponse.matchups:type_name -> leaguelens.v1.OverviewMatchup
-	4,  // 10: leaguelens.v1.OverviewMatchup.team:type_name -> leaguelens.v1.OverviewTeam
-	17, // 11: leaguelens.v1.OverviewMatchup.fetched_at:type_name -> google.protobuf.Timestamp
-	3,  // 12: leaguelens.v1.GetOverviewPlayerUpdatesResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	13, // 13: leaguelens.v1.GetOverviewPlayerUpdatesResponse.updates:type_name -> leaguelens.v1.PlayerUpdate
-	17, // 14: leaguelens.v1.PlayerUpdate.published_at:type_name -> google.protobuf.Timestamp
-	3,  // 15: leaguelens.v1.GetOverviewLookingAheadResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
-	16, // 16: leaguelens.v1.GetOverviewLookingAheadResponse.issues:type_name -> leaguelens.v1.UpcomingIssue
-	4,  // 17: leaguelens.v1.UpcomingIssue.team:type_name -> leaguelens.v1.OverviewTeam
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	18, // 7: leaguelens.v1.LineupAlert.kickoff_at:type_name -> google.protobuf.Timestamp
+	4,  // 8: leaguelens.v1.GetOverviewMatchupsResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
+	11, // 9: leaguelens.v1.GetOverviewMatchupsResponse.matchups:type_name -> leaguelens.v1.OverviewMatchup
+	5,  // 10: leaguelens.v1.OverviewMatchup.team:type_name -> leaguelens.v1.OverviewTeam
+	18, // 11: leaguelens.v1.OverviewMatchup.fetched_at:type_name -> google.protobuf.Timestamp
+	4,  // 12: leaguelens.v1.GetOverviewPlayerUpdatesResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
+	14, // 13: leaguelens.v1.GetOverviewPlayerUpdatesResponse.updates:type_name -> leaguelens.v1.PlayerUpdate
+	18, // 14: leaguelens.v1.PlayerUpdate.published_at:type_name -> google.protobuf.Timestamp
+	3,  // 15: leaguelens.v1.PlayerUpdate.category:type_name -> leaguelens.v1.NewsCategory
+	2,  // 16: leaguelens.v1.PlayerUpdate.injury_status:type_name -> leaguelens.v1.InjuryStatus
+	5,  // 17: leaguelens.v1.PlayerUpdate.teams:type_name -> leaguelens.v1.OverviewTeam
+	4,  // 18: leaguelens.v1.GetOverviewLookingAheadResponse.coverage:type_name -> leaguelens.v1.OverviewCoverage
+	17, // 19: leaguelens.v1.GetOverviewLookingAheadResponse.issues:type_name -> leaguelens.v1.UpcomingIssue
+	5,  // 20: leaguelens.v1.UpcomingIssue.team:type_name -> leaguelens.v1.OverviewTeam
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_leaguelens_v1_overview_proto_init() }
@@ -1236,7 +1365,7 @@ func file_leaguelens_v1_overview_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leaguelens_v1_overview_proto_rawDesc), len(file_leaguelens_v1_overview_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
