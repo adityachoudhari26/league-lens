@@ -6,7 +6,7 @@ An open-source, self-hosted fantasy football dashboard for ESPN and Sleeper, wit
 
 We will build one checkpoint at a time. After each checkpoint, stop, show what changed, report the checks performed and any limitations, and wait for your approval before starting the next checkpoint. Approval applies only to the next checkpoint, not the entire roadmap.
 
-All changes must be made on feature branches and reviewed through pull requests. Never push directly to `main`.
+All changes must be made on feature branches and reviewed through pull requests. Never push directly to `main`. Keep only one active development branch and PR at a time; merge it before starting the next.
 
 This README is the progress tracker. Check an item only when its acceptance criteria have been verified. Update the plan together if the scope changes. Do not publish, deploy to a public host, or choose a project license implicitly.
 
@@ -16,83 +16,132 @@ This README is the progress tracker. Check an item only when its acceptance crit
 | --- | --- |
 | Frontend | React, TypeScript, Vite |
 | Navigation | TanStack Router |
-| API client and cache | Connect Query and TanStack Query |
+| API client and cache | Connect TypeScript client and TanStack Query |
 | UI | Tailwind CSS and shadcn/ui |
 | Backend | Go, standard `net/http`, Connect |
 | API contracts | Protocol Buffers and Buf |
 | Database | PostgreSQL, pgx, sqlc |
 | Database migrations | Goose |
-| Background jobs | River open-source core, backed by Postgres |
-| Packaging | Docker Compose; Go serves the built frontend |
-| AI | OpenAI initially, behind a provider interface |
+| Background jobs (planned) | River open-source core, backed by Postgres |
+| Packaging (planned) | Production Docker Compose; Go serves the built frontend |
+| AI (deferred) | OpenAI initially, behind a provider interface |
 
 Node is used for frontend development and builds. The production application runs in Go. Start with one application process and Postgres; split out a worker only when needed. Authentication will live in the Go backend; its implementation will be reviewed before that checkpoint.
 
 ## Checkpoints
 
-- [x] **0. Verify access and initialize Git.** Read-only ESPN and Sleeper requests successfully retrieved the selected teams, rosters, scoring settings, and current matchups. Git is initialized on `main`, and `.env.local` is ignored. These were manual connection checks; reusable connectors are still to be built.
+Completed items describe verified functionality on `main`. Unchecked items are
+planned work, not a claim that implementation has started. Checkpoint numbers
+remain stable even though the API and frontend work happened before owner setup.
 
-- [x] **0a. Prepare the repository.** Add Conventional Commit guidance and a local commit-message hook, editor and line-ending defaults, Git and Docker exclusions, and contribution instructions. **Done when:** commit validation accepts valid messages and rejects invalid ones, credentials remain excluded, and housekeeping files pass checks. Stop for review before checkpoint 1.
+- [x] **0. Verify access and initialize Git.** Read-only ESPN and Sleeper access verified; repository published with an MIT license and local credentials excluded.
+- [x] **0a. Prepare the repository.** Conventional Commits, local hooks, editor/line-ending defaults, Git/Docker exclusions, and contribution guidance.
+- [x] **1. Review the foundation design.** One local owner, full selected leagues, encountered players only, exact provider ID mappings, and available current-season history. See [database foundation](docs/designs/database-foundation.md) and [provider contracts](docs/designs/provider-contracts.md).
+- [x] **2. Create the project skeleton and development workflow.** Go/Postgres and Vite/React entry points, configuration examples, dependency lockfiles, `just` commands, and Air reload. `just dev` runs frontend and API together; builds and frontend checks pass.
+- [x] **3. Connect the frontend to Go.** Implemented through real dashboard RPCs instead of a demo health RPC. Committed Go and TypeScript bindings, separate generation commands, typed Connect calls, TanStack Query caching, and per-section loading/error/retry states.
+- [x] **4. Add Postgres and migrations.** Goose, pgx, generated sqlc queries, ownership and history schema, atomic imports, health/readiness endpoints, and disposable database integration checks.
 
-- [x] **1. Review the scaffold design.** Agree on directory layout, local development commands, configuration, and the minimal frontend-to-backend health flow. The owner approved an infrastructure/database-first slice in chat: full selected leagues, encountered players only, one owner, and current-season history backfill. See [database foundation](docs/designs/database-foundation.md) for the recorded design and next steps. Frontend, Connect, and AI are deferred.
+- [ ] **5. Add owner setup and credential protection.**
+  - [x] Local owner selection through `LOCAL_OWNER_EMAIL`; this is an identity label, not authentication.
+  - [ ] Review and implement protected owner setup, authentication, and server-side sessions with closed registration.
+  - [ ] Add encrypted provider credential storage and document encryption-key backup requirements.
+  - [ ] Verify unauthorized access is rejected and setup cannot be claimed without its token before supporting public exposure.
 
-- [ ] **2. Create the project skeleton.** Add React/Vite and Go entry points, dependency manifests and lockfile, basic UI styling, configuration validation, and secret-free configuration examples. **Done when:** the frontend builds, the Go backend builds, and documented development commands work. No fantasy integration yet.
+- [ ] **6. Complete ESPN connection setup.**
+  - [x] Shared-provider Go adapter and CLI import: full league, rosters, records, encountered players, and available current-season matchup/roster history.
+  - [x] Fixture coverage for normalization, invalid authentication, historical weeks, missing data, and multiweek scores; failures preserve previously imported data.
+  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states.
 
-- [ ] **3. Connect the frontend to Go.** Define a small health service in Protobuf, configure reproducible code generation, and call it from the frontend through Connect Query. **Done when:** the page displays the real backend response and a useful error when the backend is unavailable; generated bindings reproduce cleanly.
+- [ ] **7. Complete Sleeper connection setup.**
+  - [x] Shared-provider Go adapter and CLI import using a username and league ID, including team selection and available current-season history.
+  - [x] Fixture coverage for mappings and missing data; public username lookup is selection, not proof of ownership.
+  - [ ] Add in-app username lookup and league/team selection.
 
-- [x] **4. Add Postgres and migrations.** Add a local database service, Goose migrations, pgx connections, and sqlc queries. Design ownership for users, connections, leagues, and selected teams. Separate process health from database readiness. **Done when:** an empty database migrates successfully, a database round trip works, and an unavailable database is reported accurately.
+- [ ] **8. Build the combined dashboard.**
+  - [x] Responsive shell, collapsible navigation, and persistent Light/Dark/System appearance.
+  - [x] Owner-scoped `ListLeagues`, `GetLeague`, `GetTeamRoster`, and `ListMatchups` endpoints with modular handlers.
+  - [x] Four overview section endpoints and connected UI: attention, matchups, player updates, and looking ahead.
+  - [x] All-league overview with real imported scores, fetch timestamps, three attention items before expansion, and explicit unavailable news/schedule coverage. No mock data.
+  - [x] Exact cross-provider player mapping with provider-ID fallback; only encountered players are stored, and uncertain identities are not joined by name.
+  - [ ] Build Roster, Matchups, and Standings pages one at a time, with league selection where useful.
+  - [ ] Show connection health and stale-data state, and connect Refresh to provider synchronization.
 
-- [ ] **5. Add owner setup and credential protection.** Review and implement owner authentication, protected setup, server-side sessions, and encrypted credential storage. Keep registration closed by default. **Done when:** unauthorized requests cannot access protected data, secrets do not appear in responses or logs, and setup cannot be claimed without its token. Document encryption-key backup requirements.
+- [ ] **9. Make synchronization automatic.** Proposed next slice; not implemented yet.
+  - [ ] Reuse the import service behind a server-side sync operation; keep the CLI as a development tool.
+  - [ ] On dashboard load, show saved data immediately and refresh stale provider data in the background.
+  - [ ] Make explicit Refresh fetch provider data, save it, and update the view; distinguish refreshing from a failed sync.
+  - [ ] Define freshness intervals, duplicate prevention, bounded retries, and per-provider request limits.
+  - [ ] Add persistent scheduled jobs using River so sync continues without an open browser and recovers after restart.
+  - [ ] Verify a failed provider preserves its last successful data and does not stop other leagues from updating.
 
-- [ ] **6. Build the ESPN connector.** Backend adapter and command implemented and verified; UI configuration/reconnect states remain deferred. Turn the verified read-only flow into reusable Go code; normalize league settings, teams, roster slots, players, and matchups. Add UI configuration and reconnect/error states. **Done when:** the selected ESPN team imports correctly, fixture tests verify normalization, and an expired or invalid connection leaves the last successful snapshot intact.
+- [ ] **10. Add player news and supported alerts.**
+  - [x] Empty starter-slot checks based on observed full/lineup snapshots; coverage explicitly remains partial.
+  - [ ] Choose permitted news and NFL schedule sources with useful free coverage.
+  - [ ] Match and deduplicate player news, with source links and publication times.
+  - [ ] Add injury, bye, and upcoming lineup checks only where the stored data supports them.
+  - [ ] Verify league-rule handling and disclose missing coverage; paid feeds remain optional.
 
-- [x] **7. Build the Sleeper connector.** Look up a username, select a league/team, and normalize the same data categories. Treat public username lookup as selection, not proof of account ownership. **Done when:** the selected Sleeper team imports correctly and fixture tests cover its mappings and missing-data cases.
+- [ ] **11. Add optional AI.** Deferred. Review the provider interface and context first, then add bring-your-own credentials, usage controls, sourced briefings, and roster-aware questions. The core dashboard must work without AI.
 
-- [ ] **8. Build the combined dashboard.** Display both teams, rosters, matchups, scoring context, connection state, manual refresh, and last successful sync times. Introduce explicit cross-provider player ID mappings; do not merge by name alone. **Done when:** both real teams appear correctly, unresolved player mappings stay explicit, and stale or missing data is visibly distinguished from fresh data.
+- [ ] **12. Package and verify self-hosting.**
+  - [x] Local Postgres Compose service and documented development commands.
+  - [ ] Production image and routing for the built frontend and Connect API.
+  - [ ] Installation, migrations, upgrades, persistent volumes, and backup/restore documentation.
+  - [ ] Verify a clean installation and restore; document HTTPS and complete owner protection before public exposure.
 
-- [ ] **9. Add reliable scheduled sync.** Use River for persistent jobs, bounded retries, duplicate prevention, and per-provider request limits. **Done when:** sync runs without an open browser, resumes after restart, and a failed provider does not stop the other connector. Expose job failures in the UI without exposing credentials.
+- [ ] **13. Prepare an open-source release.**
+  - [x] MIT license, public repository, contributor guidance, and Conventional PR title checks.
+  - [x] CI for Go checks, database integration, sqlc drift, and frontend lint/types/build.
+  - [ ] Verify the production installation guide from a fresh checkout, review tracked files for secrets, and document provider limits and optional costs.
+  - [ ] Add release artifacts/automation when self-hosting packaging is ready; deployment and release publication require explicit approval.
 
-- [ ] **10. Add player news and basic alerts.** Review available source permissions and coverage before selecting a default source. Match stories to players, deduplicate updates, link to sources, and add supported bye/lineup alerts. **Done when:** relevant updates include source and publication time, alerts honor league rules, and missing coverage is disclosed. Paid feeds remain optional.
+Win-probability charts, future matchup schedules, Yahoo, and a polished standalone
+CLI remain deferred. The overview is an all-league starting point; it does not
+require a global league selection.
 
-- [ ] **11. Add optional AI.** Add user-provided OpenAI credentials, model settings, usage controls, a sourced briefing, and roster-aware questions. Review the context and provider interface before implementation. **Done when:** answers use actual selected-team data, unsupported claims are rejected or qualified, credentials remain private, and the core dashboard works with AI disabled or unavailable.
-
-- [ ] **12. Package and verify self-hosting.** Complete the production Docker image and Compose setup, persistent volumes, migration workflow, health checks, and installation/upgrade/backup documentation. **Done when:** a clean installation starts using documented steps, the built frontend is served by Go, and backup/restore is exercised. Document HTTPS configuration for public exposure.
-
-- [ ] **13. Prepare the open-source release.** The MIT license is in place. Add contributor guidance and CI, inspect tracked files for secrets, and document provider limits and optional costs. **Done when:** a fresh checkout passes the required checks and follows the installation guide. Publishing the repository is a separate explicit step.
-
-## Proposed repository layout
+## Repository layout
 
 ```text
 web/                  React application and generated TypeScript bindings
 cmd/server/           Go application entry point
-internal/             Backend services, connectors, auth, and jobs
+internal/             Backend services, provider adapters, and persistence
 proto/                Versioned API definitions
 gen/                  Generated Go API bindings
 db/                   SQL queries and migrations
 internal/store/       Generated sqlc query bindings
 internal/database/    Pool ownership and transaction boundary
 docs/                 Approved designs and implementation notes
-compose.yaml          Self-hosted services
-Dockerfile            Frontend build and Go runtime packaging
+compose.yaml          Local development Postgres
+Dockerfile            Planned production packaging (not implemented)
 ```
 
 ## Current state
 
-The repository includes the locally implemented Go/Postgres foundation described below, plus the earlier manual provider connection checks. Existing private provider credentials remain untouched. No application deployment has been performed.
+The foundation, provider adapters, dashboard APIs, frontend shell, and connected
+overview are merged on `main`. Both ESPN and Sleeper imports have been exercised
+against real leagues, and the local overview was verified across three imported
+leagues. No application deployment or production release has been performed.
 
-Credentials live in the ignored `.env.local` file. Never commit that file, paste its contents into chat, or include it in a Docker build context. Add appropriate Docker exclusions when packaging begins. Examples and test fixtures must contain no real credentials or private league data.
+Both adapters implement `fantasy.Provider`. The shared importer normalizes and
+persists full leagues, encountered players, and available current-season history
+atomically. DynastyProcess mappings are cached; unmapped players retain provider
+identities. Earlier stored seasons are preserved.
 
-**Current:** Sleeper and ESPN implement the shared `fantasy.Provider` contract. The importer consumes normalized league data; provider
-HTTP formats stay inside adapters. See [provider contracts](docs/designs/provider-contracts.md).
+The overview reads saved database observations. **Refresh view currently reloads
+our API; it does not contact ESPN or Sleeper.** Imports still run through the CLI.
+Automatic provider sync is proposed next work. News and upcoming bye checks show
+unavailable coverage; Roster, Matchups, and Standings pages remain placeholders.
+Authentication, in-app connection setup, scheduling, production packaging, and AI
+are not implemented.
 
-Included: a reusable provider-independent import service, a temporary flag-based import command,
-current rosters and team records, available current-season weekly rosters/matchups,
-cached DynastyProcess identity lookup, and atomic persistence with sync status.
-Authentication, frontend/Connect work, scheduling, and AI remain deferred.
+Credentials live in ignored `.env.local` and are excluded from Docker build
+contexts. Never commit the file or include real credentials or private league
+data in examples and fixtures. The API uses a configured local owner rather than
+login sessions and should remain bound to localhost.
 
-Sleeper now exercises full-league import and current-season backfill. Existing prior-season data is preserved. Generated queries and transaction behavior are tested against disposable Postgres.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook setup.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and checks. Work on
+one active branch/PR at a time; the roadmap does not authorize starting every
+unchecked item.
 
 ## Development tools
 
@@ -122,7 +171,7 @@ The database port is loopback-only. The password shown is a local development de
 - `just test-db`: starts a disposable Postgres container, tests migrations/schema/queries, and removes the container afterward. It does not use your development database.
 - `just db-stop`: stop Postgres while retaining its volume.
 
-No build or test command invokes a generator. `sqlc.yaml` generates committed bindings under `internal/store`; edit SQL inputs and run `just gen-db` rather than editing generated Go. See [the database design and import plan](docs/designs/database-foundation.md) for history semantics and the transaction boundary. Public-facing authentication and data endpoints are not part of this scaffold.
+No build or test command invokes a generator. `sqlc.yaml` generates committed bindings under `internal/store`; edit SQL inputs and run `just gen-db` rather than editing generated Go. See [the database design and import plan](docs/designs/database-foundation.md) for history semantics and the transaction boundary. Local owner-scoped data endpoints are implemented; public-facing authentication remains deferred.
 
 ## License
 
@@ -139,7 +188,7 @@ sqlc version
 just gen-db
 ```
 
-`just gen-db` rejects other sqlc versions. After changing `db/queries` or migrations, run it explicitly and review the generated diff. Buf and other generators remain deferred. Ordinary startup, build, and tests never generate code.
+`just gen-db` rejects other sqlc versions. After changing `db/queries` or migrations, run it explicitly and review the generated diff. Use `just gen-api` for Go protobuf/Connect bindings and `just gen-web` for TypeScript contracts. Ordinary startup, build, and tests never generate code.
 
 `internal/database` owns the pool and exposes `Queries()` for individual operations and `InTx(ctx, callback)` for atomic writes. The callback receives transaction-bound generated queries. Use those queries for every operation in the transaction and do not retain them afterward. Errors, panics, and cancellation roll back; callbacks are not automatically retried. Do not call `Queries()` or nest `InTx` from inside the callback. Network fetches belong outside the transaction.
 
@@ -251,8 +300,8 @@ multiweek scores, defense identity, and missing data.
 
 ## Frontend shell
 
-The desktop-first shell lives in `web/` and runs independently of the API and
-Postgres. It uses Vite, React, TypeScript, TanStack Router, Tailwind v4, and the
+The desktop-first shell lives in `web/`. Navigation and appearance work without
+the backend; the connected overview requires the API and Postgres. It uses Vite, React, TypeScript, TanStack Router, Tailwind v4, and the
 standard shadcn sidebar/menu components (Base UI primitives). Geist is bundled
 locally; the UI does not depend on a font CDN.
 
@@ -273,7 +322,8 @@ error instead of silently opening a different address. These commands prefer an
 optional ignored `bin/node` before your normal PATH; no machine-specific runtime
 path is committed.
 
-Overview, Roster, Matchups, and Standings are separate placeholder routes. Settings
+Overview is connected to the API; Roster, Matchups, and Standings remain separate
+placeholder routes. Settings
 contains a working appearance preference. Light, Dark, and System are supported;
 the selected preference persists in this browser and follows operating-system
 changes in System mode. The sidebar collapses and has a drawer at narrow widths.
@@ -281,9 +331,9 @@ changes in System mode. The sidebar collapses and has a drawer at narrow widths.
 `src/components/layout` owns shared navigation and the page frame;
 `src/components/theme` owns appearance; `src/pages` owns page content;
 `src/components/ui` contains shadcn primitives. Adding a real page replaces its
-placeholder without rebuilding the shell. The pages currently display no league
-data and make no API calls. The dashboard API work is preserved separately on
-`feat/dashboard-api`; connecting it and building each page are later checkpoints.
+placeholder without rebuilding the shell. Overview section components live in `src/components/overview`, with typed API
+access in `src/lib/api`. The dashboard endpoints and connected overview are
+merged; remaining pages can use the existing read API foundation.
 
 The shell follows the official [shadcn Vite setup](https://ui.shadcn.com/docs/installation/vite)
 and [theme-provider approach](https://ui.shadcn.com/docs/dark-mode/vite), including
@@ -307,7 +357,7 @@ versions align. No formatting rules or formatter have been added in this step.
 
 ## Overview read API
 
-This backend branch adds owner-scoped Connect reads independently of the frontend.
+The backend exposes owner-scoped Connect reads consumed by the overview.
 The service uses `LOCAL_OWNER_EMAIL` (default `owner@localhost`); this is a local
 single-owner mode, not authentication. Keep the server bound to localhost.
 
@@ -345,7 +395,7 @@ sources live in `db/queries/overview.sql`; section messages live in
 Generated files can combine methods; application logic stays in focused files.
 
 Run `just gen-api` for Go protobuf/Connect bindings and `just gen-db` for SQL
-bindings. No frontend or TypeScript generation is required by this branch.
+bindings. Run `just gen-web` for the frontend TypeScript contracts.
 
 ### Connected overview
 
