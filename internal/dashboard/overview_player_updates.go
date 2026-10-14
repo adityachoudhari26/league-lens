@@ -179,24 +179,30 @@ func rankPlayerUpdates(rows []store.PlayerNews, summaries map[string]*playerSumm
 		ranked = append(ranked, rankedPlayerUpdate{update: update, tier: playerUpdateTier(summary, category)})
 	}
 	sort.Slice(ranked, func(i, j int) bool {
-		if ranked[i].tier != ranked[j].tier {
-			return ranked[i].tier < ranked[j].tier
-		}
-		if ranked[i].update.Starter != ranked[j].update.Starter {
-			return ranked[i].update.Starter
-		}
-		iPublished := ranked[i].update.PublishedAt.AsTime()
-		jPublished := ranked[j].update.PublishedAt.AsTime()
-		if !iPublished.Equal(jPublished) {
-			return iPublished.After(jPublished)
-		}
-		return ranked[i].update.Id < ranked[j].update.Id
+		return rankedBefore(ranked[i], ranked[j])
 	})
 	updates := make([]*v1.PlayerUpdate, 0, len(ranked))
 	for _, item := range ranked {
 		updates = append(updates, item.update)
 	}
 	return updates
+}
+
+// rankedBefore orders updates by tier, then starters before bench, then
+// newest first, with the update ID as a stable tie-breaker.
+func rankedBefore(a, b rankedPlayerUpdate) bool {
+	if a.tier != b.tier {
+		return a.tier < b.tier
+	}
+	if a.update.Starter != b.update.Starter {
+		return a.update.Starter
+	}
+	aPublished := a.update.PublishedAt.AsTime()
+	bPublished := b.update.PublishedAt.AsTime()
+	if !aPublished.Equal(bPublished) {
+		return aPublished.After(bPublished)
+	}
+	return a.update.Id < b.update.Id
 }
 
 func playerUpdateTier(summary *playerSummary, category v1.NewsCategory) int {
