@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router"
 import { AppShell } from "@/components/layout/app-shell"
 import { navigation } from "@/components/layout/navigation"
+import { MatchupsPage } from "@/pages/matchups-page"
 import { OverviewPage } from "@/pages/overview-page"
 import { WorkspacePage } from "@/pages/workspace-page"
 
@@ -28,7 +29,13 @@ const pages = navigation.map((item) =>
     getParentRoute: () => rootRoute,
     path: item.path,
     component: () =>
-      item.path === "/" ? <OverviewPage /> : <WorkspacePage item={item} />,
+      item.path === "/" ? (
+        <OverviewPage />
+      ) : item.path === "/matchups" ? (
+        <MatchupsPage item={item} />
+      ) : (
+        <WorkspacePage item={item} />
+      ),
   }),
 )
 export const router = createRouter({

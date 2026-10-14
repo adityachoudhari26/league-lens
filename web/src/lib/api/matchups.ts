@@ -1,0 +1,34 @@
+import { queryOptions } from "@tanstack/react-query"
+import { dashboard } from "./client"
+
+// Reads saved snapshots. Matchups reloads these queries when syncing ends (see
+// useReloadAfterSync); it never starts a sync itself.
+export const matchupQueries = {
+  leagues: queryOptions({
+    queryKey: ["matchups", "leagues"],
+    queryFn: ({ signal }) =>
+      dashboard.listLeagues({ pageSize: 100 }, { signal }),
+  }),
+  periods: (leagueSeasonId: string) =>
+    queryOptions({
+      queryKey: ["matchups", "periods", leagueSeasonId],
+      queryFn: ({ signal }) =>
+        dashboard.getLeague({ leagueSeasonId }, { signal }),
+      select: (response) => response.availableMatchupPeriods,
+    }),
+  // An omitted period asks the server for the current round.
+  detail: (leagueSeasonId: string, matchupPeriod?: number) =>
+    queryOptions({
+      queryKey: [
+        "matchups",
+        "detail",
+        leagueSeasonId,
+        matchupPeriod ?? "current",
+      ],
+      queryFn: ({ signal }) =>
+        dashboard.getMatchupDetail(
+          { leagueSeasonId, matchupPeriod },
+          { signal },
+        ),
+    }),
+}
