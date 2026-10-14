@@ -60,7 +60,7 @@ function designatedStatus(status: InjuryStatus) {
   }
 }
 
-const previewCount = 5
+const previewCount = 3
 
 /** Injured players: a designation or injury-category news. */
 function isInjuryUpdate(update: PlayerUpdate) {
