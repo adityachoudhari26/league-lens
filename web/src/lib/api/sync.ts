@@ -52,7 +52,7 @@ export function useLeagueSync() {
 
   const leagues = status.data?.leagues ?? []
   const leaguesSyncing = syncingLeagues(leagues).length > 0
-  useOverviewReloadWhenSyncEnds(leaguesSyncing)
+  useReloadWhenSyncEnds(leaguesSyncing)
   return {
     leagues,
     syncing: start.isPending || leaguesSyncing,
@@ -72,14 +72,23 @@ function useStaleSyncOnMount(startSync: (onlyStale: boolean) => void) {
   }, [startSync])
 }
 
-// Reloads overview sections when the last syncing league finishes.
-function useOverviewReloadWhenSyncEnds(syncing: boolean) {
+/** Reloads saved data when a sync finishes, without starting one. */
+export function useReloadAfterSync() {
+  const status = useQuery(syncStatusQuery)
+  useReloadWhenSyncEnds(syncingLeagues(status.data?.leagues).length > 0)
+}
+
+// Reloads every saved-data query (all but sync status) when the last syncing
+// league finishes. Inactive pages are only marked stale.
+function useReloadWhenSyncEnds(syncing: boolean) {
   const queryClient = useQueryClient()
   const wasSyncing = useRef(false)
 
   useEffect(() => {
     if (wasSyncing.current && !syncing)
-      void queryClient.invalidateQueries({ queryKey: ["overview"] })
+      void queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== "sync",
+      })
     wasSyncing.current = syncing
   }, [syncing, queryClient])
 }

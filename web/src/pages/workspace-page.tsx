@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { themeOptions } from "@/components/theme/theme-toggle"
 import { useTheme } from "@/components/theme/theme-provider"
 
-function PageHeading({ item }: { item: NavigationItem }) {
+export function PageHeading({ item }: { item: NavigationItem }) {
   return (
     <div className="mb-6">
       <h1 className="text-2xl font-semibold tracking-tight">{item.title}</h1>
