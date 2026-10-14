@@ -1,6 +1,5 @@
 # Repository instructions
 
-- Keep only one active development branch and PR at a time. Finish and merge it before starting the next. Do not create additional worktrees without asking.
 - Work on a feature branch before editing files. Never commit or push directly to `main`.
 - Push feature branches and use pull requests. Do not merge without explicit user approval.
 - Follow the README checkpoint workflow: complete only the authorized checkpoint, report verification, and pause for review.

@@ -11,6 +11,9 @@ func validateData(data fantasy.LeagueData, described fantasy.League, selection f
 	if data.League.Ref != described.Ref || selection.League != described.Ref {
 		return fmt.Errorf("provider returned a different league")
 	}
+	if len(selection.SelectedTeamIDs) > 1 {
+		return fmt.Errorf("more than one selected team in this league")
+	}
 	if data.FetchedAt.IsZero() || data.League.TeamCount < 1 || len(data.Teams) != data.League.TeamCount {
 		return fmt.Errorf("incomplete league data")
 	}
