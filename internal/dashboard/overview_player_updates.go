@@ -16,7 +16,7 @@ import (
 const playerNewsCoverage = "Latest RotoWire news via ESPN from the past 7 days, saved at each sync. Players ESPN can't identify have no news."
 
 var (
-	injuryHeadline        = regexp.MustCompile(`(?i)injur|\(back\)|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|illness|ruled out|questionable|doubtful|practice|sidelined|ir|injured reserve)\b`)
+	injuryHeadline        = regexp.MustCompile(`(?i)injur|\((?:[a-z]+[ -]?){1,3}\)|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|quad|bruise|rib|ribs|wrist|finger|hand|elbow|neck|chest|thumb|achilles|oblique|pectoral|abdomen|illness|ruled out|questionable|doubtful|practice|sidelined|ir|injured reserve)\b`)
 	practiceSquadHeadline = regexp.MustCompile(`(?i)\bpractice\s+squad\b`)
 	transactionHeadline   = regexp.MustCompile(`(?i)\b(?:signed|re-signed|released|waived|traded|claimed|activated|promoted|elevated|cut|acquired|suspended|reinstated)\b`)
 )
