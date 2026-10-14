@@ -57,7 +57,7 @@ func (c *Client) readLeague(ctx context.Context, id string, week int) (leagueRes
 	if c.credentials.S2 == "" || c.credentials.SWID == "" {
 		return result, fmt.Errorf("ESPN_S2 and ESPN_SWID are required")
 	}
-	query := url.Values{"view": {"mSettings", "mTeam", "mRoster", "mMatchup"}}
+	query := url.Values{"view": {"mSettings", "mTeam", "mRoster", "mMatchup", "mBoxscore"}}
 	if week > 0 {
 		query.Set("scoringPeriodId", strconv.Itoa(week))
 	}

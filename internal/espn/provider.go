@@ -46,6 +46,9 @@ func (c *Client) FetchLeague(ctx context.Context, league fantasy.League) (fantas
 	if err = appendMatchups(&data, raw); err != nil {
 		return fantasy.LeagueData{}, err
 	}
+	if err = appendLineups(&data, players, raw); err != nil {
+		return fantasy.LeagueData{}, err
+	}
 	if err = c.appendHistory(ctx, &data, players, raw); err != nil {
 		return fantasy.LeagueData{}, err
 	}
@@ -63,6 +66,9 @@ func (c *Client) appendHistory(ctx context.Context, data *fantasy.LeagueData, pl
 			return err
 		}
 		if err := appendRosters(data, players, history, fantasy.SnapshotHistory); err != nil {
+			return err
+		}
+		if err := appendLineups(data, players, history); err != nil {
 			return err
 		}
 	}

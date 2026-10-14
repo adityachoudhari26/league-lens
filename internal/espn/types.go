@@ -44,16 +44,23 @@ type entryResponse struct {
 	PlayerID int `json:"playerId"`
 	Slot     int `json:"lineupSlotId"`
 	Pool     struct {
-		Player playerResponse `json:"player"`
+		Player           playerResponse `json:"player"`
+		AppliedStatTotal *float64       `json:"appliedStatTotal"`
 	} `json:"playerPoolEntry"`
 }
 type playerResponse struct {
-	ID            int    `json:"id"`
-	Name          string `json:"fullName"`
-	Position      int    `json:"defaultPositionId"`
-	ProTeam       int    `json:"proTeamId"`
-	InjuryStatus  string `json:"injuryStatus"`
-	EligibleSlots []int  `json:"eligibleSlots"`
+	ID            int            `json:"id"`
+	Name          string         `json:"fullName"`
+	Position      int            `json:"defaultPositionId"`
+	ProTeam       int            `json:"proTeamId"`
+	InjuryStatus  string         `json:"injuryStatus"`
+	EligibleSlots []int          `json:"eligibleSlots"`
+	Stats         []statResponse `json:"stats"`
+}
+type statResponse struct {
+	SourceID        int `json:"statSourceId"`
+	SplitTypeID     int `json:"statSplitTypeId"`
+	ScoringPeriodID int `json:"scoringPeriodId"`
 }
 type matchupResponse struct {
 	ID     int           `json:"id"`
@@ -63,6 +70,10 @@ type matchupResponse struct {
 	Away   *sideResponse `json:"away"`
 }
 type sideResponse struct {
-	TeamID int      `json:"teamId"`
-	Points *float64 `json:"totalPoints"`
+	TeamID int             `json:"teamId"`
+	Points *float64        `json:"totalPoints"`
+	Lineup *lineupResponse `json:"rosterForCurrentScoringPeriod"`
+}
+type lineupResponse struct {
+	Entries []entryResponse `json:"entries"`
 }
