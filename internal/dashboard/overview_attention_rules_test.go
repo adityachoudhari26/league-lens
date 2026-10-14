@@ -53,6 +53,12 @@ func TestStarterAlerts(t *testing.T) {
 		t.Fatalf("injury alert = %+v", alerts[0])
 	}
 
+	for _, alert := range starterAlerts(team, entries, schedule, now.Add(2*time.Hour)) {
+		if alert.Kind == v1.AlertKind_ALERT_KIND_BYE {
+			t.Fatalf("bye alert after the week's last kickoff: %+v", alert)
+		}
+	}
+
 	withoutSchedule := starterAlerts(team, entries, weekSchedule{}, now)
 	for _, alert := range withoutSchedule {
 		if alert.Kind == v1.AlertKind_ALERT_KIND_BYE {

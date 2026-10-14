@@ -150,13 +150,18 @@ func (r *Runner) launch(targets []Target) {
 	}()
 }
 
-// syncTargets loads the optional player catalog once per batch, then refreshes
-// leagues concurrently; one league's failure never stops the others.
+// syncTargets refreshes the NFL schedule alongside the leagues so a slow
+// schedule source never delays league data. The optional player catalog loads
+// once per batch; one league's failure never stops the others.
 func (r *Runner) syncTargets(targets []Target) {
-	r.refreshSchedules(targets)
-	catalog, version := r.loadCatalog()
-
 	var batch sync.WaitGroup
+	batch.Add(1)
+	go func() {
+		defer batch.Done()
+		r.refreshSchedules(targets)
+	}()
+
+	catalog, version := r.loadCatalog()
 	for _, target := range targets {
 		batch.Add(1)
 		go func() {

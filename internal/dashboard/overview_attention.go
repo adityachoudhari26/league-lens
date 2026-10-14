@@ -81,7 +81,8 @@ func emptySlotAlerts(team store.OverviewTeamsRow, settings fantasy.LeagueSetting
 }
 
 // starterAlerts flags starters who are on bye or carry an injury designation.
-// Starters whose game has kicked off are skipped. Missing team, status, or
+// Starters whose game has kicked off are skipped, as are byes once the week's
+// last game has kicked off. Missing team, status, or
 // schedule data never produces an alert.
 func starterAlerts(team store.OverviewTeamsRow, entries []store.ListSnapshotRosterForUserRow, schedule weekSchedule, now time.Time) []*v1.LineupAlert {
 	var alerts []*v1.LineupAlert
@@ -96,7 +97,9 @@ func starterAlerts(team store.OverviewTeamsRow, entries []store.ListSnapshotRost
 		}
 
 		if schedule.loaded() && entry.ProTeam.Valid && !hasGame {
-			alerts = append(alerts, byeAlert(team, entry, slot))
+			if !schedule.finished(now) {
+				alerts = append(alerts, byeAlert(team, entry, slot))
+			}
 			continue
 		}
 		if alert := injuryAlert(team, entry, slot, game, hasGame); alert != nil {
@@ -219,6 +222,17 @@ type weekSchedule struct {
 }
 
 func (w weekSchedule) loaded() bool { return len(w.games) > 0 }
+
+// finished reports whether every game of the week has kicked off, after which
+// no lineup change can help a starter on bye.
+func (w weekSchedule) finished(now time.Time) bool {
+	for _, game := range w.games {
+		if game.KickoffAt.Time.After(now) {
+			return false
+		}
+	}
+	return true
+}
 
 // weekSchedules caches weekly schedules across teams that share a season and week.
 type weekSchedules map[[2]int32]weekSchedule

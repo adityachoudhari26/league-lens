@@ -23,7 +23,7 @@ func (r *Runner) refreshSchedules(targets []Target) {
 		}
 		seen[season] = true
 		if err := r.refreshSchedule(season); err != nil {
-			slog.Warn("nfl schedule refresh failed; bye and kickoff checks use saved data", "season", season)
+			slog.Warn("nfl schedule refresh failed; bye and kickoff checks use saved data", "season", season, "error", err)
 		}
 	}
 }
