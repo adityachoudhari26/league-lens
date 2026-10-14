@@ -51,26 +51,37 @@ func (s *Service) GetOverviewAttention(ctx context.Context, _ *v1.GetOverviewAtt
 			response.Alerts = append(response.Alerts, starterAlerts(team, entries, schedule, now)...)
 		}
 
-		if len(response.Alerts) > 0 {
-			fingerprints := make([]string, 0, len(response.Alerts))
-			for _, alert := range response.Alerts {
-				fingerprints = append(fingerprints, alert.Fingerprint)
-			}
-			dismissedRows, err := q.ListDismissedAlerts(ctx, store.ListDismissedAlertsParams{UserID: owner, Fingerprints: fingerprints})
-			if err != nil {
-				return err
-			}
-			dismissed := make(map[string]bool, len(dismissedRows))
-			for _, fingerprint := range dismissedRows {
-				dismissed[fingerprint] = true
-			}
-			response.Alerts = withoutDismissed(response.Alerts, dismissed)
+		dismissedAlerts, err := dropDismissedAlerts(ctx, q, owner, response.Alerts)
+		if err != nil {
+			return err
 		}
+		response.Alerts = dismissedAlerts
 		sortAlerts(response.Alerts)
 		response.Coverage = attentionCoverage(schedules.allLoaded())
 		return nil
 	})
 	return response, err
+}
+
+// dropDismissedAlerts removes alerts the owner dismissed in their current week and status.
+func dropDismissedAlerts(ctx context.Context, q *store.Queries, owner pgtype.UUID, alerts []*v1.LineupAlert) ([]*v1.LineupAlert, error) {
+	if len(alerts) == 0 {
+		return alerts, nil
+	}
+
+	fingerprints := make([]string, 0, len(alerts))
+	for _, alert := range alerts {
+		fingerprints = append(fingerprints, alert.Fingerprint)
+	}
+	dismissedRows, err := q.ListDismissedAlerts(ctx, store.ListDismissedAlertsParams{UserID: owner, Fingerprints: fingerprints})
+	if err != nil {
+		return nil, err
+	}
+	dismissed := make(map[string]bool, len(dismissedRows))
+	for _, fingerprint := range dismissedRows {
+		dismissed[fingerprint] = true
+	}
+	return withoutDismissed(alerts, dismissed), nil
 }
 
 func attentionCoverage(scheduleLoaded bool) *v1.OverviewCoverage {
@@ -188,7 +199,7 @@ func alertFingerprint(alert *v1.LineupAlert, period int32) string {
 	var state string
 	switch alert.Kind {
 	case v1.AlertKind_ALERT_KIND_INJURY:
-		state = strings.ToLower(alert.InjuryStatus.String())
+		state = strings.ToLower(strings.TrimPrefix(alert.InjuryStatus.String(), "INJURY_STATUS_"))
 	case v1.AlertKind_ALERT_KIND_EMPTY_SLOT:
 		state = strconv.FormatInt(int64(alert.EmptySlots), 10)
 	}

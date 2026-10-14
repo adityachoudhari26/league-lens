@@ -82,7 +82,7 @@ function AlertCard({
         type="button"
         variant="ghost"
         size="icon-sm"
-        className="absolute right-1.5 top-1.5"
+        className="absolute right-1.5 top-1.5 text-muted-foreground hover:text-foreground"
         aria-label={`Dismiss: ${alert.title}`}
         onClick={() => onDismiss(alert)}
       >

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
-
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -18,6 +17,9 @@ func TestAlertFingerprintTracksCurrentSituation(t *testing.T) {
 		InjuryStatus: v1.InjuryStatus_INJURY_STATUS_QUESTIONABLE,
 	}
 	questionable := alertFingerprint(injury, 3)
+	if got, want := questionable, "team:player:injury:week3:questionable"; got != want {
+		t.Fatalf("questionable fingerprint = %q, want %q", got, want)
+	}
 	if got := alertFingerprint(injury, 3); got != questionable {
 		t.Fatalf("same alert fingerprint = %q, want %q", got, questionable)
 	}
