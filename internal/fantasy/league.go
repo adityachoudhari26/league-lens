@@ -25,6 +25,7 @@ type LeagueData struct {
 	Players   []Player
 	Rosters   []RosterSnapshot
 	Matchups  []Matchup
+	Lineups   []MatchupLineup
 	FetchedAt time.Time
 
 	// Only these periods have an authoritative, complete matchup list. Within
