@@ -1,0 +1,70 @@
+{
+  "id": 123,
+  "seasonId": 2026,
+  "scoringPeriodId": 1,
+  "status": {"latestScoringPeriod": 2, "finalScoringPeriod": 18},
+  "settings": {
+    "name": "Fixture ESPN Lineups",
+    "size": 2,
+    "rosterSettings": {"lineupSlotCounts": {"0": 1, "20": 1}},
+    "scheduleSettings": {"matchupPeriods": {"1": [1], "2": [2]}},
+    "scoringSettings": {"scoringItems": []}
+  },
+  "teams": [
+    {
+      "id": 1,
+      "name": "Home",
+      "roster": {"entries": [
+        {"playerId": 101, "lineupSlotId": 0, "playerPoolEntry": {"player": {"id": 101, "fullName": "Week One QB", "defaultPositionId": 1, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+        {"playerId": 102, "lineupSlotId": 23, "playerPoolEntry": {"player": {"id": 102, "fullName": "Week One Flex", "defaultPositionId": 2}}},
+        {"playerId": 103, "lineupSlotId": 20, "playerPoolEntry": {"player": {"id": 103, "fullName": "Week One Bench", "defaultPositionId": 3}}},
+        {"playerId": 104, "lineupSlotId": 21, "playerPoolEntry": {"player": {"id": 104, "fullName": "Week One IR", "defaultPositionId": 4}}},
+        {"playerId": 105, "lineupSlotId": 2, "playerPoolEntry": {"player": {"id": 105, "fullName": "Week One Zero", "defaultPositionId": 2}}},
+        {"playerId": 106, "lineupSlotId": 20, "playerPoolEntry": {"player": {"id": 106, "fullName": "Week One Bye", "defaultPositionId": 3}}}
+      ]}
+    },
+    {
+      "id": 2,
+      "name": "Away",
+      "roster": {"entries": [
+        {"playerId": 111, "lineupSlotId": 0, "playerPoolEntry": {"player": {"id": 111, "fullName": "Away QB", "defaultPositionId": 1}}},
+        {"playerId": 112, "lineupSlotId": 23, "playerPoolEntry": {"player": {"id": 112, "fullName": "Away Flex", "defaultPositionId": 3}}}
+      ]}
+    }
+  ],
+  "schedule": [
+    {
+      "id": 1,
+      "matchupPeriodId": 1,
+      "winner": "HOME",
+      "home": {
+        "teamId": 1,
+        "totalPoints": 15,
+        "rosterForCurrentScoringPeriod": {"entries": [
+          {"playerId": 101, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 10, "player": {"id": 101, "fullName": "Week One QB", "defaultPositionId": 1, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+          {"playerId": 102, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 5, "player": {"id": 102, "fullName": "Week One Flex", "defaultPositionId": 2, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+          {"playerId": 103, "lineupSlotId": 20, "playerPoolEntry": {"appliedStatTotal": 4, "player": {"id": 103, "fullName": "Week One Bench", "defaultPositionId": 3, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+          {"playerId": 104, "lineupSlotId": 21, "playerPoolEntry": {"appliedStatTotal": 2, "player": {"id": 104, "fullName": "Week One IR", "defaultPositionId": 4, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+          {"playerId": 105, "lineupSlotId": 2, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 105, "fullName": "Week One Zero", "defaultPositionId": 2, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+          {"playerId": 106, "lineupSlotId": 20, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 106, "fullName": "Week One Bye", "defaultPositionId": 3, "stats":[]}}},
+          {"playerId": 108, "lineupSlotId": 20, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 108, "fullName": "Dropped Later", "defaultPositionId": 4, "stats":[]}}}
+        ]}
+      },
+      "away": {
+        "teamId": 2,
+        "totalPoints": 12,
+        "rosterForCurrentScoringPeriod": {"entries": [
+          {"playerId": 111, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 8, "player": {"id": 111, "fullName": "Away QB", "defaultPositionId": 1, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}},
+          {"playerId": 112, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 4, "player": {"id": 112, "fullName": "Away Flex", "defaultPositionId": 3, "stats": [{"statSourceId": 0, "statSplitTypeId": 1, "scoringPeriodId": 1}]}}}
+        ]}
+      }
+    },
+    {
+      "id": 2,
+      "matchupPeriodId": 2,
+      "winner": "UNDECIDED",
+      "home": {"teamId": 1, "totalPoints": 0},
+      "away": {"teamId": 2, "totalPoints": 0}
+    }
+  ]
+}

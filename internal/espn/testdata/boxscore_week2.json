@@ -1,0 +1,61 @@
+{
+  "id": 123,
+  "seasonId": 2026,
+  "scoringPeriodId": 2,
+  "status": {"latestScoringPeriod": 2, "finalScoringPeriod": 18},
+  "settings": {
+    "name": "Fixture ESPN Lineups",
+    "size": 2,
+    "rosterSettings": {"lineupSlotCounts": {"0": 1, "20": 1}},
+    "scheduleSettings": {"matchupPeriods": {"1": [1], "2": [2]}},
+    "scoringSettings": {"scoringItems": []}
+  },
+  "teams": [
+    {
+      "id": 1,
+      "name": "Home",
+      "roster": {"entries": [
+        {"playerId": 201, "lineupSlotId": 0, "playerPoolEntry": {"player": {"id": 201, "fullName": "Week Two QB", "defaultPositionId": 1}}},
+        {"playerId": 202, "lineupSlotId": 23, "playerPoolEntry": {"player": {"id": 202, "fullName": "Week Two Flex", "defaultPositionId": 2}}}
+      ]}
+    },
+    {
+      "id": 2,
+      "name": "Away",
+      "roster": {"entries": [
+        {"playerId": 211, "lineupSlotId": 0, "playerPoolEntry": {"player": {"id": 211, "fullName": "Week Two Away QB", "defaultPositionId": 1}}},
+        {"playerId": 212, "lineupSlotId": 23, "playerPoolEntry": {"player": {"id": 212, "fullName": "Week Two Away Flex", "defaultPositionId": 3}}}
+      ]}
+    }
+  ],
+  "schedule": [
+    {
+      "id": 1,
+      "matchupPeriodId": 1,
+      "winner": "HOME",
+      "home": {"teamId": 1, "totalPoints": 15},
+      "away": {"teamId": 2, "totalPoints": 12}
+    },
+    {
+      "id": 2,
+      "matchupPeriodId": 2,
+      "winner": "UNDECIDED",
+      "home": {
+        "teamId": 1,
+        "totalPoints": 0,
+        "rosterForCurrentScoringPeriod": {"entries": [
+          {"playerId": 201, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 201, "fullName": "Week Two QB", "defaultPositionId": 1, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2}]}}},
+          {"playerId": 202, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 202, "fullName": "Week Two Flex", "defaultPositionId": 2, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2}]}}}
+        ]}
+      },
+      "away": {
+        "teamId": 2,
+        "totalPoints": 0,
+        "rosterForCurrentScoringPeriod": {"entries": [
+          {"playerId": 211, "lineupSlotId": 0, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 211, "fullName": "Week Two Away QB", "defaultPositionId": 1, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2}]}}},
+          {"playerId": 212, "lineupSlotId": 23, "playerPoolEntry": {"appliedStatTotal": 0, "player": {"id": 212, "fullName": "Week Two Away Flex", "defaultPositionId": 3, "stats": [{"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 2}]}}}
+        ]}
+      }
+    }
+  ]
+}
