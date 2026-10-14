@@ -99,7 +99,7 @@ func isMatchupSide(matchup fantasy.Matchup, teamID string) bool {
 func validateLineupEntries(entries []fantasy.LineupEntry, players map[string]bool) error {
 	seen := map[string]bool{}
 	for _, entry := range entries {
-		if !players[entry.PlayerID] || seen[entry.PlayerID] || entry.Slot == "" || !finiteScore(entry.Points) {
+		if !players[entry.PlayerID] || seen[entry.PlayerID] || entry.Slot == "" || !finiteScore(entry.Points) || !finiteScore(entry.ProjectedPoints) {
 			return fmt.Errorf("invalid matchup lineup entry")
 		}
 		seen[entry.PlayerID] = true

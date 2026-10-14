@@ -85,6 +85,7 @@ func TestValidateMatchupLineups(t *testing.T) {
 		{"duplicate player", func(d *fantasy.LeagueData) { d.Lineups[0].Entries[1].PlayerID = "10" }, "invalid matchup lineup entry"},
 		{"empty slot", func(d *fantasy.LeagueData) { d.Lineups[0].Entries[1].Slot = "" }, "invalid matchup lineup entry"},
 		{"non-finite points", func(d *fantasy.LeagueData) { d.Lineups[0].Entries[0].Points = &nan }, "invalid matchup lineup entry"},
+		{"non-finite projected points", func(d *fantasy.LeagueData) { d.Lineups[0].Entries[0].ProjectedPoints = &nan }, "invalid matchup lineup entry"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

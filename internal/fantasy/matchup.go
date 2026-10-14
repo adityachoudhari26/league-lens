@@ -53,4 +53,9 @@ type LineupEntry struct {
 	// with MatchupSide.Score. Nil means not reported, zero is a real score, and
 	// projections must never be substituted.
 	Points *float64
+
+	// ProjectedPoints is the provider's latest league-scored projection for the
+	// player in the matchup. Nil means no projection; it never stands in for
+	// Points, and Points never stands in for it.
+	ProjectedPoints *float64
 }
