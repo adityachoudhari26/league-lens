@@ -9,8 +9,8 @@
 ## Current scaffold constraints
 
 - Keep scaffold changes local. Do not push branches or create PRs unless the user changes this instruction.
-- sqlc generation is authorized for database queries via `just gen-db` (v1.30.0). Buf, go generate, and scaffold generators still require explicit authorization.
-- Current implementation scope includes the Go/Postgres foundation and provider-independent import contracts with the Sleeper and ESPN adapters/commands. Frontend, Connect endpoints, background scheduling, and AI are deferred.
+- sqlc generation is authorized for database queries via `just gen-db` (v1.30.0). Frontend scaffolding and shadcn component generation are authorized for the shell. Buf and other Go/scaffold generators still require explicit authorization.
+- Current implementation scope includes the Go/Postgres foundation and provider-independent import contracts with the Sleeper and ESPN adapters/commands. The Vite/React frontend shell and shadcn components are authorized. Connect endpoints, background scheduling, and AI remain outside this branch.
 
 ## Code organization and readability
 
