@@ -86,6 +86,35 @@ import-sleeper username league_id owner_email="owner@localhost": _require-env
 import-espn league_id season team_id owner_email="owner@localhost": _require-env
     go run ./cmd/import espn --league-id {{quote(league_id)}} --season {{quote(season)}} --team-id {{quote(team_id)}} --owner-email {{quote(owner_email)}}
 
+# Install frontend dependencies. Requires Node 22.12+ and pnpm 11.15.1.
+setup-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web install --frozen-lockfile
+
+# Run the frontend shell; no database or API is needed yet.
+dev-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web dev
+
+# Lint and type-check the frontend.
+check-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web check
+
+# Build the frontend to web/dist.
+build-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web build
+
+
+# Run the frontend and Go API together; Ctrl+C stops both.
+dev: _require-env _require-air
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web dev:all
+
+# Lint frontend source without changing files.
+lint-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web lint
+
+# Apply safe automatic frontend lint fixes.
+fix-web:
+    PATH="{{justfile_directory()}}/bin:$PATH" pnpm --dir web lint:fix
+
 # Regenerate Go protobuf and Connect bindings.
 gen-api:
     go run github.com/bufbuild/buf/cmd/buf@v1.61.0 lint

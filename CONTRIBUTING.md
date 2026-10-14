@@ -37,7 +37,7 @@ This sets the hook path for this repository only. If you already use a custom ho
 ## Files and formatting
 
 - Follow `.editorconfig` and `.gitattributes` for UTF-8, LF line endings, and indentation.
-- Format Go with `gofmt` once Go files exist. Frontend formatting and lint tools will be pinned with the scaffold.
+- Format Go with `gofmt` once Go files exist. Frontend lint dependencies are pinned in `web/package.json`; run `just check-web` for lint and type checks.
 - Commit dependency lockfiles, SQL migrations, and generated API/query bindings when introduced. Dependency directories and build artifacts are ignored.
 - Configuration examples must contain placeholders, never real tokens, cookies, or private league data. `.env.local` remains private; all environment files are excluded from Docker build contexts.
 - Ignore rules do not protect files already tracked by Git. Review staged changes before committing; never force-add credentials.
@@ -60,7 +60,7 @@ check. Run `just check`, `go test -race ./...`, `just build`, `just test-db`, an
 
 PR titles must follow the same Conventional Commit format as local commits
 because they become squash commit subjects. Editing a title reruns its check.
-Workflows use read-only repository permissions and need no provider credentials.
+Frontend changes are checked with ESLint, TypeScript, and a production build. Run `just check-web` and `just build-web` locally. Workflows use read-only repository permissions and need no provider credentials.
 
 Recommended required checks in GitHub branch rules: `Go checks`, `Database
 integration`, `Generated database code`, and `Conventional PR title`. Adding the

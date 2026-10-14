@@ -98,7 +98,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and local hook set
 
 Use `just` to list the command menu. Install it with `brew install just` on macOS or follow [the official installation guide](https://just.systems/man/en/packages.html). Then run the setup sequence below. `just tools` installs Air v1.65.3 under the ignored project `bin/` directory, without changing your global Air installation.
 
-`just dev-api` uses Air to rebuild and restart Go after source or embedded SQL changes. It stops the old server on a compile error and sends an interrupt for graceful shutdown. SQL edits trigger a rebuild only; migrations are always explicit. Development commands do not run generation; use `just gen-db` explicitly when changing database queries. Use `just serve` for a plain run. The frontend is not implemented, so there is no `dev-web` recipe yet.
+`just dev-api` uses Air to rebuild and restart Go after source or embedded SQL changes. It stops the old server on a compile error and sends an interrupt for graceful shutdown. SQL edits trigger a rebuild only; migrations are always explicit. Development commands do not run generation; use `just gen-db` explicitly when changing database queries. Use `just serve` for a plain run. Use `just dev` to run the frontend and API together, or `just dev-web` for the frontend alone; see the frontend shell section below.
 
 Development settings live in `.env.development` (created with owner-only permissions). Restart the development command after changing that file. The existing `.env.local` provider credentials and local VS Code settings remain separate and ignored. Use `just setup` safely on an existing checkout: it never overwrites configuration.
 
@@ -247,6 +247,63 @@ ESPN's fantasy API is undocumented and may change. The adapter follows the
 [community ESPN client](https://github.com/cwendt94/espn-api) and verified read-only
 responses. Fixture tests cover authentication failures, redirects, history,
 multiweek scores, defense identity, and missing data.
+
+
+## Frontend shell
+
+The desktop-first shell lives in `web/` and runs independently of the API and
+Postgres. It uses Vite, React, TypeScript, TanStack Router, Tailwind v4, and the
+standard shadcn sidebar/menu components (Base UI primitives). Geist is bundled
+locally; the UI does not depend on a font CDN.
+
+With Node 22.12+ (Node 24.19.0 is recorded in `web/.node-version`) and pnpm 11.15.1:
+
+```sh
+just setup-web
+just dev
+```
+
+Open **http://127.0.0.1:5173**. `just dev` runs Vite and the Go API together;
+one Ctrl+C stops both, and either process exiting stops its sibling. It requires
+`just setup` and `just tools` once for API configuration and Air. Use `just db-up`
+when you need database-backed API behavior. `just dev-web` runs only the frontend
+and requires no database/API setup. `just check-web` runs lint and type checks, and `just build-web`
+produces `web/dist`. The development port is fixed; an occupied port produces an
+error instead of silently opening a different address. These commands prefer an
+optional ignored `bin/node` before your normal PATH; no machine-specific runtime
+path is committed.
+
+Overview, Roster, Matchups, and Standings are separate placeholder routes. Settings
+contains a working appearance preference. Light, Dark, and System are supported;
+the selected preference persists in this browser and follows operating-system
+changes in System mode. The sidebar collapses and has a drawer at narrow widths.
+
+`src/components/layout` owns shared navigation and the page frame;
+`src/components/theme` owns appearance; `src/pages` owns page content;
+`src/components/ui` contains shadcn primitives. Adding a real page replaces its
+placeholder without rebuilding the shell. The pages currently display no league
+data and make no API calls. The dashboard API work is preserved separately on
+`feat/dashboard-api`; connecting it and building each page are later checkpoints.
+
+The shell follows the official [shadcn Vite setup](https://ui.shadcn.com/docs/installation/vite)
+and [theme-provider approach](https://ui.shadcn.com/docs/dark-mode/vite), including
+listening for system appearance changes.
+
+### Frontend linting
+
+Run `just lint-web` for lint only, or `just fix-web` to apply automatic fixes.
+`just check-web` runs ESLint with zero warnings allowed, then TypeScript.
+Frontend CI installs from the frozen lockfile and runs checks and a production build.
+
+ESLint checks recommended JavaScript and type-aware TypeScript rules (including
+unsafe values, unused variables, and unhandled promises), React hooks, JSX
+accessibility, and consistent type imports. These checks cover shadcn components
+as well as app code. Layout and visual accessibility still need browser review.
+We avoid function-length limits: small, meaningful helpers are encouraged.
+
+TypeScript is pinned to 6.0.3 for typescript-eslint compatibility. ESLint remains
+on 9 until jsx-a11y supports 10; upgrade these together when their supported
+versions align. No formatting rules or formatter have been added in this step.
 
 ## Overview read API
 
