@@ -26,9 +26,11 @@ func Open(ctx context.Context, databaseURL string) (*DB, error) {
 	return &DB{pool: pool, queries: store.New(pool)}, nil
 }
 
-func (db *DB) Close()                         { db.pool.Close() }
+func (db *DB) Close() { db.pool.Close() }
+
 func (db *DB) Ping(ctx context.Context) error { return db.pool.Ping(ctx) }
-func (db *DB) Queries() *store.Queries        { return db.queries }
+
+func (db *DB) Queries() *store.Queries { return db.queries }
 
 // InTx commits only if fn succeeds and the context remains valid. Errors and
 // panics roll back all writes. Use the provided queries for every operation in

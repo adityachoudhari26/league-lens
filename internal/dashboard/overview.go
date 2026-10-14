@@ -1,9 +1,10 @@
 package dashboard
 
 import (
-	"connectrpc.com/connect/v2"
 	"context"
 	"fmt"
+
+	"connectrpc.com/connect/v2"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -27,6 +28,7 @@ func (s *Service) readOverview(ctx context.Context, fn func(context.Context, *st
 	}
 	return err
 }
+
 func overviewTeam(row store.OverviewTeamsRow) *v1.OverviewTeam {
 	team := &v1.OverviewTeam{Id: row.ID.String(), Name: row.Name, LeagueId: row.LeagueID.String(), LeagueName: row.LeagueName, Provider: row.Provider, Season: row.Season, ObservedAt: timestamp(row.ObservedAt)}
 	if row.Period > 0 {
@@ -34,6 +36,7 @@ func overviewTeam(row store.OverviewTeamsRow) *v1.OverviewTeam {
 	}
 	return team
 }
+
 func coverage(state, explanation string) *v1.OverviewCoverage {
 	return &v1.OverviewCoverage{State: state, Explanation: explanation}
 }

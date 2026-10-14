@@ -8,6 +8,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// ListMatchups reads an accessible league's requested matchup round.
+// A matchup round may span multiple scoring weeks.
 func (s *Service) ListMatchups(ctx context.Context, request *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error) {
 	id, err := parseID(request.LeagueSeasonId)
 	if err != nil {

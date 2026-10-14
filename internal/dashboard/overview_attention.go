@@ -4,13 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"sort"
 )
 
+// GetOverviewAttention checks only complete observed lineups for empty starter slots.
+// Coverage remains partial because injuries, byes, and kickoff times are not available.
 func (s *Service) GetOverviewAttention(ctx context.Context, _ *v1.GetOverviewAttentionRequest) (*v1.GetOverviewAttentionResponse, error) {
 	response := &v1.GetOverviewAttentionResponse{Coverage: coverage("empty", "Import a league to check your lineup.")}
 	err := s.readOverview(ctx, func(ctx context.Context, q *store.Queries, owner pgtype.UUID, teams []store.OverviewTeamsRow) error {
@@ -51,6 +54,10 @@ func isStarter(slot fantasy.RosterSlot) bool {
 	}
 	return false
 }
+
+// emptyStarterSlots compares configured starter capacity with occupied slots.
+// Repeated slot definitions are combined; bench and reserve capacity is ignored.
+// Unknown entry slots suppress inference rather than producing false alerts.
 func emptyStarterSlots(settings fantasy.LeagueSettings, entries []store.ListSnapshotRosterForUserRow) []slotGap {
 	counts := map[string]int{}
 	for _, slot := range settings.RosterSlots {

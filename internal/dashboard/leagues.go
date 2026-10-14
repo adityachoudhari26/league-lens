@@ -9,6 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// ListLeagues pages through leagues accessible to the configured local owner.
+// Before the first import, a missing owner produces an empty list.
 func (s *Service) ListLeagues(ctx context.Context, request *v1.ListLeaguesRequest) (*v1.ListLeaguesResponse, error) {
 	size := request.PageSize
 	if size < 0 || size > 100 {
@@ -46,6 +48,9 @@ func (s *Service) ListLeagues(ctx context.Context, request *v1.ListLeaguesReques
 	}
 	return response, err
 }
+
+// GetLeague returns an accessible league, its teams, and imported matchup rounds.
+// Team selection is specific to the configured owner.
 func (s *Service) GetLeague(ctx context.Context, request *v1.GetLeagueRequest) (*v1.GetLeagueResponse, error) {
 	id, err := parseID(request.LeagueSeasonId)
 	if err != nil {

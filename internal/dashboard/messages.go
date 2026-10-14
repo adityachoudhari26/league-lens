@@ -17,6 +17,7 @@ func timestamp(value pgtype.Timestamptz) *timestamppb.Timestamp {
 	}
 	return timestamppb.New(value.Time)
 }
+
 func leagueMessage(row store.DashboardLeagueRow) *v1.League {
 	result := &v1.League{Id: row.ID.String(), Provider: row.Provider, ExternalId: row.ExternalLeagueID, Season: row.Season, Name: row.Name, LastSuccessfulSyncAt: timestamp(row.LastSuccessfulSyncAt)}
 	for _, id := range row.SelectedTeamIds {
@@ -24,6 +25,7 @@ func leagueMessage(row store.DashboardLeagueRow) *v1.League {
 	}
 	return result
 }
+
 func teamMessage(row store.Team, selected []string) (*v1.Team, error) {
 	result := &v1.Team{Id: row.ID.String(), ExternalId: row.ExternalTeamID, Name: row.Name, Selected: slices.Contains(selected, row.ID.String())}
 	if row.Rank.Valid {
@@ -38,6 +40,8 @@ func teamMessage(row store.Team, selected []string) (*v1.Team, error) {
 	}
 	return result, nil
 }
+
+// rosterMessage preserves snapshot provenance, coverage, and optional position data.
 func rosterMessage(row store.TeamSnapshot, entries []store.ListSnapshotRosterForUserRow) (*v1.RosterSnapshot, error) {
 	result := &v1.RosterSnapshot{Id: row.ID.String(), TeamId: row.TeamID.String(), ScoringPeriod: row.Period, Origin: row.Origin, Coverage: row.Coverage, ObservedAt: timestamp(row.ObservedAt), EffectiveAt: timestamp(row.EffectiveAt)}
 	for _, entry := range entries {
@@ -52,6 +56,8 @@ func rosterMessage(row store.TeamSnapshot, entries []store.ListSnapshotRosterFor
 	}
 	return result, nil
 }
+
+// matchupMessage preserves unknown scores and scoring periods, and explicit bye status.
 func matchupMessage(row store.Matchup) (*v1.Matchup, error) {
 	a, err := matchupSide(row.TeamAID, row.ScoreA)
 	if err != nil {
@@ -72,6 +78,7 @@ func matchupMessage(row store.Matchup) (*v1.Matchup, error) {
 	}
 	return result, nil
 }
+
 func matchupSide(id pgtype.UUID, score pgtype.Numeric) (*v1.MatchupSide, error) {
 	side := &v1.MatchupSide{TeamId: id.String()}
 	if score.Valid {

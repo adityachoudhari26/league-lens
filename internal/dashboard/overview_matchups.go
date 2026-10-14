@@ -3,12 +3,15 @@ package dashboard
 import (
 	"context"
 	"errors"
+
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// GetOverviewMatchups returns imported scores for the owner's selected teams.
+// Missing matchup data makes coverage partial; results are not live provider reads.
 func (s *Service) GetOverviewMatchups(ctx context.Context, _ *v1.GetOverviewMatchupsRequest) (*v1.GetOverviewMatchupsResponse, error) {
 	response := &v1.GetOverviewMatchupsResponse{Coverage: coverage("empty", "Import a league to see your matchups.")}
 	err := s.readOverview(ctx, func(ctx context.Context, q *store.Queries, owner pgtype.UUID, teams []store.OverviewTeamsRow) error {
@@ -30,6 +33,10 @@ func (s *Service) GetOverviewMatchups(ctx context.Context, _ *v1.GetOverviewMatc
 	})
 	return response, err
 }
+
+// readOverviewMatchup selects the round containing the observed scoring week
+// and orients its scores around the selected team, whether home or away.
+// Missing snapshots or matchups remain unavailable, never an inferred bye.
 func readOverviewMatchup(ctx context.Context, q *store.Queries, owner pgtype.UUID, team store.OverviewTeamsRow) (*v1.OverviewMatchup, error) {
 	item := &v1.OverviewMatchup{Team: overviewTeam(team), Status: "unavailable"}
 	if team.Period == 0 {
@@ -62,6 +69,8 @@ func readOverviewMatchup(ctx context.Context, q *store.Queries, owner pgtype.UUI
 	item.FetchedAt = timestamp(row.FetchedAt)
 	return item, nil
 }
+
+// optionalScore preserves the difference between an unknown score and a real zero.
 func optionalScore(score pgtype.Numeric) (*float64, error) {
 	if !score.Valid {
 		return nil, nil

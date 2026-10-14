@@ -33,6 +33,7 @@ type source struct{ data fantasy.LeagueData }
 func (s source) DescribeLeague(context.Context, string) (fantasy.League, error) {
 	return s.data.League, nil
 }
+
 func (s source) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData, error) {
 	return s.data, nil
 }
@@ -70,6 +71,7 @@ func openDatabase(t *testing.T) *database.DB {
 	t.Cleanup(db.Close)
 	return db
 }
+
 func importLeague(t *testing.T, db *database.DB, owner string, provider fantasy.ProviderID) {
 	t.Helper()
 	now := time.Now().UTC()
@@ -92,12 +94,14 @@ func importLeague(t *testing.T, db *database.DB, owner string, provider fantasy.
 		t.Fatal(err)
 	}
 }
+
 func clientFor(t *testing.T, db *database.DB, owner string) leaguelensv1connect.DashboardServiceClient {
 	t.Helper()
 	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner)))
 	t.Cleanup(server.Close)
 	return leaguelensv1connect.NewDashboardServiceClient(connect.NewClient(connecthttp.NewTransport(server.Client(), server.URL, connecthttp.WithProtoJSON())))
 }
+
 func TestDashboardRoundTrip(t *testing.T) {
 	db := openDatabase(t)
 	ctx := context.Background()

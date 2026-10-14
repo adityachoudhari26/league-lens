@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// GetTeamRoster returns the latest observed roster unless a scoring week is requested.
+// A missing snapshot is absent, while a known empty roster retains its snapshot.
 func (s *Service) GetTeamRoster(ctx context.Context, request *v1.GetTeamRosterRequest) (*v1.GetTeamRosterResponse, error) {
 	id, err := parseID(request.TeamId)
 	if err != nil {

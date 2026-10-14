@@ -16,6 +16,7 @@ type unavailableDB struct{}
 func (unavailableDB) InReadTx(context.Context, func(*store.Queries) error) error {
 	return errors.New("password=secret")
 }
+
 func TestInvalidRequestsFailBeforeDatabaseRead(t *testing.T) {
 	s := New(unavailableDB{}, "owner@localhost")
 	calls := []func() error{
@@ -47,6 +48,7 @@ func TestInvalidRequestsFailBeforeDatabaseRead(t *testing.T) {
 		}
 	}
 }
+
 func TestDatabaseErrorsAreSanitized(t *testing.T) {
 	s := New(unavailableDB{}, "owner@localhost")
 	_, err := s.ListLeagues(context.Background(), &v1.ListLeaguesRequest{})

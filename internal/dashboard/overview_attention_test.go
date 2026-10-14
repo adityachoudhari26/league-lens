@@ -1,10 +1,11 @@
 package dashboard
 
 import (
+	"testing"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"testing"
 )
 
 func TestEmptyStarterSlots(t *testing.T) {
