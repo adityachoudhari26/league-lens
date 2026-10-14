@@ -69,6 +69,7 @@ func (r *Runner) Close() {
 }
 
 // Start begins background syncs and returns each league's status immediately.
+// Statuses are read before launch so claimed leagues always report syncing.
 // With onlyStale, leagues whose data is still fresh are skipped.
 func (r *Runner) Start(ctx context.Context, onlyStale bool) ([]Status, error) {
 	targets, err := r.listTargets(ctx)
@@ -77,8 +78,9 @@ func (r *Runner) Start(ctx context.Context, onlyStale bool) ([]Status, error) {
 	}
 
 	claimedTargets := r.claimTargets(targets, onlyStale)
+	statuses := r.statuses(targets)
 	r.launch(claimedTargets)
-	return r.statuses(targets), nil
+	return statuses, nil
 }
 
 // Status reports each league's sync state without starting any sync.

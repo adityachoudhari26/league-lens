@@ -22,8 +22,10 @@ JOIN connections c ON c.id=cl.connection_id
 JOIN league_seasons l ON l.id=cl.league_season_id
 WHERE cl.user_id=$1 AND c.status<>'disabled'
 AND l.season=(
- SELECT max(l2.season) FROM connection_leagues cl2 JOIN league_seasons l2 ON l2.id=cl2.league_season_id
- WHERE cl2.user_id=$1
+ SELECT max(ls.season) FROM user_teams selected
+ JOIN connections active ON active.id=selected.connection_id AND active.status<>'disabled'
+ JOIN league_seasons ls ON ls.id=selected.league_season_id
+ WHERE selected.user_id=$1
 )
 ORDER BY l.provider,l.name,cl.connection_id
 `
@@ -40,7 +42,7 @@ type ListSyncTargetsRow struct {
 	SelectedTeamIds      []string
 }
 
-// Sync targets are the owner's attached leagues in their latest imported season.
+// Sync targets are the owner's attached leagues in the season the overview shows.
 // Selected teams come from earlier imports.
 func (q *Queries) ListSyncTargets(ctx context.Context, userID pgtype.UUID) ([]ListSyncTargetsRow, error) {
 	rows, err := q.db.Query(ctx, listSyncTargets, userID)
