@@ -51,11 +51,11 @@ func (s *Service) GetOverviewAttention(ctx context.Context, _ *v1.GetOverviewAtt
 			response.Alerts = append(response.Alerts, starterAlerts(team, entries, schedule, now)...)
 		}
 
-		dismissedAlerts, err := dropDismissedAlerts(ctx, q, owner, response.Alerts)
+		visibleAlerts, err := dropDismissedAlerts(ctx, q, owner, response.Alerts)
 		if err != nil {
 			return err
 		}
-		response.Alerts = dismissedAlerts
+		response.Alerts = visibleAlerts
 		sortAlerts(response.Alerts)
 		response.Coverage = attentionCoverage(schedules.allLoaded())
 		return nil
