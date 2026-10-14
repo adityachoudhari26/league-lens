@@ -22,7 +22,6 @@ import {
   SectionLoading,
   SectionError,
   SectionMessage,
-  CoverageNote,
 } from "./section"
 import { observedTime } from "./format"
 
@@ -296,15 +295,10 @@ export function UpdatesSection() {
             void query.refetch()
           }}
         />
+      ) : updates.length ? (
+        <PlayerUpdateList updates={updates.slice(0, previewCount)} />
       ) : (
-        <>
-          {updates.length ? (
-            <PlayerUpdateList updates={updates.slice(0, previewCount)} />
-          ) : (
-            <SectionMessage>No recent news for your players.</SectionMessage>
-          )}
-          <CoverageNote coverage={query.data.coverage} />
-        </>
+        <SectionMessage>No recent news for your players.</SectionMessage>
       )}
     </Section>
   )

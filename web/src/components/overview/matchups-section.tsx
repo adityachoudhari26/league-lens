@@ -6,7 +6,6 @@ import {
   SectionLoading,
   SectionError,
   SectionMessage,
-  CoverageNote,
 } from "./section"
 import { observedTime, scoreLabel } from "./format"
 
@@ -73,21 +72,16 @@ export function MatchupsSection() {
             void query.refetch()
           }}
         />
+      ) : query.data.matchups.length ? (
+        <div className="grid gap-2">
+          {query.data.matchups.map((matchup) => (
+            <MatchupCard key={matchup.team?.id} matchup={matchup} />
+          ))}
+        </div>
       ) : (
-        <>
-          {query.data.matchups.length ? (
-            <div className="grid gap-2">
-              {query.data.matchups.map((matchup) => (
-                <MatchupCard key={matchup.team?.id} matchup={matchup} />
-              ))}
-            </div>
-          ) : (
-            <SectionMessage>
-              No imported matchups yet. Import a league to get started.
-            </SectionMessage>
-          )}
-          <CoverageNote coverage={query.data.coverage} />
-        </>
+        <SectionMessage>
+          No imported matchups yet. Import a league to get started.
+        </SectionMessage>
       )}
     </Section>
   )

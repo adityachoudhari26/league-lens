@@ -12,7 +12,6 @@ import {
   SectionLoading,
   SectionError,
   SectionMessage,
-  CoverageNote,
 } from "./section"
 import { kickoffTime, observedTime } from "./format"
 
@@ -124,7 +123,6 @@ export function AttentionSection() {
                 : `Show ${hidden.length} more${urgent ? ` · ${urgent} need action` : ""}`}
             </Button>
           )}
-          <CoverageNote coverage={query.data.coverage} />
         </>
       )}
     </Section>

@@ -1,5 +1,4 @@
 import { type ReactNode } from "react"
-import { type OverviewCoverage } from "@/gen/leaguelens/v1/overview_pb"
 import { Button } from "@/components/ui/button"
 
 export function Section({
@@ -56,12 +55,4 @@ export function SectionError({ retry }: { retry: () => void }) {
       </Button>
     </SectionMessage>
   )
-}
-
-export function CoverageNote({ coverage }: { coverage?: OverviewCoverage }) {
-  return coverage?.explanation ? (
-    <p className="mt-2 text-xs leading-5 text-muted-foreground">
-      {coverage.explanation}
-    </p>
-  ) : null
 }
