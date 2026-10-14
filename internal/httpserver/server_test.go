@@ -9,7 +9,7 @@ import (
 )
 
 func TestReadinessFailureDoesNotLeakDatabaseError(t *testing.T) {
-	h := NewHandler(func(context.Context) error { return errors.New("password=private-secret") })
+	h := NewHandler(func(context.Context) error { return errors.New("password=private-secret") }, nil)
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, httptest.NewRequest("GET", "/readyz", nil))
 	if rr.Code != 503 {
@@ -31,7 +31,7 @@ func TestReadyAndUnregisteredEndpoints(t *testing.T) {
 			t.Error("DB check has no deadline")
 		}
 		return nil
-	})
+	}, nil)
 	for _, tc := range []struct {
 		method, path string
 		status       int

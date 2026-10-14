@@ -37,3 +37,24 @@ func TestLoadValidatesListenAddress(t *testing.T) {
 		t.Fatalf("unexpected default %q", cfg.HTTPAddr)
 	}
 }
+
+func TestLocalOwnerSelection(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://owner:secret@localhost/league_lens")
+	t.Setenv("HTTP_ADDR", "")
+	t.Setenv("LOCAL_OWNER_EMAIL", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.LocalOwnerEmail != "owner@localhost" {
+		t.Fatal("wrong default import owner")
+	}
+	t.Setenv("LOCAL_OWNER_EMAIL", "custom@example.test")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.LocalOwnerEmail != "custom@example.test" {
+		t.Fatal("ignored configured owner")
+	}
+}

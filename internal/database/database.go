@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/store"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -34,10 +35,20 @@ func (db *DB) Queries() *store.Queries        { return db.queries }
 // fn; using db.Queries() would escape the transaction. Do not retain them after
 // fn returns. Callbacks are never retried, and nested transactions are unsupported.
 func (db *DB) InTx(ctx context.Context, fn func(*store.Queries) error) error {
+	return db.inTx(ctx, pgx.TxOptions{}, fn)
+}
+
+// InReadTx gives all queries in one dashboard request a consistent database view.
+// PostgreSQL also rejects writes within this transaction.
+func (db *DB) InReadTx(ctx context.Context, fn func(*store.Queries) error) error {
+	return db.inTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}, fn)
+}
+
+func (db *DB) inTx(ctx context.Context, options pgx.TxOptions, fn func(*store.Queries) error) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	tx, err := db.pool.Begin(ctx)
+	tx, err := db.pool.BeginTx(ctx, options)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}

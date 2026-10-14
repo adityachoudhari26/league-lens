@@ -1,13 +1,16 @@
 package httpserver
 
 import (
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"context"
+	"github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1/leaguelensv1connect"
 	"net/http"
 	"time"
 )
 
-// NewHandler deliberately exposes no league or credential data before auth exists.
-func NewHandler(ping func(context.Context) error) http.Handler {
+// NewHandler mounts health checks and the configured local-owner dashboard.
+func NewHandler(ping func(context.Context) error, dashboard leaguelensv1connect.DashboardServiceHandler) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -26,5 +29,13 @@ func NewHandler(ping func(context.Context) error) http.Handler {
 		}
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
-	return mux
+	if dashboard != nil {
+		server := connect.NewServer()
+		leaguelensv1connect.RegisterDashboardServiceHandler(server, dashboard)
+		connecthttp.Mount(mux, server, connecthttp.WithReadMaxBytes(64<<10))
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		mux.ServeHTTP(w, r)
+	})
 }

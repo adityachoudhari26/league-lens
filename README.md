@@ -247,3 +247,45 @@ ESPN's fantasy API is undocumented and may change. The adapter follows the
 [community ESPN client](https://github.com/cwendt94/espn-api) and verified read-only
 responses. Fixture tests cover authentication failures, redirects, history,
 multiweek scores, defense identity, and missing data.
+
+## Overview read API
+
+This backend branch adds owner-scoped Connect reads independently of the frontend.
+The service uses `LOCAL_OWNER_EMAIL` (default `owner@localhost`); this is a local
+single-owner mode, not authentication. Keep the server bound to localhost.
+
+The four overview RPCs are under `/leaguelens.v1.DashboardService/`:
+
+| RPC | Current behavior |
+| --- | --- |
+| `GetOverviewAttention` | Empty starter-slot checks from full/lineup observed snapshots; marks coverage partial because injury and bye checks are unavailable. |
+| `GetOverviewMatchups` | Selected teams, opponents, nullable actual scores, matchup status, and fetch timestamps. Matches scoring weeks to matchup rounds explicitly. |
+| `GetOverviewPlayerUpdates` | Returns unavailable coverage and no invented articles until a news source is connected. |
+| `GetOverviewLookingAhead` | Returns unavailable coverage until NFL bye schedules are connected. |
+
+Each RPC accepts an empty request. Attention and matchup queries use selected
+teams in the owner's latest imported season, ignore disabled connections, and
+have a five-second read transaction deadline. Reads are capped at 100 selected
+teams; exceeding the cap fails rather than silently dropping teams. No provider
+requests, scheduled syncing, probabilities, or live-score claims are included.
+An absent score is unknown; zero is a real score. No snapshot is unavailable,
+not a bye or an empty roster. The UI should display observation/fetch timestamps.
+
+Example:
+
+```sh
+curl --fail-with-body http://127.0.0.1:8080/leaguelens.v1.DashboardService/GetOverviewMatchups \
+  -H 'Content-Type: application/json' -H 'Connect-Protocol-Version: 1' -d '{}'
+```
+
+The existing local API foundation is included: `ListLeagues`, `GetLeague`,
+`GetTeamRoster`, and `ListMatchups`. Their handlers are separate from the new
+`overview_attention.go`, `overview_matchups.go`, `overview_player_updates.go`,
+and `overview_looking_ahead.go` files in `internal/dashboard`.
+`overview.go` contains only shared overview reading/message helpers. Query
+sources live in `db/queries/overview.sql`; section messages live in
+`proto/leaguelens/v1/overview.proto`. The service contract is in `dashboard.proto`.
+Generated files can combine methods; application logic stays in focused files.
+
+Run `just gen-api` for Go protobuf/Connect bindings and `just gen-db` for SQL
+bindings. No frontend or TypeScript generation is required by this branch.

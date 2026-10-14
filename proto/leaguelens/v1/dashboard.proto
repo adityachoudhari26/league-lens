@@ -1,0 +1,116 @@
+syntax = "proto3";
+package leaguelens.v1;
+
+import "google/protobuf/timestamp.proto";
+import "leaguelens/v1/overview.proto";
+
+option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
+
+// DashboardService reads imported data for the server's configured local owner.
+// It never calls a provider or accepts a caller-selected user identity.
+service DashboardService {
+  rpc GetOverviewAttention(GetOverviewAttentionRequest) returns (GetOverviewAttentionResponse);
+  rpc GetOverviewMatchups(GetOverviewMatchupsRequest) returns (GetOverviewMatchupsResponse);
+  rpc GetOverviewPlayerUpdates(GetOverviewPlayerUpdatesRequest) returns (GetOverviewPlayerUpdatesResponse);
+  rpc GetOverviewLookingAhead(GetOverviewLookingAheadRequest) returns (GetOverviewLookingAheadResponse);
+  rpc ListLeagues(ListLeaguesRequest) returns (ListLeaguesResponse);
+  rpc GetLeague(GetLeagueRequest) returns (GetLeagueResponse);
+  rpc GetTeamRoster(GetTeamRosterRequest) returns (GetTeamRosterResponse);
+  rpc ListMatchups(ListMatchupsRequest) returns (ListMatchupsResponse);
+}
+message ListLeaguesRequest {
+  int32 page_size = 1; // Default 25, maximum 100.
+  string page_token = 2;
+}
+message ListLeaguesResponse {
+  repeated League leagues = 1;
+  string next_page_token = 2;
+}
+message GetLeagueRequest {
+  string league_season_id = 1;
+}
+message GetLeagueResponse {
+  League league = 1;
+  repeated Team teams = 2;
+  repeated int32 available_matchup_periods = 3;
+}
+message League {
+  string id = 1;
+  string provider = 2;
+  string external_id = 3;
+  int32 season = 4;
+  string name = 5;
+  repeated string selected_team_ids = 6;
+  google.protobuf.Timestamp last_successful_sync_at = 7;
+}
+message Team {
+  string id = 1;
+  string external_id = 2;
+  string name = 3;
+  bool selected = 4;
+  TeamRecord record = 5; // Absent when unknown. Not a historical record.
+  optional int32 rank = 6; // Provider rank only; no invented tie-breaking rules.
+}
+message TeamRecord {
+  int32 wins = 1;
+  int32 losses = 2;
+  int32 ties = 3;
+  optional double points_for = 4;
+  optional double points_against = 5;
+}
+message GetTeamRosterRequest {
+  string team_id = 1;
+  // Omit for latest observed roster. Explicit weeks may return provider history.
+  optional int32 scoring_period = 2;
+}
+message GetTeamRosterResponse {
+  // Absent means no snapshot available; present with no entries means known empty.
+  RosterSnapshot snapshot = 1;
+}
+message RosterSnapshot {
+  string id = 1;
+  string team_id = 2;
+  int32 scoring_period = 3;
+  string origin = 4;
+  string coverage = 5;
+  google.protobuf.Timestamp observed_at = 6;
+  google.protobuf.Timestamp effective_at = 7;
+  repeated RosterEntry entries = 8;
+}
+message RosterEntry {
+  string player_id = 1;
+  string player_name = 2;
+  string player_kind = 3;
+  string slot = 4;
+  string provider_slot_id = 5;
+  // Absent means unknown; present with no values means explicitly empty.
+  Positions eligible_positions = 6;
+}
+message Positions {
+  repeated string values = 1;
+}
+message ListMatchupsRequest {
+  string league_season_id = 1;
+  int32 matchup_period = 2; // A matchup round, not necessarily one scoring week.
+}
+message ListMatchupsResponse {
+  repeated Matchup matchups = 1;
+}
+message Matchup {
+  string id = 1;
+  string external_id = 2;
+  int32 matchup_period = 3;
+  ScoringPeriods scoring_periods = 4; // Absent means unknown.
+  MatchupSide team_a = 5;
+  MatchupSide team_b = 6; // Absent is not automatically a bye.
+  bool is_bye = 7;
+  string status = 8;
+  google.protobuf.Timestamp fetched_at = 9;
+}
+message ScoringPeriods {
+  repeated int32 values = 1;
+}
+message MatchupSide {
+  string team_id = 1;
+  optional double score = 2; // Absence and actual zero are distinct.
+}
