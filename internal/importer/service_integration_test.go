@@ -149,6 +149,14 @@ func TestImportRoundTrip(t *testing.T) {
 	if failures != 1 {
 		t.Fatal("failure not recorded")
 	}
+	userTeams := count("user_teams")
+	secondConnection := Request{OwnerEmail: req.OwnerEmail, ExternalAccountID: "second-account", Selection: fantasy.ConnectionSelection{League: req.Selection.League, SelectedTeamIDs: []string{"2"}}}
+	if _, e = s.Import(ctx, secondConnection); e == nil {
+		t.Fatal("second selected team in the same league was accepted")
+	}
+	if count("user_teams") != userTeams {
+		t.Fatal("failed second-team import changed user teams")
+	}
 	// Force a database failure after team and identity writes; entire write phase rolls back.
 	_, e = sqlDB.Exec("CREATE FUNCTION reject_matchup() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'test failure'; END $$; CREATE TRIGGER reject_matchup BEFORE INSERT OR UPDATE ON matchups FOR EACH ROW EXECUTE FUNCTION reject_matchup()")
 	if e != nil {
