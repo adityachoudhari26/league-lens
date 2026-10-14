@@ -68,18 +68,18 @@ type fakeNewsSources struct {
 
 func (f fakeNewsSources) NewsSource() news.Source { return f.news }
 
-type fakeNewsSource struct {
-	err   error
-	done  chan struct{}
-	label string
-}
-
 type emptyNewsSource struct{}
 
 func (emptyNewsSource) Name() string { return "empty" }
 
 func (emptyNewsSource) PlayerNews(context.Context, []news.Player) ([]news.Item, error) {
 	return nil, nil
+}
+
+type fakeNewsSource struct {
+	err      error
+	done     chan struct{}
+	headline string
 }
 
 func (s fakeNewsSource) Name() string { return "fake" }
@@ -97,7 +97,7 @@ func (s fakeNewsSource) PlayerNews(_ context.Context, players []news.Player) ([]
 	return []news.Item{{
 		PlayerID:     players[0].ID,
 		SourceItemID: "item-1",
-		Headline:     s.label,
+		Headline:     s.headline,
 		Summary:      "A saved fixture summary.",
 		URL:          "https://example.test/player",
 		SourceLabel:  "Fixture source",
@@ -310,7 +310,7 @@ func TestMissingESPNCredentialsFailWithoutLosingData(t *testing.T) {
 func TestRunnerStoresPlayerNews(t *testing.T) {
 	db := openDatabase(t)
 	seedLeague(t, db, fantasy.ProviderSleeper)
-	source := fakeNewsSource{label: "Saved news", done: make(chan struct{})}
+	source := fakeNewsSource{headline: "Saved news", done: make(chan struct{})}
 	runner := leaguesync.New(db, owner, fakeNewsSources{
 		fakeSources: fakeSources{fantasy.ProviderSleeper: &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home")}},
 		news:        source,

@@ -16,7 +16,7 @@ import (
 const playerNewsCoverage = "Latest RotoWire news via ESPN from the past 7 days, saved at each sync. Players ESPN can't identify have no news."
 
 var (
-	injuryHeadline        = regexp.MustCompile(`(?i)injur|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|quad|bruise|rib|ribs|wrist|finger|hand|elbow|neck|chest|thumb|achilles|oblique|pectoral|abdomen|illness|ruled out|questionable|doubtful|practice|sidelined|ir|injured reserve)\b`)
+	injuryHeadline        = regexp.MustCompile(`(?i)injur|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|quad|bruise|rib|ribs|wrist|finger|hand|elbow|neck|chest|thumb|achilles|oblique|pectoral|abdomen|illness|ruled out|questionable|doubtful|practice|sidelined|ir)\b`)
 	injuryParenthetical   = regexp.MustCompile(`\b[A-Z][A-Za-z'.-]+ \([a-z]+(?:[ -][a-z]+){0,2}\)`)
 	practiceSquadHeadline = regexp.MustCompile(`(?i)\bpractice\s+squad\b`)
 	transactionHeadline   = regexp.MustCompile(`(?i)\b(?:signed|re-signed|released|waived|traded|claimed|activated|promoted|elevated|cut|acquired|suspended|reinstated)\b`)
@@ -76,6 +76,9 @@ func (s *Service) GetOverviewPlayerUpdates(ctx context.Context, _ *v1.GetOvervie
 	return response, err
 }
 
+// addPlayerSummary merges one roster entry into the player's summary. Each team
+// is tagged once, only full or lineup coverage counts toward starter status,
+// and the worst injury designation across teams wins.
 func addPlayerSummary(summaries map[string]*playerSummary, team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUserRow) {
 	playerID := entry.PlayerID.String()
 	summary := summaries[playerID]
@@ -205,6 +208,8 @@ func rankedBefore(a, b rankedPlayerUpdate) bool {
 	return a.update.Id < b.update.Id
 }
 
+// playerUpdateTier assigns tier 0 to questionable-or-worse designations or
+// starters with injury news, tier 1 to other starters, and tier 2 to bench players.
 func playerUpdateTier(summary *playerSummary, category v1.NewsCategory) int {
 	if injuryStatusPriority(summary.injuryStatus) >= injuryStatusPriority(v1.InjuryStatus_INJURY_STATUS_QUESTIONABLE) ||
 		(summary.starter && category == v1.NewsCategory_NEWS_CATEGORY_INJURY) {
@@ -216,6 +221,9 @@ func playerUpdateTier(summary *playerSummary, category v1.NewsCategory) int {
 	return 2
 }
 
+// categorize applies keyword rules to headlines: injury terms or a parenthetical
+// after a capitalized name indicate injury, except practice-squad mentions.
+// Transaction verbs come next; all other headlines are general.
 func categorize(headline string) v1.NewsCategory {
 	headlineWithoutPracticeSquad := practiceSquadHeadline.ReplaceAllString(headline, " ")
 	switch {

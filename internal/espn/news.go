@@ -127,7 +127,8 @@ func parsePlayerNews(body []byte, playerIDs map[string]string) ([]news.Item, err
 		if record.Type != "Rotowire" || record.Premium || record.ID == 0 || record.PlayerID == 0 || record.Headline == "" {
 			continue
 		}
-		playerID := playerIDs[strconv.FormatInt(record.PlayerID, 10)]
+		externalID := strconv.FormatInt(record.PlayerID, 10)
+		playerID := playerIDs[externalID]
 		if playerID == "" {
 			continue
 		}
@@ -135,7 +136,6 @@ func parsePlayerNews(body []byte, playerIDs map[string]string) ([]news.Item, err
 		if err != nil {
 			continue
 		}
-		externalID := strconv.FormatInt(record.PlayerID, 10)
 		items = append(items, news.Item{
 			PlayerID:     playerID,
 			SourceItemID: strconv.FormatInt(record.ID, 10),

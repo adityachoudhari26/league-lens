@@ -53,6 +53,7 @@ func (r *Runner) listNewsPlayers(ctx context.Context) ([]news.Player, error) {
 	return players, nil
 }
 
+// savePlayerNews replaces all of a source's saved rows in one transaction.
 func (r *Runner) savePlayerNews(ctx context.Context, source string, items []news.Item) error {
 	fetchedAt := pgtype.Timestamptz{Time: r.now(), Valid: true}
 	return r.db.InTx(ctx, func(q *store.Queries) error {
