@@ -79,7 +79,7 @@ func TestValidateMatchupLineups(t *testing.T) {
 		{"unknown matchup", func(d *fantasy.LeagueData) { d.Lineups[0].MatchupID = "other" }, "invalid matchup lineup"},
 		{"wrong period", func(d *fantasy.LeagueData) { d.Lineups[0].Period = 2 }, "invalid matchup lineup"},
 		{"team not a side", func(d *fantasy.LeagueData) { d.Lineups[0].TeamID = "3" }, "invalid matchup lineup"},
-		{"bye team b", func(d *fantasy.LeagueData) { d.Matchups[0].TeamB = nil }, "invalid matchup lineup"},
+		{"opponent lineup on a bye", func(d *fantasy.LeagueData) { d.Matchups[0].TeamB, d.Matchups[0].IsBye = nil, true }, "invalid matchup lineup"},
 		{"duplicate side", func(d *fantasy.LeagueData) { d.Lineups[1].TeamID = "1" }, "duplicate matchup lineup"},
 		{"unknown player", func(d *fantasy.LeagueData) { d.Lineups[0].Entries[0].PlayerID = "missing" }, "invalid matchup lineup entry"},
 		{"duplicate player", func(d *fantasy.LeagueData) { d.Lineups[0].Entries[1].PlayerID = "10" }, "invalid matchup lineup entry"},
