@@ -43,8 +43,13 @@ function TeamScore({
       <p
         className={`mt-1 text-3xl font-semibold tabular-nums ${tone ? scoreToneClass[tone] : ""}`}
       >
-        {scoreLabel(teamScore(side, status))}
+        {scoreLabel(teamScore(side, status) ?? 0)}
       </p>
+      {side.projectedScore !== undefined && (
+        <p className="text-sm text-muted-foreground tabular-nums">
+          {scoreLabel(side.projectedScore)} proj
+        </p>
+      )}
       <p className="mt-1 text-xs text-muted-foreground">
         {summary.join(" · ")}
       </p>
