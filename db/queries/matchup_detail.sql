@@ -29,7 +29,7 @@ ORDER BY m.fetched_at DESC,m.id DESC LIMIT 1;
 -- name: MatchupDetailLineup :many
 -- Injury and NFL team are current: they come from the team's latest observed
 -- snapshot, so players dropped since then have neither.
-SELECT ml.player_id,p.display_name,ml.slot_label,ml.starter,ml.points,e.injury_status,e.pro_team
+SELECT ml.player_id,p.display_name,ml.slot_label,ml.starter,ml.points,ml.projected_points,e.injury_status,e.pro_team
 FROM matchup_lineups ml
 JOIN matchups m ON m.id=ml.matchup_id
 JOIN players p ON p.id=ml.player_id

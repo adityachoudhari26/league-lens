@@ -12,7 +12,7 @@ import (
 )
 
 const matchupDetailLineup = `-- name: MatchupDetailLineup :many
-SELECT ml.player_id,p.display_name,ml.slot_label,ml.starter,ml.points,e.injury_status,e.pro_team
+SELECT ml.player_id,p.display_name,ml.slot_label,ml.starter,ml.points,ml.projected_points,e.injury_status,e.pro_team
 FROM matchup_lineups ml
 JOIN matchups m ON m.id=ml.matchup_id
 JOIN players p ON p.id=ml.player_id
@@ -37,13 +37,14 @@ type MatchupDetailLineupParams struct {
 }
 
 type MatchupDetailLineupRow struct {
-	PlayerID     pgtype.UUID
-	DisplayName  string
-	SlotLabel    pgtype.Text
-	Starter      bool
-	Points       pgtype.Numeric
-	InjuryStatus pgtype.Text
-	ProTeam      pgtype.Text
+	PlayerID        pgtype.UUID
+	DisplayName     string
+	SlotLabel       pgtype.Text
+	Starter         bool
+	Points          pgtype.Numeric
+	ProjectedPoints pgtype.Numeric
+	InjuryStatus    pgtype.Text
+	ProTeam         pgtype.Text
 }
 
 // Injury and NFL team are current: they come from the team's latest observed
@@ -63,6 +64,7 @@ func (q *Queries) MatchupDetailLineup(ctx context.Context, arg MatchupDetailLine
 			&i.SlotLabel,
 			&i.Starter,
 			&i.Points,
+			&i.ProjectedPoints,
 			&i.InjuryStatus,
 			&i.ProTeam,
 		); err != nil {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"slices"
 	"time"
 
@@ -160,6 +161,7 @@ func matchupLineupMessage(ctx context.Context, q *store.Queries, owner, teamID p
 	sortLineupPlayers(lineup.Starters, starterSlotOrder)
 	sortLineupPlayers(lineup.Bench, benchSlotOrder)
 	lineup.StartersLeftToPlay = startersLeftToPlay(lineup.Starters)
+	lineup.ProjectedScore = projectedScore(lineup.Starters)
 	return lineup, nil
 }
 
@@ -185,16 +187,21 @@ func lineupPlayerMessage(row store.MatchupDetailLineupRow, schedule weekSchedule
 	if err != nil {
 		return nil, err
 	}
+	projectedPoints, err := optionalScore(row.ProjectedPoints)
+	if err != nil {
+		return nil, err
+	}
 	gameState, kickoffAt := lineupGameState(row.ProTeam.String, schedule, now)
 	return &v1.LineupPlayer{
-		PlayerId:     row.PlayerID.String(),
-		PlayerName:   row.DisplayName,
-		Slot:         row.SlotLabel.String,
-		Points:       points,
-		InjuryStatus: injuryStatusMessage(fantasy.InjuryStatus(row.InjuryStatus.String)),
-		ProTeam:      row.ProTeam.String,
-		GameState:    gameState,
-		KickoffAt:    kickoffAt,
+		PlayerId:        row.PlayerID.String(),
+		PlayerName:      row.DisplayName,
+		Slot:            row.SlotLabel.String,
+		Points:          points,
+		ProjectedPoints: projectedPoints,
+		InjuryStatus:    injuryStatusMessage(fantasy.InjuryStatus(row.InjuryStatus.String)),
+		ProTeam:         row.ProTeam.String,
+		GameState:       gameState,
+		KickoffAt:       kickoffAt,
 	}, nil
 }
 
@@ -250,6 +257,34 @@ func startersLeftToPlay(starters []*v1.LineupPlayer) int32 {
 		}
 	}
 	return remaining
+}
+
+// projectedScore is absent when no starter has a projection.
+func projectedScore(starters []*v1.LineupPlayer) *float64 {
+	var total float64
+	hasProjection := false
+	for _, starter := range starters {
+		hasProjection = hasProjection || starter.ProjectedPoints != nil
+		total += starterProjectedPoints(starter)
+	}
+	if !hasProjection {
+		return nil
+	}
+	total = math.Round(total*10000) / 10000 // Stored points have four decimals; drop float sum noise.
+	return &total
+}
+
+// starterProjectedPoints counts the projection only before kickoff; bye and
+// unknown-schedule starters keep their actual points. Missing counts as zero.
+func starterProjectedPoints(starter *v1.LineupPlayer) float64 {
+	points := starter.Points
+	if starter.GameState == v1.GameState_GAME_STATE_NOT_STARTED {
+		points = starter.ProjectedPoints
+	}
+	if points == nil {
+		return 0
+	}
+	return *points
 }
 
 var starterSlotOrder = []fantasy.RosterSlot{

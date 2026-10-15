@@ -149,6 +149,43 @@ func TestStartersLeftToPlay(t *testing.T) {
 	}
 }
 
+func TestProjectedScore(t *testing.T) {
+	actual, projected, zero := 8.5, 14.25, 0.0
+	tenth, fifth, threeTenths := 0.1, 0.2, 0.3
+	notStarted, kickedOff := v1.GameState_GAME_STATE_NOT_STARTED, v1.GameState_GAME_STATE_KICKED_OFF
+	tests := []struct {
+		name     string
+		starters []*v1.LineupPlayer
+		want     *float64
+	}{
+		{"not started uses projection", []*v1.LineupPlayer{{GameState: notStarted, Points: &zero, ProjectedPoints: &projected}}, &projected},
+		{"kicked off uses actual", []*v1.LineupPlayer{{GameState: kickedOff, Points: &actual, ProjectedPoints: &projected}}, &actual},
+		{"bye and unknown use actual", []*v1.LineupPlayer{
+			{GameState: v1.GameState_GAME_STATE_BYE, ProjectedPoints: &projected},
+			{GameState: v1.GameState_GAME_STATE_UNKNOWN, Points: &actual, ProjectedPoints: &projected},
+		}, &actual},
+		{"missing projection counts as zero", []*v1.LineupPlayer{
+			{GameState: notStarted},
+			{GameState: notStarted, ProjectedPoints: &projected},
+		}, &projected},
+		{"float noise is rounded", []*v1.LineupPlayer{
+			{GameState: kickedOff, Points: &tenth},
+			{GameState: kickedOff, Points: &fifth, ProjectedPoints: &zero},
+		}, &threeTenths},
+		{"zero projection is present", []*v1.LineupPlayer{{GameState: notStarted, ProjectedPoints: &zero}}, &zero},
+		{"no projections is absent", []*v1.LineupPlayer{{GameState: kickedOff, Points: &actual}}, nil},
+		{"no starters is absent", nil, nil},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := projectedScore(test.starters)
+			if (got == nil) != (test.want == nil) || (got != nil && *got != *test.want) {
+				t.Fatalf("projectedScore = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
 func TestMatchupStatusMessage(t *testing.T) {
 	tests := []struct {
 		status string

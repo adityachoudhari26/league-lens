@@ -538,6 +538,7 @@ func importMatchupDetailFixture(t *testing.T, db *database.DB) string {
 	ctx := context.Background()
 	now := time.Now().UTC()
 	zero, eightAndHalf, twelveAndHalf := 0.0, 8.5, 12.5
+	qbProjection, rbProjection, benchProjection := 21.5, 14.25, 6.0
 	league := fantasy.League{
 		Ref:       fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "matchup-detail", Season: 2026},
 		Name:      "Matchup Detail",
@@ -590,11 +591,11 @@ func importMatchupDetailFixture(t *testing.T, db *database.DB) string {
 			{
 				Period: 2, MatchupID: "period-2", TeamID: "1",
 				Entries: []fantasy.LineupEntry{
-					{PlayerID: "qb", Slot: fantasy.SlotQB, Starter: true, Points: &zero},
-					{PlayerID: "rb", Slot: fantasy.SlotRB, Starter: true, Points: &eightAndHalf},
+					{PlayerID: "qb", Slot: fantasy.SlotQB, Starter: true, Points: &zero, ProjectedPoints: &qbProjection},
+					{PlayerID: "rb", Slot: fantasy.SlotRB, Starter: true, Points: &eightAndHalf, ProjectedPoints: &rbProjection},
 					{PlayerID: "wr", Slot: fantasy.SlotWR, Starter: true},
-					{PlayerID: "flex", Slot: fantasy.SlotFlex, Starter: true},
-					{PlayerID: "bench", Slot: fantasy.SlotBench},
+					{PlayerID: "flex", Slot: fantasy.SlotFlex, Starter: true, ProjectedPoints: &zero},
+					{PlayerID: "bench", Slot: fantasy.SlotBench, ProjectedPoints: &benchProjection},
 					{PlayerID: "ir", Slot: fantasy.SlotIR, Points: &zero},
 				},
 			},
@@ -639,8 +640,32 @@ func assertDefaultMatchupDetail(t *testing.T, detail *v1.MatchupDetail) {
 		t.Fatalf("opponent orientation or record lost: %v", detail.Opponent)
 	}
 	assertHomeMatchupLineup(t, detail.Team)
-	if len(detail.Opponent.Starters) != 0 || len(detail.Opponent.Bench) != 0 {
+	assertHomeProjections(t, detail.Team)
+	if len(detail.Opponent.Starters) != 0 || len(detail.Opponent.Bench) != 0 || detail.Opponent.ProjectedScore != nil {
 		t.Fatalf("missing opponent lineup was invented: %v", detail.Opponent)
+	}
+}
+
+// assertHomeProjections checks the projected total: the not-started QB's
+// projection, the kicked-off RB's actual, and zero for the rest; the bench
+// projection is excluded.
+func assertHomeProjections(t *testing.T, team *v1.MatchupLineup) {
+	t.Helper()
+	if team.ProjectedScore == nil || *team.ProjectedScore != 30 {
+		t.Fatalf("projected score = %v, want 30", team.ProjectedScore)
+	}
+	assertProjectedPoints(t, team.Starters[0], true, 21.5)
+	assertProjectedPoints(t, team.Starters[1], true, 14.25)
+	assertProjectedPoints(t, team.Starters[2], false, 0)
+	assertProjectedPoints(t, team.Starters[3], true, 0)
+	assertProjectedPoints(t, team.Bench[0], true, 6)
+	assertProjectedPoints(t, team.Bench[1], false, 0)
+}
+
+func assertProjectedPoints(t *testing.T, player *v1.LineupPlayer, hasProjection bool, projected float64) {
+	t.Helper()
+	if (player.ProjectedPoints != nil) != hasProjection || (hasProjection && *player.ProjectedPoints != projected) {
+		t.Fatalf("%s projected points = %v, want present %t value %v", player.PlayerName, player.ProjectedPoints, hasProjection, projected)
 	}
 }
 
@@ -687,7 +712,7 @@ func assertMatchupWithoutSchedule(t *testing.T, detail *v1.MatchupDetail) {
 	if player.GameState != v1.GameState_GAME_STATE_UNKNOWN || player.KickoffAt != nil {
 		t.Fatalf("missing schedule state = %v, kickoff = %v", player.GameState, player.KickoffAt)
 	}
-	if detail.Team.Score != nil || detail.Opponent == nil || detail.Opponent.Score != nil {
+	if detail.Team.Score != nil || detail.Team.ProjectedScore != nil || detail.Opponent == nil || detail.Opponent.Score != nil {
 		t.Fatalf("unknown scores became present: %v", detail)
 	}
 }
