@@ -4,9 +4,9 @@ import {
   type LineupPlayer,
   type MatchupDetail,
   type MatchupLineup,
-  type TeamRecord,
-} from "@/gen/leaguelens/v1/dashboard_pb"
-import { InjuryStatus } from "@/gen/leaguelens/v1/overview_pb"
+} from "@/gen/leaguelens/v1/matchups_pb"
+import { InjuryStatus } from "@/gen/leaguelens/v1/players_pb"
+import { type TeamRecord } from "@/gen/leaguelens/v1/leagues_pb"
 import { kickoffTime } from "@/components/overview/format"
 
 export type ScoreTone = "winning" | "losing"

@@ -1,0 +1,47 @@
+syntax = "proto3";
+package leaguelens.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
+
+message ListLeaguesRequest {
+  int32 page_size = 1; // Default 25, maximum 100.
+  string page_token = 2;
+}
+message ListLeaguesResponse {
+  repeated League leagues = 1;
+  string next_page_token = 2;
+}
+message GetLeagueRequest {
+  string league_season_id = 1;
+}
+message GetLeagueResponse {
+  League league = 1;
+  repeated Team teams = 2;
+  repeated int32 available_matchup_periods = 3;
+}
+message League {
+  string id = 1;
+  string provider = 2;
+  string external_id = 3;
+  int32 season = 4;
+  string name = 5;
+  repeated string selected_team_ids = 6;
+  google.protobuf.Timestamp last_successful_sync_at = 7;
+}
+message Team {
+  string id = 1;
+  string external_id = 2;
+  string name = 3;
+  bool selected = 4;
+  TeamRecord record = 5; // Absent when unknown. Not a historical record.
+  optional int32 rank = 6; // Provider rank only; no invented tie-breaking rules.
+}
+message TeamRecord {
+  int32 wins = 1;
+  int32 losses = 2;
+  int32 ties = 3;
+  optional double points_for = 4;
+  optional double points_against = 5;
+}

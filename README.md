@@ -397,8 +397,11 @@ The existing local API foundation is included: `ListLeagues`, `GetLeague`,
 `overview_attention.go`, `overview_matchups.go`, `overview_player_updates.go`,
 and `overview_looking_ahead.go` files in `internal/dashboard`.
 `overview.go` contains only shared overview reading/message helpers. Query
-sources live in `db/queries/overview.sql`; section messages live in
-`proto/leaguelens/v1/overview.proto`. The service contract is in `dashboard.proto`.
+sources live in `db/queries/overview.sql`; overview messages live in
+`proto/leaguelens/v1/overview.proto`, with league, roster, matchup, and player
+messages in their corresponding `leagues.proto`, `rosters.proto`,
+`matchups.proto`, and `players.proto` files. The service contract remains in
+`dashboard.proto`.
 Generated files can combine methods; application logic stays in focused files.
 
 Run `just gen-api` for Go protobuf/Connect bindings and `just gen-db` for SQL

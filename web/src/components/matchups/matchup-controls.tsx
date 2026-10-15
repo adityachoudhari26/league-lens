@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { type League } from "@/gen/leaguelens/v1/dashboard_pb"
+import { type League } from "@/gen/leaguelens/v1/leagues_pb"
 
 function ProviderBadge({ provider }: { provider: string }) {
   const espn = provider === "espn"

@@ -1,0 +1,38 @@
+syntax = "proto3";
+package leaguelens.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
+
+message GetTeamRosterRequest {
+  string team_id = 1;
+  // Omit for latest observed roster. Explicit weeks may return provider history.
+  optional int32 scoring_period = 2;
+}
+message GetTeamRosterResponse {
+  // Absent means no snapshot available; present with no entries means known empty.
+  RosterSnapshot snapshot = 1;
+}
+message RosterSnapshot {
+  string id = 1;
+  string team_id = 2;
+  int32 scoring_period = 3;
+  string origin = 4;
+  string coverage = 5;
+  google.protobuf.Timestamp observed_at = 6;
+  google.protobuf.Timestamp effective_at = 7;
+  repeated RosterEntry entries = 8;
+}
+message RosterEntry {
+  string player_id = 1;
+  string player_name = 2;
+  string player_kind = 3;
+  string slot = 4;
+  string provider_slot_id = 5;
+  // Absent means unknown; present with no values means explicitly empty.
+  Positions eligible_positions = 6;
+}
+message Positions {
+  repeated string values = 1;
+}

@@ -11,7 +11,7 @@ import {
   type PlayerBlurb,
   type PlayerCard,
   type PlayerStat,
-} from "@/gen/leaguelens/v1/dashboard_pb"
+} from "@/gen/leaguelens/v1/players_pb"
 import { playerCardQuery } from "@/lib/api/player-card"
 import {
   bioLine,

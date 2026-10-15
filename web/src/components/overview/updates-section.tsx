@@ -2,10 +2,10 @@ import { type ReactNode, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Activity, ArrowLeftRight, ChevronDown, Newspaper } from "lucide-react"
 import {
-  InjuryStatus,
   NewsCategory,
   type PlayerUpdate,
 } from "@/gen/leaguelens/v1/overview_pb"
+import { InjuryStatus } from "@/gen/leaguelens/v1/players_pb"
 import { overviewQueries } from "@/lib/api/overview"
 import { PlayerCardTrigger } from "@/components/player-card/player-card"
 import { Button } from "@/components/ui/button"
