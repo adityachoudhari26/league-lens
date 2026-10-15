@@ -105,7 +105,7 @@ function PlayerPoints({
       className={`w-12 shrink-0 tabular-nums ${mirrored ? "text-left" : "text-right"}`}
     >
       <p
-        className={`text-sm ${toneClass ? `font-semibold ${toneClass}` : "text-foreground/70"}`}
+        className={`text-sm ${toneClass ? `font-semibold ${toneClass}` : "font-medium text-foreground"}`}
       >
         {scoreLabel(shownPoints(player) ?? 0)}
       </p>
