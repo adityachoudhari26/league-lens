@@ -7,6 +7,7 @@ import {
 import { AppShell } from "@/components/layout/app-shell"
 import { navigation } from "@/components/layout/navigation"
 import { MatchupsPage } from "@/pages/matchups-page"
+import { ConnectPage } from "@/pages/connect-page"
 import { OverviewPage } from "@/pages/overview-page"
 import { WorkspacePage } from "@/pages/workspace-page"
 
@@ -53,6 +54,12 @@ const matchupsRoute = createRoute({
   validateSearch: validateMatchupsSearch,
 })
 
+const connectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/connect",
+  component: ConnectPage,
+})
+
 const pages = navigation
   .filter((item) => item.path !== matchupsItem.path)
   .map((item) =>
@@ -65,7 +72,7 @@ const pages = navigation
   )
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([...pages, matchupsRoute]),
+  routeTree: rootRoute.addChildren([...pages, matchupsRoute, connectRoute]),
   scrollRestoration: true,
 })
 

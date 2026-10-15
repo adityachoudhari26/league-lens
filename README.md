@@ -18,7 +18,8 @@ use, put `LEAGUE_LENS_PORT=8080` in a `.env` file next to `compose.yaml`. Then
 open `http://league-lens.localhost:8080` in Chrome, Edge, or Firefox, or
 `http://localhost:8080` in Safari.
 
-Until the in-app league connection flow ships, import a Sleeper league with:
+Open the app and click **Connect leagues** to connect ESPN or Sleeper. The
+command-line importer remains available as an alternative:
 
 ```sh
 docker compose exec app import sleeper --username YOUR_USERNAME --league-id YOUR_LEAGUE_ID
@@ -83,13 +84,13 @@ remain stable even though the API and frontend work happened before owner setup.
   - [x] Shared-provider Go adapter and CLI import: full league, rosters, records, encountered players, and available current-season matchup/roster history.
   - [x] Fixture coverage for normalization, invalid authentication, historical weeks, missing data, and multiweek scores; failures preserve previously imported data.
   - [x] Connect backend: ESPN fan-API league discovery, encrypted account cookies, owner-scoped import/removal, and sync using stored credentials.
-  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states. Proposed: bookmarklet or pasted cookies and Reconnect when cookies are rejected ([design](docs/designs/league-connections.md#connecting-leagues)).
+  - [x] Add in-app ESPN league/team selection, bookmarklet or pasted cookies, and reconnect/error states ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **7. Complete Sleeper connection setup.**
   - [x] Shared-provider Go adapter and CLI import using a username and league ID, including team selection and available current-season history.
   - [x] Fixture coverage for mappings and missing data; public username lookup is selection, not proof of ownership.
   - [x] Connect backend username lookup, league discovery, and import through the shared importer.
-  - [ ] Add in-app username lookup and league/team selection ([design](docs/designs/league-connections.md#connecting-leagues)).
+  - [x] Add in-app username lookup and league/team selection ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **8. Build the combined dashboard.**
   - [x] Responsive shell, collapsible navigation, and persistent Light/Dark/System appearance.
@@ -99,7 +100,7 @@ remain stable even though the API and frontend work happened before owner setup.
   - [x] Exact cross-provider player mapping with provider-ID fallback; only encountered players are stored, and uncertain identities are not joined by name.
   - [ ] Build Roster, Matchups, and Standings pages one at a time, with league selection where useful.
   - [ ] Show connection health and stale-data state. (Refresh now runs provider sync; see checkpoint 9.)
-  - [ ] Replace the empty overview with a Connect leagues entry point, and manage connections in Settings.
+  - [x] Replace the empty overview with a Connect leagues entry point, manage connections in Settings, and show ESPN reconnect status.
 
 - [ ] **9. Make synchronization automatic.** In progress: on-demand sync is implemented; scheduling remains.
   - [x] Reuse the import service behind a server-side sync operation (`SyncService`); keep the CLI as a development tool.
@@ -166,10 +167,9 @@ identities. Earlier stored seasons are preserved.
 
 The overview reads saved database observations. Opening it syncs leagues whose
 data is older than 15 minutes in the background, and **Refresh** syncs every
-attached league through the shared importer. ESPN credentials are encrypted per
-connection for sync; `ESPN_S2` and `ESPN_SWID` remain a fallback for existing
-environment-based imports. The connection backend supports ESPN and Sleeper
-discovery, import, and league removal; the in-app connection UI is next.
+attached league through the shared importer. In-app ESPN and Sleeper connection
+is available from Home and Settings. ESPN credentials are encrypted per
+connection for sync; `ESPN_S2` and `ESPN_SWID` are only the CLI import fallback.
 Scheduled sync without an open browser (River) is also pending. News and
 upcoming bye checks show unavailable coverage; Roster, Matchups, and Standings
 pages remain placeholders. Authentication and AI are not implemented. The

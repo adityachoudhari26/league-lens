@@ -28,15 +28,9 @@ export const syncStatusQuery = queryOptions({
       : false,
 })
 
-/**
- * Keeps provider data current: opening the page syncs stale leagues in the
- * background, refresh syncs every league, and the overview reloads when
- * syncing ends. Saved data stays visible throughout.
- */
-export function useLeagueSync() {
+export function useStartSync() {
   const queryClient = useQueryClient()
-  const status = useQuery(syncStatusQuery)
-  const start = useMutation({
+  return useMutation({
     mutationFn: (onlyStale: boolean) => sync.startSync({ onlyStale }),
     // Cancel any in-flight status read first so a pre-claim response can't
     // overwrite the syncing state and skip the overview reload.
@@ -48,6 +42,16 @@ export function useLeagueSync() {
       )
     },
   })
+}
+
+/**
+ * Keeps provider data current: opening the page syncs stale leagues in the
+ * background, refresh syncs every league, and the overview reloads when
+ * syncing ends. Saved data stays visible throughout.
+ */
+export function useLeagueSync() {
+  const status = useQuery(syncStatusQuery)
+  const start = useStartSync()
   useStaleSyncOnMount(start.mutate)
 
   const leagues = status.data?.leagues ?? []

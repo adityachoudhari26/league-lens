@@ -5,6 +5,8 @@ import { observedTime } from "./format"
 
 const failureReasons: Record<string, string> = {
   espn_credentials_missing: "ESPN cookies aren’t configured on the server",
+  espn_credentials_unavailable:
+    "the saved ESPN cookies can’t be read; reconnect ESPN",
   espn_account_mismatch:
     "the server’s ESPN cookies belong to a different account",
   provider_unavailable: "the provider couldn’t be reached",

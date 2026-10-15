@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { type NavigationItem } from "@/components/layout/navigation"
+import { LeagueSettings } from "@/components/connect/league-settings"
 import { Button } from "@/components/ui/button"
 import { themeOptions } from "@/components/theme/theme-toggle"
 import { useTheme } from "@/components/theme/theme-provider"
@@ -85,7 +86,10 @@ export function WorkspacePage({ item }: { item: NavigationItem }) {
     <>
       <PageHeading item={item} />
       {item.path === "/settings" ? (
-        <AppearanceSettings />
+        <div className="grid gap-6">
+          <LeagueSettings />
+          <AppearanceSettings />
+        </div>
       ) : (
         <PagePlaceholder item={item} />
       )}
