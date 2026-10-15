@@ -280,19 +280,20 @@ func (b *blockedSource) FetchLeague(ctx context.Context, h fantasy.League) (fant
 	}
 }
 
-// lineupFixture gives team 1 a starter with points, an IR player without
-// points, and a bench player with a real zero; team 2 has one starter whose
-// provider slot is unknown.
+// lineupFixture gives team 1 a projected starter with points, an IR player
+// without points or projection, and a bench player with a real zero for both;
+// team 2 has one starter whose provider slot is unknown and whose projection
+// is negative.
 func lineupFixture() []fantasy.MatchupLineup {
-	twelve, zero := 12.5, 0.0
+	twelve, zero, projected, negative := 12.5, 0.0, 14.25, -1.5
 	return []fantasy.MatchupLineup{
 		{Period: 1, MatchupID: "1", TeamID: "1", Entries: []fantasy.LineupEntry{
-			{PlayerID: "10", ProviderSlotID: "0", Slot: fantasy.SlotQB, Starter: true, Points: &twelve},
+			{PlayerID: "10", ProviderSlotID: "0", Slot: fantasy.SlotQB, Starter: true, Points: &twelve, ProjectedPoints: &projected},
 			{PlayerID: "20", ProviderSlotID: "21", Slot: fantasy.SlotIR},
-			{PlayerID: "DET", ProviderSlotID: "20", Slot: fantasy.SlotBench, Points: &zero},
+			{PlayerID: "DET", ProviderSlotID: "20", Slot: fantasy.SlotBench, Points: &zero, ProjectedPoints: &zero},
 		}},
 		{Period: 1, MatchupID: "1", TeamID: "2", Entries: []fantasy.LineupEntry{
-			{PlayerID: "30", Slot: fantasy.SlotQB, Starter: true, Points: &zero},
+			{PlayerID: "30", Slot: fantasy.SlotQB, Starter: true, Points: &zero, ProjectedPoints: &negative},
 		}},
 	}
 }
@@ -310,23 +311,25 @@ func TestImportMatchupLineups(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	team2Rows := map[string]string{"2/Fixture 30": "slot=<null> label=QB starter=true points=0.0000"}
+	team2Rows := map[string]string{"2/Fixture 30": "slot=<null> label=QB starter=true points=0.0000 projected=-1.5000"}
 
 	importFixture()
 	assertLineupRows(t, sqlDB, mergeRows(map[string]string{
-		"1/Fixture 10":  "slot=0 label=QB starter=true points=12.5000",
-		"1/Fixture 20":  "slot=21 label=IR starter=false points=<null>",
-		"1/Fixture DET": "slot=20 label=BENCH starter=false points=0.0000",
+		"1/Fixture 10":  "slot=0 label=QB starter=true points=12.5000 projected=14.2500",
+		"1/Fixture 20":  "slot=21 label=IR starter=false points=<null> projected=<null>",
+		"1/Fixture DET": "slot=20 label=BENCH starter=false points=0.0000 projected=0.0000",
 	}, team2Rows))
 
-	// A reported lineup replaces that side's rows.
+	// A reported lineup replaces that side's rows, projections included.
 	src.data.Players = append(src.data.Players, fantasy.Player{ExternalID: "40", Name: "Fixture 40", Kind: fantasy.PlayerPerson})
 	src.data.Lineups[0].Entries[1] = fantasy.LineupEntry{PlayerID: "40", ProviderSlotID: "2", Slot: fantasy.SlotRB, Starter: true}
+	updated := 15.75
+	src.data.Lineups[0].Entries[0].ProjectedPoints = &updated
 	importFixture()
 	team1Rows := map[string]string{
-		"1/Fixture 10":  "slot=0 label=QB starter=true points=12.5000",
-		"1/Fixture 40":  "slot=2 label=RB starter=true points=<null>",
-		"1/Fixture DET": "slot=20 label=BENCH starter=false points=0.0000",
+		"1/Fixture 10":  "slot=0 label=QB starter=true points=12.5000 projected=15.7500",
+		"1/Fixture 40":  "slot=2 label=RB starter=true points=<null> projected=<null>",
+		"1/Fixture DET": "slot=20 label=BENCH starter=false points=0.0000 projected=0.0000",
 	}
 	assertLineupRows(t, sqlDB, mergeRows(team1Rows, team2Rows))
 
@@ -369,7 +372,7 @@ func assertLineupRows(t *testing.T, sqlDB *sql.DB, want map[string]string) {
 func readLineupRows(t *testing.T, sqlDB *sql.DB) map[string]string {
 	t.Helper()
 	rows, err := sqlDB.Query(`SELECT t.external_team_id||'/'||p.display_name,
-	 'slot='||COALESCE(l.provider_slot_id,'<null>')||' label='||l.slot_label||' starter='||l.starter::text||' points='||COALESCE(l.points::text,'<null>')
+	 'slot='||COALESCE(l.provider_slot_id,'<null>')||' label='||l.slot_label||' starter='||l.starter::text||' points='||COALESCE(l.points::text,'<null>')||' projected='||COALESCE(l.projected_points::text,'<null>')
 	 FROM matchup_lineups l JOIN teams t ON t.id=l.team_id JOIN players p ON p.id=l.player_id`)
 	if err != nil {
 		t.Fatal(err)
