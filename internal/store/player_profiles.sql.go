@@ -75,6 +75,33 @@ func (q *Queries) GetPlayerProfile(ctx context.Context, playerID pgtype.UUID) (P
 	return i, err
 }
 
+const latestPlayerNews = `-- name: LatestPlayerNews :one
+SELECT source, source_item_id, player_id, headline, summary, url, source_label, published_at, fetched_at FROM player_news WHERE player_id = $1 AND published_at >= $2
+ORDER BY published_at DESC,source_item_id LIMIT 1
+`
+
+type LatestPlayerNewsParams struct {
+	PlayerID pgtype.UUID
+	Since    pgtype.Timestamptz
+}
+
+func (q *Queries) LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error) {
+	row := q.db.QueryRow(ctx, latestPlayerNews, arg.PlayerID, arg.Since)
+	var i PlayerNews
+	err := row.Scan(
+		&i.Source,
+		&i.SourceItemID,
+		&i.PlayerID,
+		&i.Headline,
+		&i.Summary,
+		&i.Url,
+		&i.SourceLabel,
+		&i.PublishedAt,
+		&i.FetchedAt,
+	)
+	return i, err
+}
+
 const listPlayerProfileStats = `-- name: ListPlayerProfileStats :many
 SELECT player_id, ordinal, label, value, rank FROM player_profile_stats WHERE player_id = $1 ORDER BY ordinal
 `
@@ -103,6 +130,70 @@ func (q *Queries) ListPlayerProfileStats(ctx context.Context, playerID pgtype.UU
 		return nil, err
 	}
 	return items, nil
+}
+
+const nextNFLGame = `-- name: NextNFLGame :one
+SELECT week,opponent,kickoff_at FROM nfl_games
+WHERE team = $1 AND kickoff_at > $2 ORDER BY kickoff_at LIMIT 1
+`
+
+type NextNFLGameParams struct {
+	Team string
+	Now  pgtype.Timestamptz
+}
+
+type NextNFLGameRow struct {
+	Week      int32
+	Opponent  string
+	KickoffAt pgtype.Timestamptz
+}
+
+func (q *Queries) NextNFLGame(ctx context.Context, arg NextNFLGameParams) (NextNFLGameRow, error) {
+	row := q.db.QueryRow(ctx, nextNFLGame, arg.Team, arg.Now)
+	var i NextNFLGameRow
+	err := row.Scan(&i.Week, &i.Opponent, &i.KickoffAt)
+	return i, err
+}
+
+const playerCardPlayer = `-- name: PlayerCardPlayer :one
+SELECT p.id,p.display_name,p.entity_type,
+ coalesce(latest.pro_team,'')::text AS pro_team,
+ coalesce(latest.injury_status,'')::text AS injury_status,
+ coalesce((SELECT jsonb_object_agg(x.provider,x.external_id) FROM player_external_ids x WHERE x.player_id=p.id),'{}')::jsonb AS external_ids
+FROM players p
+LEFT JOIN LATERAL (
+ SELECT e.pro_team,e.injury_status FROM roster_entries e
+ JOIN team_snapshots ts ON ts.id=e.snapshot_id AND ts.origin='observed'
+ JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
+ WHERE e.player_id=p.id
+ ORDER BY (e.pro_team IS NOT NULL) DESC,(e.injury_status IS NOT NULL) DESC,ts.observed_at DESC,ts.id DESC LIMIT 1
+) latest ON true
+WHERE p.id = $1
+`
+
+type PlayerCardPlayerRow struct {
+	ID           pgtype.UUID
+	DisplayName  string
+	EntityType   string
+	ProTeam      string
+	InjuryStatus string
+	ExternalIds  []byte
+}
+
+// Injury and NFL team come from the player's latest observed roster entry,
+// preferring one that reports them (Sleeper only does for selected teams).
+func (q *Queries) PlayerCardPlayer(ctx context.Context, playerID pgtype.UUID) (PlayerCardPlayerRow, error) {
+	row := q.db.QueryRow(ctx, playerCardPlayer, playerID)
+	var i PlayerCardPlayerRow
+	err := row.Scan(
+		&i.ID,
+		&i.DisplayName,
+		&i.EntityType,
+		&i.ProTeam,
+		&i.InjuryStatus,
+		&i.ExternalIds,
+	)
+	return i, err
 }
 
 const upsertPlayerProfile = `-- name: UpsertPlayerProfile :exec

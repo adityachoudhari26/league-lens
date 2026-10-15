@@ -1879,7 +1879,7 @@ func (x *GetPlayerCardResponse) GetCard() *PlayerCard {
 // PlayerCard combines stored player data with the player's source profile.
 // Profile fields are empty or absent when the source didn't report them, and
 // all of them are when no profile could be fetched (profile_fetched_at absent).
-// A profile older than 12 hours is served only when a refetch fails.
+// The last saved profile is served when a live fetch fails.
 type PlayerCard struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId         string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`

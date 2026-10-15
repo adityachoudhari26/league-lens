@@ -21,9 +21,8 @@ service DashboardService {
   rpc GetTeamRoster(GetTeamRosterRequest) returns (GetTeamRosterResponse);
   rpc ListMatchups(ListMatchupsRequest) returns (ListMatchupsResponse);
   rpc GetMatchupDetail(GetMatchupDetailRequest) returns (GetMatchupDetailResponse);
-  // GetPlayerCard is the one read that may contact a profile source: it serves
-  // the cached profile, refetching it once 12 hours old. NOT_FOUND for an
-  // unknown player_id.
+  // GetPlayerCard is the one read that contacts a profile source: it fetches
+  // the player's profile live and saves it. NOT_FOUND for an unknown player_id.
   rpc GetPlayerCard(GetPlayerCardRequest) returns (GetPlayerCardResponse);
 }
 message ListLeaguesRequest {
@@ -195,7 +194,7 @@ message GetPlayerCardResponse {
 // PlayerCard combines stored player data with the player's source profile.
 // Profile fields are empty or absent when the source didn't report them, and
 // all of them are when no profile could be fetched (profile_fetched_at absent).
-// A profile older than 12 hours is served only when a refetch fails.
+// The last saved profile is served when a live fetch fails.
 message PlayerCard {
   string player_id = 1;
   string player_name = 2;

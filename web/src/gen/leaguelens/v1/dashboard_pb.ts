@@ -801,7 +801,7 @@ export const GetPlayerCardResponseSchema: GenMessage<GetPlayerCardResponse> = /*
  * PlayerCard combines stored player data with the player's source profile.
  * Profile fields are empty or absent when the source didn't report them, and
  * all of them are when no profile could be fetched (profile_fetched_at absent).
- * A profile older than 12 hours is served only when a refetch fails.
+ * The last saved profile is served when a live fetch fails.
  *
  * @generated from message leaguelens.v1.PlayerCard
  */
@@ -1349,9 +1349,8 @@ export const DashboardService: GenService<{
     output: typeof GetMatchupDetailResponseSchema;
   },
   /**
-   * GetPlayerCard is the one read that may contact a profile source: it serves
-   * the cached profile, refetching it once 12 hours old. NOT_FOUND for an
-   * unknown player_id.
+   * GetPlayerCard is the one read that contacts a profile source: it fetches
+   * the player's profile live and saves it. NOT_FOUND for an unknown player_id.
    *
    * @generated from rpc leaguelens.v1.DashboardService.GetPlayerCard
    */

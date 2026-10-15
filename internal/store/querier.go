@@ -45,6 +45,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
 	InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error
+	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
 	ListDismissedAlerts(ctx context.Context, arg ListDismissedAlertsParams) ([]string, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
@@ -76,10 +77,14 @@ type Querier interface {
 	// matching OverviewTeamMatchup.
 	MatchupDetailRound(ctx context.Context, arg MatchupDetailRoundParams) (Matchup, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)
+	NextNFLGame(ctx context.Context, arg NextNFLGameParams) (NextNFLGameRow, error)
 	// Match the latest observed scoring week, not the greatest (possibly future) round.
 	OverviewTeamMatchup(ctx context.Context, arg OverviewTeamMatchupParams) (OverviewTeamMatchupRow, error)
 	// Only selected teams, enabled connections, and the owner's latest imported season.
 	OverviewTeams(ctx context.Context, userID pgtype.UUID) ([]OverviewTeamsRow, error)
+	// Injury and NFL team come from the player's latest observed roster entry,
+	// preferring one that reports them (Sleeper only does for selected teams).
+	PlayerCardPlayer(ctx context.Context, playerID pgtype.UUID) (PlayerCardPlayerRow, error)
 	RestoreAlert(ctx context.Context, arg RestoreAlertParams) error
 	SelectUserTeam(ctx context.Context, arg SelectUserTeamParams) error
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)

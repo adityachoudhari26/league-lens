@@ -44,7 +44,7 @@ func run() error {
 		Addr: cfg.HTTPAddr,
 		Handler: httpserver.NewHandler(
 			data.Ping,
-			dashboard.New(data, cfg.LocalOwnerEmail),
+			dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now())),
 			leaguesync.NewHandler(syncRunner),
 		),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
@@ -68,6 +68,16 @@ func run() error {
 		}
 		return nil
 	}
+}
+
+// newProfileSource reads player profiles for the NFL season in progress, which
+// starts in September and runs through the February playoffs.
+func newProfileSource(now time.Time) espn.ProfileSource {
+	season := now.Year()
+	if now.Month() < time.March {
+		season--
+	}
+	return espn.ProfileSource{HTTP: &http.Client{Timeout: 5 * time.Second}, Season: season}
 }
 
 // newSyncRunner reads ESPN cookies from the environment, as the import CLI does,
