@@ -49,25 +49,23 @@ export function EspnBookmarkletOption() {
             <Bookmark className="size-4" aria-hidden />
             Connect to League Lens
           </a>
-          <p className="mt-1">Drag it. Clicking it here does nothing.</p>
-          {clickedInApp && (
-            <p role="status" className="mt-1">
-              Drag this button to your bookmarks bar instead of clicking it
-              here.
-            </p>
-          )}
+          <p role="status" className="mt-1">
+            {clickedInApp
+              ? "Drag this button to your bookmarks bar instead of clicking it here."
+              : "Drag it. Clicking it here does nothing."}
+          </p>
         </InstructionStep>
         <InstructionStep
           number={3}
           title="Open ESPN Fantasy Football and sign in"
         >
           <a
-            href="https://fantasy.espn.com/football/"
+            href="https://www.espn.com/fantasy/"
             target="_blank"
             rel="noreferrer"
             className="underline underline-offset-2"
           >
-            fantasy.espn.com/football
+            espn.com/fantasy
           </a>
         </InstructionStep>
         <InstructionStep number={4} title="Click the bookmark on the ESPN tab">

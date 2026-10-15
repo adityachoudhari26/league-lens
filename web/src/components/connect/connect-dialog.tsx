@@ -38,73 +38,75 @@ export function ConnectDialog({
         onOpenChange(nextOpen)
       }}
     >
-      <DialogContent className="max-h-[min(85vh,44rem)] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[min(85vh,44rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {flow.step === "provider" && (
-          <ProviderStep onChoose={flow.chooseProvider} />
-        )}
-        {flow.step === "credentials" && flow.provider === "espn" && (
-          <EspnStep
-            initialCredentials={flow.espnPrefill}
-            error={flow.error}
-            pending={flow.espnPending}
-            onBack={() => flow.goToStep("provider")}
-            onSubmit={flow.submitESPN}
-          />
-        )}
-        {flow.step === "credentials" && flow.provider === "sleeper" && (
-          <SleeperStep
-            username={flow.username}
-            onUsernameChange={flow.setUsername}
-            error={flow.error}
-            pending={flow.sleeperPending}
-            onBack={() => flow.goToStep("provider")}
-            onSubmit={flow.submitSleeper}
-          />
-        )}
-        {flow.step === "leagues" && (
-          <LeagueChoiceStep
-            leagues={flow.leagues}
-            selected={flow.selected}
-            selectedCount={flow.selectedCount}
-            allAlreadyImported={flow.allAlreadyImported}
-            error={flow.error}
-            pending={flow.importPending}
-            onBack={() => flow.goToStep("credentials")}
-            onToggle={flow.toggleLeague}
-            onImport={() => void flow.importSelectedLeagues()}
-            onDone={() => {
-              flow.reset()
-              onOpenChange(false)
-            }}
-          />
-        )}
-        {flow.step === "results" && (
-          <ImportResultsStep
-            results={flow.results}
-            leagues={flow.leagues}
-            onDone={() => {
-              flow.reset()
-              onOpenChange(false)
-            }}
-          />
-        )}
-        {flow.error &&
-          flow.step !== "credentials" &&
-          flow.step !== "leagues" && <InlineError>{flow.error}</InlineError>}
-        {showSettingsHint && (
-          <p className="border-t pt-3 text-xs text-muted-foreground">
-            You can also connect leagues in Settings.
-          </p>
-        )}
-        {flow.pending && (
-          <span className="sr-only" role="status">
-            Working…
-          </span>
-        )}
+        <div className="-mx-4 -mb-4 grid min-h-0 content-start gap-4 overflow-y-auto px-4 pb-4 [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
+          {flow.step === "provider" && (
+            <ProviderStep onChoose={flow.chooseProvider} />
+          )}
+          {flow.step === "credentials" && flow.provider === "espn" && (
+            <EspnStep
+              initialCredentials={flow.espnPrefill}
+              error={flow.error}
+              pending={flow.espnPending}
+              onBack={() => flow.goToStep("provider")}
+              onSubmit={flow.submitESPN}
+            />
+          )}
+          {flow.step === "credentials" && flow.provider === "sleeper" && (
+            <SleeperStep
+              username={flow.username}
+              onUsernameChange={flow.setUsername}
+              error={flow.error}
+              pending={flow.sleeperPending}
+              onBack={() => flow.goToStep("provider")}
+              onSubmit={flow.submitSleeper}
+            />
+          )}
+          {flow.step === "leagues" && (
+            <LeagueChoiceStep
+              leagues={flow.leagues}
+              selected={flow.selected}
+              selectedCount={flow.selectedCount}
+              allAlreadyImported={flow.allAlreadyImported}
+              error={flow.error}
+              pending={flow.importPending}
+              onBack={() => flow.goToStep("credentials")}
+              onToggle={flow.toggleLeague}
+              onImport={() => void flow.importSelectedLeagues()}
+              onDone={() => {
+                flow.reset()
+                onOpenChange(false)
+              }}
+            />
+          )}
+          {flow.step === "results" && (
+            <ImportResultsStep
+              results={flow.results}
+              leagues={flow.leagues}
+              onDone={() => {
+                flow.reset()
+                onOpenChange(false)
+              }}
+            />
+          )}
+          {flow.error &&
+            flow.step !== "credentials" &&
+            flow.step !== "leagues" && <InlineError>{flow.error}</InlineError>}
+          {showSettingsHint && (
+            <p className="border-t pt-3 text-xs text-muted-foreground">
+              You can also connect leagues in Settings.
+            </p>
+          )}
+          {flow.pending && (
+            <span className="sr-only" role="status">
+              Working…
+            </span>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )
