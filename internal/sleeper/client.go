@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -49,6 +50,13 @@ type Matchup struct {
 	Points        *float64           `json:"points"`
 	CustomPoints  *float64           `json:"custom_points"`
 }
+
+// Projection is one player's projected stat line for a week from Sleeper's
+// undocumented /projections endpoint. Stats are raw counts, not points.
+type Projection struct {
+	PlayerID string             `json:"player_id"`
+	Stats    map[string]float64 `json:"stats"`
+}
 type State struct {
 	Season     string `json:"season"`
 	SeasonType string `json:"season_type"`
@@ -60,16 +68,21 @@ type Header struct {
 }
 type Data struct {
 	Header
-	Rosters    []Roster
-	Users      []User
-	Weeks      map[int][]Matchup
-	Period     int
-	ObservedAt time.Time
-	State      State
+	Rosters []Roster
+	Users   []User
+	Weeks   map[int][]Matchup
+	// Projections holds each synced week's projections. A missing week means
+	// its request failed and that week's lineups get no projections.
+	Projections map[int][]Projection
+	Period      int
+	ObservedAt  time.Time
+	State       State
 }
 type Client struct {
 	HTTP    *http.Client
 	BaseURL string
+	// ProjectionsURL is the projections endpoint root, which sits outside /v1.
+	ProjectionsURL string
 	// AvailabilityTeamIDs lists roster IDs whose observed players get injury
 	// status and NFL team through per-player lookups. Empty disables lookups.
 	AvailabilityTeamIDs []string
@@ -79,13 +92,18 @@ func NewClient(h *http.Client) *Client {
 	if h == nil {
 		h = &http.Client{Timeout: 20 * time.Second}
 	}
-	return &Client{HTTP: h, BaseURL: "https://api.sleeper.app/v1"}
+	return &Client{HTTP: h, BaseURL: "https://api.sleeper.app/v1", ProjectionsURL: "https://api.sleeper.app/projections/nfl"}
 }
 
 func (c *Client) get(ctx context.Context, path string, out any) error {
+	return c.getURL(ctx, c.BaseURL+path, path, out)
+}
+
+// getURL reads rawURL into out, naming it by path in errors.
+func (c *Client) getURL(ctx context.Context, rawURL, path string, out any) error {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return err
 	}
@@ -159,8 +177,31 @@ func (c *Client) Fetch(ctx context.Context, header Header) (Data, error) {
 		if err != nil {
 			return data, err
 		}
+		data.Projections = c.fetchProjections(ctx, header.League.Season, period)
 	}
 	return data, nil
+}
+
+// projectionPositions limits the weekly projections to fantasy positions,
+// which keeps each response near 2 MB instead of 6 MB.
+var projectionPositions = []string{"QB", "RB", "WR", "TE", "K", "DEF"}
+
+// fetchProjections reads the league season's projections for every synced
+// week. The endpoint is undocumented, so a failed week is logged and skipped
+// rather than failing the import.
+func (c *Client) fetchProjections(ctx context.Context, season string, period int) map[int][]Projection {
+	query := url.Values{"season_type": {"regular"}, "position[]": projectionPositions}.Encode()
+	projections := map[int][]Projection{}
+	for week := 1; week <= period; week++ {
+		path := "/" + url.PathEscape(season) + "/" + strconv.Itoa(week)
+		var rows []Projection
+		if err := c.getURL(ctx, c.ProjectionsURL+path+"?"+query, "/projections/nfl"+path, &rows); err != nil {
+			slog.Warn("sleeper projections fetch failed; week has no projections", "season", season, "week", week, "error", err)
+			continue
+		}
+		projections[week] = rows
+	}
+	return projections
 }
 
 // Fetch each week once, sequentially: bounded to 18 small requests per import.

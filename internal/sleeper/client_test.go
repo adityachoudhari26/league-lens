@@ -27,6 +27,16 @@ func TestFetch(t *testing.T) {
 			return
 		case "/league/123/matchups/1", "/league/123/matchups/2":
 			file = "week.json"
+		case "/projections/nfl/2026/1":
+			query := r.URL.Query()
+			if query.Get("season_type") != "regular" || len(query["position[]"]) != len(projectionPositions) {
+				t.Errorf("projections query = %s", r.URL.RawQuery)
+			}
+			w.Write([]byte(`[{"player_id":"10","stats":{"rec":2}}]`))
+			return
+		case "/projections/nfl/2026/2":
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		default:
 			http.NotFound(w, r)
 			return
@@ -40,6 +50,7 @@ func TestFetch(t *testing.T) {
 	defer srv.Close()
 	c := NewClient(srv.Client())
 	c.BaseURL = srv.URL
+	c.ProjectionsURL = srv.URL + "/projections/nfl"
 	head, err := c.Header(context.Background(), "test", "123")
 	if err != nil {
 		t.Fatal(err)
@@ -50,6 +61,9 @@ func TestFetch(t *testing.T) {
 	}
 	if len(data.Rosters) != 2 || len(data.Weeks) != 2 || data.Period != 2 {
 		t.Fatalf("unexpected data: %+v", data)
+	}
+	if _, failed := data.Projections[2]; failed || len(data.Projections[1]) != 1 || data.Projections[1][0].Stats["rec"] != 2 {
+		t.Fatalf("projections = %+v, want week 1 only", data.Projections)
 	}
 	league, err := c.DescribeLeague(context.Background(), "123")
 	if err != nil {

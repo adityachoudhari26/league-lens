@@ -13,8 +13,9 @@ import (
 // list reserve and taxi players without saying which they are, so designations
 // (the current rosters) label them only for the observed week; past weeks show
 // every non-starter as bench, like roster history. Rows without players or
-// starters are unavailable and get no lineup.
-func normalizeLineups(rows []Matchup, matchups []fantasy.Matchup, positions []string, designations map[int]Roster) ([]fantasy.MatchupLineup, error) {
+// starters are unavailable and get no lineup. Projections are the week's
+// projected stat lines by player, scored with the league's scoring.
+func normalizeLineups(rows []Matchup, matchups []fantasy.Matchup, positions []string, designations map[int]Roster, projections map[string]map[string]float64, scoring map[string]float64) ([]fantasy.MatchupLineup, error) {
 	rowsByTeam := map[string]Matchup{}
 	for _, row := range rows {
 		rowsByTeam[strconv.Itoa(row.RosterID)] = row
@@ -26,7 +27,7 @@ func normalizeLineups(rows []Matchup, matchups []fantasy.Matchup, positions []st
 			if row.Players == nil && row.Starters == nil {
 				continue
 			}
-			entries, err := lineupEntries(row, positions, designations[row.RosterID])
+			entries, err := lineupEntries(row, positions, designations[row.RosterID], projections, scoring)
 			if err != nil {
 				return nil, fmt.Errorf("week %d lineup for roster %s: %w", matchup.Period, teamID, err)
 			}
@@ -43,10 +44,11 @@ func matchupTeamIDs(matchup fantasy.Matchup) []string {
 	return []string{matchup.TeamA.TeamID, matchup.TeamB.TeamID}
 }
 
-// lineupEntries reuses the roster slot rules and attaches players_points.
-// Starter points add up to Sleeper's points, not a custom_points override.
-// rosterEntries gives only starters a slot index, which marks them as starters.
-func lineupEntries(row Matchup, positions []string, roster Roster) ([]fantasy.LineupEntry, error) {
+// lineupEntries reuses the roster slot rules and attaches players_points and
+// projections. Starter points add up to Sleeper's points, not a custom_points
+// override. rosterEntries gives only starters a slot index, which marks them
+// as starters.
+func lineupEntries(row Matchup, positions []string, roster Roster, projections map[string]map[string]float64, scoring map[string]float64) ([]fantasy.LineupEntry, error) {
 	reserve := benchedOnly(roster.Reserve, row)
 	taxi := benchedOnly(roster.Taxi, row)
 	entries, _, err := rosterEntries(row.Players, row.Starters, reserve, taxi, positions)
@@ -56,7 +58,14 @@ func lineupEntries(row Matchup, positions []string, roster Roster) ([]fantasy.Li
 	lineup := make([]fantasy.LineupEntry, 0, len(entries))
 	for _, entry := range entries {
 		slot, _ := normalizeSlot(entry.Label)
-		lineup = append(lineup, fantasy.LineupEntry{PlayerID: entry.ID, ProviderSlotID: entry.Slot, Slot: slot, Starter: entry.Slot != "", Points: playerPoints(row.PlayersPoints, entry.ID)})
+		lineup = append(lineup, fantasy.LineupEntry{
+			PlayerID:        entry.ID,
+			ProviderSlotID:  entry.Slot,
+			Slot:            slot,
+			Starter:         entry.Slot != "",
+			Points:          playerPoints(row.PlayersPoints, entry.ID),
+			ProjectedPoints: projectedPoints(projections[entry.ID], scoring),
+		})
 	}
 	return lineup, nil
 }

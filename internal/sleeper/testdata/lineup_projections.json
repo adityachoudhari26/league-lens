@@ -1,0 +1,8 @@
+{
+  "1": [
+    {"player_id":"10","stats":{"rec":4.5,"pass_yd":250,"pts_std":14,"pts_half_ppr":16.25,"pts_ppr":18.5}},
+    {"player_id":"20","stats":{"pass_yd":120,"pts_std":4.8}},
+    {"player_id":"40","stats":{"rec":6,"pts_ppr":21}},
+    {"player_id":"99","stats":{"rec":3}}
+  ]
+}
