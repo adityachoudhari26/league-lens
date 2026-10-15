@@ -119,14 +119,14 @@ func (r *Runner) fillWinChanceGap(
 	if err != nil {
 		return 0, 0, err
 	}
-	starters, rowsByKey, countsByKey, proTeams, err := gapReplayStarters(starterRows)
+	starters, rowsByKey, countsByKey, err := gapReplayStarters(starterRows)
 	if err != nil {
 		return 0, 0, err
 	}
 	if len(starters) == 0 {
 		return 0, 0, fmt.Errorf("live gap has no starter snapshots")
 	}
-	games, err := r.fetchLiveGapGames(ctx, scoreboard.Games, proTeams, gap.EndedAt.Time)
+	games, err := r.fetchLiveGapGames(ctx, scoreboard.Games, gap.EndedAt.Time)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -140,23 +140,22 @@ func (r *Runner) fillWinChanceGap(
 
 func gapReplayStarters(
 	rows []store.ListWinChanceGapStartersRow,
-) ([]replay.Starter, map[string]store.ListWinChanceGapStartersRow, map[string]gapStarterCounts, map[string]bool, error) {
+) ([]replay.Starter, map[string]store.ListWinChanceGapStartersRow, map[string]gapStarterCounts, error) {
 	starters := make([]replay.Starter, 0, len(rows))
 	rowsByKey := make(map[string]store.ListWinChanceGapStartersRow, len(rows))
 	countsByKey := make(map[string]gapStarterCounts, len(rows))
-	proTeams := make(map[string]bool)
 	for _, row := range rows {
 		startPoints, err := lineupPointsOrZero(row.PointsBefore)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, err
 		}
 		finalPoints, err := lineupPointsOrZero(row.PointsAfter)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, err
 		}
 		projected, err := liveProjection(row.ProjectedPoints)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, err
 		}
 		key := backfillStarterKey(row.TeamID, row.PlayerID)
 		starters = append(starters, replay.Starter{
@@ -169,11 +168,8 @@ func gapReplayStarters(
 			touchdowns: row.TouchdownsBefore.Valid,
 			fieldGoals: row.FieldGoalsBefore.Valid,
 		}
-		if row.ProTeam != "" {
-			proTeams[row.ProTeam] = true
-		}
 	}
-	return starters, rowsByKey, countsByKey, proTeams, nil
+	return starters, rowsByKey, countsByKey, nil
 }
 
 func int4OrZero(value pgtype.Int4) int {
@@ -186,12 +182,11 @@ func int4OrZero(value pgtype.Int4) int {
 func (r *Runner) fetchLiveGapGames(
 	ctx context.Context,
 	scoreboardGames []fantasy.NFLGameStatus,
-	proTeams map[string]bool,
 	endedAt time.Time,
 ) ([]replay.Game, error) {
 	games := make([]replay.Game, 0)
 	for _, game := range scoreboardGames {
-		if !proTeams[game.HomeTeam] && !proTeams[game.AwayTeam] {
+		if game.State == fantasy.NFLGameScheduled || !game.KickoffAt.Before(endedAt) {
 			continue
 		}
 		plays, err := r.sources.NFLGamePlays(ctx, game.ID)

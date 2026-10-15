@@ -67,6 +67,8 @@ func (r *Runner) runWinChanceBackfill(matchupID pgtype.UUID, key string) {
 	delete(r.backfillRunning, key)
 	if err != nil {
 		r.backfillFailures[key] = failure{code: failureCode(err), at: r.now()}
+	} else if samples == 0 && changes == 0 {
+		r.backfillFailures[key] = failure{code: "nothing_to_rebuild", at: r.now()}
 	} else {
 		delete(r.backfillFailures, key)
 	}
@@ -117,7 +119,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 		return 0, 0, nil
 	}
 
-	starters, starterRowsByKey, proTeams, err := backfillStarters(starterRows)
+	starters, starterRowsByKey, err := backfillStarters(starterRows)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -125,7 +127,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	if err != nil {
 		return 0, 0, err
 	}
-	games, err := r.fetchBackfillGames(ctx, scoreboard.Games, proTeams)
+	games, err := r.fetchBackfillGames(ctx, scoreboard.Games)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -151,18 +153,17 @@ func backfillWeek(value []byte) (fantasy.ScoringPeriod, bool, error) {
 
 func backfillStarters(
 	rows []store.ListBackfillMatchupStartersRow,
-) ([]replay.Starter, map[string]store.ListBackfillMatchupStartersRow, map[string]bool, error) {
+) ([]replay.Starter, map[string]store.ListBackfillMatchupStartersRow, error) {
 	starters := make([]replay.Starter, 0, len(rows))
 	rowsByKey := make(map[string]store.ListBackfillMatchupStartersRow, len(rows))
-	proTeams := make(map[string]bool)
 	for _, row := range rows {
 		finalPoints, err := lineupPointsOrZero(row.Points)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
 		projected, err := liveProjection(row.ProjectedPoints)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
 		athleteID := numericAthleteID(row.AthleteID)
 		key := backfillStarterKey(row.TeamID, row.PlayerID)
@@ -171,11 +172,8 @@ func backfillStarters(
 			FinalPoints: finalPoints, Projected: projected,
 		})
 		rowsByKey[key] = row
-		if row.ProTeam != "" {
-			proTeams[row.ProTeam] = true
-		}
 	}
-	return starters, rowsByKey, proTeams, nil
+	return starters, rowsByKey, nil
 }
 
 func numericAthleteID(value string) string {
@@ -195,13 +193,9 @@ func backfillStarterKey(teamID, playerID pgtype.UUID) string {
 func (r *Runner) fetchBackfillGames(
 	ctx context.Context,
 	scoreboardGames []fantasy.NFLGameStatus,
-	proTeams map[string]bool,
 ) ([]replay.Game, error) {
 	games := make([]replay.Game, 0)
 	for _, game := range scoreboardGames {
-		if !proTeams[game.HomeTeam] && !proTeams[game.AwayTeam] {
-			continue
-		}
 		plays, err := r.sources.NFLGamePlays(ctx, game.ID)
 		if err != nil {
 			return nil, err

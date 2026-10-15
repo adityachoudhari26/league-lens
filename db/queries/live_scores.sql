@@ -67,14 +67,23 @@ WHERE m.id = @matchup_id;
 SELECT ml.team_id,ml.player_id,ml.points,ml.projected_points,
  (ml.team_id=m.team_b_id)::boolean AS team_b,
  coalesce(x.external_id,'')::text AS athlete_id,
- coalesce(e.pro_team,'')::text AS pro_team
+ coalesce(nullif(e.pro_team,''), CASE
+  WHEN p.entity_type='team_defense' THEN sleeper.external_id
+  ELSE ''
+ END,'')::text AS pro_team
 FROM matchup_lineups ml
 JOIN matchups m ON m.id=ml.matchup_id
+JOIN players p ON p.id=ml.player_id
 LEFT JOIN LATERAL (
  SELECT x.external_id FROM player_external_ids x
  WHERE x.player_id=ml.player_id AND x.provider='espn' AND x.external_id ~ '^[0-9]+$'
  ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
 ) x ON true
+LEFT JOIN LATERAL (
+ SELECT x.external_id FROM player_external_ids x
+ WHERE x.player_id=ml.player_id AND x.provider='sleeper' AND x.external_id ~ '^[A-Z]{2,3}$'
+ ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
+) sleeper ON true
 LEFT JOIN LATERAL (
  SELECT ts.id FROM team_snapshots ts
  JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
@@ -163,15 +172,24 @@ SELECT gs.team_id, gs.player_id, gs.points_before, gs.points_after,
  gs.touchdowns_before, gs.touchdowns_after, gs.field_goals_before, gs.field_goals_after,
  ml.projected_points, (gs.team_id=m.team_b_id)::boolean AS team_b,
  coalesce(x.external_id,'')::text AS athlete_id,
- coalesce(e.pro_team,'')::text AS pro_team
+ coalesce(nullif(e.pro_team,''), CASE
+  WHEN p.entity_type='team_defense' THEN sleeper.external_id
+  ELSE ''
+ END,'')::text AS pro_team
 FROM win_chance_gap_starters gs
 JOIN matchups m ON m.id=gs.matchup_id
 JOIN matchup_lineups ml ON ml.matchup_id=gs.matchup_id AND ml.team_id=gs.team_id AND ml.player_id=gs.player_id
+JOIN players p ON p.id=gs.player_id
 LEFT JOIN LATERAL (
  SELECT x.external_id FROM player_external_ids x
  WHERE x.player_id=gs.player_id AND x.provider='espn' AND x.external_id ~ '^[0-9]+$'
  ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
 ) x ON true
+LEFT JOIN LATERAL (
+ SELECT x.external_id FROM player_external_ids x
+ WHERE x.player_id=gs.player_id AND x.provider='sleeper' AND x.external_id ~ '^[A-Z]{2,3}$'
+ ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
+) sleeper ON true
 LEFT JOIN LATERAL (
  SELECT ts.id FROM team_snapshots ts
  JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'

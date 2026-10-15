@@ -62,8 +62,13 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 			Status: fantasy.MatchupFinal,
 			TeamA:  fantasy.MatchupSide{TeamID: "1", Score: floatPtr(7)},
 			TeamB:  &fantasy.MatchupSide{TeamID: "2", Score: floatPtr(0)},
+		}, {
+			ExternalID: "multi-week", Period: 5, ScoringPeriods: []fantasy.ScoringPeriod{5, 6},
+			Status: fantasy.MatchupFinal,
+			TeamA:  fantasy.MatchupSide{TeamID: "1", Score: floatPtr(7)},
+			TeamB:  &fantasy.MatchupSide{TeamID: "2", Score: floatPtr(0)},
 		}},
-		CompleteMatchupPeriods: []fantasy.MatchupPeriod{5},
+		CompleteMatchupPeriods: []fantasy.MatchupPeriod{5, 6},
 		Lineups: []fantasy.MatchupLineup{
 			{Period: 5, MatchupID: "week-5", TeamID: "1", Entries: []fantasy.LineupEntry{
 				{PlayerID: "101", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(7), ProjectedPoints: floatPtr(14)},
@@ -153,5 +158,25 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 	}
 	if savedSamples != wantSamples || savedChanges != wantChanges {
 		t.Fatalf("second backfill changed saved history to %d samples/%d changes", savedSamples, savedChanges)
+	}
+
+	var ineligibleMatchupID pgtype.UUID
+	if err := pool.QueryRow(context.Background(), `
+		SELECT id FROM matchups WHERE external_matchup_id='multi-week'
+	`).Scan(&ineligibleMatchupID); err != nil {
+		t.Fatal(err)
+	}
+	if !runner.RequestWinChanceBackfill(ineligibleMatchupID) {
+		t.Fatal("first ineligible backfill request was not scheduled")
+	}
+	runner.wg.Wait()
+	runner.mu.Lock()
+	failure := runner.backfillFailures[ineligibleMatchupID.String()]
+	runner.mu.Unlock()
+	if failure.code != "nothing_to_rebuild" {
+		t.Fatalf("ineligible backfill failure code = %q, want nothing_to_rebuild", failure.code)
+	}
+	if runner.RequestWinChanceBackfill(ineligibleMatchupID) {
+		t.Fatal("second ineligible backfill request should be throttled")
 	}
 }

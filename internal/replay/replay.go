@@ -68,13 +68,6 @@ type gameTimeline struct {
 	lastPlay fantasy.NFLPlay
 }
 
-type playerDelta struct {
-	points     float64
-	touchdowns int
-	fieldGoals int
-	credited   bool
-}
-
 type playerState struct {
 	points     float64
 	touchdowns int
@@ -96,15 +89,28 @@ func Build(in Input) Timeline {
 		}
 	}
 
-	rulePoints := scoringPoints(in.Rules)
 	starterGames := make([]int, len(in.Starters))
 	for i, starter := range in.Starters {
 		starterGames[i] = gameForStarter(starter, games)
 	}
 
+	events, credited, earnedPoints := creditWindowPlays(in, games, starterGames)
+	anchorResiduals(in, games, starterGames, latestAt, events, credited, earnedPoints)
+	timeline := replayChangesAndSamples(in, games, starterGames, latestAt, earliestAt, events)
+	timeline.Samples = appendSample(timeline.Samples, finalSample(in, games, starterGames, latestAt))
+	return timeline
+}
+
+// creditWindowPlays computes per-bucket credits and totals for plays in the replay window.
+func creditWindowPlays(
+	in Input,
+	games []gameTimeline,
+	starterGames []int,
+) (map[time.Time]map[int]playerDelta, []bool, []float64) {
 	events := map[time.Time]map[int]playerDelta{}
 	credited := make([]bool, len(in.Starters))
 	earnedPoints := make([]float64, len(in.Starters))
+	rulePoints := scoringPoints(in.Rules)
 	for gameIndex, game := range games {
 		for _, play := range game.game.Plays {
 			if !playWithinWindow(play.At, in.From, in.To) {
@@ -127,12 +133,24 @@ func Build(in Input) Timeline {
 			}
 		}
 	}
-
 	for _, bucket := range sortedBuckets(events) {
 		for starterIndex := range in.Starters {
 			earnedPoints[starterIndex] += events[bucket][starterIndex].points
 		}
 	}
+	return events, credited, earnedPoints
+}
+
+// anchorResiduals align replayed credits with each starter's provider total.
+func anchorResiduals(
+	in Input,
+	games []gameTimeline,
+	starterGames []int,
+	latestAt time.Time,
+	events map[time.Time]map[int]playerDelta,
+	credited []bool,
+	earnedPoints []float64,
+) {
 	for starterIndex, starter := range in.Starters {
 		residual := starter.FinalPoints - starter.StartPoints - earnedPoints[starterIndex]
 		if credited[starterIndex] && math.Abs(residual) < 0.005 {
@@ -160,7 +178,16 @@ func Build(in Input) Timeline {
 		delta.points += residual
 		events[bucket][starterIndex] = delta
 	}
+}
 
+// replayChangesAndSamples converts credited buckets into cumulative changes and samples.
+func replayChangesAndSamples(
+	in Input,
+	games []gameTimeline,
+	starterGames []int,
+	latestAt, earliestAt time.Time,
+	events map[time.Time]map[int]playerDelta,
+) Timeline {
 	result := Timeline{}
 	states := make([]playerState, len(in.Starters))
 	for i, starter := range in.Starters {
@@ -175,9 +202,7 @@ func Build(in Input) Timeline {
 			result.Samples, replaySample(in, games, starterGames, latestAt, minuteBucket(earliestAt), 0, 0, true, false),
 		)
 	}
-
-	buckets := sortedBuckets(events)
-	for _, bucket := range buckets {
+	for _, bucket := range sortedBuckets(events) {
 		changesBefore := len(result.Changes)
 		starterIndices := make([]int, 0, len(events[bucket]))
 		for starterIndex := range events[bucket] {
@@ -210,7 +235,16 @@ func Build(in Input) Timeline {
 			))
 		}
 	}
+	return result
+}
 
+// finalSample records the provider totals as the replay's final score.
+func finalSample(
+	in Input,
+	games []gameTimeline,
+	starterGames []int,
+	latestAt time.Time,
+) Sample {
 	finalA, finalB := finalScores(in.Starters)
 	finalAt := minuteBucket(latestAt)
 	finalEstimate := true
@@ -218,255 +252,9 @@ func Build(in Input) Timeline {
 		finalAt = in.To
 		finalEstimate = false
 	}
-	result.Samples = appendSample(result.Samples, replaySample(
+	return replaySample(
 		in, games, starterGames, latestAt, finalAt, finalA, finalB, false, finalEstimate,
-	))
-	return result
-}
-
-func playWithinWindow(at, from, to time.Time) bool {
-	return (from.IsZero() || at.After(from)) && (to.IsZero() || !at.After(to))
-}
-
-func replayBucket(at, from time.Time) time.Time {
-	bucket := minuteBucket(at)
-	if !from.IsZero() && !bucket.After(from) {
-		return minuteBucket(from).Add(time.Minute)
-	}
-	return bucket
-}
-
-func gameEndedWithinWindow(game gameTimeline, from, to time.Time) bool {
-	return game.lastPlay.Kind == fantasy.NFLPlayEndOfGame &&
-		(from.IsZero() || game.lastAt.After(from)) &&
-		(to.IsZero() || !game.lastAt.After(to))
-}
-
-func prepareGames(games []Game) ([]gameTimeline, time.Time, time.Time) {
-	result := make([]gameTimeline, 0, len(games))
-	var earliest, latest time.Time
-	for _, game := range games {
-		plays := append([]fantasy.NFLPlay(nil), game.Plays...)
-		sort.SliceStable(plays, func(i, j int) bool { return plays[i].At.Before(plays[j].At) })
-		if len(plays) == 0 {
-			result = append(result, gameTimeline{game: Game{
-				HomeTeam: game.HomeTeam, AwayTeam: game.AwayTeam,
-			}})
-			continue
-		}
-		firstAt, lastAt := plays[0].At, plays[len(plays)-1].At
-		if earliest.IsZero() || firstAt.Before(earliest) {
-			earliest = firstAt
-		}
-		if latest.IsZero() || lastAt.After(latest) {
-			latest = lastAt
-		}
-		result = append(result, gameTimeline{
-			game:    Game{HomeTeam: game.HomeTeam, AwayTeam: game.AwayTeam, Plays: plays},
-			firstAt: firstAt, lastAt: lastAt, lastPlay: plays[len(plays)-1],
-		})
-	}
-	return result, earliest, latest
-}
-
-func scoringPoints(rules []fantasy.ScoringRule) map[fantasy.Stat]float64 {
-	points := make(map[fantasy.Stat]float64, len(rules))
-	for _, rule := range rules {
-		perUnits := rule.PerUnits
-		if perUnits == 0 {
-			perUnits = 1
-		}
-		points[rule.Stat] += rule.Points / perUnits
-	}
-	return points
-}
-
-func gameForStarter(starter Starter, games []gameTimeline) int {
-	if starter.AthleteID != "" {
-		for gameIndex, game := range games {
-			for _, play := range game.game.Plays {
-				for _, participant := range play.Participants {
-					if participant.AthleteID == starter.AthleteID {
-						return gameIndex
-					}
-				}
-			}
-		}
-	}
-	if starter.ProTeam != "" {
-		for gameIndex, game := range games {
-			if game.game.HomeTeam == starter.ProTeam || game.game.AwayTeam == starter.ProTeam {
-				return gameIndex
-			}
-		}
-	}
-	return -1
-}
-
-func creditPlay(play fantasy.NFLPlay, athleteID string, rulePoints map[fantasy.Stat]float64) playerDelta {
-	delta := playerDelta{}
-	switch play.Kind {
-	case fantasy.NFLPlayRush, fantasy.NFLPlayRushingTouchdown:
-		rusher := participantID(play, "rusher")
-		if rusher == athleteID {
-			addStat(&delta, fantasy.StatRushingYards, float64(play.Yards), rulePoints)
-		}
-		if play.Kind == fantasy.NFLPlayRushingTouchdown {
-			scorer := participantID(play, "scorer")
-			if scorer == "" {
-				scorer = rusher
-			}
-			if scorer == athleteID {
-				addStat(&delta, fantasy.StatRushingTouchdowns, 1, rulePoints)
-				delta.touchdowns++
-			}
-		}
-	case fantasy.NFLPlayPassReception, fantasy.NFLPlayPassingTouchdown:
-		passer := participantID(play, "passer")
-		receiver := participantID(play, "receiver")
-		if receiver == "" {
-			receiver = participantID(play, "scorer")
-		}
-		if passer == athleteID {
-			addStat(&delta, fantasy.StatPassingYards, float64(play.Yards), rulePoints)
-		}
-		if receiver == athleteID {
-			addStat(&delta, fantasy.StatReceivingYards, float64(play.Yards), rulePoints)
-			addStat(&delta, fantasy.StatReceptions, 1, rulePoints)
-		}
-		if play.Kind == fantasy.NFLPlayPassingTouchdown {
-			if passer == athleteID {
-				addStat(&delta, fantasy.StatPassingTouchdowns, 1, rulePoints)
-				delta.touchdowns++
-			}
-			scorer := participantID(play, "scorer")
-			if scorer == "" {
-				scorer = receiver
-			}
-			if scorer == athleteID {
-				addStat(&delta, fantasy.StatReceivingTouchdowns, 1, rulePoints)
-				delta.touchdowns++
-			}
-		}
-	case fantasy.NFLPlayInterception:
-		if participantID(play, "passer") == athleteID {
-			addStat(&delta, fantasy.StatInterceptions, 1, rulePoints)
-		}
-	case fantasy.NFLPlayFieldGoalGood:
-		if participantID(play, "kicker") == athleteID {
-			delta.points += 3
-			delta.fieldGoals++
-			delta.credited = true
-		}
-	}
-
-	if play.ExtraPointGood &&
-		(play.Kind == fantasy.NFLPlayRushingTouchdown || play.Kind == fantasy.NFLPlayPassingTouchdown) {
-		kicker := participantID(play, "kicker")
-		if kicker == "" {
-			kicker = participantID(play, "patScorer")
-		}
-		if kicker == athleteID {
-			delta.points++
-			delta.credited = true
-		}
-	}
-	return delta
-}
-
-func participantID(play fantasy.NFLPlay, role string) string {
-	for _, participant := range play.Participants {
-		if participant.Role == role {
-			return participant.AthleteID
-		}
-	}
-	return ""
-}
-
-func addStat(delta *playerDelta, stat fantasy.Stat, value float64, rulePoints map[fantasy.Stat]float64) {
-	delta.points += value * rulePoints[stat]
-	delta.credited = true
-}
-
-func addDelta(before, after playerDelta) playerDelta {
-	return playerDelta{
-		points:     before.points + after.points,
-		touchdowns: before.touchdowns + after.touchdowns,
-		fieldGoals: before.fieldGoals + after.fieldGoals,
-		credited:   before.credited || after.credited,
-	}
-}
-
-func replaySample(
-	in Input,
-	games []gameTimeline,
-	starterGames []int,
-	latestAt, at time.Time,
-	scoreA, scoreB float64,
-	pregame, final bool,
-) Sample {
-	sideA := winchance.Side{Score: scoreA}
-	sideB := winchance.Side{Score: scoreB}
-	for i, starter := range in.Starters {
-		remaining := 0.0
-		if pregame || !final {
-			remaining = 1
-		}
-		if !pregame && !final {
-			remaining = starterRemaining(starterGames[i], games, latestAt, at)
-		}
-		item := winchance.Starter{Projected: starter.Projected, Remaining: remaining}
-		if starter.TeamB {
-			sideB.Starters = append(sideB.Starters, item)
-		} else {
-			sideA.Starters = append(sideA.Starters, item)
-		}
-	}
-	estimate := winchance.Estimate(sideA, sideB)
-	estimate.WinChanceA = round4(estimate.WinChanceA)
-	estimate.ProjectedA = round4(estimate.ProjectedA)
-	estimate.ProjectedB = round4(estimate.ProjectedB)
-	return Sample{At: at, ScoreA: round4(scoreA), ScoreB: round4(scoreB), Estimate: estimate}
-}
-
-func starterRemaining(gameIndex int, games []gameTimeline, latestAt, at time.Time) float64 {
-	if gameIndex < 0 {
-		return remainingUntil(at, latestAt)
-	}
-	game := games[gameIndex]
-	if len(game.game.Plays) == 0 {
-		return 1
-	}
-	bucket := minuteBucket(at)
-	firstBucket, lastBucket := minuteBucket(game.firstAt), minuteBucket(game.lastAt)
-	if bucket.Before(firstBucket) {
-		return 1
-	}
-	if bucket.After(lastBucket) ||
-		(bucket.Equal(lastBucket) && game.lastPlay.Kind == fantasy.NFLPlayEndOfGame) {
-		return 0
-	}
-	var latestPlay *fantasy.NFLPlay
-	for i := range game.game.Plays {
-		play := &game.game.Plays[i]
-		if minuteBucket(play.At).After(bucket) {
-			break
-		}
-		latestPlay = play
-	}
-	if latestPlay == nil {
-		return 1
-	}
-	return winchance.GameRemaining(fantasy.NFLGameStatus{
-		State: fantasy.NFLGameLive, Period: latestPlay.Period, Clock: latestPlay.Clock,
-	})
-}
-
-func remainingUntil(at, latestAt time.Time) float64 {
-	if latestAt.IsZero() || at.Before(minuteBucket(latestAt)) {
-		return 1
-	}
-	return 0
+	)
 }
 
 func sideScores(starters []Starter, states []playerState) (float64, float64) {
@@ -506,21 +294,4 @@ func sameSample(a, b Sample) bool {
 		round4(a.Estimate.ProjectedA) == round4(b.Estimate.ProjectedA) &&
 		round4(a.Estimate.ProjectedB) == round4(b.Estimate.ProjectedB) &&
 		round4(a.Estimate.WinChanceA) == round4(b.Estimate.WinChanceA)
-}
-
-func minuteBucket(at time.Time) time.Time {
-	return at.UTC().Truncate(time.Minute)
-}
-
-func sortedBuckets(events map[time.Time]map[int]playerDelta) []time.Time {
-	buckets := make([]time.Time, 0, len(events))
-	for bucket := range events {
-		buckets = append(buckets, bucket)
-	}
-	sort.Slice(buckets, func(i, j int) bool { return buckets[i].Before(buckets[j]) })
-	return buckets
-}
-
-func round4(value float64) float64 {
-	return math.Round(value*10000) / 10000
 }
