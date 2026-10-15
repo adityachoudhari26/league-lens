@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 )
 
@@ -13,6 +14,11 @@ type importOptions struct {
 
 func parseImportOptions(args []string, errOut io.Writer) (importOptions, error) {
 	var options importOptions
+	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
+		fmt.Fprintln(errOut, "usage: import sleeper --username USER --league-id ID [--owner-email EMAIL]")
+		fmt.Fprintln(errOut, "       import espn --league-id ID --season YEAR --team-id ID [--owner-email EMAIL]")
+		return options, flag.ErrHelp
+	}
 	if len(args) == 0 || (args[0] != "sleeper" && args[0] != "espn") {
 		return options, errors.New("usage: import sleeper|espn --league-id ID [provider options]")
 	}

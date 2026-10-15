@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -21,6 +22,12 @@ func TestArguments(t *testing.T) {
 	var out bytes.Buffer
 	if err := run([]string{"sleeper", "--help"}, &out, &out); err != nil {
 		t.Fatal(err)
+	}
+	if err := run([]string{"--help"}, &out, &out); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "import sleeper --username USER") {
+		t.Fatal("missing top-level help")
 	}
 }
 
