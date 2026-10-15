@@ -34,9 +34,11 @@ type Querier interface {
 	DeleteSourceNews(ctx context.Context, source string) error
 	DeleteStaleMatchupLineupTeams(ctx context.Context, matchupID pgtype.UUID) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
+	DetachLeagueForUser(ctx context.Context, arg DetachLeagueForUserParams) (int64, error)
 	DismissAlert(ctx context.Context, arg DismissAlertParams) error
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
 	FailSync(ctx context.Context, arg FailSyncParams) (SyncRun, error)
+	FindAttachedLeagueIDForConnection(ctx context.Context, arg FindAttachedLeagueIDForConnectionParams) (pgtype.UUID, error)
 	FindPlayerByExternalID(ctx context.Context, arg FindPlayerByExternalIDParams) (Player, error)
 	FindProviderConnection(ctx context.Context, arg FindProviderConnectionParams) (Connection, error)
 	GetConnectionForUser(ctx context.Context, arg GetConnectionForUserParams) (Connection, error)
@@ -45,7 +47,10 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
 	InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error
+	IsLeagueAttachedForUser(ctx context.Context, arg IsLeagueAttachedForUserParams) (bool, error)
 	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
+	ListConnectionLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionLeaguesForUserRow, error)
+	ListConnectionsForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionsForUserRow, error)
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
 	ListDismissedAlerts(ctx context.Context, arg ListDismissedAlertsParams) ([]string, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
@@ -66,6 +71,7 @@ type Querier interface {
 	// Serialize the brief write phase, including shared identity creation, across importers.
 	// No network calls run while this transaction lock is held.
 	LockImportWrites(ctx context.Context) error
+	MarkConnectionNeedsReconnect(ctx context.Context, id pgtype.UUID) error
 	MarkLeagueSynced(ctx context.Context, arg MarkLeagueSyncedParams) error
 	// Injury and NFL team are current: they come from the team's latest observed
 	// snapshot, so players dropped since then have neither.
@@ -87,6 +93,7 @@ type Querier interface {
 	PlayerCardPlayer(ctx context.Context, playerID pgtype.UUID) (PlayerCardPlayerRow, error)
 	RestoreAlert(ctx context.Context, arg RestoreAlertParams) error
 	SelectUserTeam(ctx context.Context, arg SelectUserTeamParams) error
+	SetConnectionStatusForUser(ctx context.Context, arg SetConnectionStatusForUserParams) (int64, error)
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)
 	UpdateMappedPlayerName(ctx context.Context, arg UpdateMappedPlayerNameParams) error

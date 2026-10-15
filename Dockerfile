@@ -26,6 +26,7 @@ COPY --from=build /out/server /out/import /out/migrate /usr/local/bin/
 COPY --from=build --chown=65532:65532 /data /data
 
 ENV HTTP_ADDR=0.0.0.0:8080 \
+    DATA_DIR=/data \
     XDG_CACHE_HOME=/data/cache \
     MIGRATE_ON_START=true
 

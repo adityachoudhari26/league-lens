@@ -149,6 +149,9 @@ func TestHTTPFailuresDoNotLeakSecrets(t *testing.T) {
 			if err == nil || strings.Contains(err.Error(), "private-token") || reached {
 				t.Fatalf("unsafe failure: %v, redirected %v", err, reached)
 			}
+			if code == http.StatusUnauthorized && !errors.Is(err, ErrUnauthorized) {
+				t.Fatalf("401 error does not wrap ErrUnauthorized: %v", err)
+			}
 		})
 	}
 }

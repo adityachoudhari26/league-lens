@@ -43,3 +43,11 @@ type ConnectionSelection struct {
 	League          LeagueRef
 	SelectedTeamIDs []string
 }
+
+// DiscoveredLeague is a provider account's league and owned team selection.
+type DiscoveredLeague struct {
+	Ref      LeagueRef
+	Name     string
+	TeamID   string
+	TeamName string
+}

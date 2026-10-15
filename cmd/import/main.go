@@ -13,7 +13,9 @@ import (
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/config"
+	"github.com/adityachoudhari26/league-lens/internal/connections"
 	"github.com/adityachoudhari26/league-lens/internal/database"
+	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
 )
@@ -57,7 +59,11 @@ func run(args []string, out, errOut io.Writer) error {
 	if err != nil {
 		fmt.Fprintln(errOut, "Player mapping unavailable; retaining provider identities for this import.")
 	}
-	source, accountID, selection, err := prepareSource(ctx, options)
+	source, accountID, selection, err := connections.PrepareSource(ctx, connections.ImportSpec{
+		Provider: options.provider, LeagueID: options.leagueID,
+		Season: options.season, TeamID: options.teamID, Username: options.username,
+		ESPN: espn.Credentials{S2: os.Getenv("ESPN_S2"), SWID: os.Getenv("ESPN_SWID")},
+	})
 	if err != nil {
 		return err
 	}

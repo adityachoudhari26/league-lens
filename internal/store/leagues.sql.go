@@ -13,7 +13,9 @@ import (
 
 const attachLeague = `-- name: AttachLeague :exec
 INSERT INTO connection_leagues (connection_id,league_season_id,user_id,provider)
-VALUES ($1,$2,$3,$4) ON CONFLICT (connection_id,league_season_id) DO NOTHING
+VALUES ($1,$2,$3,$4)
+ON CONFLICT (connection_id,league_season_id)
+DO UPDATE SET detached_at=NULL
 `
 
 type AttachLeagueParams struct {
@@ -33,11 +35,31 @@ func (q *Queries) AttachLeague(ctx context.Context, arg AttachLeagueParams) erro
 	return err
 }
 
+const detachLeagueForUser = `-- name: DetachLeagueForUser :execrows
+UPDATE connection_leagues cl SET detached_at=now()
+FROM connections c
+WHERE cl.connection_id=c.id AND cl.league_season_id=$2
+AND cl.user_id=$1 AND c.user_id=$1 AND cl.detached_at IS NULL
+`
+
+type DetachLeagueForUserParams struct {
+	UserID         pgtype.UUID
+	LeagueSeasonID pgtype.UUID
+}
+
+func (q *Queries) DetachLeagueForUser(ctx context.Context, arg DetachLeagueForUserParams) (int64, error) {
+	result, err := q.db.Exec(ctx, detachLeagueForUser, arg.UserID, arg.LeagueSeasonID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const listLeaguesForUser = `-- name: ListLeaguesForUser :many
 SELECT DISTINCT l.id, l.provider, l.external_league_id, l.season, l.name, l.settings_json, l.created_at, l.updated_at FROM league_seasons l
 JOIN connection_leagues cl ON cl.league_season_id=l.id
 JOIN connections c ON c.id=cl.connection_id
-WHERE cl.user_id=$1 AND c.status<>'disabled'
+WHERE cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ORDER BY l.season DESC,l.name
 `
 
@@ -74,7 +96,7 @@ const listTeamsForUser = `-- name: ListTeamsForUser :many
 SELECT t.id, t.league_season_id, t.external_team_id, t.name, t.created_at, t.updated_at, t.record_json, t.rank FROM teams t WHERE t.league_season_id=$2
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=t.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
+ WHERE cl.league_season_id=t.league_season_id AND cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ) ORDER BY t.name
 `
 

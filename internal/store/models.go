@@ -32,6 +32,7 @@ type ConnectionLeague struct {
 	Provider             string
 	LastSuccessfulSyncAt pgtype.Timestamptz
 	CreatedAt            pgtype.Timestamptz
+	DetachedAt           pgtype.Timestamptz
 }
 
 type LeagueSeason struct {

@@ -76,17 +76,19 @@ remain stable even though the API and frontend work happened before owner setup.
 - [ ] **5. Add owner setup and credential protection.**
   - [x] Local owner selection through `LOCAL_OWNER_EMAIL`; this is an identity label, not authentication.
   - [ ] Review and implement protected owner setup, authentication, and server-side sessions with closed registration.
-  - [ ] Add encrypted provider credential storage and document encryption-key backup requirements. Proposed in [league connections](docs/designs/league-connections.md#credential-storage): AES-256-GCM with a generated key file; a lost key only requires reconnecting ESPN.
+  - [x] Add encrypted provider credential storage. ESPN cookies use AES-256-GCM with a generated key file; a lost key only requires reconnecting ESPN ([design](docs/designs/league-connections.md#credential-storage)).
   - [ ] Verify unauthorized access is rejected and setup cannot be claimed without its token before supporting public exposure.
 
 - [ ] **6. Complete ESPN connection setup.**
   - [x] Shared-provider Go adapter and CLI import: full league, rosters, records, encountered players, and available current-season matchup/roster history.
   - [x] Fixture coverage for normalization, invalid authentication, historical weeks, missing data, and multiweek scores; failures preserve previously imported data.
-  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states. Proposed: bookmarklet or pasted cookies, league discovery through ESPN's fan API, and Reconnect when cookies are rejected ([design](docs/designs/league-connections.md#connecting-leagues)).
+  - [x] Connect backend: ESPN fan-API league discovery, encrypted account cookies, owner-scoped import/removal, and sync using stored credentials.
+  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states. Proposed: bookmarklet or pasted cookies and Reconnect when cookies are rejected ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **7. Complete Sleeper connection setup.**
   - [x] Shared-provider Go adapter and CLI import using a username and league ID, including team selection and available current-season history.
   - [x] Fixture coverage for mappings and missing data; public username lookup is selection, not proof of ownership.
+  - [x] Connect backend username lookup, league discovery, and import through the shared importer.
   - [ ] Add in-app username lookup and league/team selection ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **8. Build the combined dashboard.**
@@ -164,15 +166,15 @@ identities. Earlier stored seasons are preserved.
 
 The overview reads saved database observations. Opening it syncs leagues whose
 data is older than 15 minutes in the background, and **Refresh** syncs every
-league from ESPN and Sleeper through the shared importer. The first import of a
-league still runs through the CLI; syncs refresh leagues that are already
-imported. The server reads `ESPN_S2` and `ESPN_SWID` from its environment, the
-same as the CLI, until encrypted connection credentials exist. Scheduled sync
-without an open browser (River) is next. News and upcoming bye checks show
-unavailable coverage; Roster, Matchups, and Standings pages remain placeholders.
-Authentication, in-app connection setup, scheduled sync, and AI are not
-implemented. The local Docker image is built on the machine and is not published;
-HTTPS and public deployment are not supported.
+attached league through the shared importer. ESPN credentials are encrypted per
+connection for sync; `ESPN_S2` and `ESPN_SWID` remain a fallback for existing
+environment-based imports. The connection backend supports ESPN and Sleeper
+discovery, import, and league removal; the in-app connection UI is next.
+Scheduled sync without an open browser (River) is also pending. News and
+upcoming bye checks show unavailable coverage; Roster, Matchups, and Standings
+pages remain placeholders. Authentication and AI are not implemented. The
+local Docker image is built on the machine and is not published; HTTPS and public
+deployment are not supported.
 
 Local credentials and settings belong in ignored environment files, which are
 excluded from Docker build contexts. Never commit them or include real

@@ -2,10 +2,12 @@ package leaguesync
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/news"
+	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 )
 
@@ -16,10 +18,16 @@ type SourceFactory interface {
 	NewsSource() news.Source
 }
 
-// ProviderSources builds live ESPN and Sleeper clients. ESPN cookies come from
-// the server environment until encrypted connection credentials exist.
+// ProviderSources builds live ESPN and Sleeper clients, preferring saved
+// encrypted ESPN cookies and falling back to the server environment.
 type ProviderSources struct {
 	ESPN espn.Credentials
+	Box  *secrets.Box
+}
+
+type encryptedESPNCredentials struct {
+	S2   string `json:"s2"`
+	SWID string `json:"swid"`
 }
 
 // setupError is a stable, credential-free failure code raised before an import starts.
@@ -51,11 +59,26 @@ func (ProviderSources) NewsSource() news.Source { return espn.NewsSource{} }
 // espnSource refuses cookies for a different ESPN account than the one that
 // imported the league, so one account's view never overwrites another's.
 func (p ProviderSources) espnSource(target Target) (fantasy.Provider, error) {
-	if p.ESPN.S2 == "" || p.ESPN.SWID == "" {
+	credentials := p.ESPN
+	if len(target.EncryptedCredentials) > 0 {
+		if p.Box == nil {
+			return nil, setupError("espn_credentials_unavailable")
+		}
+		plaintext, err := p.Box.Open(target.EncryptedCredentials, target.ConnectionID.Bytes[:])
+		if err != nil {
+			return nil, setupError("espn_credentials_unavailable")
+		}
+		var stored encryptedESPNCredentials
+		if json.Unmarshal(plaintext, &stored) != nil || stored.S2 == "" || stored.SWID == "" {
+			return nil, setupError("espn_credentials_unavailable")
+		}
+		credentials = espn.Credentials{S2: stored.S2, SWID: stored.SWID}
+	}
+	if credentials.S2 == "" || credentials.SWID == "" {
 		return nil, setupError("espn_credentials_missing")
 	}
 
-	client := espn.NewClient(nil, p.ESPN, target.Selection.League.Season)
+	client := espn.NewClient(nil, credentials, target.Selection.League.Season)
 	if client.AccountID() != target.ExternalAccountID {
 		return nil, setupError("espn_account_mismatch")
 	}

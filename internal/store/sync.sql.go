@@ -63,6 +63,8 @@ func (q *Queries) FailSync(ctx context.Context, arg FailSyncParams) (SyncRun, er
 const listSyncRunsForUser = `-- name: ListSyncRunsForUser :many
 SELECT s.id, s.connection_id, s.league_season_id, s.kind, s.status, s.requested_period, s.started_at, s.completed_at, s.error_code FROM sync_runs s
 JOIN connections c ON c.id=s.connection_id
+JOIN connection_leagues cl ON cl.connection_id=s.connection_id
+ AND cl.league_season_id=s.league_season_id AND cl.detached_at IS NULL
 WHERE c.user_id=$1 AND s.league_season_id=$2
 ORDER BY s.started_at DESC LIMIT 50
 `
@@ -102,9 +104,19 @@ func (q *Queries) ListSyncRunsForUser(ctx context.Context, arg ListSyncRunsForUs
 	return items, nil
 }
 
+const markConnectionNeedsReconnect = `-- name: MarkConnectionNeedsReconnect :exec
+UPDATE connections SET status='needs_reconnect',updated_at=now()
+WHERE id=$1
+`
+
+func (q *Queries) MarkConnectionNeedsReconnect(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, markConnectionNeedsReconnect, id)
+	return err
+}
+
 const markLeagueSynced = `-- name: MarkLeagueSynced :exec
 UPDATE connection_leagues SET last_successful_sync_at=$3
-WHERE connection_id=$1 AND league_season_id=$2
+WHERE connection_id=$1 AND league_season_id=$2 AND detached_at IS NULL
 `
 
 type MarkLeagueSyncedParams struct {

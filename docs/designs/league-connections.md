@@ -1,6 +1,6 @@
 # Installation and in-app league connections
 
-Status: Docker installation implemented; in-app league connections remain proposed.
+Status: Docker installation and the connection backend are implemented; the in-app connection UI remains pending.
 
 League Lens stays a laptop-only, self-hosted app. Installation remains
 terminal-based through Docker; connecting ESPN and Sleeper leagues moves into the
@@ -85,9 +85,9 @@ Each step is a separate pull request, approved before the next begins:
 
 1. Docker installation: image, embedded frontend, startup migrations, the `app`
    Compose service, the Host check, and installation docs (checkpoint 12).
-2. Connection backend: credential encryption, league discovery,
+2. Connection backend (implemented): credential encryption, league discovery,
    `ConnectionService` (`ConnectESPN`, `ConnectSleeper`, `ListConnections`,
    `ImportLeagues`, `RemoveLeague`), and sync using stored credentials
    (checkpoints 5, 6, and 7).
-3. Connection UI: the connect dialog, `/connect` bookmarklet page, Settings
+3. Connection UI (pending): the connect dialog, `/connect` bookmarklet page, Settings
    leagues section, Home empty state, and banner Reconnect (checkpoints 6, 7, and 8).

@@ -1,0 +1,87 @@
+syntax = "proto3";
+package leaguelens.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
+
+service ConnectionService {
+  rpc ConnectESPN(ConnectESPNRequest) returns (ConnectESPNResponse);
+  rpc ConnectSleeper(ConnectSleeperRequest) returns (ConnectSleeperResponse);
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse);
+  rpc ImportLeagues(ImportLeaguesRequest) returns (ImportLeaguesResponse);
+  rpc RemoveLeague(RemoveLeagueRequest) returns (RemoveLeagueResponse);
+}
+
+enum ConnectionStatus {
+  CONNECTION_STATUS_UNSPECIFIED = 0;
+  CONNECTION_STATUS_PENDING = 1;
+  CONNECTION_STATUS_ACTIVE = 2;
+  CONNECTION_STATUS_NEEDS_RECONNECT = 3;
+  CONNECTION_STATUS_DISABLED = 4;
+}
+
+message DiscoveredLeague {
+  string external_league_id = 1;
+  string name = 2;
+  int32 season = 3;
+  string team_id = 4;
+  string team_name = 5;
+  bool already_imported = 6;
+}
+message ConnectESPNRequest {
+  string s2 = 1;
+  string swid = 2;
+}
+message ConnectESPNResponse {
+  string connection_id = 1;
+  repeated DiscoveredLeague leagues = 2;
+}
+message ConnectSleeperRequest {
+  string username = 1;
+}
+message ConnectSleeperResponse {
+  string connection_id = 1;
+  repeated DiscoveredLeague leagues = 2;
+}
+message ListConnectionsRequest {}
+message ConnectedLeague {
+  string league_id = 1;
+  string external_league_id = 2;
+  string name = 3;
+  int32 season = 4;
+  google.protobuf.Timestamp last_successful_sync_at = 5;
+}
+message LeagueConnection {
+  string id = 1;
+  string provider = 2;
+  ConnectionStatus status = 3;
+  repeated ConnectedLeague leagues = 4;
+}
+message ListConnectionsResponse {
+  repeated LeagueConnection connections = 1;
+}
+message ImportPick {
+  string external_league_id = 1;
+  string team_id = 2;
+}
+message ImportLeaguesRequest {
+  string connection_id = 1;
+  repeated ImportPick picks = 2;
+}
+message ImportResult {
+  string external_league_id = 1;
+  string team_id = 2;
+  string league_id = 3;
+  bool succeeded = 4;
+  string error_code = 5;
+}
+message ImportLeaguesResponse {
+  repeated ImportResult results = 1;
+}
+message RemoveLeagueRequest {
+  string league_id = 1;
+}
+message RemoveLeagueResponse {
+  bool removed = 1;
+}

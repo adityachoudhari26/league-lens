@@ -25,7 +25,7 @@ SELECT s.* FROM team_snapshots s JOIN sync_runs r ON r.id=s.sync_run_id
 WHERE s.team_id=$2 AND s.period=$3 AND r.status='succeeded'
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
+ WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ) ORDER BY s.observed_at DESC,s.id DESC;
 
 -- name: ListSnapshotRosterForUser :many
@@ -36,7 +36,7 @@ JOIN sync_runs r ON r.id=s.sync_run_id
 WHERE e.snapshot_id=$2 AND r.status='succeeded'
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
+ WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ) ORDER BY e.slot_label,p.display_name;
 
 -- name: UpsertMatchup :one
@@ -64,5 +64,5 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8);
 SELECT m.* FROM matchups m WHERE m.league_season_id=$2 AND m.period=$3
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=m.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
+ WHERE cl.league_season_id=m.league_season_id AND cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ) ORDER BY m.external_matchup_id;
