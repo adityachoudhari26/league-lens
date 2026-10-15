@@ -29,6 +29,8 @@ type DiscoverESPNFunc func(context.Context, espn.Credentials) ([]fantasy.Discove
 type DiscoverSleeperFunc func(context.Context, string, int) (string, []fantasy.DiscoveredLeague, error)
 type NewSourceFunc func(context.Context, ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error)
 
+const importNewsTimeout = 5 * time.Second
+
 // Service manages the configured owner's provider connections and league imports.
 type Service struct {
 	DB              *database.DB
@@ -38,6 +40,8 @@ type Service struct {
 	DiscoverESPN    DiscoverESPNFunc
 	DiscoverSleeper DiscoverSleeperFunc
 	NewSource       NewSourceFunc
+	// RefreshPlayerNews runs a best-effort news refresh after imports; nil skips it.
+	RefreshPlayerNews func(context.Context)
 }
 
 func (s *Service) withDefaults() Service {
@@ -268,7 +272,23 @@ func (s *Service) ImportLeagues(ctx context.Context, request *v1.ImportLeaguesRe
 	for _, pick := range request.GetPicks() {
 		response.Results = append(response.Results, service.importPick(ctx, importerService, connection, credentials, credentialErr, pick))
 	}
+	service.refreshNewsAfterImport(ctx, response.Results)
 	return response, nil
+}
+
+// refreshNewsAfterImport updates news before a successful import response is returned.
+func (s Service) refreshNewsAfterImport(ctx context.Context, results []*v1.ImportResult) {
+	if s.RefreshPlayerNews == nil {
+		return
+	}
+	for _, result := range results {
+		if result.GetSucceeded() {
+			refreshCtx, cancel := context.WithTimeout(ctx, importNewsTimeout)
+			defer cancel()
+			s.RefreshPlayerNews(refreshCtx)
+			return
+		}
+	}
 }
 
 func (s *Service) loadCatalog(ctx context.Context) (playerids.Catalog, string) {

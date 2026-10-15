@@ -67,6 +67,7 @@ func run() error {
 	defer syncRunner.Close()
 	connectionService := &connections.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,
+		RefreshPlayerNews: syncRunner.RefreshPlayerNews,
 	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
