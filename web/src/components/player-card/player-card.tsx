@@ -224,6 +224,8 @@ function PlayerPhoto({
   )
 }
 
+// Long outlooks scroll inside a fixed-height area, so the card is sized once
+// when it opens and never grows afterwards.
 function BlurbSection({ blurb }: { blurb: PlayerBlurb }) {
   const title = blurbTitle(blurb)
   return (
@@ -233,7 +235,9 @@ function BlurbSection({ blurb }: { blurb: PlayerBlurb }) {
           {title}
         </p>
       )}
-      <p className="line-clamp-4 text-sm leading-5">{blurb.text}</p>
+      <p className="max-h-35 overflow-y-auto overscroll-contain pr-1 text-sm leading-5 [scrollbar-width:thin]">
+        {blurb.text}
+      </p>
       {blurb.url && (
         <a
           className="mt-1 inline-block text-xs font-medium text-primary underline-offset-4 hover:underline"
@@ -241,7 +245,7 @@ function BlurbSection({ blurb }: { blurb: PlayerBlurb }) {
           target="_blank"
           rel="noreferrer"
         >
-          Read more
+          Read article
         </a>
       )}
     </div>
