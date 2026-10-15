@@ -56,6 +56,17 @@ func (c *Client) AccountID() string {
 }
 
 func (c *Client) readLeague(ctx context.Context, id string, week int) (leagueResponse, error) {
+	return c.readLeagueWithViews(ctx, id, week, []string{"mSettings", "mTeam", "mRoster", "mMatchup", "mBoxscore"}, nil)
+}
+
+// readLeagueWithViews fetches one league week using the requested views and headers.
+func (c *Client) readLeagueWithViews(
+	ctx context.Context,
+	id string,
+	week int,
+	views []string,
+	headers http.Header,
+) (leagueResponse, error) {
 	var result leagueResponse
 	leagueID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil || leagueID == 0 || c.season < 1900 || c.season > 2200 {
@@ -64,7 +75,10 @@ func (c *Client) readLeague(ctx context.Context, id string, week int) (leagueRes
 	if c.credentials.S2 == "" || c.credentials.SWID == "" {
 		return result, fmt.Errorf("ESPN_S2 and ESPN_SWID are required")
 	}
-	query := url.Values{"view": {"mSettings", "mTeam", "mRoster", "mMatchup", "mBoxscore"}}
+	query := url.Values{}
+	for _, view := range views {
+		query.Add("view", view)
+	}
 	if week > 0 {
 		query.Set("scoringPeriodId", strconv.Itoa(week))
 	}
@@ -75,6 +89,11 @@ func (c *Client) readLeague(ctx context.Context, id string, week int) (leagueRes
 	}
 	request.AddCookie(&http.Cookie{Name: "espn_s2", Value: c.credentials.S2})
 	request.AddCookie(&http.Cookie{Name: "SWID", Value: c.credentials.SWID})
+	for name, values := range headers {
+		for _, value := range values {
+			request.Header.Add(name, value)
+		}
+	}
 	if err := c.fetchJSON(request, &result); err != nil {
 		return result, err
 	}
