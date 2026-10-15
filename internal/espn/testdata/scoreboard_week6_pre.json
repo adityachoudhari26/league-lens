@@ -1,0 +1,445 @@
+{
+  "season": {
+    "year": 2026,
+    "type": 2
+  },
+  "week": {
+    "number": 6
+  },
+  "events": [
+    {
+      "id": "401872995",
+      "date": "2026-10-16T00:15Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 7
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 26
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872996",
+      "date": "2026-10-18T13:30Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 30
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 34
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872999",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 1
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872997",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 5
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 33
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873003",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 11
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 10
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873001",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 17
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 20
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873000",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 19
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 18
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872998",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 21
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 29
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873002",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 27
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 23
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873004",
+      "date": "2026-10-18T20:05Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 14
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 22
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873006",
+      "date": "2026-10-18T20:25Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 12
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 24
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873005",
+      "date": "2026-10-18T20:25Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 13
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 2
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873007",
+      "date": "2026-10-19T00:20Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 9
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873008",
+      "date": "2026-10-20T00:15Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 25
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 28
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

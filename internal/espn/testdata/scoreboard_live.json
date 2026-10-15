@@ -1,0 +1,167 @@
+{
+  "season": {
+    "year": 2026,
+    "type": 2
+  },
+  "week": {
+    "number": 6
+  },
+  "events": [
+    {
+      "id": "401872995",
+      "date": "2026-10-16T00:15Z",
+      "status": {
+        "clock": 462,
+        "period": 3,
+        "type": {
+          "name": "STATUS_IN_PROGRESS",
+          "state": "in",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 7
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 26
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872996",
+      "date": "2026-10-18T13:30Z",
+      "status": {
+        "clock": 0,
+        "period": 2,
+        "type": {
+          "name": "STATUS_HALFTIME",
+          "state": "in",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 30
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 34
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872999",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_POSTPONED",
+          "state": "post",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 1
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872997",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 5
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 99999
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873003",
+      "date": "2026-10-18T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "name": "STATUS_WEIRD",
+          "state": "weird",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": 11
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": 10
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "_note": "Event statuses and one team ID are edited for parser coverage."
+}
