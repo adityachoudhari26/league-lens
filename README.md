@@ -2,6 +2,38 @@
 
 An open-source, self-hosted fantasy football dashboard for ESPN and Sleeper, with optional AI powered by your own credentials. The core dashboard should work without an AI subscription or mandatory paid data service. Yahoo is deferred.
 
+## Install with Docker
+
+Install Docker Desktop on Windows or macOS, or OrbStack on macOS. Clone or
+download this repository, then open a terminal in the checkout:
+
+```sh
+docker compose up -d
+```
+
+The first run builds the app image locally and may take a few minutes. Open
+`http://league-lens.localhost` in Chrome, Edge, or Firefox. Safari support is
+unverified; use `http://localhost` in Safari instead. If port 80 is already in
+use, put `LEAGUE_LENS_PORT=8080` in a `.env` file next to `compose.yaml`. Then
+open `http://league-lens.localhost:8080` in Chrome, Edge, or Firefox, or
+`http://localhost:8080` in Safari.
+
+Until the in-app league connection flow ships, import a Sleeper league with:
+
+```sh
+docker compose exec app import sleeper --username YOUR_USERNAME --league-id YOUR_LEAGUE_ID
+```
+
+For ESPN, put `ESPN_S2` and `ESPN_SWID` in the same `.env` file, then run:
+
+```sh
+docker compose exec app import espn --league-id YOUR_LEAGUE_ID --season YEAR --team-id TEAM_ID
+```
+
+Update the app with `git pull && docker compose up -d --build`. Stop it with
+`docker compose stop`; the named volumes retain your data. `docker compose down
+-v` deletes all saved data.
+
 ## How we'll work
 
 We will build one checkpoint at a time. After each checkpoint, stop, show what changed, report the checks performed and any limitations, and wait for your approval before starting the next checkpoint. Approval applies only to the next checkpoint, not the entire roadmap.
@@ -23,7 +55,7 @@ This README is the progress tracker. Check an item only when its acceptance crit
 | Database | PostgreSQL, pgx, sqlc |
 | Database migrations | Goose |
 | Background jobs (planned) | River open-source core, backed by Postgres |
-| Packaging (planned) | Production Docker Compose; Go serves the built frontend |
+| Packaging (local) | Docker Compose; Go serves the built frontend |
 | AI (deferred) | OpenAI initially, behind a provider interface |
 
 Node is used for frontend development and builds. The production application runs in Go. Start with one application process and Postgres; split out a worker only when needed. Authentication will live in the Go backend; its implementation will be reviewed before that checkpoint.
@@ -44,18 +76,18 @@ remain stable even though the API and frontend work happened before owner setup.
 - [ ] **5. Add owner setup and credential protection.**
   - [x] Local owner selection through `LOCAL_OWNER_EMAIL`; this is an identity label, not authentication.
   - [ ] Review and implement protected owner setup, authentication, and server-side sessions with closed registration.
-  - [ ] Add encrypted provider credential storage and document encryption-key backup requirements.
+  - [ ] Add encrypted provider credential storage and document encryption-key backup requirements. Proposed in [league connections](docs/designs/league-connections.md#credential-storage): AES-256-GCM with a generated key file; a lost key only requires reconnecting ESPN.
   - [ ] Verify unauthorized access is rejected and setup cannot be claimed without its token before supporting public exposure.
 
 - [ ] **6. Complete ESPN connection setup.**
   - [x] Shared-provider Go adapter and CLI import: full league, rosters, records, encountered players, and available current-season matchup/roster history.
   - [x] Fixture coverage for normalization, invalid authentication, historical weeks, missing data, and multiweek scores; failures preserve previously imported data.
-  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states.
+  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states. Proposed: bookmarklet or pasted cookies, league discovery through ESPN's fan API, and Reconnect when cookies are rejected ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **7. Complete Sleeper connection setup.**
   - [x] Shared-provider Go adapter and CLI import using a username and league ID, including team selection and available current-season history.
   - [x] Fixture coverage for mappings and missing data; public username lookup is selection, not proof of ownership.
-  - [ ] Add in-app username lookup and league/team selection.
+  - [ ] Add in-app username lookup and league/team selection ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **8. Build the combined dashboard.**
   - [x] Responsive shell, collapsible navigation, and persistent Light/Dark/System appearance.
@@ -65,6 +97,7 @@ remain stable even though the API and frontend work happened before owner setup.
   - [x] Exact cross-provider player mapping with provider-ID fallback; only encountered players are stored, and uncertain identities are not joined by name.
   - [ ] Build Roster, Matchups, and Standings pages one at a time, with league selection where useful.
   - [ ] Show connection health and stale-data state. (Refresh now runs provider sync; see checkpoint 9.)
+  - [ ] Replace the empty overview with a Connect leagues entry point, and manage connections in Settings.
 
 - [ ] **9. Make synchronization automatic.** In progress: on-demand sync is implemented; scheduling remains.
   - [x] Reuse the import service behind a server-side sync operation (`SyncService`); keep the CLI as a development tool.
@@ -87,8 +120,8 @@ remain stable even though the API and frontend work happened before owner setup.
 
 - [ ] **12. Package and verify self-hosting.**
   - [x] Local Postgres Compose service and documented development commands.
-  - [ ] Production image and routing for the built frontend and Connect API.
-  - [ ] Installation, migrations, upgrades, persistent volumes, and backup/restore documentation.
+  - [x] Local Docker image and routing: `docker compose up` builds the image locally and serves the embedded frontend at `http://league-lens.localhost`, with Connect under `/api`, opt-in startup migrations, and a localhost-only Host check ([design](docs/designs/league-connections.md#installation)).
+  - [ ] Backup/restore documentation and restore verification.
   - [ ] Verify a clean installation and restore; document HTTPS and complete owner protection before public exposure.
 
 - [ ] **13. Prepare an open-source release.**
@@ -113,8 +146,8 @@ db/                   SQL queries and migrations
 internal/store/       Generated sqlc query bindings
 internal/database/    Pool ownership and transaction boundary
 docs/                 Approved designs and implementation notes
-compose.yaml          Local development Postgres
-Dockerfile            Planned production packaging (not implemented)
+compose.yaml          Local Postgres and app services
+Dockerfile            Multi-stage local app image
 ```
 
 ## Current state
@@ -137,13 +170,15 @@ imported. The server reads `ESPN_S2` and `ESPN_SWID` from its environment, the
 same as the CLI, until encrypted connection credentials exist. Scheduled sync
 without an open browser (River) is next. News and upcoming bye checks show
 unavailable coverage; Roster, Matchups, and Standings pages remain placeholders.
-Authentication, in-app connection setup, scheduled sync, production packaging, and AI
-are not implemented.
+Authentication, in-app connection setup, scheduled sync, and AI are not
+implemented. The local Docker image is built on the machine and is not published;
+HTTPS and public deployment are not supported.
 
-Credentials live in ignored `.env.local` and are excluded from Docker build
-contexts. Never commit the file or include real credentials or private league
-data in examples and fixtures. The API uses a configured local owner rather than
-login sessions and should remain bound to localhost.
+Local credentials and settings belong in ignored environment files, which are
+excluded from Docker build contexts. Never commit them or include real
+credentials or private league data in examples and fixtures. The API uses a
+configured local owner rather than login sessions and should remain bound to
+localhost.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and checks. Work on
 one active branch/PR at a time; the roadmap does not authorize starting every
@@ -409,8 +444,9 @@ bindings. Run `just gen-web` for the frontend TypeScript contracts.
 The overview reads the four owner-scoped section endpoints using generated
 Connect TypeScript contracts and TanStack Query. Vite proxies `/api` to the local
 Go server at `127.0.0.1:8080`; use `just dev` to run both. `just dev-web` alone
-shows per-section errors if the API is unavailable. A deployed server/reverse
-proxy will also need to route `/api` to Connect; production packaging is deferred.
+shows per-section errors if the API is unavailable. The local Docker image
+embeds and serves the app on localhost; public deployment and release artifacts
+remain deferred. Any future reverse proxy must route `/api` to Connect.
 
 Matchup scores are imported observations, not a live feed. Each card displays
 its fetch timestamp. **Refresh** starts a provider sync; a status line shows

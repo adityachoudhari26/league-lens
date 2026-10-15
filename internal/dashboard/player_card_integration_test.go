@@ -37,9 +37,9 @@ func (f *fakeProfiles) Profile(_ context.Context, player playerprofile.Player) (
 
 func playerCardClient(t *testing.T, db *database.DB, owner string, profiles playerprofile.Source) leaguelensv1connect.DashboardServiceClient {
 	t.Helper()
-	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, profiles), nil))
+	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, profiles), nil, nil))
 	t.Cleanup(server.Close)
-	return leaguelensv1connect.NewDashboardServiceClient(connect.NewClient(connecthttp.NewTransport(server.Client(), server.URL, connecthttp.WithProtoJSON())))
+	return leaguelensv1connect.NewDashboardServiceClient(connect.NewClient(connecthttp.NewTransport(server.Client(), server.URL+"/api", connecthttp.WithProtoJSON())))
 }
 
 func getPlayerCard(t *testing.T, client leaguelensv1connect.DashboardServiceClient, playerID string) *v1.PlayerCard {

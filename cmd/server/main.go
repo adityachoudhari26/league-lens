@@ -10,6 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
+
+	"github.com/adityachoudhari26/league-lens/db"
 	"github.com/adityachoudhari26/league-lens/internal/config"
 	"github.com/adityachoudhari26/league-lens/internal/dashboard"
 	"github.com/adityachoudhari26/league-lens/internal/database"
@@ -17,6 +21,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/httpserver"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
+	"github.com/adityachoudhari26/league-lens/web"
 )
 
 func main() {
@@ -33,6 +38,11 @@ func run() error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	if cfg.MigrateOnStart {
+		if err := migrateOnStart(ctx, cfg.DatabaseURL); err != nil {
+			return err
+		}
+	}
 	data, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return errors.New("could not configure database pool; check DATABASE_URL")
@@ -42,11 +52,12 @@ func run() error {
 	defer syncRunner.Close()
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
-		Handler: httpserver.NewHandler(
+		Handler: httpserver.RequireLocalHost(httpserver.NewHandler(
 			data.Ping,
 			dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now())),
 			leaguesync.NewHandler(syncRunner),
-		),
+			web.Dist(),
+		)),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
 		WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
@@ -68,6 +79,25 @@ func run() error {
 		}
 		return nil
 	}
+}
+
+// migrateOnStart applies pending migrations before the app pool opens when
+// MIGRATE_ON_START=true, as in Docker. Development keeps `just migrate`
+// explicit, and returned errors omit database credentials.
+func migrateOnStart(ctx context.Context, databaseURL string) error {
+	cfg, err := pgx.ParseConfig(databaseURL)
+	if err != nil {
+		return errors.New("invalid DATABASE_URL")
+	}
+	conn := stdlib.OpenDB(*cfg)
+	defer conn.Close()
+
+	migrationCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	if err := db.Migrate(migrationCtx, conn, "up"); err != nil {
+		return errors.New("startup migration failed; verify database availability, permissions, and migration SQL")
+	}
+	return nil
 }
 
 // newProfileSource reads player profiles for the NFL season in progress, which

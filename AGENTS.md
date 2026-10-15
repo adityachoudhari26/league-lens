@@ -19,6 +19,8 @@ Matchup projections are authorized: per-player league-scored projections stored 
 
 The player info card is authorized: a source-agnostic `playerprofile.Source` interface with an ESPN implementation over public athlete and fantasy endpoints (no cookies), fetched live each time a card opens rather than during sync and saved to a constrained `player_profiles` table (with `player_profile_stats` rows) as the fallback when a fetch fails, served by a `GetPlayerCard` RPC, and shown in a hover/tap card.
 
+Checkpoint 12 Docker installation is authorized: a multi-stage Dockerfile with the frontend embedded behind the `embedweb` build tag, the API under `/api`, a localhost-only Host check, opt-in startup migrations (`MIGRATE_ON_START`), and a Compose `app` service published on `127.0.0.1` at `http://league-lens.localhost`. Image publication remains unapproved.
+
 ## Code organization and readability
 
 - Prefer focused, modular functions that each do one recognizable thing. A helper with only four lines is worthwhile when its name expresses a meaningful operation; reuse and line count are not prerequisites for extraction.
