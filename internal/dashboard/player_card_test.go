@@ -76,14 +76,17 @@ func TestProfileParamsStoreUnknownFieldsAsNull(t *testing.T) {
 	if params.Position.String != "RB" || params.DraftPick.Int32 != 8 || params.WeeklyOutlookWeek.Int32 != 6 {
 		t.Fatalf("known fields not stored: %+v", params)
 	}
-	if value := optionalFloat64(params.PercentRostered); value == nil || *value != rostered {
+	if value, err := optionalScore(params.PercentRostered); err != nil || value == nil || *value != rostered {
 		t.Fatalf("percent rostered: got %v", value)
 	}
 }
 
 func TestPlayerCardWithoutProfileHasStoredDataOnly(t *testing.T) {
 	player := store.PlayerCardPlayerRow{DisplayName: "Falcons D/ST", EntityType: string(fantasy.PlayerTeamDefense), ProTeam: "ATL"}
-	card := playerCardMessage(player, nil, &store.NextNFLGameRow{Week: 7, Opponent: "SF"}, nil, time.Now())
+	card, err := playerCardMessage(player, nil, &store.NextNFLGameRow{Week: 7, Opponent: "SF"}, nil, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if card.PlayerKind != v1.PlayerKind_PLAYER_KIND_TEAM_DEFENSE || card.ProTeam != "ATL" || card.NextGame.GetOpponent() != "SF" {
 		t.Fatalf("stored data missing: %v", card)
 	}

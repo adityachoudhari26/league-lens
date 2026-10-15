@@ -18,7 +18,7 @@ func playerCardMessage(
 	nextGame *store.NextNFLGameRow,
 	latestNews *store.PlayerNews,
 	now time.Time,
-) *v1.PlayerCard {
+) (*v1.PlayerCard, error) {
 	card := &v1.PlayerCard{
 		PlayerId:     player.ID.String(),
 		PlayerName:   player.DisplayName,
@@ -28,14 +28,30 @@ func playerCardMessage(
 		NextGame:     nextGameMessage(nextGame),
 		Blurb:        playerBlurb(saved, nextGame, latestNews),
 	}
-	if saved != nil {
-		addProfileFields(card, saved, now)
+	if saved == nil {
+		return card, nil
 	}
-	return card
+	if err := addProfileFields(card, saved, now); err != nil {
+		return nil, err
+	}
+	return card, nil
 }
 
-func addProfileFields(card *v1.PlayerCard, saved *savedProfile, now time.Time) {
+func addProfileFields(card *v1.PlayerCard, saved *savedProfile, now time.Time) error {
 	profile := saved.profile
+	percentRostered, err := optionalScore(profile.PercentRostered)
+	if err != nil {
+		return err
+	}
+	percentStarted, err := optionalScore(profile.PercentStarted)
+	if err != nil {
+		return err
+	}
+	stats, err := statMessages(saved.stats)
+	if err != nil {
+		return err
+	}
+
 	card.Position = positionMessage(fantasy.Position(profile.Position.String))
 	card.HeadshotUrl = profile.HeadshotUrl.String
 	card.Jersey = profile.Jersey.String
@@ -45,10 +61,11 @@ func addProfileFields(card *v1.PlayerCard, saved *savedProfile, now time.Time) {
 	card.College = profile.College.String
 	card.Draft = draftMessage(profile)
 	card.PositionRank = optionalInt32(profile.PositionRank)
-	card.PercentRostered = optionalFloat64(profile.PercentRostered)
-	card.PercentStarted = optionalFloat64(profile.PercentStarted)
-	card.SeasonStats = statMessages(saved.stats)
+	card.PercentRostered = percentRostered
+	card.PercentStarted = percentStarted
+	card.SeasonStats = stats
 	card.ProfileFetchedAt = timestamp(profile.FetchedAt)
+	return nil
 }
 
 // playerBlurb picks this week's outlook, then news from the past week, then the
@@ -105,13 +122,16 @@ func draftMessage(profile store.PlayerProfile) *v1.PlayerDraft {
 	return &v1.PlayerDraft{Year: profile.DraftYear.Int32, Round: profile.DraftRound.Int32, Pick: profile.DraftPick.Int32}
 }
 
-func statMessages(stats []store.PlayerProfileStat) []*v1.PlayerStat {
+func statMessages(stats []store.PlayerProfileStat) ([]*v1.PlayerStat, error) {
 	messages := make([]*v1.PlayerStat, 0, len(stats))
 	for _, stat := range stats {
-		value, _ := stat.Value.Float64Value()
+		value, err := stat.Value.Float64Value()
+		if err != nil {
+			return nil, err
+		}
 		messages = append(messages, &v1.PlayerStat{Label: stat.Label, Value: value.Float64, Rank: optionalInt32(stat.Rank)})
 	}
-	return messages
+	return messages, nil
 }
 
 // ageOn counts whole years since birth, so a player is a year older only once
@@ -153,12 +173,4 @@ func optionalInt32(value pgtype.Int4) *int32 {
 		return nil
 	}
 	return &value.Int32
-}
-
-func optionalFloat64(value pgtype.Numeric) *float64 {
-	result, err := value.Float64Value()
-	if err != nil || !result.Valid {
-		return nil
-	}
-	return &result.Float64
 }

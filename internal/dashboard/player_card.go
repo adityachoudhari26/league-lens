@@ -40,9 +40,10 @@ func (s *Service) GetPlayerCard(ctx context.Context, request *v1.GetPlayerCardRe
 		return nil, err
 	}
 
-	s.refreshProfile(ctx, player)
+	now := time.Now()
+	s.refreshProfile(ctx, player, now)
 
-	card, err := s.readPlayerCard(ctx, player, time.Now())
+	card, err := s.readPlayerCard(ctx, player, now)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +62,7 @@ func (s *Service) readCardPlayer(ctx context.Context, playerID pgtype.UUID) (sto
 
 // refreshProfile replaces the player's saved profile with a live one. Failures
 // only log, since the card falls back to the saved profile.
-func (s *Service) refreshProfile(ctx context.Context, player store.PlayerCardPlayerRow) {
+func (s *Service) refreshProfile(ctx context.Context, player store.PlayerCardPlayerRow, now time.Time) {
 	if s.profiles == nil {
 		return
 	}
@@ -70,11 +71,13 @@ func (s *Service) refreshProfile(ctx context.Context, player store.PlayerCardPla
 		return
 	}
 	if err != nil {
-		slog.Warn("player profile fetch failed; serving the saved profile", "player_id", player.ID.String(), "source", s.profiles.Name(), "error", err)
+		slog.Warn("player profile fetch failed; serving the saved profile",
+			"player_id", player.ID.String(), "source", s.profiles.Name(), "error", err)
 		return
 	}
-	if err := s.saveProfile(ctx, player.ID, profile, time.Now()); err != nil {
-		slog.Warn("player profile save failed; serving the saved profile", "player_id", player.ID.String(), "error", err)
+	if err := s.saveProfile(ctx, player.ID, profile, now); err != nil {
+		slog.Warn("player profile save failed; serving the saved profile",
+			"player_id", player.ID.String(), "error", err)
 	}
 }
 
@@ -105,7 +108,11 @@ func (s *Service) saveProfile(ctx context.Context, playerID pgtype.UUID, profile
 func addProfileStats(ctx context.Context, q *store.Queries, playerID pgtype.UUID, stats []playerprofile.Stat) error {
 	for ordinal, stat := range stats {
 		err := q.AddPlayerProfileStat(ctx, store.AddPlayerProfileStatParams{
-			PlayerID: playerID, Ordinal: int32(ordinal), Label: stat.Label, Value: numeric(stat.Value), Rank: optionalInt4(stat.Rank),
+			PlayerID: playerID,
+			Ordinal:  int32(ordinal),
+			Label:    stat.Label,
+			Value:    numeric(stat.Value),
+			Rank:     optionalInt4(stat.Rank),
 		})
 		if err != nil {
 			return err
@@ -158,8 +165,8 @@ func (s *Service) readPlayerCard(ctx context.Context, player store.PlayerCardPla
 		if err != nil {
 			return err
 		}
-		card = playerCardMessage(player, saved, nextGame, latestNews, now)
-		return nil
+		card, err = playerCardMessage(player, saved, nextGame, latestNews, now)
+		return err
 	})
 	return card, err
 }
