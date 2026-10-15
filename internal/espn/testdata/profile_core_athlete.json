@@ -1,0 +1,21 @@
+{
+  "id": "4430807",
+  "fullName": "Bijan Robinson",
+  "height": 71.0,
+  "weight": 215.0,
+  "dateOfBirth": "2002-01-30T08:00Z",
+  "jersey": "7",
+  "headshot": {
+    "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4430807.png",
+    "alt": "Bijan Robinson"
+  },
+  "experience": {
+    "years": 4
+  },
+  "draft": {
+    "displayText": "Year: 2023 Round: 1 Pick: 8",
+    "round": 1,
+    "year": 2023,
+    "selection": 8
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "athlete": {
+    "id": "4430807",
+    "fullName": "Bijan Robinson",
+    "college": {
+      "id": "251",
+      "name": "Texas",
+      "abbrev": "TEX"
+    },
+    "statsSummary": {
+      "displayName": "2026 regular season stats",
+      "statistics": [
+        {
+          "name": "rushingAttempts",
+          "displayName": "Rushing Attempts",
+          "shortDisplayName": "Rushing Attempts",
+          "abbreviation": "CAR",
+          "value": 102.0,
+          "displayValue": "102",
+          "rank": 3,
+          "rankDisplayValue": "3rd"
+        },
+        {
+          "name": "rushingYards",
+          "displayName": "Rushing Yards",
+          "shortDisplayName": "Rush Yards",
+          "abbreviation": "YDS",
+          "value": 580.0,
+          "displayValue": "580",
+          "rank": 1,
+          "rankDisplayValue": "1st"
+        },
+        {
+          "name": "rushingTouchdowns",
+          "displayName": "Rushing Touchdowns",
+          "shortDisplayName": "Rushing Touchdowns",
+          "abbreviation": "TD",
+          "value": 4.0,
+          "displayValue": "4",
+          "rank": 8,
+          "rankDisplayValue": "Tied-8th"
+        },
+        {
+          "name": "yardsPerRushAttempt",
+          "displayName": "Yards Per Rush Attempt",
+          "shortDisplayName": "YDS/RA",
+          "abbreviation": "AVG",
+          "value": 5.685999870300293,
+          "displayValue": "5.7",
+          "rank": 3,
+          "rankDisplayValue": "3rd"
+        }
+      ]
+    }
+  }
+}

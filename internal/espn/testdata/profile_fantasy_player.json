@@ -1,0 +1,22 @@
+[
+  {
+    "id": 4430807,
+    "fullName": "Bijan Robinson",
+    "proTeamId": 1,
+    "defaultPositionId": 2,
+    "ownership": {
+      "percentOwned": 99.92,
+      "percentStarted": 99.71
+    },
+    "seasonOutlook": "Robinson enters his fourth season having finished in the top five among running backs in carries, rushing yards, touches, yards and fantasy points in each of the past two seasons.",
+    "outlooks": {
+      "outlooksByWeek": {
+        "2": "Bijan Robinson will continue to lead Atlanta's offense in a Week 2 divisional matchup against the Panthers.",
+        "3": "Bijan Robinson is expected to lead the Falcons' offense in the Week 3 matchup against the Packers, whose defense has given up 22.9 PPR fantasy points per game to running backs this season.",
+        "4": "Bijan Robinson is expected to continue being the main playmaker on the Falcons' offense in the Week 4 matchup against the Saints.",
+        "5": "Bijan Robinson is expected to continue leading Atlanta's offense during the Week 5 matchup against the Ravens.",
+        "6": "Bijan Robinson will lead Atlanta's offensive attack in the Week 6 matchup against the Bears."
+      }
+    }
+  }
+]
