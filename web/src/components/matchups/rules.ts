@@ -43,11 +43,16 @@ export function teamScore(side: MatchupLineup, status: RoundStatus) {
   return status === "Upcoming" ? undefined : side.score
 }
 
+/**
+ * Whether the owner won the round. Only finished rounds get a tone, so the
+ * header score stays neutral while a week is upcoming or in progress.
+ */
 export function ownerScoreTone(
   team: MatchupLineup,
   opponent: MatchupLineup | undefined,
   status: RoundStatus,
 ): ScoreTone | undefined {
+  if (status !== "Final") return undefined
   const mine = teamScore(team, status)
   const theirs = opponent && teamScore(opponent, status)
   if (mine === undefined || theirs === undefined) return undefined
@@ -88,4 +93,48 @@ export function gameDetail(player: LineupPlayer) {
 // Who the player is, shown before the game detail: the NFL team for now.
 export function playerInfo(player: LineupPlayer) {
   return player.proTeam
+}
+
+/**
+ * Points each side is heading for: the final score once the round is over,
+ * otherwise the projection (actuals for kicked-off starters plus projections).
+ */
+export function expectedScore(side: MatchupLineup, status: RoundStatus) {
+  if (status === "Final") return side.score
+  return side.projectedScore ?? teamScore(side, status)
+}
+
+/**
+ * The owner's share of both sides' expected points, from 0 to 1. Undefined
+ * when either side has nothing to compare yet.
+ */
+export function ownerShare(
+  team: MatchupLineup,
+  opponent: MatchupLineup,
+  status: RoundStatus,
+) {
+  const mine = expectedScore(team, status)
+  const theirs = expectedScore(opponent, status)
+  if (mine === undefined || theirs === undefined || mine + theirs <= 0)
+    return undefined
+  return mine / (mine + theirs)
+}
+
+/**
+ * Whether the owner won a lineup row. Only finished rounds get a tone, so
+ * upcoming and in-progress weeks stay neutral. Rows where either player has
+ * no points (bye, did not play) and ties have no tone.
+ */
+export function ownerRowTone(
+  status: RoundStatus,
+  mine?: LineupPlayer,
+  theirs?: LineupPlayer,
+): ScoreTone | undefined {
+  if (status !== "Final" || !mine || !theirs) return undefined
+  const minePoints = shownPoints(mine)
+  const theirPoints = shownPoints(theirs)
+  if (minePoints === undefined || theirPoints === undefined) return undefined
+  if (minePoints > theirPoints) return "winning"
+  if (minePoints < theirPoints) return "losing"
+  return undefined
 }

@@ -3,9 +3,12 @@ import { GameState, type LineupPlayer } from "@/gen/leaguelens/v1/dashboard_pb"
 import {
   gameDetail,
   injuryLabel,
+  ownerRowTone,
   playerInfo,
   shownPoints,
+  type RoundStatus,
 } from "@/components/matchups/rules"
+import { scoreToneClass } from "@/components/matchups/tones"
 
 const slotToneClass: Record<string, string> = {
   QB: "bg-rose-100 text-rose-700 dark:bg-[#3a2a2f] dark:text-[#d99aa8]",
@@ -15,6 +18,7 @@ const slotToneClass: Record<string, string> = {
   FLEX: "bg-violet-100 text-violet-700 dark:bg-[#2e2a3a] dark:text-[#b9a8d9]",
   SUPERFLEX:
     "bg-violet-100 text-violet-700 dark:bg-[#2e2a3a] dark:text-[#b9a8d9]",
+  K: "bg-lime-100 text-lime-700 dark:bg-[#2b3322] dark:text-[#b5cc8e]",
   DEF: "bg-stone-200 text-stone-700 dark:bg-[#302e2b] dark:text-[#c4bdb4]",
 }
 
@@ -29,7 +33,7 @@ function InjuryBadge({ status }: { status: string }) {
   const severe = status !== "Q"
   return (
     <span
-      className={`shrink-0 rounded px-1 text-[10px] font-semibold ${severe ? "bg-red-100 text-red-700 dark:bg-[#3a2a2b] dark:text-[#d79b97]" : "bg-amber-100 text-amber-700 dark:bg-[#332b1f] dark:text-[#d8b77b]"}`}
+      className={`shrink-0 rounded px-1 text-[10px] font-semibold ${severe ? "bg-red-100 text-red-700/80 dark:bg-[#4d3031] dark:text-[#f6a6a1]" : "bg-amber-100 text-amber-700/80 dark:bg-[#4a3b20] dark:text-[#f5d08a]"}`}
     >
       {status}
     </span>
@@ -56,11 +60,11 @@ function PlayerSubtitle({ player }: { player: LineupPlayer }) {
 function PlayerCell({
   player,
   mirrored,
-  leading,
+  toneClass,
 }: {
   player?: LineupPlayer
   mirrored?: boolean
-  leading?: boolean
+  toneClass?: string
 }) {
   if (!player) return <div />
   const injury = injuryLabel(player.injuryStatus)
@@ -79,34 +83,32 @@ function PlayerCell({
         </div>
         <PlayerSubtitle player={player} />
       </div>
-      <PlayerPoints player={player} mirrored={mirrored} leading={leading} />
+      <PlayerPoints player={player} mirrored={mirrored} toneClass={toneClass} />
     </div>
   )
 }
 
-// Before kickoff only the projection shows, in place of "—".
+// Points sit on top (0 before kickoff) with the projection underneath. A
+// tone colors the points.
 function PlayerPoints({
   player,
   mirrored,
-  leading,
+  toneClass,
 }: {
   player: LineupPlayer
   mirrored?: boolean
-  leading?: boolean
+  toneClass?: string
 }) {
-  const points = shownPoints(player)
   const projected = player.projectedPoints
   return (
     <div
       className={`w-12 shrink-0 tabular-nums ${mirrored ? "text-left" : "text-right"}`}
     >
-      {(points !== undefined || projected === undefined) && (
-        <p
-          className={`text-sm ${leading ? "font-semibold" : "text-foreground/70"}`}
-        >
-          {scoreLabel(points)}
-        </p>
-      )}
+      <p
+        className={`text-sm ${toneClass ? `font-semibold ${toneClass}` : "font-medium text-foreground"}`}
+      >
+        {scoreLabel(shownPoints(player) ?? 0)}
+      </p>
       {projected !== undefined && (
         <p className="text-[11px] text-muted-foreground">
           {scoreLabel(projected)}
@@ -132,15 +134,15 @@ function LineupRow({
   mine,
   theirs,
   hasOpponent,
+  status,
 }: {
   slot: string
   mine?: LineupPlayer
   theirs?: LineupPlayer
   hasOpponent: boolean
+  status: RoundStatus
 }) {
-  const minePoints = mine && shownPoints(mine)
-  const theirPoints = theirs && shownPoints(theirs)
-  const bothScored = minePoints !== undefined && theirPoints !== undefined
+  const tone = ownerRowTone(status, mine, theirs)
   if (!hasOpponent)
     return (
       <div className="grid grid-cols-[1fr_3rem] items-center gap-2 px-3 py-2">
@@ -150,16 +152,9 @@ function LineupRow({
     )
   return (
     <div className="grid grid-cols-[1fr_3rem_1fr] items-center gap-2 px-3 py-2">
-      <PlayerCell
-        player={mine}
-        leading={bothScored && minePoints > theirPoints}
-      />
+      <PlayerCell player={mine} toneClass={tone && scoreToneClass[tone]} />
       <SlotBadge slot={slot} />
-      <PlayerCell
-        player={theirs}
-        mirrored
-        leading={bothScored && theirPoints > minePoints}
-      />
+      <PlayerCell player={theirs} mirrored />
     </div>
   )
 }
@@ -168,10 +163,12 @@ export function Lineup({
   mine,
   theirs,
   hasOpponent,
+  status,
 }: {
   mine: LineupPlayer[]
   theirs: LineupPlayer[]
   hasOpponent: boolean
+  status: RoundStatus
 }) {
   const rows = Array.from({ length: Math.max(mine.length, theirs.length) })
   return (
@@ -183,6 +180,7 @@ export function Lineup({
           mine={mine[index]}
           theirs={theirs[index]}
           hasOpponent={hasOpponent}
+          status={status}
         />
       ))}
     </div>
