@@ -100,11 +100,18 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	zero := 0.0
 	data := fantasy.LeagueData{
 		League: league, FetchedAt: now,
-		Teams:   []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}},
-		Players: []fantasy.Player{{ExternalID: "synthetic-player", Name: "Fixture Player", Kind: fantasy.PlayerPerson}},
+		Teams: []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}},
+		Players: []fantasy.Player{
+			{ExternalID: "synthetic-player", Name: "Fixture Player", Kind: fantasy.PlayerPerson},
+			{ExternalID: "opponent-player", Name: "Opponent Fixture Player", Kind: fantasy.PlayerPerson},
+		},
 		Rosters: []fantasy.RosterSnapshot{
-			{TeamID: "1", ScoringPeriod: 1, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{PlayerID: "synthetic-player", Slot: fantasy.SlotQB}}},
-			{TeamID: "2", ScoringPeriod: 1, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now},
+			{TeamID: "1", ScoringPeriod: 1, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{
+				PlayerID: "synthetic-player", Slot: fantasy.SlotQB, ProTeam: "NE", InjuryStatus: fantasy.InjuryOut,
+			}}},
+			{TeamID: "2", ScoringPeriod: 1, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{
+				PlayerID: "opponent-player", Slot: fantasy.SlotRB, ProTeam: "BUF", InjuryStatus: fantasy.InjuryQuestionable,
+			}}},
 		},
 		Matchups: []fantasy.Matchup{{
 			ExternalID: "matchup-1", Period: 1, ScoringPeriods: []fantasy.ScoringPeriod{1},
@@ -187,6 +194,26 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	if err != nil || len(visible.Leagues) != 1 {
 		t.Fatalf("league before detach: %v, %v", visible, err)
 	}
+	matchups, err := dashboardService.GetOverviewMatchups(ctx, &v1.GetOverviewMatchupsRequest{})
+	if err != nil || len(matchups.Matchups) != 1 {
+		t.Fatalf("overview before detach: %v, %v", matchups, err)
+	}
+	newsPlayers, err := db.Queries().ListNewsPlayers(ctx, service.OwnerEmail)
+	if err != nil || len(newsPlayers) != 1 {
+		t.Fatalf("news players before detach: %v, %v", newsPlayers, err)
+	}
+	player, err := db.Queries().FindPlayerByExternalID(ctx, store.FindPlayerByExternalIDParams{
+		Provider: string(fantasy.ProviderESPN), ExternalID: "opponent-player",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cardPlayer, err := db.Queries().PlayerCardPlayer(ctx, store.PlayerCardPlayerParams{
+		ID: player.ID, UserID: owner.ID,
+	})
+	if err != nil || cardPlayer.ProTeam != "BUF" || cardPlayer.InjuryStatus != string(fantasy.InjuryQuestionable) {
+		t.Fatalf("player card before detach: %+v, %v", cardPlayer, err)
+	}
 	removed, err := service.RemoveLeague(ctx, &v1.RemoveLeagueRequest{LeagueId: imported.Results[0].LeagueId})
 	if err != nil || !removed.Removed {
 		t.Fatalf("remove result: %v, %v", removed, err)
@@ -194,6 +221,28 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	visible, err = dashboardService.ListLeagues(ctx, &v1.ListLeaguesRequest{})
 	if err != nil || len(visible.Leagues) != 0 {
 		t.Fatalf("detached league remained visible: %v, %v", visible, err)
+	}
+	matchups, err = dashboardService.GetOverviewMatchups(ctx, &v1.GetOverviewMatchupsRequest{})
+	if err != nil || len(matchups.Matchups) != 0 {
+		t.Fatalf("detached league remained in overview matchups: %v, %v", matchups, err)
+	}
+	attention, err := dashboardService.GetOverviewAttention(ctx, &v1.GetOverviewAttentionRequest{})
+	if err != nil || attention.Coverage.State != "empty" || len(attention.Alerts) != 0 {
+		t.Fatalf("detached league remained in overview attention: %v, %v", attention, err)
+	}
+	updates, err := dashboardService.GetOverviewPlayerUpdates(ctx, &v1.GetOverviewPlayerUpdatesRequest{})
+	if err != nil || updates.Coverage.State != "empty" || len(updates.Updates) != 0 {
+		t.Fatalf("detached league remained in player updates: %v, %v", updates, err)
+	}
+	newsPlayers, err = db.Queries().ListNewsPlayers(ctx, service.OwnerEmail)
+	if err != nil || len(newsPlayers) != 0 {
+		t.Fatalf("detached league remained in news player lookup: %v, %v", newsPlayers, err)
+	}
+	cardPlayer, err = db.Queries().PlayerCardPlayer(ctx, store.PlayerCardPlayerParams{
+		ID: player.ID, UserID: owner.ID,
+	})
+	if err != nil || cardPlayer.ProTeam != "" || cardPlayer.InjuryStatus != "" {
+		t.Fatalf("detached league data remained in player card: %+v, %v", cardPlayer, err)
 	}
 	rows, err = db.Queries().ListSyncTargets(ctx, owner.ID)
 	if err != nil || len(rows) != 0 {
@@ -208,6 +257,20 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	visible, err = dashboardService.ListLeagues(ctx, &v1.ListLeaguesRequest{})
 	if err != nil || len(visible.Leagues) != 1 {
 		t.Fatalf("re-import did not reattach league: %v, %v", visible, err)
+	}
+	matchups, err = dashboardService.GetOverviewMatchups(ctx, &v1.GetOverviewMatchupsRequest{})
+	if err != nil || len(matchups.Matchups) != 1 {
+		t.Fatalf("re-import did not restore overview: %v, %v", matchups, err)
+	}
+	newsPlayers, err = db.Queries().ListNewsPlayers(ctx, service.OwnerEmail)
+	if err != nil || len(newsPlayers) != 1 {
+		t.Fatalf("re-import did not restore news players: %v, %v", newsPlayers, err)
+	}
+	cardPlayer, err = db.Queries().PlayerCardPlayer(ctx, store.PlayerCardPlayerParams{
+		ID: player.ID, UserID: owner.ID,
+	})
+	if err != nil || cardPlayer.ProTeam != "BUF" || cardPlayer.InjuryStatus != string(fantasy.InjuryQuestionable) {
+		t.Fatalf("re-import did not restore player card data: %+v, %v", cardPlayer, err)
 	}
 	rows, err = db.Queries().ListSyncTargets(ctx, owner.ID)
 	if err != nil || len(rows) != 1 {

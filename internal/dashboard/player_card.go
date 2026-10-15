@@ -52,9 +52,9 @@ func (s *Service) GetPlayerCard(ctx context.Context, request *v1.GetPlayerCardRe
 
 func (s *Service) readCardPlayer(ctx context.Context, playerID pgtype.UUID) (store.PlayerCardPlayerRow, error) {
 	var player store.PlayerCardPlayerRow
-	err := s.read(ctx, func(ctx context.Context, q *store.Queries, _ pgtype.UUID) error {
+	err := s.read(ctx, func(ctx context.Context, q *store.Queries, owner pgtype.UUID) error {
 		var err error
-		player, err = q.PlayerCardPlayer(ctx, playerID)
+		player, err = q.PlayerCardPlayer(ctx, store.PlayerCardPlayerParams{ID: playerID, UserID: owner})
 		return err
 	})
 	return player, err
