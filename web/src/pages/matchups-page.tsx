@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { useNavigate, useSearch } from "@tanstack/react-router"
 import { type NavigationItem } from "@/components/layout/navigation"
 import {
   LeagueSelector,
@@ -70,10 +71,17 @@ function LeagueMatchup({
   league: League
   onSelectLeague: (leagueId: string) => void
 }) {
-  const [period, setPeriod] = useState<number>()
+  const { week } = useSearch({ from: "/matchups" })
+  const navigate = useNavigate({ from: "/matchups" })
   const periods = useQuery(matchupQueries.periods(league.id))
-  const detail = useMatchupDetail(league.id, period)
-  const shownPeriod = period ?? detail.data?.matchup?.matchupPeriod
+  const detail = useMatchupDetail(league.id, week)
+  const shownPeriod = week ?? detail.data?.matchup?.matchupPeriod
+  const onSelectWeek = (period: number) => {
+    void navigate({
+      search: { league: league.id, week: period },
+      replace: true,
+    })
+  }
   return (
     <div className="mx-auto grid w-full max-w-4xl gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -86,7 +94,7 @@ function LeagueMatchup({
           <WeekSelector
             periods={periods.data}
             period={shownPeriod}
-            onSelect={setPeriod}
+            onSelect={onSelectWeek}
           />
         ) : null}
       </div>
@@ -97,15 +105,19 @@ function LeagueMatchup({
 
 // Leagues where the owner has a selected team; the first is the default.
 function MatchupsView({ leagues }: { leagues: League[] }) {
-  const [leagueId, setLeagueId] = useState(leagues[0].id)
+  const { league: leagueId } = useSearch({ from: "/matchups" })
+  const navigate = useNavigate({ from: "/matchups" })
   const league =
     leagues.find((current) => current.id === leagueId) ?? leagues[0]
+  const onSelectLeague = (id: string) => {
+    void navigate({ search: { league: id }, replace: true })
+  }
   return (
     <LeagueMatchup
       key={league.id}
       leagues={leagues}
       league={league}
-      onSelectLeague={setLeagueId}
+      onSelectLeague={onSelectLeague}
     />
   )
 }

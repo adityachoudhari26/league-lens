@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { type OverviewMatchup } from "@/gen/leaguelens/v1/overview_pb"
 import { overviewQueries } from "@/lib/api/overview"
 import {
@@ -15,10 +16,8 @@ function MatchupCard({ matchup }: { matchup: OverviewMatchup }) {
   const opponent = matchup.isBye
     ? "Bye"
     : matchup.opponentName || "Opponent unavailable"
-  return (
-    <article
-      className={`rounded-lg border border-t-2 bg-card px-3 py-2.5 ${espn ? "border-t-rose-400 dark:border-t-[#946570]" : "border-t-violet-400 dark:border-t-[#84759f]"}`}
-    >
+  const body = (
+    <>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-medium">{team?.leagueName}</h3>
         <span
@@ -56,7 +55,18 @@ function MatchupCard({ matchup }: { matchup: OverviewMatchup }) {
           ? `Last imported ${observedTime(matchup.fetchedAt)}`
           : "No imported matchup for this scoring week."}
       </p>
-    </article>
+    </>
+  )
+  const cardClass = `rounded-lg border border-t-2 bg-card px-3 py-2.5 ${espn ? "border-t-rose-400 dark:border-t-[#946570]" : "border-t-violet-400 dark:border-t-[#84759f]"}`
+  if (!team) return <article className={cardClass}>{body}</article>
+  return (
+    <Link
+      to="/matchups"
+      search={{ league: team.leagueId, week: matchup.matchupPeriod }}
+      className={`block transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${cardClass}`}
+    >
+      {body}
+    </Link>
   )
 }
 
