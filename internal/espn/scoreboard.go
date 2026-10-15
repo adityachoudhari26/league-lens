@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
@@ -27,7 +28,7 @@ type scoreboardResponse struct {
 type scoreboardCompetitor struct {
 	HomeAway string `json:"homeAway"`
 	Team     struct {
-		ID int `json:"id"`
+		ID string `json:"id"`
 	} `json:"team"`
 }
 
@@ -75,6 +76,8 @@ func FetchNFLScoreboard(ctx context.Context, client *http.Client) (fantasy.NFLSc
 	return parseNFLScoreboard(body)
 }
 
+// parseNFLScoreboard parses ESPN's response. A missing season year or week is an error;
+// zero events is a valid empty board, and invalid games are skipped rather than guessed.
 func parseNFLScoreboard(body []byte) (fantasy.NFLScoreboard, error) {
 	var raw scoreboardResponse
 	if err := json.Unmarshal(body, &raw); err != nil {
@@ -154,7 +157,11 @@ func parseScoreboardDate(value string) (time.Time, error) {
 func scoreboardTeams(competitors []scoreboardCompetitor) (string, string, bool) {
 	var homeTeam, awayTeam string
 	for _, competitor := range competitors {
-		abbreviation := proTeamAbbreviation(competitor.Team.ID)
+		teamID, err := strconv.Atoi(competitor.Team.ID)
+		if err != nil {
+			return "", "", false
+		}
+		abbreviation := proTeamAbbreviation(teamID)
 		if abbreviation == "" {
 			return "", "", false
 		}

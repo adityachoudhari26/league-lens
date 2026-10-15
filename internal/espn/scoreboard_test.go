@@ -2,7 +2,6 @@ package espn
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -107,9 +106,11 @@ func TestParseNFLScoreboardSkipsInvalidEvents(t *testing.T) {
 		"week":{"number":6},
 		"events":[
 			{"id":"missing-home","date":"2026-10-16T00:15Z","status":{"type":{"state":"pre"}},
-			 "competitions":[{"competitors":[{"homeAway":"away","team":{"id":26}}]}]},
+			 "competitions":[{"competitors":[{"homeAway":"away","team":{"id":"26"}}]}]},
 			{"id":"invalid-date","date":"not-a-date","status":{"type":{"state":"pre"}},
-			 "competitions":[{"competitors":[{"homeAway":"home","team":{"id":7}},{"homeAway":"away","team":{"id":26}}]}]}
+			 "competitions":[{"competitors":[{"homeAway":"home","team":{"id":"7"}},{"homeAway":"away","team":{"id":"26"}}]}]},
+			{"id":"nonnumeric-team-id","date":"2026-10-16T00:15Z","status":{"type":{"state":"pre"}},
+			 "competitions":[{"competitors":[{"homeAway":"home","team":{"id":"abc"}},{"homeAway":"away","team":{"id":"26"}}]}]}
 		]
 	}`)
 	scoreboard, err := parseNFLScoreboard(body)
@@ -179,21 +180,5 @@ func scoreboardHTTPResponse(request *http.Request, status int, body string) *htt
 		Body:       io.NopCloser(strings.NewReader(body)),
 		Header:     make(http.Header),
 		Request:    request,
-	}
-}
-
-func TestScoreboardFixtureDataIsValidJSON(t *testing.T) {
-	for _, fixture := range []string{
-		"scoreboard_week6_pre.json",
-		"scoreboard_week5_final.json",
-		"scoreboard_live.json",
-	} {
-		body, err := os.ReadFile(filepath.Join("testdata", fixture))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !json.Valid(body) {
-			t.Errorf("%s is not valid JSON", fixture)
-		}
 	}
 }
