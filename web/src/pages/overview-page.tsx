@@ -14,7 +14,7 @@ export function OverviewPage() {
   }, [])
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">
             Your week at a glance
@@ -42,8 +42,8 @@ export function OverviewPage() {
         syncing={syncing}
         syncUnavailable={syncUnavailable}
       />
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <div className="grid gap-5">
+      <div className="grid items-start gap-x-8 gap-y-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <div className="grid gap-10">
           <AttentionSection />
           <UpdatesSection />
           <LookingAhead />

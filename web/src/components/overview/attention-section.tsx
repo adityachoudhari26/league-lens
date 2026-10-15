@@ -74,7 +74,7 @@ function AlertCard({
   return (
     <div className="relative">
       <details className={`group rounded-lg border ${style.card}`}>
-        <summary className="flex cursor-pointer list-none items-start gap-2.5 rounded-lg px-3 py-2.5 pr-10 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-start gap-2.5 rounded-lg px-4 py-3 pr-11 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
           <style.Icon
             aria-hidden="true"
             className={`mt-0.5 size-4 shrink-0 ${style.accent}`}
@@ -103,7 +103,7 @@ function AlertCard({
             className="mt-0.5 size-4 shrink-0 text-muted-foreground group-open:rotate-180"
           />
         </summary>
-        <div className="border-t px-3 py-2.5 text-sm leading-6 text-muted-foreground">
+        <div className="border-t px-4 py-3 text-sm leading-6 text-muted-foreground">
           <p>{alert.detail}</p>
           <p className="mt-1 text-xs">
             {alert.team?.name} · Synced {observedTime(alert.team?.observedAt)}
@@ -115,7 +115,7 @@ function AlertCard({
         type="button"
         variant="ghost"
         size="icon-sm"
-        className="absolute right-1.5 top-1.5 text-muted-foreground hover:text-foreground"
+        className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
         aria-label={`Dismiss: ${alert.title}`}
         onClick={() => onDismiss(alert)}
       >
@@ -237,7 +237,7 @@ export function AttentionSection() {
             <Button
               variant="ghost"
               size="sm"
-              className="mt-1"
+              className="mt-2"
               aria-expanded={expanded}
               onClick={() => setExpanded(!expanded)}
             >

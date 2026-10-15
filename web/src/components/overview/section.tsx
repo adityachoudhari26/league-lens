@@ -14,7 +14,7 @@ export function Section({
 }) {
   return (
     <section aria-label={title}>
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         <h2 className="text-base font-semibold tracking-tight">{title}</h2>
         {count !== undefined && (
           <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
