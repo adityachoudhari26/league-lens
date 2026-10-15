@@ -118,8 +118,7 @@ func matchupDetailMessage(
 ) (*v1.MatchupDetail, error) {
 	teamScore, opponentScore := matchup.ScoreA, matchup.ScoreB
 	opponentID := matchup.TeamBID
-	ownerIsTeamB := matchup.TeamBID == selectedTeamID
-	if ownerIsTeamB {
+	if matchup.TeamBID == selectedTeamID {
 		teamScore, opponentScore = opponentScore, teamScore
 		opponentID = matchup.TeamAID
 	}
@@ -138,10 +137,6 @@ func matchupDetailMessage(
 	}
 	if !matchup.IsBye && opponentID.Valid {
 		detail.Opponent, err = matchupLineupMessage(ctx, q, owner, opponentID, opponentScore, matchup.ID, schedule, now)
-		if err != nil {
-			return nil, err
-		}
-		detail.WinChance, err = matchupWinChanceMessage(ctx, q, owner, matchup.ID, ownerIsTeamB)
 		if err != nil {
 			return nil, err
 		}

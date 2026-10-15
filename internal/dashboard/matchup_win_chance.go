@@ -12,6 +12,37 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
+// GetMatchupWinChance returns the owner's saved win-chance samples and classified key moments.
+func (s *Service) GetMatchupWinChance(
+	ctx context.Context,
+	request *v1.GetMatchupWinChanceRequest,
+) (*v1.GetMatchupWinChanceResponse, error) {
+	matchupID, err := parseID(request.MatchupId)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &v1.GetMatchupWinChanceResponse{}
+	err = s.read(ctx, func(ctx context.Context, q *store.Queries, owner pgtype.UUID) error {
+		matchup, err := q.MatchupWinChanceOwnerMatchup(ctx, store.MatchupWinChanceOwnerMatchupParams{
+			MatchupID: matchupID,
+			UserID:    owner,
+		})
+		if err != nil {
+			return err
+		}
+		if matchup.IsBye {
+			return nil
+		}
+		response.WinChance, err = matchupWinChanceMessage(ctx, q, owner, matchup.ID, matchup.OwnerIsTeamB)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
 // matchupWinChanceMessage loads a matchup's saved samples and classified starter moments.
 func matchupWinChanceMessage(
 	ctx context.Context,

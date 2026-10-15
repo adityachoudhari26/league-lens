@@ -76,3 +76,13 @@ AND EXISTS (
   AND cl.detached_at IS NULL AND c2.status<>'disabled'
 )
 ORDER BY c.observed_at,c.team_id,c.player_id;
+
+-- name: MatchupWinChanceOwnerMatchup :one
+-- The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
+SELECT m.id,m.is_bye,coalesce(m.team_b_id = ut.team_id,false)::boolean AS owner_is_team_b
+FROM matchups m
+JOIN user_teams ut ON ut.league_season_id=m.league_season_id AND (ut.team_id=m.team_a_id OR ut.team_id=m.team_b_id)
+JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
+JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
+ AND cl.league_season_id=ut.league_season_id AND cl.user_id=ut.user_id AND cl.detached_at IS NULL
+WHERE m.id = @matchup_id AND ut.user_id = @user_id;

@@ -93,6 +93,8 @@ type Querier interface {
 	// matching OverviewTeamMatchup.
 	MatchupDetailRound(ctx context.Context, arg MatchupDetailRoundParams) (Matchup, error)
 	MatchupDetailWinChanceSamples(ctx context.Context, arg MatchupDetailWinChanceSamplesParams) ([]MatchupDetailWinChanceSamplesRow, error)
+	// The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
+	MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupWinChanceOwnerMatchupParams) (MatchupWinChanceOwnerMatchupRow, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)
 	NextNFLGame(ctx context.Context, arg NextNFLGameParams) (NextNFLGameRow, error)
 	// Match the latest observed scoring week, not the greatest (possibly future) round.

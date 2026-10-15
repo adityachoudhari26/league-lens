@@ -476,17 +476,6 @@ func TestMatchupDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertDefaultMatchupDetail(t, detail.Matchup)
-	if detail.Matchup.WinChance != nil {
-		t.Fatalf("win chance without saved samples or moments = %v, want nil", detail.Matchup.WinChance)
-	}
-
-	firstSampleAt := now.Truncate(time.Microsecond).Add(-2 * time.Minute)
-	insertMatchupWinChanceFixture(t, db, detail.Matchup, firstSampleAt)
-	detail, err = client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertMatchupWinChance(t, detail.Matchup, firstSampleAt)
 
 	period := int32(1)
 	firstPeriod, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
@@ -494,9 +483,6 @@ func TestMatchupDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertMatchupWithoutSchedule(t, firstPeriod.Matchup)
-	if firstPeriod.Matchup.WinChance != nil {
-		t.Fatalf("period one win chance = %v, want nil", firstPeriod.Matchup.WinChance)
-	}
 
 	period = 3
 	bye, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
@@ -504,9 +490,6 @@ func TestMatchupDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertByeMatchupDetail(t, bye.Matchup)
-	if bye.Matchup.WinChance != nil {
-		t.Fatalf("bye win chance = %v, want nil", bye.Matchup.WinChance)
-	}
 
 	period = 5
 	missing, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
@@ -515,6 +498,82 @@ func TestMatchupDetail(t *testing.T) {
 	}
 
 	assertMatchupDetailAccessErrors(t, db, client, leagueSeasonID)
+}
+
+func TestMatchupWinChance(t *testing.T) {
+	db := openDatabase(t)
+	ctx := context.Background()
+	leagueSeasonID := importMatchupDetailFixture(t, db)
+	now := time.Now().UTC()
+	addMatchupDetailSchedule(t, db, now)
+
+	client := clientFor(t, db, "matchup-owner@test")
+	detail, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertDefaultMatchupDetail(t, detail.Matchup)
+	matchupID := detail.Matchup.Id
+	ownerTeamID := detail.Matchup.Team.TeamId
+
+	chance, err := client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: matchupID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if chance.WinChance != nil {
+		t.Fatalf("win chance without saved samples or moments = %v, want nil", chance.WinChance)
+	}
+
+	firstSampleAt := now.Truncate(time.Microsecond).Add(-2 * time.Minute)
+	insertMatchupWinChanceFixture(t, db, detail.Matchup, firstSampleAt)
+	chance, err = client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: matchupID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertMatchupWinChance(t, chance.WinChance, ownerTeamID, firstSampleAt)
+
+	period := int32(1)
+	firstPeriod, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{
+		LeagueSeasonId: leagueSeasonID,
+		MatchupPeriod:  &period,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstPeriodChance, err := client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: firstPeriod.Matchup.Id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if firstPeriodChance.WinChance != nil {
+		t.Fatalf("period one win chance = %v, want nil", firstPeriodChance.WinChance)
+	}
+
+	period = 3
+	bye, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{
+		LeagueSeasonId: leagueSeasonID,
+		MatchupPeriod:  &period,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	byeChance, err := client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: bye.Matchup.Id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if byeChance.WinChance != nil {
+		t.Fatalf("bye win chance = %v, want nil", byeChance.WinChance)
+	}
+
+	if _, err = db.Queries().CreateUser(ctx, "matchup-other-win-chance@test"); err != nil {
+		t.Fatal(err)
+	}
+	other := clientFor(t, db, "matchup-other-win-chance@test")
+	if _, err = other.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: matchupID}); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("other owner access error = %v, want not found", err)
+	}
+	if _, err = client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: "bad-id"}); connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("invalid matchup ID error = %v, want invalid argument", err)
+	}
 }
 
 func insertMatchupWinChanceFixture(t *testing.T, db *database.DB, detail *v1.MatchupDetail, firstAt time.Time) {
@@ -581,18 +640,18 @@ func insertMatchupWinChanceFixture(t *testing.T, db *database.DB, detail *v1.Mat
 	}
 }
 
-func assertMatchupWinChance(t *testing.T, detail *v1.MatchupDetail, firstAt time.Time) {
+func assertMatchupWinChance(t *testing.T, chance *v1.MatchupWinChance, ownerTeamID string, firstAt time.Time) {
 	t.Helper()
-	if detail.WinChance == nil || len(detail.WinChance.Samples) != 2 || len(detail.WinChance.Moments) != 1 {
-		t.Fatalf("win chance detail = %v, want two samples and one classified moment", detail.WinChance)
+	if chance == nil || len(chance.Samples) != 2 || len(chance.Moments) != 1 {
+		t.Fatalf("win chance detail = %v, want two samples and one classified moment", chance)
 	}
-	assertWinChanceSample(t, detail.WinChance.Samples[0], firstAt, 0.4, 98.5, 112.5, 118.75, 130.25)
-	assertWinChanceSample(t, detail.WinChance.Samples[1], firstAt.Add(time.Minute), 0.7, 99.5, 115.5, 120.75, 132.25)
+	assertWinChanceSample(t, chance.Samples[0], firstAt, 0.4, 98.5, 112.5, 118.75, 130.25)
+	assertWinChanceSample(t, chance.Samples[1], firstAt.Add(time.Minute), 0.7, 99.5, 115.5, 120.75, 132.25)
 
-	moment := detail.WinChance.Moments[0]
+	moment := chance.Moments[0]
 	if moment.Kind != v1.KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN ||
 		math.Abs(moment.Points-6.8) > 1e-9 ||
-		moment.TeamId != detail.Team.TeamId ||
+		moment.TeamId != ownerTeamID ||
 		moment.PlayerName != "Running Back" {
 		t.Fatalf("key moment = %v, want owner TD +6.8 for Running Back", moment)
 	}

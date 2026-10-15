@@ -43,6 +43,13 @@ message GetMatchupDetailResponse {
   // Absent means no matchup is stored for the owner's team and round.
   MatchupDetail matchup = 1;
 }
+message GetMatchupWinChanceRequest {
+  string matchup_id = 1; // MatchupDetail.id; must include the owner's selected team.
+}
+message GetMatchupWinChanceResponse {
+  // Absent on a bye or when no live samples or moments are saved.
+  MatchupWinChance win_chance = 1;
+}
 // MatchupDetail is oriented around the owner: team is always the
 // owner's side, opponent the other side.
 message MatchupDetail {
@@ -53,7 +60,6 @@ message MatchupDetail {
   MatchupLineup team = 5;
   MatchupLineup opponent = 6; // Absent on a bye.
   google.protobuf.Timestamp fetched_at = 7;
-  MatchupWinChance win_chance = 8; // Absent on a bye or when no live samples or moments are saved.
 }
 // MatchupWinChance is oriented around the owner like MatchupDetail.
 message MatchupWinChance {
