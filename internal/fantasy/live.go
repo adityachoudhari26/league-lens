@@ -12,10 +12,9 @@ type ScoringCounts struct {
 
 // LiveMatchupRequest names the owner's matchup for a single-week matchup period.
 type LiveMatchupRequest struct {
-	Week                 ScoringPeriod
-	Period               MatchupPeriod
-	TeamID               string // the owner's provider team ID (Sleeper roster ID)
-	IncludeScoringCounts bool   // Sleeper needs an extra ~260 KB request for counts; ESPN includes them for free
+	Week   ScoringPeriod
+	Period MatchupPeriod
+	TeamID string // the owner's provider team ID (Sleeper roster ID)
 }
 
 // LiveMatchup is the current state of one matchup. It follows the LeagueData
@@ -26,8 +25,10 @@ type LiveMatchup struct {
 	Players []Player
 }
 
-// LiveScorer is an optional provider capability: a light read of one matchup's
-// current scoring, cheap enough to run every minute during games.
+// LiveScorer is an optional provider capability for reading one matchup's current scoring.
+// Full-sync LeagueData never sets LineupEntry.Scoring. FetchLiveMatchup sets
+// Scoring for every entry when counts are available; otherwise it is nil.
+// Counts are never inferred from points.
 type LiveScorer interface {
 	FetchLiveMatchup(ctx context.Context, league League, request LiveMatchupRequest) (LiveMatchup, error)
 }

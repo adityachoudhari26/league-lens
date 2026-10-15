@@ -17,7 +17,7 @@ type liveStatsRow struct {
 	Stats    map[string]float64 `json:"stats"`
 }
 
-// FetchLiveMatchup reads one Sleeper matchup and optionally labels scoring plays.
+// FetchLiveMatchup reads one Sleeper matchup and labels scoring plays when stats are available.
 func (c *Client) FetchLiveMatchup(ctx context.Context, league fantasy.League, request fantasy.LiveMatchupRequest) (fantasy.LiveMatchup, error) {
 	if league.Ref.Provider != fantasy.ProviderSleeper ||
 		league.Ref.ExternalID == "" ||
@@ -59,11 +59,9 @@ func (c *Client) FetchLiveMatchup(ctx context.Context, league fantasy.League, re
 	if err != nil {
 		return fantasy.LiveMatchup{}, err
 	}
-	if request.IncludeScoringCounts {
-		stats, ok := c.fetchLiveScoringStats(ctx, league.Ref.Season, request.Week)
-		if ok {
-			applyLiveScoringCounts(lineups, stats)
-		}
+	stats, ok := c.fetchLiveScoringStats(ctx, league.Ref.Season, request.Week)
+	if ok {
+		applyLiveScoringCounts(lineups, stats)
 	}
 	return fantasy.LiveMatchup{
 		Matchup: matchup,
@@ -115,7 +113,7 @@ func sleeperRosterPositions(league fantasy.League) ([]string, error) {
 	return settings.Positions, nil
 }
 
-// fetchLiveScoringStats returns false when the optional weekly stats request fails.
+// fetchLiveScoringStats returns false when the weekly stats request fails.
 func (c *Client) fetchLiveScoringStats(ctx context.Context, season int, week fantasy.ScoringPeriod) (map[string]map[string]float64, bool) {
 	path := "/" + strconv.Itoa(season) + "/" + strconv.Itoa(int(week))
 	var rows []liveStatsRow

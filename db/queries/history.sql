@@ -53,12 +53,17 @@ DELETE FROM matchup_lineups l USING matchups m
 WHERE l.matchup_id=$1 AND m.id=l.matchup_id
 AND l.team_id<>m.team_a_id AND l.team_id IS DISTINCT FROM m.team_b_id;
 
--- name: DeleteMatchupLineup :exec
-DELETE FROM matchup_lineups WHERE matchup_id=$1 AND team_id=$2;
+-- name: DeleteMatchupLineupPlayersNotIn :exec
+DELETE FROM matchup_lineups
+WHERE matchup_id = @matchup_id AND team_id = @team_id AND NOT (player_id = ANY(@player_ids::uuid[]));
 
--- name: InsertMatchupLineupEntry :exec
+-- name: UpsertMatchupLineupEntry :exec
+-- Live TD/FG counts survive a full sync; only the live loop writes them.
 INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points,projected_points)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8);
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+ON CONFLICT (matchup_id,team_id,player_id) DO UPDATE SET
+ provider_slot_id=EXCLUDED.provider_slot_id, slot_label=EXCLUDED.slot_label, starter=EXCLUDED.starter,
+ points=EXCLUDED.points, projected_points=EXCLUDED.projected_points;
 
 -- name: ListMatchupsForUser :many
 SELECT m.* FROM matchups m WHERE m.league_season_id=$2 AND m.period=$3

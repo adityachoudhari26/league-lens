@@ -31,6 +31,9 @@ func (db *DB) Close() { db.pool.Close() }
 
 func (db *DB) Ping(ctx context.Context) error { return db.pool.Ping(ctx) }
 
+// Pool exposes the underlying connection pool for direct database queries.
+func (db *DB) Pool() *pgxpool.Pool { return db.pool }
+
 func (db *DB) Queries() *store.Queries { return db.queries }
 
 // InTx commits only if fn succeeds and the context remains valid. Errors and

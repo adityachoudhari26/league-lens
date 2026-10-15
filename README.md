@@ -203,6 +203,7 @@ Set these in a `.env` file next to `compose.yaml`. All are optional.
 | --- | --- | --- |
 | `LEAGUE_LENS_PORT` | `80` | Port the app listens on, on `127.0.0.1`. |
 | `ESPN_S2`, `ESPN_SWID` | empty | ESPN cookies used for importing and syncing ESPN leagues. |
+| `LIVE_SCORES` | `true` | Update live matchup scores every minute; set to exactly `false` to disable. |
 | `LOCAL_OWNER_EMAIL` | `owner@localhost` | Label for the local owner. This is not a login. |
 | `POSTGRES_PASSWORD` | `league_lens_local` | Password for the bundled Postgres database. |
 

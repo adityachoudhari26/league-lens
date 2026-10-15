@@ -70,6 +70,13 @@ func TestFetchLineups(t *testing.T) {
 	if len(data.Lineups) != 4 {
 		t.Fatalf("got %d lineups, want both sides in each week", len(data.Lineups))
 	}
+	for _, lineup := range data.Lineups {
+		for _, entry := range lineup.Entries {
+			if entry.Scoring != nil {
+				t.Errorf("full-sync player %s has scoring counts %+v", entry.PlayerID, entry.Scoring)
+			}
+		}
+	}
 
 	assertLineupsReferenceMatchupsAndPlayers(t, data)
 	players := playerIDs(data.Players)

@@ -39,17 +39,19 @@ func (q *Queries) AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) 
 	return err
 }
 
-const deleteMatchupLineup = `-- name: DeleteMatchupLineup :exec
-DELETE FROM matchup_lineups WHERE matchup_id=$1 AND team_id=$2
+const deleteMatchupLineupPlayersNotIn = `-- name: DeleteMatchupLineupPlayersNotIn :exec
+DELETE FROM matchup_lineups
+WHERE matchup_id = $1 AND team_id = $2 AND NOT (player_id = ANY($3::uuid[]))
 `
 
-type DeleteMatchupLineupParams struct {
+type DeleteMatchupLineupPlayersNotInParams struct {
 	MatchupID pgtype.UUID
 	TeamID    pgtype.UUID
+	PlayerIds []pgtype.UUID
 }
 
-func (q *Queries) DeleteMatchupLineup(ctx context.Context, arg DeleteMatchupLineupParams) error {
-	_, err := q.db.Exec(ctx, deleteMatchupLineup, arg.MatchupID, arg.TeamID)
+func (q *Queries) DeleteMatchupLineupPlayersNotIn(ctx context.Context, arg DeleteMatchupLineupPlayersNotInParams) error {
+	_, err := q.db.Exec(ctx, deleteMatchupLineupPlayersNotIn, arg.MatchupID, arg.TeamID, arg.PlayerIds)
 	return err
 }
 
@@ -102,36 +104,6 @@ func (q *Queries) GetLatestObservedSnapshot(ctx context.Context, arg GetLatestOb
 		&i.ContentHash,
 	)
 	return i, err
-}
-
-const insertMatchupLineupEntry = `-- name: InsertMatchupLineupEntry :exec
-INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points,projected_points)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-`
-
-type InsertMatchupLineupEntryParams struct {
-	MatchupID       pgtype.UUID
-	TeamID          pgtype.UUID
-	PlayerID        pgtype.UUID
-	ProviderSlotID  pgtype.Text
-	SlotLabel       pgtype.Text
-	Starter         bool
-	Points          pgtype.Numeric
-	ProjectedPoints pgtype.Numeric
-}
-
-func (q *Queries) InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error {
-	_, err := q.db.Exec(ctx, insertMatchupLineupEntry,
-		arg.MatchupID,
-		arg.TeamID,
-		arg.PlayerID,
-		arg.ProviderSlotID,
-		arg.SlotLabel,
-		arg.Starter,
-		arg.Points,
-		arg.ProjectedPoints,
-	)
-	return err
 }
 
 const listMatchupsForUser = `-- name: ListMatchupsForUser :many
@@ -342,6 +314,40 @@ func (q *Queries) UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (M
 		&i.IsBye,
 	)
 	return i, err
+}
+
+const upsertMatchupLineupEntry = `-- name: UpsertMatchupLineupEntry :exec
+INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points,projected_points)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+ON CONFLICT (matchup_id,team_id,player_id) DO UPDATE SET
+ provider_slot_id=EXCLUDED.provider_slot_id, slot_label=EXCLUDED.slot_label, starter=EXCLUDED.starter,
+ points=EXCLUDED.points, projected_points=EXCLUDED.projected_points
+`
+
+type UpsertMatchupLineupEntryParams struct {
+	MatchupID       pgtype.UUID
+	TeamID          pgtype.UUID
+	PlayerID        pgtype.UUID
+	ProviderSlotID  pgtype.Text
+	SlotLabel       pgtype.Text
+	Starter         bool
+	Points          pgtype.Numeric
+	ProjectedPoints pgtype.Numeric
+}
+
+// Live TD/FG counts survive a full sync; only the live loop writes them.
+func (q *Queries) UpsertMatchupLineupEntry(ctx context.Context, arg UpsertMatchupLineupEntryParams) error {
+	_, err := q.db.Exec(ctx, upsertMatchupLineupEntry,
+		arg.MatchupID,
+		arg.TeamID,
+		arg.PlayerID,
+		arg.ProviderSlotID,
+		arg.SlotLabel,
+		arg.Starter,
+		arg.Points,
+		arg.ProjectedPoints,
+	)
+	return err
 }
 
 const upsertTeamSnapshot = `-- name: UpsertTeamSnapshot :one

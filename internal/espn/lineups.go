@@ -128,7 +128,6 @@ func normalizeLineupEntry(playerID string, entry entryResponse, week int) fantas
 		Starter:         isStarterSlot(entry.Slot),
 		Points:          actualPoints(entry, week),
 		ProjectedPoints: projectedPoints(entry.Pool.Player.Stats, week),
-		Scoring:         actualScoringCounts(entry.Pool.Player.Stats, week),
 	}
 }
 

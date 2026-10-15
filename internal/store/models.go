@@ -70,6 +70,8 @@ type MatchupLineup struct {
 	Starter         bool
 	Points          pgtype.Numeric
 	ProjectedPoints pgtype.Numeric
+	Touchdowns      pgtype.Int4
+	FieldGoals      pgtype.Int4
 }
 
 type NflGame struct {

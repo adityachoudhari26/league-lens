@@ -69,11 +69,31 @@ func (c *Client) FetchLiveMatchup(ctx context.Context, league fantasy.League, re
 	if err != nil {
 		return fantasy.LiveMatchup{}, err
 	}
+	setLiveScoringCounts(lineups, *match, raw.Week)
 	return fantasy.LiveMatchup{
 		Matchup: normalized,
 		Lineups: lineups,
 		Players: sortedPlayers(players),
 	}, nil
+}
+
+func setLiveScoringCounts(lineups []fantasy.MatchupLineup, match matchupResponse, week int) {
+	countsByPlayer := make(map[string]*fantasy.ScoringCounts)
+	for _, side := range []*sideResponse{match.Home, match.Away} {
+		if side == nil || side.Lineup == nil {
+			continue
+		}
+		for _, entry := range side.Lineup.Entries {
+			playerID := strconv.Itoa(entry.Pool.Player.ID)
+			countsByPlayer[playerID] = actualScoringCounts(entry.Pool.Player.Stats, week)
+		}
+	}
+	for lineupIndex := range lineups {
+		for entryIndex := range lineups[lineupIndex].Entries {
+			entry := &lineups[lineupIndex].Entries[entryIndex]
+			entry.Scoring = countsByPlayer[entry.PlayerID]
+		}
+	}
 }
 
 func matchupFilter(teamID int, period fantasy.MatchupPeriod) (string, error) {
