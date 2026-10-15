@@ -31,4 +31,12 @@ export const matchupQueries = {
           { signal },
         ),
     }),
+  // The graph's own query: samples and key moments for one matchup.
+  // `building` means a finished week is being rebuilt; ask again shortly.
+  winChance: (matchupId: string) =>
+    queryOptions({
+      queryKey: ["matchups", "win-chance", matchupId],
+      queryFn: ({ signal }) =>
+        dashboard.getMatchupWinChance({ matchupId }, { signal }),
+    }),
 }
