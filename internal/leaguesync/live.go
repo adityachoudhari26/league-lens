@@ -3,16 +3,19 @@ package leaguesync
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/store"
+	"github.com/adityachoudhari26/league-lens/internal/winchance"
 )
 
 const (
@@ -190,7 +193,7 @@ func (r *Runner) updateLiveCandidate(
 		return
 	}
 
-	updatedEntries, skippedEntries, err := r.saveLiveMatchup(ctx, target, candidate, live)
+	updatedEntries, skippedEntries, err := r.saveLiveMatchup(ctx, scoreboard, target, candidate, live)
 	if err != nil {
 		r.logLiveScoreFailure(target, err)
 		return
@@ -211,6 +214,7 @@ func (r *Runner) logLiveScoreFailure(target Target, err error) {
 // saveLiveMatchup validates provider identities and persists all live scores atomically.
 func (r *Runner) saveLiveMatchup(
 	ctx context.Context,
+	scoreboard fantasy.NFLScoreboard,
 	target Target,
 	candidate store.ListLiveMatchupCandidatesRow,
 	live fantasy.LiveMatchup,
@@ -268,9 +272,167 @@ func (r *Runner) saveLiveMatchup(
 				}
 			}
 		}
-		return nil
+		return r.saveWinChanceSample(ctx, queries, candidate, scoreboard, scoreA, scoreB)
 	})
 	return updatedEntries, skippedEntries, err
+}
+
+// saveWinChanceSample records a changed live win estimate with the lineup and score update.
+func (r *Runner) saveWinChanceSample(
+	ctx context.Context,
+	queries *store.Queries,
+	candidate store.ListLiveMatchupCandidatesRow,
+	scoreboard fantasy.NFLScoreboard,
+	scoreA, scoreB *float64,
+) error {
+	if !candidate.TeamBID.Valid {
+		return nil
+	}
+
+	rows, err := queries.ListLiveMatchupStarters(ctx, candidate.MatchupID)
+	if err != nil {
+		return err
+	}
+	gamesByTeam, allFinal := scoreboardGamesByTeam(scoreboard.Games)
+	sideA := winchance.Side{Score: scoreOrZero(scoreA)}
+	sideB := winchance.Side{Score: scoreOrZero(scoreB)}
+	for _, row := range rows {
+		projection, err := liveProjection(row.ProjectedPoints)
+		if err != nil {
+			return err
+		}
+		starter := winchance.Starter{
+			Projected: projection,
+			Remaining: starterRemaining(row.ProTeam, gamesByTeam, allFinal),
+		}
+		switch row.TeamID {
+		case candidate.TeamAID:
+			sideA.Starters = append(sideA.Starters, starter)
+		case candidate.TeamBID:
+			sideB.Starters = append(sideB.Starters, starter)
+		default:
+			return fmt.Errorf("live matchup starter team does not match stored matchup")
+		}
+	}
+
+	estimate := winchance.Estimate(sideA, sideB)
+	sample, err := newWinChanceSample(candidate.MatchupID, r.now(), sideA.Score, sideB.Score, estimate)
+	if err != nil {
+		return err
+	}
+	previous, err := queries.LatestWinChanceSample(ctx, candidate.MatchupID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+	if err == nil {
+		matches, err := sameWinChanceSample(previous, sample)
+		if err != nil {
+			return err
+		}
+		if matches {
+			return nil
+		}
+	}
+	return queries.InsertWinChanceSample(ctx, sample)
+}
+
+func newWinChanceSample(
+	matchupID pgtype.UUID,
+	observedAt time.Time,
+	scoreA, scoreB float64,
+	estimate winchance.Result,
+) (store.InsertWinChanceSampleParams, error) {
+	values := []*float64{&estimate.WinChanceA, &scoreA, &scoreB, &estimate.ProjectedA, &estimate.ProjectedB}
+	numbers := make([]pgtype.Numeric, len(values))
+	for i, value := range values {
+		number, err := liveScore(value)
+		if err != nil {
+			return store.InsertWinChanceSampleParams{}, err
+		}
+		numbers[i] = number
+	}
+	return store.InsertWinChanceSampleParams{
+		MatchupID:      matchupID,
+		ObservedAt:     pgtype.Timestamptz{Time: observedAt, Valid: true},
+		TeamAWinChance: numbers[0],
+		ScoreA:         numbers[1],
+		ScoreB:         numbers[2],
+		ProjectedA:     numbers[3],
+		ProjectedB:     numbers[4],
+	}, nil
+}
+
+func sameWinChanceSample(previous store.LatestWinChanceSampleRow, current store.InsertWinChanceSampleParams) (bool, error) {
+	previousValues := []pgtype.Numeric{
+		previous.TeamAWinChance, previous.ScoreA, previous.ScoreB, previous.ProjectedA, previous.ProjectedB,
+	}
+	currentValues := []pgtype.Numeric{
+		current.TeamAWinChance, current.ScoreA, current.ScoreB, current.ProjectedA, current.ProjectedB,
+	}
+	for i, previousValue := range previousValues {
+		previousFloat, err := previousValue.Float64Value()
+		if err != nil {
+			return false, err
+		}
+		currentFloat, err := currentValues[i].Float64Value()
+		if err != nil {
+			return false, err
+		}
+		if !previousFloat.Valid || !currentFloat.Valid || previousFloat.Float64 != currentFloat.Float64 {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func liveProjection(points pgtype.Numeric) (*float64, error) {
+	if !points.Valid {
+		return nil, nil
+	}
+	value, err := points.Float64Value()
+	if err != nil {
+		return nil, err
+	}
+	return &value.Float64, nil
+}
+
+func scoreboardGamesByTeam(games []fantasy.NFLGameStatus) (map[string]fantasy.NFLGameStatus, bool) {
+	gamesByTeam := make(map[string]fantasy.NFLGameStatus, len(games)*2)
+	allFinal := len(games) > 0
+	for _, game := range games {
+		if game.State != fantasy.NFLGameFinal {
+			allFinal = false
+		}
+		if game.HomeTeam != "" {
+			gamesByTeam[game.HomeTeam] = game
+		}
+		if game.AwayTeam != "" {
+			gamesByTeam[game.AwayTeam] = game
+		}
+	}
+	return gamesByTeam, allFinal
+}
+
+// starterRemaining maps known teams to game time, treating byes as complete and unknown teams conservatively.
+func starterRemaining(proTeam string, games map[string]fantasy.NFLGameStatus, allFinal bool) float64 {
+	if proTeam == "" {
+		if allFinal {
+			return 0
+		}
+		return 1
+	}
+	game, found := games[proTeam]
+	if !found {
+		return 0
+	}
+	return winchance.GameRemaining(game)
+}
+
+func scoreOrZero(score *float64) float64 {
+	if score == nil {
+		return 0
+	}
+	return *score
 }
 
 // liveMatchupTeams maps provider team IDs to stored IDs and aligns scores to stored sides.

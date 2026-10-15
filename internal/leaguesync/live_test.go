@@ -90,3 +90,29 @@ func TestLiveScoreTickSkipsDatabaseWhenNoGamesAreLive(t *testing.T) {
 		t.Fatalf("scoreboard reads=%d provider calls=%d, want 1 and 0", sources.scoreboard, sources.providerUse)
 	}
 }
+
+func TestStarterRemaining(t *testing.T) {
+	liveGame := fantasy.NFLGameStatus{
+		HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive,
+		Period: 2, Clock: 7*time.Minute + 30*time.Second,
+	}
+	for _, test := range []struct {
+		name     string
+		proTeam  string
+		games    []fantasy.NFLGameStatus
+		allFinal bool
+		want     float64
+	}{
+		{name: "bye", proTeam: "BUF", games: []fantasy.NFLGameStatus{liveGame}, want: 0},
+		{name: "unknown team with games left", games: []fantasy.NFLGameStatus{liveGame}, want: 1},
+		{name: "unknown team when all games are final", games: []fantasy.NFLGameStatus{{State: fantasy.NFLGameFinal}}, allFinal: true, want: 0},
+		{name: "known team mid-game", proTeam: "KC", games: []fantasy.NFLGameStatus{liveGame}, want: 0.625},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			gamesByTeam, allFinal := scoreboardGamesByTeam(test.games)
+			if got := starterRemaining(test.proTeam, gamesByTeam, test.allFinal || allFinal); got != test.want {
+				t.Fatalf("starterRemaining() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}

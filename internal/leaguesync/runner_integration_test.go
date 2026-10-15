@@ -26,6 +26,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/news"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/store"
+	"github.com/adityachoudhari26/league-lens/internal/winchance"
 )
 
 const owner = "owner@test"
@@ -235,11 +236,11 @@ func liveLeagueFixture() fantasy.LeagueData {
 	data.CompleteMatchupPeriods = []fantasy.MatchupPeriod{5}
 	data.Lineups = []fantasy.MatchupLineup{
 		{Period: 5, MatchupID: "m", TeamID: "1", Entries: []fantasy.LineupEntry{
-			{PlayerID: "p", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(1)},
-			{PlayerID: "old", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(2)},
+			{PlayerID: "p", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(1), ProjectedPoints: floatPtr(60)},
+			{PlayerID: "old", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(2), ProjectedPoints: floatPtr(60)},
 		}},
 		{Period: 5, MatchupID: "m", TeamID: "2", Entries: []fantasy.LineupEntry{
-			{PlayerID: "q", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(3)},
+			{PlayerID: "q", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(3), ProjectedPoints: floatPtr(30)},
 		}},
 	}
 	return data
@@ -274,8 +275,16 @@ func runLiveLoopUntilScoreboardTick(
 	source *fakeLiveProvider,
 	wantScoreA string,
 	wantScoreB string,
-) {
+) time.Time {
 	t.Helper()
+	var previousFetchedAt time.Time
+	if err := pool.QueryRow(context.Background(), `
+		SELECT m.fetched_at FROM matchups m
+		JOIN league_seasons ls ON ls.id=m.league_season_id
+		WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
+	`).Scan(&previousFetchedAt); err != nil {
+		t.Fatal(err)
+	}
 	runner := leaguesync.New(db, owner, sources, "")
 	defer runner.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -289,20 +298,21 @@ func runLiveLoopUntilScoreboardTick(
 	for time.Now().Before(deadline) {
 		if source.calls.Load() > initialCalls {
 			var scoreA, scoreB string
+			var fetchedAt time.Time
 			err := pool.QueryRow(context.Background(), `
-				SELECT m.score_a::text, m.score_b::text FROM matchups m
+				SELECT m.score_a::text, COALESCE(m.score_b::text, ''), m.fetched_at FROM matchups m
 				JOIN league_seasons ls ON ls.id=m.league_season_id
 				WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
-			`).Scan(&scoreA, &scoreB)
+			`).Scan(&scoreA, &scoreB, &fetchedAt)
 			if err != nil {
 				cancel()
 				<-done
 				t.Fatal(err)
 			}
-			if scoreA == wantScoreA && scoreB == wantScoreB {
+			if fetchedAt.After(previousFetchedAt) && scoreA == wantScoreA && scoreB == wantScoreB {
 				cancel()
 				<-done
-				return
+				return fetchedAt
 			}
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -310,6 +320,68 @@ func runLiveLoopUntilScoreboardTick(
 	cancel()
 	<-done
 	t.Fatal("live score tick did not update matchup")
+	return time.Time{}
+}
+
+type savedWinChanceSample struct {
+	observedAt time.Time
+	chance     string
+	scoreA     string
+	scoreB     string
+	projectedA string
+	projectedB string
+}
+
+func readWinChanceSamples(t *testing.T, pool *pgxpool.Pool) []savedWinChanceSample {
+	t.Helper()
+	rows, err := pool.Query(context.Background(), `
+		SELECT s.observed_at, s.team_a_win_chance::text, s.score_a::text, s.score_b::text, s.projected_a::text, s.projected_b::text
+		FROM win_chance_samples s
+		JOIN matchups m ON m.id=s.matchup_id
+		JOIN league_seasons ls ON ls.id=m.league_season_id
+		WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
+		ORDER BY observed_at
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var samples []savedWinChanceSample
+	for rows.Next() {
+		var sample savedWinChanceSample
+		if err := rows.Scan(
+			&sample.observedAt, &sample.chance, &sample.scoreA, &sample.scoreB, &sample.projectedA, &sample.projectedB,
+		); err != nil {
+			t.Fatal(err)
+		}
+		samples = append(samples, sample)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return samples
+}
+
+func expectedFixtureWinChance(scoreA, scoreB float64) string {
+	estimate := winchance.Estimate(
+		winchance.Side{
+			Score: scoreA,
+			Starters: []winchance.Starter{
+				{Projected: floatPtr(60), Remaining: 1},
+				{Projected: floatPtr(60), Remaining: 1},
+			},
+		},
+		winchance.Side{
+			Score:    scoreB,
+			Starters: []winchance.Starter{{Projected: floatPtr(30), Remaining: 1}},
+		},
+	)
+	return fmt.Sprintf("%.4f", estimate.WinChanceA)
+}
+
+func sameSampleValues(got, want savedWinChanceSample) bool {
+	return got.chance == want.chance && got.scoreA == want.scoreA && got.scoreB == want.scoreB &&
+		got.projectedA == want.projectedA && got.projectedB == want.projectedB
 }
 
 func readSavedLiveLineup(t *testing.T, pool *pgxpool.Pool, playerID string) (string, int32, int32) {
@@ -350,10 +422,12 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 		fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
 		board: fantasy.NFLScoreboard{
 			Season: 2026, SeasonType: 2, Week: 5,
-			Games: []fantasy.NFLGameStatus{{HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive}},
+			Games: []fantasy.NFLGameStatus{{
+				HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive, Period: 1, Clock: 15 * time.Minute,
+			}},
 		},
 	}
-	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000")
+	firstFetchedAt := runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000")
 
 	ctx := context.Background()
 	var scoreA, scoreB, status string
@@ -366,6 +440,22 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 	}
 	if scoreA != "120.0000" || scoreB != "200.0000" || status != string(fantasy.MatchupFinal) {
 		t.Fatalf("stored matchup scores/status = %s/%s/%s", scoreA, scoreB, status)
+	}
+	samples := readWinChanceSamples(t, pool)
+	expectedFirstSample := savedWinChanceSample{
+		chance: expectedFixtureWinChance(120, 200),
+		scoreA: "120.0000", scoreB: "200.0000", projectedA: "240.0000", projectedB: "230.0000",
+	}
+	if len(samples) != 1 || !sameSampleValues(samples[0], expectedFirstSample) || samples[0].observedAt.IsZero() {
+		t.Fatalf("first win-chance samples = %+v, want [%+v]", samples, expectedFirstSample)
+	}
+
+	secondFetchedAt := runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000")
+	if !secondFetchedAt.After(firstFetchedAt) {
+		t.Fatalf("identical second tick at %v was not later than first tick at %v", secondFetchedAt, firstFetchedAt)
+	}
+	if samples := readWinChanceSamples(t, pool); len(samples) != 1 {
+		t.Fatalf("identical later tick saved %d win-chance samples, want 1", len(samples))
 	}
 
 	rows, err := pool.Query(ctx, `
@@ -411,9 +501,21 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 	nilCountsTick.Lineups[1].Entries[0].Points = floatPtr(18)
 	nilCountsTick.Lineups[1].Entries[0].Scoring = nil
 	liveSource.live = nilCountsTick
-	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "121.0000", "201.0000")
+	thirdFetchedAt := runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "121.0000", "201.0000")
+	if !thirdFetchedAt.After(secondFetchedAt) {
+		t.Fatalf("changed third tick at %v was not later than second tick at %v", thirdFetchedAt, secondFetchedAt)
+	}
 	if points, touchdowns, fieldGoals := readSavedLiveLineup(t, pool, "p"); points != "18.0000" || touchdowns != 1 || fieldGoals != 0 {
 		t.Fatalf("nil-count tick saved %s points and %d/%d counts, want 18.0000 and 1/0", points, touchdowns, fieldGoals)
+	}
+	samples = readWinChanceSamples(t, pool)
+	expectedChangedSample := savedWinChanceSample{
+		chance: expectedFixtureWinChance(121, 201),
+		scoreA: "121.0000", scoreB: "201.0000", projectedA: "241.0000", projectedB: "231.0000",
+	}
+	if len(samples) != 2 || !sameSampleValues(samples[1], expectedChangedSample) ||
+		!samples[1].observedAt.After(samples[0].observedAt) {
+		t.Fatalf("changed-score win-chance samples = %+v, want second sample %+v", samples, expectedChangedSample)
 	}
 
 	zeroCountsTick := liveMatchupFixture("m")
@@ -470,6 +572,42 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 	}
 	if dropped != 0 {
 		t.Fatalf("dropped player lineup rows = %d, want 0", dropped)
+	}
+}
+
+func TestLiveScoreLoopDoesNotSampleMatchupWithoutOpponent(t *testing.T) {
+	db, pool := openDatabaseWithTestPool(t, true)
+	data := liveLeagueFixture()
+	data.Matchups[0].TeamB = nil
+	data.Lineups = data.Lineups[:1]
+	initial := &fakeSource{data: data}
+	importerService := importer.Service{DB: db, Source: initial}
+	if _, err := importerService.Import(context.Background(), importer.Request{
+		OwnerEmail: owner, ExternalAccountID: "account",
+		Selection: fantasy.ConnectionSelection{League: data.League.Ref, SelectedTeamIDs: []string{"1"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	liveSource := &fakeLiveProvider{fakeSource: initial, live: fantasy.LiveMatchup{
+		Matchup: fantasy.Matchup{
+			ExternalID: "m", Period: 5, TeamA: fantasy.MatchupSide{TeamID: "1", Score: floatPtr(12)},
+		},
+		Lineups: []fantasy.MatchupLineup{{TeamID: "1", Entries: []fantasy.LineupEntry{
+			{PlayerID: "p", Points: floatPtr(12)},
+		}}},
+	}}
+	sources := &liveScoreSources{
+		fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
+		board: fantasy.NFLScoreboard{
+			Season: 2026, SeasonType: 2, Week: 5,
+			Games: []fantasy.NFLGameStatus{{
+				HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive, Period: 1, Clock: 15 * time.Minute,
+			}},
+		},
+	}
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "12.0000", "")
+	if samples := readWinChanceSamples(t, pool); len(samples) != 0 {
+		t.Fatalf("matchup without an opponent saved %d win-chance samples", len(samples))
 	}
 }
 

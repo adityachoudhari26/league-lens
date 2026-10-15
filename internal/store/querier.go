@@ -46,8 +46,10 @@ type Querier interface {
 	GetPlayerProfile(ctx context.Context, playerID pgtype.UUID) (PlayerProfile, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
+	InsertWinChanceSample(ctx context.Context, arg InsertWinChanceSampleParams) error
 	IsLeagueAttachedForUser(ctx context.Context, arg IsLeagueAttachedForUserParams) (bool, error)
 	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
+	LatestWinChanceSample(ctx context.Context, matchupID pgtype.UUID) (LatestWinChanceSampleRow, error)
 	ListConnectionLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionLeaguesForUserRow, error)
 	ListConnectionsForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionsForUserRow, error)
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
@@ -57,6 +59,8 @@ type Querier interface {
 	// with the NFL teams of both sides' starters from each team's latest observed
 	// snapshot ('' when a starter's team is unknown).
 	ListLiveMatchupCandidates(ctx context.Context, arg ListLiveMatchupCandidatesParams) ([]ListLiveMatchupCandidatesRow, error)
+	// Both sides' starters with projections and NFL team from each team's latest observed snapshot ('' when unknown).
+	ListLiveMatchupStarters(ctx context.Context, matchupID pgtype.UUID) ([]ListLiveMatchupStartersRow, error)
 	ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUserParams) ([]Matchup, error)
 	ListNFLGamesForWeek(ctx context.Context, arg ListNFLGamesForWeekParams) ([]ListNFLGamesForWeekRow, error)
 	// Players on the owner's selected teams' latest succeeded observed snapshot, with every known external ID.
