@@ -17,6 +17,7 @@ message OverviewTeam {
   int32 season = 6;
   optional int32 scoring_period = 7;
   google.protobuf.Timestamp observed_at = 8;
+  string league_url = 9; // Provider's league home page.
 }
 message GetOverviewAttentionRequest {}
 message GetOverviewAttentionResponse {

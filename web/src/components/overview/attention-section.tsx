@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { CircleAlert, ChevronDown, Eye, X } from "lucide-react"
+import { ArrowUpRight, CircleAlert, ChevronDown, Eye, X } from "lucide-react"
 import {
   AlertSeverity,
   type LineupAlert,
@@ -30,6 +30,35 @@ const severityStyles = {
   },
 }
 
+function LeagueLink({
+  leagueName,
+  leagueUrl,
+}: {
+  leagueName: string | undefined
+  leagueUrl: string | undefined
+}) {
+  if (!leagueUrl) {
+    return <>{leagueName}</>
+  }
+
+  return (
+    <a
+      href={leagueUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline-offset-2 hover:text-foreground hover:underline focus-visible:underline"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {leagueName}
+      <ArrowUpRight
+        aria-hidden="true"
+        strokeWidth={1.6}
+        className="ml-px inline size-[1.1em] align-[-0.2em] opacity-60"
+      />
+    </a>
+  )
+}
+
 function AlertCard({
   alert,
   onDismiss,
@@ -55,7 +84,11 @@ function AlertCard({
               <span className={`font-medium ${style.accent}`}>
                 {style.label}
               </span>{" "}
-              · {alert.team?.leagueName}
+              ·{" "}
+              <LeagueLink
+                leagueName={alert.team?.leagueName}
+                leagueUrl={alert.team?.leagueUrl}
+              />
             </p>
             <h3 className="mt-0.5 text-sm">
               <span className="font-medium">{alert.title}</span>

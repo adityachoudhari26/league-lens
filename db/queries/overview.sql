@@ -1,6 +1,6 @@
 -- name: OverviewTeams :many
 -- Only selected teams, enabled connections, and the owner's latest imported season.
-SELECT t.id,t.name,l.id AS league_id,l.name AS league_name,l.provider,l.season,l.settings_json,
+SELECT t.id,t.name,l.id AS league_id,l.name AS league_name,l.provider,l.season,l.external_league_id,l.settings_json,
  s.id AS snapshot_id,coalesce(s.period,0)::integer AS period,coalesce(s.coverage,'')::text AS coverage,s.observed_at
 FROM user_teams ut
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'

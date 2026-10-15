@@ -301,6 +301,7 @@ type OverviewTeam struct {
 	Season        int32                  `protobuf:"varint,6,opt,name=season,proto3" json:"season,omitempty"`
 	ScoringPeriod *int32                 `protobuf:"varint,7,opt,name=scoring_period,json=scoringPeriod,proto3,oneof" json:"scoring_period,omitempty"`
 	ObservedAt    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=observed_at,json=observedAt,proto3" json:"observed_at,omitempty"`
+	LeagueUrl     string                 `protobuf:"bytes,9,opt,name=league_url,json=leagueUrl,proto3" json:"league_url,omitempty"` // Provider's league home page.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -389,6 +390,13 @@ func (x *OverviewTeam) GetObservedAt() *timestamppb.Timestamp {
 		return x.ObservedAt
 	}
 	return nil
+}
+
+func (x *OverviewTeam) GetLeagueUrl() string {
+	if x != nil {
+		return x.LeagueUrl
+	}
+	return ""
 }
 
 type GetOverviewAttentionRequest struct {
@@ -1355,7 +1363,7 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	"\x1cleaguelens/v1/overview.proto\x12\rleaguelens.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"J\n" +
 	"\x10OverviewCoverage\x12\x14\n" +
 	"\x05state\x18\x01 \x01(\tR\x05state\x12 \n" +
-	"\vexplanation\x18\x02 \x01(\tR\vexplanation\"\xa0\x02\n" +
+	"\vexplanation\x18\x02 \x01(\tR\vexplanation\"\xbf\x02\n" +
 	"\fOverviewTeam\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -1366,7 +1374,9 @@ const file_leaguelens_v1_overview_proto_rawDesc = "" +
 	"\x06season\x18\x06 \x01(\x05R\x06season\x12*\n" +
 	"\x0escoring_period\x18\a \x01(\x05H\x00R\rscoringPeriod\x88\x01\x01\x12;\n" +
 	"\vobserved_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"observedAtB\x11\n" +
+	"observedAt\x12\x1d\n" +
+	"\n" +
+	"league_url\x18\t \x01(\tR\tleagueUrlB\x11\n" +
 	"\x0f_scoring_period\"\x1d\n" +
 	"\x1bGetOverviewAttentionRequest\"\x8f\x01\n" +
 	"\x1cGetOverviewAttentionResponse\x12;\n" +
