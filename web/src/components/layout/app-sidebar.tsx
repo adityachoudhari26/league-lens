@@ -1,5 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router"
-import { Aperture } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { LeagueLensLogo } from "./league-lens-logo"
 import { navigation, type NavigationItem } from "./navigation"
 
 function NavigationLink({ item }: { item: NavigationItem }) {
@@ -52,9 +52,7 @@ export function AppSidebar() {
               className="gap-3 hover:bg-transparent"
               render={<Link to="/" aria-label="League Lens home" />}
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Aperture className="size-5!" aria-hidden="true" />
-              </span>
+              <LeagueLensLogo className="size-8! shrink-0" />
               <span className="flex flex-col gap-0.5">
                 <span className="text-base font-semibold tracking-tight">
                   League Lens
