@@ -183,6 +183,67 @@ func (PlayerKind) EnumDescriptor() ([]byte, []int) {
 	return file_leaguelens_v1_dashboard_proto_rawDescGZIP(), []int{2}
 }
 
+type PlayerPosition int32
+
+const (
+	PlayerPosition_PLAYER_POSITION_UNSPECIFIED PlayerPosition = 0
+	PlayerPosition_PLAYER_POSITION_QB          PlayerPosition = 1
+	PlayerPosition_PLAYER_POSITION_RB          PlayerPosition = 2
+	PlayerPosition_PLAYER_POSITION_WR          PlayerPosition = 3
+	PlayerPosition_PLAYER_POSITION_TE          PlayerPosition = 4
+	PlayerPosition_PLAYER_POSITION_K           PlayerPosition = 5
+	PlayerPosition_PLAYER_POSITION_DEF         PlayerPosition = 6
+)
+
+// Enum value maps for PlayerPosition.
+var (
+	PlayerPosition_name = map[int32]string{
+		0: "PLAYER_POSITION_UNSPECIFIED",
+		1: "PLAYER_POSITION_QB",
+		2: "PLAYER_POSITION_RB",
+		3: "PLAYER_POSITION_WR",
+		4: "PLAYER_POSITION_TE",
+		5: "PLAYER_POSITION_K",
+		6: "PLAYER_POSITION_DEF",
+	}
+	PlayerPosition_value = map[string]int32{
+		"PLAYER_POSITION_UNSPECIFIED": 0,
+		"PLAYER_POSITION_QB":          1,
+		"PLAYER_POSITION_RB":          2,
+		"PLAYER_POSITION_WR":          3,
+		"PLAYER_POSITION_TE":          4,
+		"PLAYER_POSITION_K":           5,
+		"PLAYER_POSITION_DEF":         6,
+	}
+)
+
+func (x PlayerPosition) Enum() *PlayerPosition {
+	p := new(PlayerPosition)
+	*p = x
+	return p
+}
+
+func (x PlayerPosition) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PlayerPosition) Descriptor() protoreflect.EnumDescriptor {
+	return file_leaguelens_v1_dashboard_proto_enumTypes[3].Descriptor()
+}
+
+func (PlayerPosition) Type() protoreflect.EnumType {
+	return &file_leaguelens_v1_dashboard_proto_enumTypes[3]
+}
+
+func (x PlayerPosition) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PlayerPosition.Descriptor instead.
+func (PlayerPosition) EnumDescriptor() ([]byte, []int) {
+	return file_leaguelens_v1_dashboard_proto_rawDescGZIP(), []int{3}
+}
+
 type PlayerBlurbKind int32
 
 const (
@@ -219,11 +280,11 @@ func (x PlayerBlurbKind) String() string {
 }
 
 func (PlayerBlurbKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_leaguelens_v1_dashboard_proto_enumTypes[3].Descriptor()
+	return file_leaguelens_v1_dashboard_proto_enumTypes[4].Descriptor()
 }
 
 func (PlayerBlurbKind) Type() protoreflect.EnumType {
-	return &file_leaguelens_v1_dashboard_proto_enumTypes[3]
+	return &file_leaguelens_v1_dashboard_proto_enumTypes[4]
 }
 
 func (x PlayerBlurbKind) Number() protoreflect.EnumNumber {
@@ -232,7 +293,7 @@ func (x PlayerBlurbKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PlayerBlurbKind.Descriptor instead.
 func (PlayerBlurbKind) EnumDescriptor() ([]byte, []int) {
-	return file_leaguelens_v1_dashboard_proto_rawDescGZIP(), []int{3}
+	return file_leaguelens_v1_dashboard_proto_rawDescGZIP(), []int{4}
 }
 
 type ListLeaguesRequest struct {
@@ -1825,7 +1886,7 @@ type PlayerCard struct {
 	PlayerName       string                 `protobuf:"bytes,2,opt,name=player_name,json=playerName,proto3" json:"player_name,omitempty"`
 	PlayerKind       PlayerKind             `protobuf:"varint,3,opt,name=player_kind,json=playerKind,proto3,enum=leaguelens.v1.PlayerKind" json:"player_kind,omitempty"`
 	ProTeam          string                 `protobuf:"bytes,4,opt,name=pro_team,json=proTeam,proto3" json:"pro_team,omitempty"`                                                 // Empty when unknown.
-	Position         string                 `protobuf:"bytes,5,opt,name=position,proto3" json:"position,omitempty"`                                                              // QB, RB, WR, TE, K, or DEF. Empty when unknown.
+	Position         PlayerPosition         `protobuf:"varint,5,opt,name=position,proto3,enum=leaguelens.v1.PlayerPosition" json:"position,omitempty"`                           // Unspecified when unknown.
 	InjuryStatus     InjuryStatus           `protobuf:"varint,6,opt,name=injury_status,json=injuryStatus,proto3,enum=leaguelens.v1.InjuryStatus" json:"injury_status,omitempty"` // Current status.
 	NextGame         *NextGame              `protobuf:"bytes,7,opt,name=next_game,json=nextGame,proto3" json:"next_game,omitempty"`                                              // Absent when no upcoming game is stored.
 	HeadshotUrl      string                 `protobuf:"bytes,8,opt,name=headshot_url,json=headshotUrl,proto3" json:"headshot_url,omitempty"`                                     // Team logo for D/ST. Empty when unknown.
@@ -1903,11 +1964,11 @@ func (x *PlayerCard) GetProTeam() string {
 	return ""
 }
 
-func (x *PlayerCard) GetPosition() string {
+func (x *PlayerCard) GetPosition() PlayerPosition {
 	if x != nil {
 		return x.Position
 	}
-	return ""
+	return PlayerPosition_PLAYER_POSITION_UNSPECIFIED
 }
 
 func (x *PlayerCard) GetInjuryStatus() InjuryStatus {
@@ -2405,7 +2466,7 @@ const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"\x14GetPlayerCardRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\"F\n" +
 	"\x15GetPlayerCardResponse\x12-\n" +
-	"\x04card\x18\x01 \x01(\v2\x19.leaguelens.v1.PlayerCardR\x04card\"\xc7\a\n" +
+	"\x04card\x18\x01 \x01(\v2\x19.leaguelens.v1.PlayerCardR\x04card\"\xe6\a\n" +
 	"\n" +
 	"PlayerCard\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x1f\n" +
@@ -2413,8 +2474,8 @@ const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"playerName\x12:\n" +
 	"\vplayer_kind\x18\x03 \x01(\x0e2\x19.leaguelens.v1.PlayerKindR\n" +
 	"playerKind\x12\x19\n" +
-	"\bpro_team\x18\x04 \x01(\tR\aproTeam\x12\x1a\n" +
-	"\bposition\x18\x05 \x01(\tR\bposition\x12@\n" +
+	"\bpro_team\x18\x04 \x01(\tR\aproTeam\x129\n" +
+	"\bposition\x18\x05 \x01(\x0e2\x1d.leaguelens.v1.PlayerPositionR\bposition\x12@\n" +
 	"\rinjury_status\x18\x06 \x01(\x0e2\x1b.leaguelens.v1.InjuryStatusR\finjuryStatus\x124\n" +
 	"\tnext_game\x18\a \x01(\v2\x17.leaguelens.v1.NextGameR\bnextGame\x12!\n" +
 	"\fheadshot_url\x18\b \x01(\tR\vheadshotUrl\x12\x16\n" +
@@ -2475,7 +2536,15 @@ const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"PlayerKind\x12\x1b\n" +
 	"\x17PLAYER_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12PLAYER_KIND_PERSON\x10\x01\x12\x1c\n" +
-	"\x18PLAYER_KIND_TEAM_DEFENSE\x10\x02*\x9c\x01\n" +
+	"\x18PLAYER_KIND_TEAM_DEFENSE\x10\x02*\xc1\x01\n" +
+	"\x0ePlayerPosition\x12\x1f\n" +
+	"\x1bPLAYER_POSITION_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12PLAYER_POSITION_QB\x10\x01\x12\x16\n" +
+	"\x12PLAYER_POSITION_RB\x10\x02\x12\x16\n" +
+	"\x12PLAYER_POSITION_WR\x10\x03\x12\x16\n" +
+	"\x12PLAYER_POSITION_TE\x10\x04\x12\x15\n" +
+	"\x11PLAYER_POSITION_K\x10\x05\x12\x17\n" +
+	"\x13PLAYER_POSITION_DEF\x10\x06*\x9c\x01\n" +
 	"\x0fPlayerBlurbKind\x12!\n" +
 	"\x1dPLAYER_BLURB_KIND_UNSPECIFIED\x10\x00\x12$\n" +
 	" PLAYER_BLURB_KIND_WEEKLY_OUTLOOK\x10\x01\x12\x1a\n" +
@@ -2507,124 +2576,126 @@ func file_leaguelens_v1_dashboard_proto_rawDescGZIP() []byte {
 	return file_leaguelens_v1_dashboard_proto_rawDescData
 }
 
-var file_leaguelens_v1_dashboard_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_leaguelens_v1_dashboard_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_leaguelens_v1_dashboard_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_leaguelens_v1_dashboard_proto_goTypes = []any{
 	(MatchupStatus)(0),                       // 0: leaguelens.v1.MatchupStatus
 	(GameState)(0),                           // 1: leaguelens.v1.GameState
 	(PlayerKind)(0),                          // 2: leaguelens.v1.PlayerKind
-	(PlayerBlurbKind)(0),                     // 3: leaguelens.v1.PlayerBlurbKind
-	(*ListLeaguesRequest)(nil),               // 4: leaguelens.v1.ListLeaguesRequest
-	(*ListLeaguesResponse)(nil),              // 5: leaguelens.v1.ListLeaguesResponse
-	(*GetLeagueRequest)(nil),                 // 6: leaguelens.v1.GetLeagueRequest
-	(*GetLeagueResponse)(nil),                // 7: leaguelens.v1.GetLeagueResponse
-	(*League)(nil),                           // 8: leaguelens.v1.League
-	(*Team)(nil),                             // 9: leaguelens.v1.Team
-	(*TeamRecord)(nil),                       // 10: leaguelens.v1.TeamRecord
-	(*GetTeamRosterRequest)(nil),             // 11: leaguelens.v1.GetTeamRosterRequest
-	(*GetTeamRosterResponse)(nil),            // 12: leaguelens.v1.GetTeamRosterResponse
-	(*RosterSnapshot)(nil),                   // 13: leaguelens.v1.RosterSnapshot
-	(*RosterEntry)(nil),                      // 14: leaguelens.v1.RosterEntry
-	(*Positions)(nil),                        // 15: leaguelens.v1.Positions
-	(*ListMatchupsRequest)(nil),              // 16: leaguelens.v1.ListMatchupsRequest
-	(*ListMatchupsResponse)(nil),             // 17: leaguelens.v1.ListMatchupsResponse
-	(*Matchup)(nil),                          // 18: leaguelens.v1.Matchup
-	(*ScoringPeriods)(nil),                   // 19: leaguelens.v1.ScoringPeriods
-	(*MatchupSide)(nil),                      // 20: leaguelens.v1.MatchupSide
-	(*GetMatchupDetailRequest)(nil),          // 21: leaguelens.v1.GetMatchupDetailRequest
-	(*GetMatchupDetailResponse)(nil),         // 22: leaguelens.v1.GetMatchupDetailResponse
-	(*MatchupDetail)(nil),                    // 23: leaguelens.v1.MatchupDetail
-	(*MatchupLineup)(nil),                    // 24: leaguelens.v1.MatchupLineup
-	(*LineupPlayer)(nil),                     // 25: leaguelens.v1.LineupPlayer
-	(*GetPlayerCardRequest)(nil),             // 26: leaguelens.v1.GetPlayerCardRequest
-	(*GetPlayerCardResponse)(nil),            // 27: leaguelens.v1.GetPlayerCardResponse
-	(*PlayerCard)(nil),                       // 28: leaguelens.v1.PlayerCard
-	(*NextGame)(nil),                         // 29: leaguelens.v1.NextGame
-	(*PlayerDraft)(nil),                      // 30: leaguelens.v1.PlayerDraft
-	(*PlayerBlurb)(nil),                      // 31: leaguelens.v1.PlayerBlurb
-	(*PlayerStat)(nil),                       // 32: leaguelens.v1.PlayerStat
-	(*timestamppb.Timestamp)(nil),            // 33: google.protobuf.Timestamp
-	(InjuryStatus)(0),                        // 34: leaguelens.v1.InjuryStatus
-	(*GetOverviewAttentionRequest)(nil),      // 35: leaguelens.v1.GetOverviewAttentionRequest
-	(*DismissLineupAlertRequest)(nil),        // 36: leaguelens.v1.DismissLineupAlertRequest
-	(*RestoreLineupAlertRequest)(nil),        // 37: leaguelens.v1.RestoreLineupAlertRequest
-	(*GetOverviewMatchupsRequest)(nil),       // 38: leaguelens.v1.GetOverviewMatchupsRequest
-	(*GetOverviewPlayerUpdatesRequest)(nil),  // 39: leaguelens.v1.GetOverviewPlayerUpdatesRequest
-	(*GetOverviewLookingAheadRequest)(nil),   // 40: leaguelens.v1.GetOverviewLookingAheadRequest
-	(*GetOverviewAttentionResponse)(nil),     // 41: leaguelens.v1.GetOverviewAttentionResponse
-	(*DismissLineupAlertResponse)(nil),       // 42: leaguelens.v1.DismissLineupAlertResponse
-	(*RestoreLineupAlertResponse)(nil),       // 43: leaguelens.v1.RestoreLineupAlertResponse
-	(*GetOverviewMatchupsResponse)(nil),      // 44: leaguelens.v1.GetOverviewMatchupsResponse
-	(*GetOverviewPlayerUpdatesResponse)(nil), // 45: leaguelens.v1.GetOverviewPlayerUpdatesResponse
-	(*GetOverviewLookingAheadResponse)(nil),  // 46: leaguelens.v1.GetOverviewLookingAheadResponse
+	(PlayerPosition)(0),                      // 3: leaguelens.v1.PlayerPosition
+	(PlayerBlurbKind)(0),                     // 4: leaguelens.v1.PlayerBlurbKind
+	(*ListLeaguesRequest)(nil),               // 5: leaguelens.v1.ListLeaguesRequest
+	(*ListLeaguesResponse)(nil),              // 6: leaguelens.v1.ListLeaguesResponse
+	(*GetLeagueRequest)(nil),                 // 7: leaguelens.v1.GetLeagueRequest
+	(*GetLeagueResponse)(nil),                // 8: leaguelens.v1.GetLeagueResponse
+	(*League)(nil),                           // 9: leaguelens.v1.League
+	(*Team)(nil),                             // 10: leaguelens.v1.Team
+	(*TeamRecord)(nil),                       // 11: leaguelens.v1.TeamRecord
+	(*GetTeamRosterRequest)(nil),             // 12: leaguelens.v1.GetTeamRosterRequest
+	(*GetTeamRosterResponse)(nil),            // 13: leaguelens.v1.GetTeamRosterResponse
+	(*RosterSnapshot)(nil),                   // 14: leaguelens.v1.RosterSnapshot
+	(*RosterEntry)(nil),                      // 15: leaguelens.v1.RosterEntry
+	(*Positions)(nil),                        // 16: leaguelens.v1.Positions
+	(*ListMatchupsRequest)(nil),              // 17: leaguelens.v1.ListMatchupsRequest
+	(*ListMatchupsResponse)(nil),             // 18: leaguelens.v1.ListMatchupsResponse
+	(*Matchup)(nil),                          // 19: leaguelens.v1.Matchup
+	(*ScoringPeriods)(nil),                   // 20: leaguelens.v1.ScoringPeriods
+	(*MatchupSide)(nil),                      // 21: leaguelens.v1.MatchupSide
+	(*GetMatchupDetailRequest)(nil),          // 22: leaguelens.v1.GetMatchupDetailRequest
+	(*GetMatchupDetailResponse)(nil),         // 23: leaguelens.v1.GetMatchupDetailResponse
+	(*MatchupDetail)(nil),                    // 24: leaguelens.v1.MatchupDetail
+	(*MatchupLineup)(nil),                    // 25: leaguelens.v1.MatchupLineup
+	(*LineupPlayer)(nil),                     // 26: leaguelens.v1.LineupPlayer
+	(*GetPlayerCardRequest)(nil),             // 27: leaguelens.v1.GetPlayerCardRequest
+	(*GetPlayerCardResponse)(nil),            // 28: leaguelens.v1.GetPlayerCardResponse
+	(*PlayerCard)(nil),                       // 29: leaguelens.v1.PlayerCard
+	(*NextGame)(nil),                         // 30: leaguelens.v1.NextGame
+	(*PlayerDraft)(nil),                      // 31: leaguelens.v1.PlayerDraft
+	(*PlayerBlurb)(nil),                      // 32: leaguelens.v1.PlayerBlurb
+	(*PlayerStat)(nil),                       // 33: leaguelens.v1.PlayerStat
+	(*timestamppb.Timestamp)(nil),            // 34: google.protobuf.Timestamp
+	(InjuryStatus)(0),                        // 35: leaguelens.v1.InjuryStatus
+	(*GetOverviewAttentionRequest)(nil),      // 36: leaguelens.v1.GetOverviewAttentionRequest
+	(*DismissLineupAlertRequest)(nil),        // 37: leaguelens.v1.DismissLineupAlertRequest
+	(*RestoreLineupAlertRequest)(nil),        // 38: leaguelens.v1.RestoreLineupAlertRequest
+	(*GetOverviewMatchupsRequest)(nil),       // 39: leaguelens.v1.GetOverviewMatchupsRequest
+	(*GetOverviewPlayerUpdatesRequest)(nil),  // 40: leaguelens.v1.GetOverviewPlayerUpdatesRequest
+	(*GetOverviewLookingAheadRequest)(nil),   // 41: leaguelens.v1.GetOverviewLookingAheadRequest
+	(*GetOverviewAttentionResponse)(nil),     // 42: leaguelens.v1.GetOverviewAttentionResponse
+	(*DismissLineupAlertResponse)(nil),       // 43: leaguelens.v1.DismissLineupAlertResponse
+	(*RestoreLineupAlertResponse)(nil),       // 44: leaguelens.v1.RestoreLineupAlertResponse
+	(*GetOverviewMatchupsResponse)(nil),      // 45: leaguelens.v1.GetOverviewMatchupsResponse
+	(*GetOverviewPlayerUpdatesResponse)(nil), // 46: leaguelens.v1.GetOverviewPlayerUpdatesResponse
+	(*GetOverviewLookingAheadResponse)(nil),  // 47: leaguelens.v1.GetOverviewLookingAheadResponse
 }
 var file_leaguelens_v1_dashboard_proto_depIdxs = []int32{
-	8,  // 0: leaguelens.v1.ListLeaguesResponse.leagues:type_name -> leaguelens.v1.League
-	8,  // 1: leaguelens.v1.GetLeagueResponse.league:type_name -> leaguelens.v1.League
-	9,  // 2: leaguelens.v1.GetLeagueResponse.teams:type_name -> leaguelens.v1.Team
-	33, // 3: leaguelens.v1.League.last_successful_sync_at:type_name -> google.protobuf.Timestamp
-	10, // 4: leaguelens.v1.Team.record:type_name -> leaguelens.v1.TeamRecord
-	13, // 5: leaguelens.v1.GetTeamRosterResponse.snapshot:type_name -> leaguelens.v1.RosterSnapshot
-	33, // 6: leaguelens.v1.RosterSnapshot.observed_at:type_name -> google.protobuf.Timestamp
-	33, // 7: leaguelens.v1.RosterSnapshot.effective_at:type_name -> google.protobuf.Timestamp
-	14, // 8: leaguelens.v1.RosterSnapshot.entries:type_name -> leaguelens.v1.RosterEntry
-	15, // 9: leaguelens.v1.RosterEntry.eligible_positions:type_name -> leaguelens.v1.Positions
-	18, // 10: leaguelens.v1.ListMatchupsResponse.matchups:type_name -> leaguelens.v1.Matchup
-	19, // 11: leaguelens.v1.Matchup.scoring_periods:type_name -> leaguelens.v1.ScoringPeriods
-	20, // 12: leaguelens.v1.Matchup.team_a:type_name -> leaguelens.v1.MatchupSide
-	20, // 13: leaguelens.v1.Matchup.team_b:type_name -> leaguelens.v1.MatchupSide
-	33, // 14: leaguelens.v1.Matchup.fetched_at:type_name -> google.protobuf.Timestamp
-	23, // 15: leaguelens.v1.GetMatchupDetailResponse.matchup:type_name -> leaguelens.v1.MatchupDetail
+	9,  // 0: leaguelens.v1.ListLeaguesResponse.leagues:type_name -> leaguelens.v1.League
+	9,  // 1: leaguelens.v1.GetLeagueResponse.league:type_name -> leaguelens.v1.League
+	10, // 2: leaguelens.v1.GetLeagueResponse.teams:type_name -> leaguelens.v1.Team
+	34, // 3: leaguelens.v1.League.last_successful_sync_at:type_name -> google.protobuf.Timestamp
+	11, // 4: leaguelens.v1.Team.record:type_name -> leaguelens.v1.TeamRecord
+	14, // 5: leaguelens.v1.GetTeamRosterResponse.snapshot:type_name -> leaguelens.v1.RosterSnapshot
+	34, // 6: leaguelens.v1.RosterSnapshot.observed_at:type_name -> google.protobuf.Timestamp
+	34, // 7: leaguelens.v1.RosterSnapshot.effective_at:type_name -> google.protobuf.Timestamp
+	15, // 8: leaguelens.v1.RosterSnapshot.entries:type_name -> leaguelens.v1.RosterEntry
+	16, // 9: leaguelens.v1.RosterEntry.eligible_positions:type_name -> leaguelens.v1.Positions
+	19, // 10: leaguelens.v1.ListMatchupsResponse.matchups:type_name -> leaguelens.v1.Matchup
+	20, // 11: leaguelens.v1.Matchup.scoring_periods:type_name -> leaguelens.v1.ScoringPeriods
+	21, // 12: leaguelens.v1.Matchup.team_a:type_name -> leaguelens.v1.MatchupSide
+	21, // 13: leaguelens.v1.Matchup.team_b:type_name -> leaguelens.v1.MatchupSide
+	34, // 14: leaguelens.v1.Matchup.fetched_at:type_name -> google.protobuf.Timestamp
+	24, // 15: leaguelens.v1.GetMatchupDetailResponse.matchup:type_name -> leaguelens.v1.MatchupDetail
 	0,  // 16: leaguelens.v1.MatchupDetail.status:type_name -> leaguelens.v1.MatchupStatus
-	24, // 17: leaguelens.v1.MatchupDetail.team:type_name -> leaguelens.v1.MatchupLineup
-	24, // 18: leaguelens.v1.MatchupDetail.opponent:type_name -> leaguelens.v1.MatchupLineup
-	33, // 19: leaguelens.v1.MatchupDetail.fetched_at:type_name -> google.protobuf.Timestamp
-	10, // 20: leaguelens.v1.MatchupLineup.record:type_name -> leaguelens.v1.TeamRecord
-	25, // 21: leaguelens.v1.MatchupLineup.starters:type_name -> leaguelens.v1.LineupPlayer
-	25, // 22: leaguelens.v1.MatchupLineup.bench:type_name -> leaguelens.v1.LineupPlayer
-	34, // 23: leaguelens.v1.LineupPlayer.injury_status:type_name -> leaguelens.v1.InjuryStatus
+	25, // 17: leaguelens.v1.MatchupDetail.team:type_name -> leaguelens.v1.MatchupLineup
+	25, // 18: leaguelens.v1.MatchupDetail.opponent:type_name -> leaguelens.v1.MatchupLineup
+	34, // 19: leaguelens.v1.MatchupDetail.fetched_at:type_name -> google.protobuf.Timestamp
+	11, // 20: leaguelens.v1.MatchupLineup.record:type_name -> leaguelens.v1.TeamRecord
+	26, // 21: leaguelens.v1.MatchupLineup.starters:type_name -> leaguelens.v1.LineupPlayer
+	26, // 22: leaguelens.v1.MatchupLineup.bench:type_name -> leaguelens.v1.LineupPlayer
+	35, // 23: leaguelens.v1.LineupPlayer.injury_status:type_name -> leaguelens.v1.InjuryStatus
 	1,  // 24: leaguelens.v1.LineupPlayer.game_state:type_name -> leaguelens.v1.GameState
-	33, // 25: leaguelens.v1.LineupPlayer.kickoff_at:type_name -> google.protobuf.Timestamp
-	28, // 26: leaguelens.v1.GetPlayerCardResponse.card:type_name -> leaguelens.v1.PlayerCard
+	34, // 25: leaguelens.v1.LineupPlayer.kickoff_at:type_name -> google.protobuf.Timestamp
+	29, // 26: leaguelens.v1.GetPlayerCardResponse.card:type_name -> leaguelens.v1.PlayerCard
 	2,  // 27: leaguelens.v1.PlayerCard.player_kind:type_name -> leaguelens.v1.PlayerKind
-	34, // 28: leaguelens.v1.PlayerCard.injury_status:type_name -> leaguelens.v1.InjuryStatus
-	29, // 29: leaguelens.v1.PlayerCard.next_game:type_name -> leaguelens.v1.NextGame
-	30, // 30: leaguelens.v1.PlayerCard.draft:type_name -> leaguelens.v1.PlayerDraft
-	31, // 31: leaguelens.v1.PlayerCard.blurb:type_name -> leaguelens.v1.PlayerBlurb
-	32, // 32: leaguelens.v1.PlayerCard.season_stats:type_name -> leaguelens.v1.PlayerStat
-	33, // 33: leaguelens.v1.PlayerCard.profile_fetched_at:type_name -> google.protobuf.Timestamp
-	33, // 34: leaguelens.v1.NextGame.kickoff_at:type_name -> google.protobuf.Timestamp
-	3,  // 35: leaguelens.v1.PlayerBlurb.kind:type_name -> leaguelens.v1.PlayerBlurbKind
-	33, // 36: leaguelens.v1.PlayerBlurb.published_at:type_name -> google.protobuf.Timestamp
-	35, // 37: leaguelens.v1.DashboardService.GetOverviewAttention:input_type -> leaguelens.v1.GetOverviewAttentionRequest
-	36, // 38: leaguelens.v1.DashboardService.DismissLineupAlert:input_type -> leaguelens.v1.DismissLineupAlertRequest
-	37, // 39: leaguelens.v1.DashboardService.RestoreLineupAlert:input_type -> leaguelens.v1.RestoreLineupAlertRequest
-	38, // 40: leaguelens.v1.DashboardService.GetOverviewMatchups:input_type -> leaguelens.v1.GetOverviewMatchupsRequest
-	39, // 41: leaguelens.v1.DashboardService.GetOverviewPlayerUpdates:input_type -> leaguelens.v1.GetOverviewPlayerUpdatesRequest
-	40, // 42: leaguelens.v1.DashboardService.GetOverviewLookingAhead:input_type -> leaguelens.v1.GetOverviewLookingAheadRequest
-	4,  // 43: leaguelens.v1.DashboardService.ListLeagues:input_type -> leaguelens.v1.ListLeaguesRequest
-	6,  // 44: leaguelens.v1.DashboardService.GetLeague:input_type -> leaguelens.v1.GetLeagueRequest
-	11, // 45: leaguelens.v1.DashboardService.GetTeamRoster:input_type -> leaguelens.v1.GetTeamRosterRequest
-	16, // 46: leaguelens.v1.DashboardService.ListMatchups:input_type -> leaguelens.v1.ListMatchupsRequest
-	21, // 47: leaguelens.v1.DashboardService.GetMatchupDetail:input_type -> leaguelens.v1.GetMatchupDetailRequest
-	26, // 48: leaguelens.v1.DashboardService.GetPlayerCard:input_type -> leaguelens.v1.GetPlayerCardRequest
-	41, // 49: leaguelens.v1.DashboardService.GetOverviewAttention:output_type -> leaguelens.v1.GetOverviewAttentionResponse
-	42, // 50: leaguelens.v1.DashboardService.DismissLineupAlert:output_type -> leaguelens.v1.DismissLineupAlertResponse
-	43, // 51: leaguelens.v1.DashboardService.RestoreLineupAlert:output_type -> leaguelens.v1.RestoreLineupAlertResponse
-	44, // 52: leaguelens.v1.DashboardService.GetOverviewMatchups:output_type -> leaguelens.v1.GetOverviewMatchupsResponse
-	45, // 53: leaguelens.v1.DashboardService.GetOverviewPlayerUpdates:output_type -> leaguelens.v1.GetOverviewPlayerUpdatesResponse
-	46, // 54: leaguelens.v1.DashboardService.GetOverviewLookingAhead:output_type -> leaguelens.v1.GetOverviewLookingAheadResponse
-	5,  // 55: leaguelens.v1.DashboardService.ListLeagues:output_type -> leaguelens.v1.ListLeaguesResponse
-	7,  // 56: leaguelens.v1.DashboardService.GetLeague:output_type -> leaguelens.v1.GetLeagueResponse
-	12, // 57: leaguelens.v1.DashboardService.GetTeamRoster:output_type -> leaguelens.v1.GetTeamRosterResponse
-	17, // 58: leaguelens.v1.DashboardService.ListMatchups:output_type -> leaguelens.v1.ListMatchupsResponse
-	22, // 59: leaguelens.v1.DashboardService.GetMatchupDetail:output_type -> leaguelens.v1.GetMatchupDetailResponse
-	27, // 60: leaguelens.v1.DashboardService.GetPlayerCard:output_type -> leaguelens.v1.GetPlayerCardResponse
-	49, // [49:61] is the sub-list for method output_type
-	37, // [37:49] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	3,  // 28: leaguelens.v1.PlayerCard.position:type_name -> leaguelens.v1.PlayerPosition
+	35, // 29: leaguelens.v1.PlayerCard.injury_status:type_name -> leaguelens.v1.InjuryStatus
+	30, // 30: leaguelens.v1.PlayerCard.next_game:type_name -> leaguelens.v1.NextGame
+	31, // 31: leaguelens.v1.PlayerCard.draft:type_name -> leaguelens.v1.PlayerDraft
+	32, // 32: leaguelens.v1.PlayerCard.blurb:type_name -> leaguelens.v1.PlayerBlurb
+	33, // 33: leaguelens.v1.PlayerCard.season_stats:type_name -> leaguelens.v1.PlayerStat
+	34, // 34: leaguelens.v1.PlayerCard.profile_fetched_at:type_name -> google.protobuf.Timestamp
+	34, // 35: leaguelens.v1.NextGame.kickoff_at:type_name -> google.protobuf.Timestamp
+	4,  // 36: leaguelens.v1.PlayerBlurb.kind:type_name -> leaguelens.v1.PlayerBlurbKind
+	34, // 37: leaguelens.v1.PlayerBlurb.published_at:type_name -> google.protobuf.Timestamp
+	36, // 38: leaguelens.v1.DashboardService.GetOverviewAttention:input_type -> leaguelens.v1.GetOverviewAttentionRequest
+	37, // 39: leaguelens.v1.DashboardService.DismissLineupAlert:input_type -> leaguelens.v1.DismissLineupAlertRequest
+	38, // 40: leaguelens.v1.DashboardService.RestoreLineupAlert:input_type -> leaguelens.v1.RestoreLineupAlertRequest
+	39, // 41: leaguelens.v1.DashboardService.GetOverviewMatchups:input_type -> leaguelens.v1.GetOverviewMatchupsRequest
+	40, // 42: leaguelens.v1.DashboardService.GetOverviewPlayerUpdates:input_type -> leaguelens.v1.GetOverviewPlayerUpdatesRequest
+	41, // 43: leaguelens.v1.DashboardService.GetOverviewLookingAhead:input_type -> leaguelens.v1.GetOverviewLookingAheadRequest
+	5,  // 44: leaguelens.v1.DashboardService.ListLeagues:input_type -> leaguelens.v1.ListLeaguesRequest
+	7,  // 45: leaguelens.v1.DashboardService.GetLeague:input_type -> leaguelens.v1.GetLeagueRequest
+	12, // 46: leaguelens.v1.DashboardService.GetTeamRoster:input_type -> leaguelens.v1.GetTeamRosterRequest
+	17, // 47: leaguelens.v1.DashboardService.ListMatchups:input_type -> leaguelens.v1.ListMatchupsRequest
+	22, // 48: leaguelens.v1.DashboardService.GetMatchupDetail:input_type -> leaguelens.v1.GetMatchupDetailRequest
+	27, // 49: leaguelens.v1.DashboardService.GetPlayerCard:input_type -> leaguelens.v1.GetPlayerCardRequest
+	42, // 50: leaguelens.v1.DashboardService.GetOverviewAttention:output_type -> leaguelens.v1.GetOverviewAttentionResponse
+	43, // 51: leaguelens.v1.DashboardService.DismissLineupAlert:output_type -> leaguelens.v1.DismissLineupAlertResponse
+	44, // 52: leaguelens.v1.DashboardService.RestoreLineupAlert:output_type -> leaguelens.v1.RestoreLineupAlertResponse
+	45, // 53: leaguelens.v1.DashboardService.GetOverviewMatchups:output_type -> leaguelens.v1.GetOverviewMatchupsResponse
+	46, // 54: leaguelens.v1.DashboardService.GetOverviewPlayerUpdates:output_type -> leaguelens.v1.GetOverviewPlayerUpdatesResponse
+	47, // 55: leaguelens.v1.DashboardService.GetOverviewLookingAhead:output_type -> leaguelens.v1.GetOverviewLookingAheadResponse
+	6,  // 56: leaguelens.v1.DashboardService.ListLeagues:output_type -> leaguelens.v1.ListLeaguesResponse
+	8,  // 57: leaguelens.v1.DashboardService.GetLeague:output_type -> leaguelens.v1.GetLeagueResponse
+	13, // 58: leaguelens.v1.DashboardService.GetTeamRoster:output_type -> leaguelens.v1.GetTeamRosterResponse
+	18, // 59: leaguelens.v1.DashboardService.ListMatchups:output_type -> leaguelens.v1.ListMatchupsResponse
+	23, // 60: leaguelens.v1.DashboardService.GetMatchupDetail:output_type -> leaguelens.v1.GetMatchupDetailResponse
+	28, // 61: leaguelens.v1.DashboardService.GetPlayerCard:output_type -> leaguelens.v1.GetPlayerCardResponse
+	50, // [50:62] is the sub-list for method output_type
+	38, // [38:50] is the sub-list for method input_type
+	38, // [38:38] is the sub-list for extension type_name
+	38, // [38:38] is the sub-list for extension extendee
+	0,  // [0:38] is the sub-list for field type_name
 }
 
 func init() { file_leaguelens_v1_dashboard_proto_init() }
@@ -2648,7 +2719,7 @@ func file_leaguelens_v1_dashboard_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leaguelens_v1_dashboard_proto_rawDesc), len(file_leaguelens_v1_dashboard_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,

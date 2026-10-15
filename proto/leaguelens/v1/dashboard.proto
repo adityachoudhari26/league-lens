@@ -201,7 +201,7 @@ message PlayerCard {
   string player_name = 2;
   PlayerKind player_kind = 3;
   string pro_team = 4; // Empty when unknown.
-  string position = 5; // QB, RB, WR, TE, K, or DEF. Empty when unknown.
+  PlayerPosition position = 5; // Unspecified when unknown.
   InjuryStatus injury_status = 6; // Current status.
   NextGame next_game = 7; // Absent when no upcoming game is stored.
   string headshot_url = 8; // Team logo for D/ST. Empty when unknown.
@@ -222,6 +222,15 @@ enum PlayerKind {
   PLAYER_KIND_UNSPECIFIED = 0;
   PLAYER_KIND_PERSON = 1;
   PLAYER_KIND_TEAM_DEFENSE = 2;
+}
+enum PlayerPosition {
+  PLAYER_POSITION_UNSPECIFIED = 0;
+  PLAYER_POSITION_QB = 1;
+  PLAYER_POSITION_RB = 2;
+  PLAYER_POSITION_WR = 3;
+  PLAYER_POSITION_TE = 4;
+  PLAYER_POSITION_K = 5;
+  PLAYER_POSITION_DEF = 6;
 }
 message NextGame {
   string opponent = 1; // NFL team abbreviation.
