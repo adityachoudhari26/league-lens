@@ -1,4 +1,8 @@
-# League Lens
+<p align="center">
+  <img src="web/public/favicon.svg" alt="League Lens icon" width="128" height="128" />
+</p>
+
+<h1 align="center">League Lens</h1>
 
 An open-source, self-hosted fantasy football dashboard for ESPN and Sleeper, with optional AI powered by your own credentials. The core dashboard should work without an AI subscription or mandatory paid data service. Yahoo is deferred.
 
