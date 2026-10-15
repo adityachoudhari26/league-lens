@@ -17,7 +17,7 @@ The Matchups detail backend is authorized: a `matchup_lineups` table with per-pl
 
 Matchup projections are authorized: per-player league-scored projections stored as `matchup_lineups.projected_points` (latest only, replaced each sync), from ESPN `mBoxscore` projected stat rows and, for Sleeper, the `/projections/nfl/{season}/{week}` stat lines for every synced week scored with the league's `scoring_settings`; optional `LineupPlayer.projected_points` and server-computed `MatchupLineup.projected_score` in `GetMatchupDetail`; and their Matchups display.
 
-The player info card is authorized: a source-agnostic `playerprofile.Source` interface with an ESPN implementation over public athlete and fantasy endpoints (no cookies), fetched on hover rather than during sync, cached in a constrained `player_profiles` table (with `player_profile_stats` rows) refreshed after 12 hours, served by a `GetPlayerCard` RPC, and shown in a hover/tap card.
+The player info card is authorized: a source-agnostic `playerprofile.Source` interface with an ESPN implementation over public athlete and fantasy endpoints (no cookies), fetched live each time a card opens rather than during sync and saved to a constrained `player_profiles` table (with `player_profile_stats` rows) as the fallback when a fetch fails, served by a `GetPlayerCard` RPC, and shown in a hover/tap card.
 
 Checkpoint 12 Docker installation is authorized: a multi-stage Dockerfile with the frontend embedded behind the `embedweb` build tag, the API under `/api`, a localhost-only Host check, opt-in startup migrations (`MIGRATE_ON_START`), and a Compose `app` service published on `127.0.0.1` at `http://league-lens.localhost`. Image publication remains unapproved.
 

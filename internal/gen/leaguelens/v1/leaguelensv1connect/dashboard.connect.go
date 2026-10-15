@@ -161,9 +161,8 @@ type DashboardServiceClient interface {
 	GetTeamRoster(context.Context, *v1.GetTeamRosterRequest) (*v1.GetTeamRosterResponse, error)
 	ListMatchups(context.Context, *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error)
 	GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error)
-	// GetPlayerCard is the one read that may contact a profile source: it serves
-	// the cached profile, refetching it once 12 hours old. NOT_FOUND for an
-	// unknown player_id.
+	// GetPlayerCard is the one read that contacts a profile source: it fetches
+	// the player's profile live and saves it. NOT_FOUND for an unknown player_id.
 	GetPlayerCard(context.Context, *v1.GetPlayerCardRequest) (*v1.GetPlayerCardResponse, error)
 }
 
@@ -186,9 +185,8 @@ type DashboardServiceHandler interface {
 	GetTeamRoster(context.Context, *v1.GetTeamRosterRequest) (*v1.GetTeamRosterResponse, error)
 	ListMatchups(context.Context, *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error)
 	GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error)
-	// GetPlayerCard is the one read that may contact a profile source: it serves
-	// the cached profile, refetching it once 12 hours old. NOT_FOUND for an
-	// unknown player_id.
+	// GetPlayerCard is the one read that contacts a profile source: it fetches
+	// the player's profile live and saves it. NOT_FOUND for an unknown player_id.
 	GetPlayerCard(context.Context, *v1.GetPlayerCardRequest) (*v1.GetPlayerCardResponse, error)
 }
 

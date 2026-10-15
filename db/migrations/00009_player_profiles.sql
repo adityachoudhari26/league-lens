@@ -1,7 +1,7 @@
 -- +goose Up
--- One player's card profile from a profile source, fetched when a card opens
--- and refreshed once fetched_at is 12 hours old. Profiles are global per
--- player, not owner-scoped. NULL means the source didn't report the field.
+-- One player's last fetched card profile from a profile source, refetched each
+-- time a card opens and served as-is when a refetch fails. Profiles are global
+-- per player, not owner-scoped. NULL means the source didn't report the field.
 CREATE TABLE player_profiles (
     player_id uuid PRIMARY KEY REFERENCES players(id),
     source text NOT NULL CHECK (source <> ''),
