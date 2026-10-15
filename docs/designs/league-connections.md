@@ -1,6 +1,6 @@
 # Installation and in-app league connections
 
-Status: proposed. Nothing in this document is implemented yet.
+Status: Docker installation implemented; in-app league connections remain proposed.
 
 League Lens stays a laptop-only, self-hosted app. Installation remains
 terminal-based through Docker; connecting ESPN and Sleeper leagues moves into the
@@ -13,19 +13,25 @@ The user installs Docker Desktop (Windows or macOS) or OrbStack (macOS), then ru
 `docker compose up -d` from a checkout and opens `http://league-lens.localhost`.
 
 - A multi-stage `Dockerfile` builds the frontend, embeds it in the Go server, and
-  ships a small runtime image. `.dockerignore` keeps environment files and keys
-  out of the build context.
+  ships a small runtime image built locally; no image is published.
+  `.dockerignore` keeps environment files, keys, and host `web/dist` out of the
+  build context.
 - The server serves the built frontend with a fallback to `index.html` for client
-  routes. Connect and health routes take precedence.
-- The server applies the embedded Goose migrations on startup before listening.
+  routes. The API is served under `/api`; health checks remain at the root.
+- Startup migrations are opt-in via `MIGRATE_ON_START`, enabled in the image.
+  Development migrations remain explicit with `just migrate`.
 - `compose.yaml` gains an `app` service that waits for a healthy Postgres and
   publishes `127.0.0.1:${LEAGUE_LENS_PORT:-80}`. If port 80 is already taken,
-  `LEAGUE_LENS_PORT=8080` in `.env` selects another port. The service sits behind
-  a Compose profile so `just db-up` and `just dev` keep starting Postgres only.
+  `LEAGUE_LENS_PORT=8080` in `.env` selects another port. It has no Compose
+  profile; `just db-up` still targets only Postgres, and `just dev` still runs the
+  local Vite and Go processes.
 - Names ending in `.localhost` resolve to the loopback address in Chrome, Edge,
-  and Firefox without a hosts-file entry. Safari support is unverified.
-- Requests whose `Host` is not `localhost`, `127.0.0.1`, or a `*.localhost` name
-  are rejected, which blocks DNS rebinding.
+  and Firefox without a hosts-file entry. Safari is unverified; use
+  `http://localhost` there.
+- Requests whose `Host` is not `localhost`, `127.0.0.1`, `::1`, or a
+  `*.localhost` name are rejected, which blocks DNS rebinding.
+- Until the connect UI ships, the image includes the `import` binary for
+  `docker compose exec app import sleeper|espn ...` CLI imports.
 
 ## Connecting leagues
 
