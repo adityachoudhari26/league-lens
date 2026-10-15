@@ -208,7 +208,7 @@ func (r *Runner) logLiveScoreFailure(target Target, err error) {
 		"provider", target.Selection.League.Provider, "code", failureCode(err))
 }
 
-// saveLiveMatchup validates provider identities and atomically persists live scores, lineup updates, and changed win-chance samples.
+// saveLiveMatchup validates provider identities and atomically persists scores, lineup observations, point changes, and win-chance samples.
 func (r *Runner) saveLiveMatchup(
 	ctx context.Context,
 	scoreboard fantasy.NFLScoreboard,
@@ -247,22 +247,20 @@ func (r *Runner) saveLiveMatchup(
 			return err
 		}
 
+		observations, err := loadLiveLineupObservations(ctx, queries, candidate.MatchupID)
+		if err != nil {
+			return err
+		}
 		for _, lineup := range live.Lineups {
 			for _, entry := range lineup.Entries {
-				points, err := liveScore(entry.Points)
+				updated, err := r.saveLiveLineupEntry(
+					ctx, queries, candidate.MatchupID, teamIDs[lineup.TeamID],
+					string(target.Selection.League.Provider), entry, observations,
+				)
 				if err != nil {
 					return err
 				}
-				touchdowns, fieldGoals := liveCounts(entry.Scoring)
-				rows, err := queries.UpdateLiveLineupEntry(ctx, store.UpdateLiveLineupEntryParams{
-					Points: points, Touchdowns: touchdowns, FieldGoals: fieldGoals,
-					MatchupID: candidate.MatchupID, TeamID: teamIDs[lineup.TeamID],
-					Provider: string(target.Selection.League.Provider), ExternalPlayerID: entry.PlayerID,
-				})
-				if err != nil {
-					return err
-				}
-				if rows == 0 {
+				if !updated {
 					skippedEntries++
 				} else {
 					updatedEntries++

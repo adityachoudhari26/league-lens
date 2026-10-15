@@ -11,6 +11,47 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const insertLineupPointChange = `-- name: InsertLineupPointChange :exec
+INSERT INTO lineup_point_changes (
+ matchup_id, team_id, player_id, observed_at, points_before, points_after,
+ touchdowns_before, touchdowns_after, field_goals_before, field_goals_after
+)
+VALUES (
+ $1, $2, $3, $4, $5, $6,
+ $7, $8, $9, $10
+)
+ON CONFLICT DO NOTHING
+`
+
+type InsertLineupPointChangeParams struct {
+	MatchupID        pgtype.UUID
+	TeamID           pgtype.UUID
+	PlayerID         pgtype.UUID
+	ObservedAt       pgtype.Timestamptz
+	PointsBefore     pgtype.Numeric
+	PointsAfter      pgtype.Numeric
+	TouchdownsBefore pgtype.Int4
+	TouchdownsAfter  pgtype.Int4
+	FieldGoalsBefore pgtype.Int4
+	FieldGoalsAfter  pgtype.Int4
+}
+
+func (q *Queries) InsertLineupPointChange(ctx context.Context, arg InsertLineupPointChangeParams) error {
+	_, err := q.db.Exec(ctx, insertLineupPointChange,
+		arg.MatchupID,
+		arg.TeamID,
+		arg.PlayerID,
+		arg.ObservedAt,
+		arg.PointsBefore,
+		arg.PointsAfter,
+		arg.TouchdownsBefore,
+		arg.TouchdownsAfter,
+		arg.FieldGoalsBefore,
+		arg.FieldGoalsAfter,
+	)
+	return err
+}
+
 const insertWinChanceSample = `-- name: InsertWinChanceSample :exec
 INSERT INTO win_chance_samples (matchup_id, observed_at, team_a_win_chance, score_a, score_b, projected_a, projected_b)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -64,6 +105,47 @@ func (q *Queries) LatestWinChanceSample(ctx context.Context, matchupID pgtype.UU
 		&i.ProjectedB,
 	)
 	return i, err
+}
+
+const listLiveLineupObservations = `-- name: ListLiveLineupObservations :many
+SELECT team_id, player_id, points, touchdowns, field_goals, observed_at
+FROM live_lineup_observations WHERE matchup_id = $1
+`
+
+type ListLiveLineupObservationsRow struct {
+	TeamID     pgtype.UUID
+	PlayerID   pgtype.UUID
+	Points     pgtype.Numeric
+	Touchdowns pgtype.Int4
+	FieldGoals pgtype.Int4
+	ObservedAt pgtype.Timestamptz
+}
+
+func (q *Queries) ListLiveLineupObservations(ctx context.Context, matchupID pgtype.UUID) ([]ListLiveLineupObservationsRow, error) {
+	rows, err := q.db.Query(ctx, listLiveLineupObservations, matchupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLiveLineupObservationsRow{}
+	for rows.Next() {
+		var i ListLiveLineupObservationsRow
+		if err := rows.Scan(
+			&i.TeamID,
+			&i.PlayerID,
+			&i.Points,
+			&i.Touchdowns,
+			&i.FieldGoals,
+			&i.ObservedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listLiveMatchupCandidates = `-- name: ListLiveMatchupCandidates :many
@@ -191,12 +273,13 @@ func (q *Queries) ListLiveMatchupStarters(ctx context.Context, matchupID pgtype.
 	return items, nil
 }
 
-const updateLiveLineupEntry = `-- name: UpdateLiveLineupEntry :execrows
+const updateLiveLineupEntry = `-- name: UpdateLiveLineupEntry :one
 UPDATE matchup_lineups ml SET points = $1,
 touchdowns = coalesce($2, ml.touchdowns), field_goals = coalesce($3, ml.field_goals)
 FROM player_external_ids x
 WHERE ml.matchup_id = $4 AND ml.team_id = $5 AND ml.player_id = x.player_id
 AND x.provider = $6 AND x.external_id = $7
+RETURNING ml.player_id, ml.starter, ml.points, ml.touchdowns, ml.field_goals
 `
 
 type UpdateLiveLineupEntryParams struct {
@@ -209,9 +292,17 @@ type UpdateLiveLineupEntryParams struct {
 	ExternalPlayerID string
 }
 
+type UpdateLiveLineupEntryRow struct {
+	PlayerID   pgtype.UUID
+	Starter    bool
+	Points     pgtype.Numeric
+	Touchdowns pgtype.Int4
+	FieldGoals pgtype.Int4
+}
+
 // Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
-func (q *Queries) UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (int64, error) {
-	result, err := q.db.Exec(ctx, updateLiveLineupEntry,
+func (q *Queries) UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (UpdateLiveLineupEntryRow, error) {
+	row := q.db.QueryRow(ctx, updateLiveLineupEntry,
 		arg.Points,
 		arg.Touchdowns,
 		arg.FieldGoals,
@@ -220,10 +311,15 @@ func (q *Queries) UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineu
 		arg.Provider,
 		arg.ExternalPlayerID,
 	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+	var i UpdateLiveLineupEntryRow
+	err := row.Scan(
+		&i.PlayerID,
+		&i.Starter,
+		&i.Points,
+		&i.Touchdowns,
+		&i.FieldGoals,
+	)
+	return i, err
 }
 
 const updateLiveMatchupScores = `-- name: UpdateLiveMatchupScores :exec
@@ -244,6 +340,41 @@ func (q *Queries) UpdateLiveMatchupScores(ctx context.Context, arg UpdateLiveMat
 		arg.ScoreB,
 		arg.FetchedAt,
 		arg.MatchupID,
+	)
+	return err
+}
+
+const upsertLiveLineupObservation = `-- name: UpsertLiveLineupObservation :exec
+INSERT INTO live_lineup_observations (
+ matchup_id, team_id, player_id, points, touchdowns, field_goals, observed_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+ON CONFLICT (matchup_id, team_id, player_id) DO UPDATE SET
+ points = EXCLUDED.points,
+ touchdowns = EXCLUDED.touchdowns,
+ field_goals = EXCLUDED.field_goals,
+ observed_at = EXCLUDED.observed_at
+`
+
+type UpsertLiveLineupObservationParams struct {
+	MatchupID  pgtype.UUID
+	TeamID     pgtype.UUID
+	PlayerID   pgtype.UUID
+	Points     pgtype.Numeric
+	Touchdowns pgtype.Int4
+	FieldGoals pgtype.Int4
+	ObservedAt pgtype.Timestamptz
+}
+
+func (q *Queries) UpsertLiveLineupObservation(ctx context.Context, arg UpsertLiveLineupObservationParams) error {
+	_, err := q.db.Exec(ctx, upsertLiveLineupObservation,
+		arg.MatchupID,
+		arg.TeamID,
+		arg.PlayerID,
+		arg.Points,
+		arg.Touchdowns,
+		arg.FieldGoals,
+		arg.ObservedAt,
 	)
 	return err
 }

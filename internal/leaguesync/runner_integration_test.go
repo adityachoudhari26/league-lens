@@ -1,6 +1,6 @@
 //go:build integration
 
-package leaguesync_test
+package leaguesync
 
 import (
 	"bytes"
@@ -22,7 +22,6 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
-	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/news"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/store"
@@ -66,7 +65,7 @@ func (fakeSources) NFLScoreboard(context.Context) (fantasy.NFLScoreboard, error)
 
 func (fakeSources) NewsSource() news.Source { return emptyNewsSource{} }
 
-func (f fakeSources) SourceFor(target leaguesync.Target) (fantasy.Provider, error) {
+func (f fakeSources) SourceFor(target Target) (fantasy.Provider, error) {
 	return f[target.Selection.League.Provider], nil
 }
 
@@ -93,7 +92,7 @@ func (s *fakeLiveProvider) FetchLiveMatchup(context.Context, fantasy.League, fan
 }
 
 type storedCredentialSources struct {
-	leaguesync.ProviderSources
+	ProviderSources
 }
 
 func (storedCredentialSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error) {
@@ -223,6 +222,7 @@ func liveLeagueFixture() fantasy.LeagueData {
 	data.Players = append(data.Players,
 		fantasy.Player{ExternalID: "q", Name: "Away Player", Kind: fantasy.PlayerPerson},
 		fantasy.Player{ExternalID: "old", Name: "Dropped Player", Kind: fantasy.PlayerPerson},
+		fantasy.Player{ExternalID: "bench", Name: "Bench Player", Kind: fantasy.PlayerPerson},
 	)
 	data.Rosters[0].ScoringPeriod = 5
 	data.Rosters[0].Entries = []fantasy.RosterEntry{{PlayerID: "p", Slot: fantasy.SlotRB, ProTeam: "KC"}}
@@ -238,6 +238,7 @@ func liveLeagueFixture() fantasy.LeagueData {
 		{Period: 5, MatchupID: "m", TeamID: "1", Entries: []fantasy.LineupEntry{
 			{PlayerID: "p", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(1), ProjectedPoints: floatPtr(60)},
 			{PlayerID: "old", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(2), ProjectedPoints: floatPtr(60)},
+			{PlayerID: "bench", Slot: fantasy.SlotBench, Points: floatPtr(4), ProjectedPoints: floatPtr(5)},
 		}},
 		{Period: 5, MatchupID: "m", TeamID: "2", Entries: []fantasy.LineupEntry{
 			{PlayerID: "q", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(3), ProjectedPoints: floatPtr(30)},
@@ -262,9 +263,18 @@ func liveMatchupFixture(externalID string) fantasy.LiveMatchup {
 			{TeamID: "1", Entries: []fantasy.LineupEntry{
 				{PlayerID: "p", Points: floatPtr(17), Scoring: &fantasy.ScoringCounts{Touchdowns: 2, FieldGoals: 1}},
 				{PlayerID: "ghost", Points: floatPtr(8), Scoring: &fantasy.ScoringCounts{Touchdowns: 1}},
+				{PlayerID: "bench", Points: floatPtr(4)},
 			}},
 		},
 	}
+}
+
+func pointChangeLiveFixture(points, benchPoints float64, touchdowns, fieldGoals int) fantasy.LiveMatchup {
+	live := liveMatchupFixture("m")
+	live.Lineups[1].Entries[0].Points = floatPtr(points)
+	live.Lineups[1].Entries[0].Scoring = &fantasy.ScoringCounts{Touchdowns: touchdowns, FieldGoals: fieldGoals}
+	live.Lineups[1].Entries[2].Points = floatPtr(benchPoints)
+	return live
 }
 
 func runLiveLoopUntilScoreboardTick(
@@ -275,6 +285,7 @@ func runLiveLoopUntilScoreboardTick(
 	source *fakeLiveProvider,
 	wantScoreA string,
 	wantScoreB string,
+	tickTimes ...time.Time,
 ) time.Time {
 	t.Helper()
 	var previousFetchedAt time.Time
@@ -285,7 +296,11 @@ func runLiveLoopUntilScoreboardTick(
 	`).Scan(&previousFetchedAt); err != nil {
 		t.Fatal(err)
 	}
-	runner := leaguesync.New(db, owner, sources, "")
+	runner := New(db, owner, sources, "")
+	if len(tickTimes) > 0 {
+		tickAt := tickTimes[0]
+		runner.now = func() time.Time { return tickAt }
+	}
 	defer runner.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -400,6 +415,77 @@ func readSavedLiveLineup(t *testing.T, pool *pgxpool.Pool, playerID string) (str
 		t.Fatal(err)
 	}
 	return points, touchdowns, fieldGoals
+}
+
+type savedLineupPointChange struct {
+	playerID                          string
+	pointsBefore, pointsAfter         string
+	touchdownsBefore, touchdownsAfter pgtype.Int4
+	fieldGoalsBefore, fieldGoalsAfter pgtype.Int4
+	observedAt                        time.Time
+}
+
+func int4Is(value pgtype.Int4, want int32) bool {
+	return value.Valid && value.Int32 == want
+}
+
+func readLineupPointChanges(t *testing.T, pool *pgxpool.Pool) []savedLineupPointChange {
+	t.Helper()
+	rows, err := pool.Query(context.Background(), `
+		SELECT x.external_id, c.points_before::text, c.points_after::text,
+			c.touchdowns_before, c.touchdowns_after, c.field_goals_before, c.field_goals_after, c.observed_at
+		FROM lineup_point_changes c
+		JOIN matchups m ON m.id=c.matchup_id
+		JOIN league_seasons ls ON ls.id=m.league_season_id
+		JOIN player_external_ids x ON x.player_id=c.player_id AND x.provider='sleeper'
+		WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
+		ORDER BY c.observed_at, x.external_id
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var changes []savedLineupPointChange
+	for rows.Next() {
+		var change savedLineupPointChange
+		if err := rows.Scan(
+			&change.playerID, &change.pointsBefore, &change.pointsAfter,
+			&change.touchdownsBefore, &change.touchdownsAfter,
+			&change.fieldGoalsBefore, &change.fieldGoalsAfter, &change.observedAt,
+		); err != nil {
+			t.Fatal(err)
+		}
+		changes = append(changes, change)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return changes
+}
+
+type savedLiveLineupObservation struct {
+	points                 string
+	touchdowns, fieldGoals pgtype.Int4
+	observedAt             time.Time
+}
+
+func readLiveLineupObservation(t *testing.T, pool *pgxpool.Pool, playerID string) savedLiveLineupObservation {
+	t.Helper()
+	var observation savedLiveLineupObservation
+	err := pool.QueryRow(context.Background(), `
+		SELECT COALESCE(o.points::text, ''), o.touchdowns, o.field_goals, o.observed_at
+		FROM live_lineup_observations o
+		JOIN matchups m ON m.id=o.matchup_id
+		JOIN league_seasons ls ON ls.id=m.league_season_id
+		JOIN player_external_ids x ON x.player_id=o.player_id AND x.provider='sleeper'
+		WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m' AND x.external_id=$1
+	`, playerID).Scan(
+		&observation.points, &observation.touchdowns, &observation.fieldGoals, &observation.observedAt,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return observation
 }
 
 func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
@@ -575,6 +661,117 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 	}
 }
 
+func TestLiveScoreLoopPersistsPointChangesFromLiveObservations(t *testing.T) {
+	db, pool := openDatabaseWithTestPool(t, true)
+	data := liveLeagueFixture()
+	initial := &fakeSource{data: data}
+	importerService := importer.Service{DB: db, Source: initial}
+	if _, err := importerService.Import(context.Background(), importer.Request{
+		OwnerEmail: owner, ExternalAccountID: "account",
+		Selection: fantasy.ConnectionSelection{League: data.League.Ref, SelectedTeamIDs: []string{"1"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	liveSource := &fakeLiveProvider{fakeSource: initial}
+	sources := &liveScoreSources{
+		fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
+		board: fantasy.NFLScoreboard{
+			Season: 2026, SeasonType: 2, Week: 5,
+			Games: []fantasy.NFLGameStatus{{
+				HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive, Period: 1, Clock: 15 * time.Minute,
+			}},
+		},
+	}
+	firstAt := time.Now().UTC().Add(time.Minute)
+	liveSource.live = pointChangeLiveFixture(17, 4, 0, 0)
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000", firstAt)
+	if changes := readLineupPointChanges(t, pool); len(changes) != 0 {
+		t.Fatalf("first tick saved %d point changes, want none", len(changes))
+	}
+	var observationCount int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT count(*) FROM live_lineup_observations o
+		JOIN matchups m ON m.id=o.matchup_id
+		JOIN league_seasons ls ON ls.id=m.league_season_id
+		WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
+	`).Scan(&observationCount); err != nil {
+		t.Fatal(err)
+	}
+	if observationCount != 3 {
+		t.Fatalf("first tick saved %d observations, want 3", observationCount)
+	}
+	firstObservation := readLiveLineupObservation(t, pool, "p")
+	if firstObservation.points != "17.0000" || !int4Is(firstObservation.touchdowns, 0) ||
+		!int4Is(firstObservation.fieldGoals, 0) {
+		t.Fatalf("first live observation = %+v, want 17 points and known 0/0 counts", firstObservation)
+	}
+
+	secondAt := firstAt.Add(time.Minute)
+	liveSource.live = pointChangeLiveFixture(23.8, 4, 1, 0)
+	secondFetchedAt := runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000", secondAt)
+	changes := readLineupPointChanges(t, pool)
+	if len(changes) != 1 {
+		t.Fatalf("second tick saved %d point changes, want 1", len(changes))
+	}
+	firstChange := changes[0]
+	if firstChange.playerID != "p" || firstChange.pointsBefore != "17.0000" || firstChange.pointsAfter != "23.8000" ||
+		!int4Is(firstChange.touchdownsBefore, 0) ||
+		!int4Is(firstChange.touchdownsAfter, 1) ||
+		!int4Is(firstChange.fieldGoalsBefore, 0) ||
+		!int4Is(firstChange.fieldGoalsAfter, 0) ||
+		!firstChange.observedAt.Equal(secondFetchedAt) {
+		t.Fatalf("second-tick point change = %+v, want p 17.0000→23.8000 and TD 0→1", firstChange)
+	}
+
+	thirdAt := secondAt.Add(time.Minute)
+	liveSource.live = pointChangeLiveFixture(23.8, 4, 1, 0)
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000", thirdAt)
+	if changes := readLineupPointChanges(t, pool); len(changes) != 1 {
+		t.Fatalf("identical tick saved %d point changes, want 1 total", len(changes))
+	}
+
+	benchChangeAt := thirdAt.Add(time.Minute)
+	liveSource.live = pointChangeLiveFixture(23.8, 7, 1, 0)
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000", benchChangeAt)
+	if changes := readLineupPointChanges(t, pool); len(changes) != 1 {
+		t.Fatalf("bench points change saved %d point changes, want 1 total", len(changes))
+	}
+
+	gapTickAt := benchChangeAt.Add(liveBaselineMaxAge + time.Minute)
+	liveSource.live = pointChangeLiveFixture(30, 7, 1, 0)
+	gapFetchedAt := runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000", gapTickAt)
+	if changes := readLineupPointChanges(t, pool); len(changes) != 1 {
+		t.Fatalf("tick after observation gap saved %d point changes, want 1 total", len(changes))
+	}
+	gapObservation := readLiveLineupObservation(t, pool, "p")
+	if gapObservation.points != "30.0000" || !gapObservation.observedAt.Equal(gapFetchedAt) {
+		t.Fatalf("post-gap observation = %+v, want 30.0000 at %s", gapObservation, gapTickAt)
+	}
+
+	if _, err := pool.Exec(context.Background(), `
+		UPDATE matchup_lineups ml
+		SET points=99.0000
+		FROM matchups m, league_seasons ls, player_external_ids x
+		WHERE ml.matchup_id=m.id AND m.league_season_id=ls.id
+			AND ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
+			AND x.player_id=ml.player_id AND x.provider='sleeper' AND x.external_id='p'
+	`); err != nil {
+		t.Fatal(err)
+	}
+	refreshTickAt := gapTickAt.Add(time.Minute)
+	liveSource.live = pointChangeLiveFixture(30.5, 7, 1, 0)
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000", refreshTickAt)
+	changes = readLineupPointChanges(t, pool)
+	if len(changes) != 2 {
+		t.Fatalf("post-refresh tick saved %d point changes, want 2 total", len(changes))
+	}
+	lastChange := changes[1]
+	if lastChange.playerID != "p" || lastChange.pointsBefore != "30.0000" || lastChange.pointsAfter != "30.5000" {
+		t.Fatalf("post-refresh point change = %+v, want 30.0000→30.5000 from the live baseline", lastChange)
+	}
+}
+
 func TestLiveScoreLoopDoesNotSampleMatchupWithoutOpponent(t *testing.T) {
 	db, pool := openDatabaseWithTestPool(t, true)
 	data := liveLeagueFixture()
@@ -626,7 +823,7 @@ func TestLiveScoreLoopRejectsMismatchedMatchupID(t *testing.T) {
 	sources := &liveScoreSources{fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
 		board: fantasy.NFLScoreboard{Season: 2026, SeasonType: 2, Week: 5,
 			Games: []fantasy.NFLGameStatus{{HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive}}}}
-	runner := leaguesync.New(db, owner, sources, "")
+	runner := New(db, owner, sources, "")
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
@@ -677,7 +874,7 @@ func TestLiveScoreLoopWithNoLiveGamesDoesNotCallLeagueProvider(t *testing.T) {
 	liveSource := &fakeLiveProvider{fakeSource: initial, live: liveMatchupFixture("m")}
 	sources := &liveScoreSources{fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
 		board: fantasy.NFLScoreboard{Season: 2026, SeasonType: 2, Week: 5}}
-	runner := leaguesync.New(db, owner, sources, "")
+	runner := New(db, owner, sources, "")
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
@@ -696,7 +893,7 @@ func TestLiveScoreLoopWithNoLiveGamesDoesNotCallLeagueProvider(t *testing.T) {
 	}
 }
 
-func waitUntilIdle(t *testing.T, runner *leaguesync.Runner) map[fantasy.ProviderID]leaguesync.Status {
+func waitUntilIdle(t *testing.T, runner *Runner) map[fantasy.ProviderID]Status {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
@@ -704,11 +901,11 @@ func waitUntilIdle(t *testing.T, runner *leaguesync.Runner) map[fantasy.Provider
 		if err != nil {
 			t.Fatal(err)
 		}
-		byProvider := map[fantasy.ProviderID]leaguesync.Status{}
+		byProvider := map[fantasy.ProviderID]Status{}
 		syncing := false
 		for _, status := range statuses {
 			byProvider[status.Target.Selection.League.Provider] = status
-			syncing = syncing || status.State == leaguesync.StateSyncing
+			syncing = syncing || status.State == StateSyncing
 		}
 		if !syncing {
 			return byProvider
@@ -757,7 +954,7 @@ func TestRunnerRefreshesLeaguesAndIsolatesFailures(t *testing.T) {
 		fantasy.ProviderSleeper: &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home Renamed")},
 		fantasy.ProviderESPN:    &fakeSource{data: leagueData(fantasy.ProviderESPN, "Home Renamed"), fetchErr: errors.New("espn unavailable")},
 	}
-	runner := leaguesync.New(db, owner, sources, "")
+	runner := New(db, owner, sources, "")
 	t.Cleanup(runner.Close)
 
 	started, err := runner.Start(context.Background(), false)
@@ -765,20 +962,20 @@ func TestRunnerRefreshesLeaguesAndIsolatesFailures(t *testing.T) {
 		t.Fatalf("start = %d statuses, %v", len(started), err)
 	}
 	for _, status := range started {
-		if status.State != leaguesync.StateSyncing {
+		if status.State != StateSyncing {
 			t.Fatalf("started league state = %s, want syncing", status.State)
 		}
 	}
 
 	finished := waitUntilIdle(t, runner)
-	if got := finished[fantasy.ProviderSleeper].State; got != leaguesync.StateSucceeded {
+	if got := finished[fantasy.ProviderSleeper].State; got != StateSucceeded {
 		t.Errorf("sleeper state = %s, want succeeded", got)
 	}
 	if got := homeTeamName(t, db, fantasy.ProviderSleeper); got != "Home Renamed" {
 		t.Errorf("sleeper team = %q, want refreshed name", got)
 	}
 	espnStatus := finished[fantasy.ProviderESPN]
-	if espnStatus.State != leaguesync.StateFailed || espnStatus.ErrorCode != "provider_fetch_failed" || espnStatus.FailedAt.IsZero() {
+	if espnStatus.State != StateFailed || espnStatus.ErrorCode != "provider_fetch_failed" || espnStatus.FailedAt.IsZero() {
 		t.Errorf("espn status = %+v, want saved provider_fetch_failed", espnStatus)
 	}
 	if got := homeTeamName(t, db, fantasy.ProviderESPN); got != "Home" {
@@ -790,11 +987,11 @@ func TestStartOnlyStaleSkipsFreshLeagues(t *testing.T) {
 	db := openDatabase(t)
 	seedLeague(t, db, fantasy.ProviderSleeper)
 	source := &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home")}
-	runner := leaguesync.New(db, owner, fakeSources{fantasy.ProviderSleeper: source}, "")
+	runner := New(db, owner, fakeSources{fantasy.ProviderSleeper: source}, "")
 	t.Cleanup(runner.Close)
 
 	statuses, err := runner.Start(context.Background(), true)
-	if err != nil || len(statuses) != 1 || statuses[0].State != leaguesync.StateSucceeded {
+	if err != nil || len(statuses) != 1 || statuses[0].State != StateSucceeded {
 		t.Fatalf("start = %+v, %v; want fresh league left alone", statuses, err)
 	}
 	if source.fetches.Load() != 0 {
@@ -806,7 +1003,7 @@ func TestStartDoesNotDuplicateRunningSync(t *testing.T) {
 	db := openDatabase(t)
 	seedLeague(t, db, fantasy.ProviderSleeper)
 	source := &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home"), release: make(chan struct{})}
-	runner := leaguesync.New(db, owner, fakeSources{fantasy.ProviderSleeper: source}, "")
+	runner := New(db, owner, fakeSources{fantasy.ProviderSleeper: source}, "")
 	t.Cleanup(runner.Close)
 
 	for range 3 {
@@ -825,14 +1022,14 @@ func TestStartDoesNotDuplicateRunningSync(t *testing.T) {
 func TestMissingESPNCredentialsFailWithoutLosingData(t *testing.T) {
 	db := openDatabase(t)
 	seedLeague(t, db, fantasy.ProviderESPN)
-	runner := leaguesync.New(db, owner, leaguesync.ProviderSources{}, "")
+	runner := New(db, owner, ProviderSources{}, "")
 	t.Cleanup(runner.Close)
 
 	if _, err := runner.Start(context.Background(), false); err != nil {
 		t.Fatal(err)
 	}
 	status := waitUntilIdle(t, runner)[fantasy.ProviderESPN]
-	if status.State != leaguesync.StateFailed || status.ErrorCode != "espn_credentials_missing" {
+	if status.State != StateFailed || status.ErrorCode != "espn_credentials_missing" {
 		t.Fatalf("status = %+v, want espn_credentials_missing", status)
 	}
 	if got := homeTeamName(t, db, fantasy.ProviderESPN); got != "Home" {
@@ -870,8 +1067,8 @@ func TestUnavailableStoredESPNCredentialsMarkReconnect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runner := leaguesync.New(db, owner, storedCredentialSources{
-		ProviderSources: leaguesync.ProviderSources{Box: box},
+	runner := New(db, owner, storedCredentialSources{
+		ProviderSources: ProviderSources{Box: box},
 	}, "")
 	t.Cleanup(runner.Close)
 	if _, err := runner.Start(ctx, false); err != nil {
@@ -894,7 +1091,7 @@ func TestRunnerStoresPlayerNews(t *testing.T) {
 	db := openDatabase(t)
 	seedLeague(t, db, fantasy.ProviderSleeper)
 	source := fakeNewsSource{headline: "Saved news", done: make(chan struct{})}
-	runner := leaguesync.New(db, owner, fakeNewsSources{
+	runner := New(db, owner, fakeNewsSources{
 		fakeSources: fakeSources{fantasy.ProviderSleeper: &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home")}},
 		news:        source,
 	}, "")
@@ -937,7 +1134,7 @@ func TestFailedPlayerNewsRefreshKeepsSavedNewsAndLeagueSucceeds(t *testing.T) {
 		t.Fatal(err)
 	}
 	source := fakeNewsSource{err: errors.New("news unavailable"), done: make(chan struct{})}
-	runner := leaguesync.New(db, owner, fakeNewsSources{
+	runner := New(db, owner, fakeNewsSources{
 		fakeSources: fakeSources{fantasy.ProviderSleeper: &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home Updated")}},
 		news:        source,
 	}, "")
@@ -949,7 +1146,7 @@ func TestFailedPlayerNewsRefreshKeepsSavedNewsAndLeagueSucceeds(t *testing.T) {
 	statuses := waitUntilIdle(t, runner)
 	<-source.done
 	runner.Close()
-	if got := statuses[fantasy.ProviderSleeper].State; got != leaguesync.StateSucceeded {
+	if got := statuses[fantasy.ProviderSleeper].State; got != StateSucceeded {
 		t.Fatalf("league state = %s, want succeeded", got)
 	}
 	rows, err := db.Queries().ListRecentPlayerNews(context.Background(), store.ListRecentPlayerNewsParams{
