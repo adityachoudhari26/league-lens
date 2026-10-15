@@ -61,13 +61,14 @@ type Matchup struct {
 }
 
 type MatchupLineup struct {
-	MatchupID      pgtype.UUID
-	TeamID         pgtype.UUID
-	PlayerID       pgtype.UUID
-	ProviderSlotID pgtype.Text
-	SlotLabel      pgtype.Text
-	Starter        bool
-	Points         pgtype.Numeric
+	MatchupID       pgtype.UUID
+	TeamID          pgtype.UUID
+	PlayerID        pgtype.UUID
+	ProviderSlotID  pgtype.Text
+	SlotLabel       pgtype.Text
+	Starter         bool
+	Points          pgtype.Numeric
+	ProjectedPoints pgtype.Numeric
 }
 
 type NflGame struct {

@@ -57,8 +57,8 @@ AND l.team_id<>m.team_a_id AND l.team_id IS DISTINCT FROM m.team_b_id;
 DELETE FROM matchup_lineups WHERE matchup_id=$1 AND team_id=$2;
 
 -- name: InsertMatchupLineupEntry :exec
-INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points)
-VALUES ($1,$2,$3,$4,$5,$6,$7);
+INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points,projected_points)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8);
 
 -- name: ListMatchupsForUser :many
 SELECT m.* FROM matchups m WHERE m.league_season_id=$2 AND m.period=$3

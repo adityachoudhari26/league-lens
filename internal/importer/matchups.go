@@ -97,14 +97,19 @@ func (w *leagueWriter) insertLineupEntry(ctx context.Context, matchupID, teamID 
 	if err != nil {
 		return err
 	}
+	projected, err := score(entry.ProjectedPoints)
+	if err != nil {
+		return err
+	}
 	return w.queries.InsertMatchupLineupEntry(ctx, store.InsertMatchupLineupEntryParams{
-		MatchupID:      matchupID,
-		TeamID:         teamID,
-		PlayerID:       w.players[entry.PlayerID],
-		ProviderSlotID: optionalText(entry.ProviderSlotID),
-		SlotLabel:      text(string(entry.Slot)),
-		Starter:        entry.Starter,
-		Points:         points,
+		MatchupID:       matchupID,
+		TeamID:          teamID,
+		PlayerID:        w.players[entry.PlayerID],
+		ProviderSlotID:  optionalText(entry.ProviderSlotID),
+		SlotLabel:       text(string(entry.Slot)),
+		Starter:         entry.Starter,
+		Points:          points,
+		ProjectedPoints: projected,
 	})
 }
 func score(points *float64) (pgtype.Numeric, error) {

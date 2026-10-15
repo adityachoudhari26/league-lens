@@ -105,18 +105,19 @@ func (q *Queries) GetLatestObservedSnapshot(ctx context.Context, arg GetLatestOb
 }
 
 const insertMatchupLineupEntry = `-- name: InsertMatchupLineupEntry :exec
-INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points)
-VALUES ($1,$2,$3,$4,$5,$6,$7)
+INSERT INTO matchup_lineups (matchup_id,team_id,player_id,provider_slot_id,slot_label,starter,points,projected_points)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 `
 
 type InsertMatchupLineupEntryParams struct {
-	MatchupID      pgtype.UUID
-	TeamID         pgtype.UUID
-	PlayerID       pgtype.UUID
-	ProviderSlotID pgtype.Text
-	SlotLabel      pgtype.Text
-	Starter        bool
-	Points         pgtype.Numeric
+	MatchupID       pgtype.UUID
+	TeamID          pgtype.UUID
+	PlayerID        pgtype.UUID
+	ProviderSlotID  pgtype.Text
+	SlotLabel       pgtype.Text
+	Starter         bool
+	Points          pgtype.Numeric
+	ProjectedPoints pgtype.Numeric
 }
 
 func (q *Queries) InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error {
@@ -128,6 +129,7 @@ func (q *Queries) InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchu
 		arg.SlotLabel,
 		arg.Starter,
 		arg.Points,
+		arg.ProjectedPoints,
 	)
 	return err
 }
