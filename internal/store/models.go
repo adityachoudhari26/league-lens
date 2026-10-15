@@ -109,6 +109,36 @@ type PlayerNews struct {
 	FetchedAt    pgtype.Timestamptz
 }
 
+type PlayerProfile struct {
+	PlayerID          pgtype.UUID
+	Source            string
+	Position          pgtype.Text
+	HeadshotUrl       pgtype.Text
+	Jersey            pgtype.Text
+	BirthDate         pgtype.Date
+	HeightInches      pgtype.Int4
+	WeightLbs         pgtype.Int4
+	College           pgtype.Text
+	DraftYear         pgtype.Int4
+	DraftRound        pgtype.Int4
+	DraftPick         pgtype.Int4
+	PositionRank      pgtype.Int4
+	PercentRostered   pgtype.Numeric
+	PercentStarted    pgtype.Numeric
+	WeeklyOutlook     pgtype.Text
+	WeeklyOutlookWeek pgtype.Int4
+	SeasonOutlook     pgtype.Text
+	FetchedAt         pgtype.Timestamptz
+}
+
+type PlayerProfileStat struct {
+	PlayerID pgtype.UUID
+	Ordinal  int32
+	Label    string
+	Value    pgtype.Numeric
+	Rank     pgtype.Int4
+}
+
 type RosterEntry struct {
 	SnapshotID            pgtype.UUID
 	PlayerID              pgtype.UUID

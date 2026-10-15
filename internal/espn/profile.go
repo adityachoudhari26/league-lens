@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/playerprofile"
 )
 
@@ -71,9 +72,10 @@ type athleteOverviewResponse struct {
 }
 
 type fantasyPlayer struct {
-	ID        int64 `json:"id"`
-	ProTeamID int   `json:"proTeamId"`
-	Ownership *struct {
+	ID                int64 `json:"id"`
+	ProTeamID         int   `json:"proTeamId"`
+	DefaultPositionID int   `json:"defaultPositionId"`
+	Ownership         *struct {
 		PercentOwned   float64 `json:"percentOwned"`
 		PercentStarted float64 `json:"percentStarted"`
 	} `json:"ownership"`
@@ -336,12 +338,27 @@ func positionRank(raw string) *int {
 }
 
 func applyFantasyPlayer(profile *playerprofile.Profile, record fantasyPlayer) {
+	profile.Position = defaultPosition(record.DefaultPositionID)
 	if record.Ownership != nil {
 		profile.PercentRostered = &record.Ownership.PercentOwned
 		profile.PercentStarted = &record.Ownership.PercentStarted
 	}
 	profile.WeeklyOutlook = latestOutlook(record.Outlooks.OutlooksByWeek)
 	profile.SeasonOutlook = strings.TrimSpace(record.SeasonOutlook)
+}
+
+// defaultPosition maps ESPN's defaultPositionId to the player's primary fantasy
+// position. Positions League Lens doesn't track, such as IDP ones, are empty.
+func defaultPosition(id int) fantasy.Position {
+	positions := map[int]fantasy.Position{
+		1:  fantasy.PositionQB,
+		2:  fantasy.PositionRB,
+		3:  fantasy.PositionWR,
+		4:  fantasy.PositionTE,
+		5:  fantasy.PositionK,
+		16: fantasy.PositionDEF,
+	}
+	return positions[id]
 }
 
 // latestOutlook picks the newest NFL week's analyst outlook. ESPN keeps past

@@ -118,6 +118,16 @@ func TestSchemaAndQueries(t *testing.T) {
 			t.Fatal("unknown score silently became zero")
 		}
 		reject(`UPDATE matchups SET team_b_id='30000000-0000-0000-0000-000000000002'`)
+		exec(`INSERT INTO player_profiles(player_id,source,fetched_at) VALUES ('40000000-0000-0000-0000-000000000001','espn',now())`)
+		reject(`INSERT INTO player_profiles(player_id,source,draft_year,fetched_at) VALUES ('40000000-0000-0000-0000-000000000002','espn',2023,now())`)
+		reject(`INSERT INTO player_profiles(player_id,source,weekly_outlook,fetched_at) VALUES ('40000000-0000-0000-0000-000000000002','espn','Starts.',now())`)
+		reject(`INSERT INTO player_profiles(player_id,source,percent_rostered,fetched_at) VALUES ('40000000-0000-0000-0000-000000000002','espn',100.5,now())`)
+		reject(`INSERT INTO player_profiles(player_id,source,headshot_url,fetched_at) VALUES ('40000000-0000-0000-0000-000000000002','espn','http://example.test/a.png',now())`)
+		reject(`INSERT INTO player_profiles(player_id,source,position,fetched_at) VALUES ('40000000-0000-0000-0000-000000000002','espn','FB',now())`)
+		reject(`INSERT INTO player_profiles(player_id,source,college,fetched_at) VALUES ('40000000-0000-0000-0000-000000000002','espn',' ',now())`)
+		exec(`INSERT INTO player_profile_stats(player_id,ordinal,label,value) VALUES ('40000000-0000-0000-0000-000000000001',0,'Rush Yards',580)`)
+		reject(`INSERT INTO player_profile_stats(player_id,ordinal,label,value,rank) VALUES ('40000000-0000-0000-0000-000000000001',1,'YDS/RA',5.7,0)`)
+		reject(`INSERT INTO player_profile_stats(player_id,ordinal,label,value) VALUES ('40000000-0000-0000-0000-000000000002',0,'Sacks',3)`)
 
 		queries := loadQueries(t)
 		for _, user := range []struct {

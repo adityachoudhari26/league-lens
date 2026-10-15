@@ -21,6 +21,10 @@ service DashboardService {
   rpc GetTeamRoster(GetTeamRosterRequest) returns (GetTeamRosterResponse);
   rpc ListMatchups(ListMatchupsRequest) returns (ListMatchupsResponse);
   rpc GetMatchupDetail(GetMatchupDetailRequest) returns (GetMatchupDetailResponse);
+  // GetPlayerCard is the one read that may contact a profile source: it serves
+  // the cached profile, refetching it once 12 hours old. NOT_FOUND for an
+  // unknown player_id.
+  rpc GetPlayerCard(GetPlayerCardRequest) returns (GetPlayerCardResponse);
 }
 message ListLeaguesRequest {
   int32 page_size = 1; // Default 25, maximum 100.
@@ -180,4 +184,80 @@ enum GameState {
   GAME_STATE_KICKED_OFF = 2;
   GAME_STATE_BYE = 3;
   GAME_STATE_UNKNOWN = 4; // No NFL team or no schedule for the week.
+}
+
+message GetPlayerCardRequest {
+  string player_id = 1;
+}
+message GetPlayerCardResponse {
+  PlayerCard card = 1;
+}
+// PlayerCard combines stored player data with the player's source profile.
+// Profile fields are empty or absent when the source didn't report them, and
+// all of them are when no profile could be fetched (profile_fetched_at absent).
+// A profile older than 12 hours is served only when a refetch fails.
+message PlayerCard {
+  string player_id = 1;
+  string player_name = 2;
+  PlayerKind player_kind = 3;
+  string pro_team = 4; // Empty when unknown.
+  PlayerPosition position = 5; // Unspecified when unknown.
+  InjuryStatus injury_status = 6; // Current status.
+  NextGame next_game = 7; // Absent when no upcoming game is stored.
+  string headshot_url = 8; // Team logo for D/ST. Empty when unknown.
+  string jersey = 9; // Empty when unknown.
+  optional int32 age = 10; // Whole years from birth date.
+  optional int32 height_inches = 11;
+  optional int32 weight_lbs = 12;
+  string college = 13; // Empty when unknown.
+  PlayerDraft draft = 14; // Absent when undrafted or unknown.
+  optional int32 position_rank = 15; // Season-to-date fantasy rank at the player's position.
+  optional double percent_rostered = 16; // 0-100 across the source's fantasy leagues.
+  optional double percent_started = 17; // 0-100 across the source's fantasy leagues.
+  PlayerBlurb blurb = 18; // Absent when no blurb is available.
+  repeated PlayerStat season_stats = 19; // Source display order; position-specific.
+  google.protobuf.Timestamp profile_fetched_at = 20;
+}
+enum PlayerKind {
+  PLAYER_KIND_UNSPECIFIED = 0;
+  PLAYER_KIND_PERSON = 1;
+  PLAYER_KIND_TEAM_DEFENSE = 2;
+}
+enum PlayerPosition {
+  PLAYER_POSITION_UNSPECIFIED = 0;
+  PLAYER_POSITION_QB = 1;
+  PLAYER_POSITION_RB = 2;
+  PLAYER_POSITION_WR = 3;
+  PLAYER_POSITION_TE = 4;
+  PLAYER_POSITION_K = 5;
+  PLAYER_POSITION_DEF = 6;
+}
+message NextGame {
+  string opponent = 1; // NFL team abbreviation.
+  google.protobuf.Timestamp kickoff_at = 2;
+}
+message PlayerDraft {
+  int32 year = 1;
+  int32 round = 2;
+  int32 pick = 3;
+}
+// PlayerBlurb is the best available write-up, in order: this NFL week's
+// outlook, the latest stored news, then the season outlook.
+message PlayerBlurb {
+  PlayerBlurbKind kind = 1;
+  string text = 2; // News uses the item's summary, or its headline when it has none.
+  optional int32 week = 3; // Weekly outlook only.
+  google.protobuf.Timestamp published_at = 4; // News only.
+  string url = 5; // News only.
+}
+enum PlayerBlurbKind {
+  PLAYER_BLURB_KIND_UNSPECIFIED = 0;
+  PLAYER_BLURB_KIND_WEEKLY_OUTLOOK = 1;
+  PLAYER_BLURB_KIND_NEWS = 2;
+  PLAYER_BLURB_KIND_SEASON_OUTLOOK = 3;
+}
+message PlayerStat {
+  string label = 1; // Source's short label, e.g. "Rush Yards".
+  double value = 2;
+  optional int32 rank = 3; // League rank for the stat; absent when unranked.
 }

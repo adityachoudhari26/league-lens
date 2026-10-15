@@ -56,6 +56,9 @@ const (
 	// DashboardServiceGetMatchupDetailProcedure is the procedure name of the DashboardService's
 	// GetMatchupDetail RPC.
 	DashboardServiceGetMatchupDetailProcedure = "/leaguelens.v1.DashboardService/GetMatchupDetail"
+	// DashboardServiceGetPlayerCardProcedure is the procedure name of the DashboardService's
+	// GetPlayerCard RPC.
+	DashboardServiceGetPlayerCardProcedure = "/leaguelens.v1.DashboardService/GetPlayerCard"
 )
 
 var (
@@ -136,6 +139,13 @@ var (
 			Procedure:  DashboardServiceGetMatchupDetailProcedure,
 		}
 	})
+	dashboardServiceGetPlayerCardSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_leaguelens_v1_dashboard_proto.Services().ByName("DashboardService").Methods().ByName("GetPlayerCard"),
+			Procedure:  DashboardServiceGetPlayerCardProcedure,
+		}
+	})
 )
 
 // DashboardServiceClient is a client for the leaguelens.v1.DashboardService service.
@@ -151,6 +161,10 @@ type DashboardServiceClient interface {
 	GetTeamRoster(context.Context, *v1.GetTeamRosterRequest) (*v1.GetTeamRosterResponse, error)
 	ListMatchups(context.Context, *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error)
 	GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error)
+	// GetPlayerCard is the one read that may contact a profile source: it serves
+	// the cached profile, refetching it once 12 hours old. NOT_FOUND for an
+	// unknown player_id.
+	GetPlayerCard(context.Context, *v1.GetPlayerCardRequest) (*v1.GetPlayerCardResponse, error)
 }
 
 // NewDashboardServiceClient constructs a client for the leaguelens.v1.DashboardService service.
@@ -172,6 +186,10 @@ type DashboardServiceHandler interface {
 	GetTeamRoster(context.Context, *v1.GetTeamRosterRequest) (*v1.GetTeamRosterResponse, error)
 	ListMatchups(context.Context, *v1.ListMatchupsRequest) (*v1.ListMatchupsResponse, error)
 	GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error)
+	// GetPlayerCard is the one read that may contact a profile source: it serves
+	// the cached profile, refetching it once 12 hours old. NOT_FOUND for an
+	// unknown player_id.
+	GetPlayerCard(context.Context, *v1.GetPlayerCardRequest) (*v1.GetPlayerCardResponse, error)
 }
 
 // RegisterDashboardServiceHandler registers svc as the leaguelens.v1.DashboardService
@@ -190,6 +208,7 @@ func RegisterDashboardServiceHandler(server *connect.Server, svc DashboardServic
 		connect.Method{Spec: dashboardServiceGetTeamRosterSpec(), Handler: adapter.getTeamRoster},
 		connect.Method{Spec: dashboardServiceListMatchupsSpec(), Handler: adapter.listMatchups},
 		connect.Method{Spec: dashboardServiceGetMatchupDetailSpec(), Handler: adapter.getMatchupDetail},
+		connect.Method{Spec: dashboardServiceGetPlayerCardSpec(), Handler: adapter.getPlayerCard},
 	)
 }
 
@@ -238,6 +257,10 @@ func (UnimplementedDashboardServiceHandler) ListMatchups(context.Context, *v1.Li
 
 func (UnimplementedDashboardServiceHandler) GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.DashboardService.GetMatchupDetail is not implemented")
+}
+
+func (UnimplementedDashboardServiceHandler) GetPlayerCard(context.Context, *v1.GetPlayerCardRequest) (*v1.GetPlayerCardResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.DashboardService.GetPlayerCard is not implemented")
 }
 
 type dashboardServiceClient struct {
@@ -327,6 +350,14 @@ func (c *dashboardServiceClient) ListMatchups(ctx context.Context, req *v1.ListM
 func (c *dashboardServiceClient) GetMatchupDetail(ctx context.Context, req *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error) {
 	var res v1.GetMatchupDetailResponse
 	if err := c.client.CallUnary(ctx, dashboardServiceGetMatchupDetailSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *dashboardServiceClient) GetPlayerCard(ctx context.Context, req *v1.GetPlayerCardRequest) (*v1.GetPlayerCardResponse, error) {
+	var res v1.GetPlayerCardResponse
+	if err := c.client.CallUnary(ctx, dashboardServiceGetPlayerCardSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -460,6 +491,18 @@ func (h dashboardServiceHandler) getMatchupDetail(ctx context.Context, _ connect
 		return err
 	}
 	res, err := h.svc.GetMatchupDetail(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h dashboardServiceHandler) getPlayerCard(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetPlayerCardRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetPlayerCard(ctx, &req)
 	if err != nil {
 		return err
 	}
