@@ -58,4 +58,7 @@ type LineupEntry struct {
 	// player in the matchup. Nil means no projection; it never stands in for
 	// Points, and Points never stands in for it.
 	ProjectedPoints *float64
+
+	// Scoring is nil when the provider gave no counts; never inferred from points.
+	Scoring *ScoringCounts
 }

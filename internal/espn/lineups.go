@@ -128,6 +128,7 @@ func normalizeLineupEntry(playerID string, entry entryResponse, week int) fantas
 		Starter:         isStarterSlot(entry.Slot),
 		Points:          actualPoints(entry, week),
 		ProjectedPoints: projectedPoints(entry.Pool.Player.Stats, week),
+		Scoring:         actualScoringCounts(entry.Pool.Player.Stats, week),
 	}
 }
 
@@ -145,6 +146,25 @@ func actualPoints(entry entryResponse, week int) *float64 {
 		return nil
 	}
 	return entry.Pool.AppliedStatTotal
+}
+
+// actualScoringCounts returns touchdown and field-goal counts from the week's actual stat line.
+func actualScoringCounts(stats []statResponse, week int) *fantasy.ScoringCounts {
+	actual, found := weekStatLine(stats, espnActualStatSource, week)
+	if !found {
+		return nil
+	}
+	// Stat IDs 63, 93, and 101 are six-point TD stats but were absent from observed lines.
+	touchdowns := int(actual.Stats["4"] +
+		actual.Stats["25"] +
+		actual.Stats["43"] +
+		actual.Stats["102"] +
+		actual.Stats["103"] +
+		actual.Stats["104"])
+	return &fantasy.ScoringCounts{
+		Touchdowns: touchdowns,
+		FieldGoals: int(actual.Stats["83"]),
+	}
 }
 
 // projectedPoints returns ESPN's league-scored projection for week, the

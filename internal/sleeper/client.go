@@ -83,6 +83,8 @@ type Client struct {
 	BaseURL string
 	// ProjectionsURL is the projections endpoint root, which sits outside /v1.
 	ProjectionsURL string
+	// StatsURL is the public weekly stats endpoint root, which sits outside /v1.
+	StatsURL string
 	// AvailabilityTeamIDs lists roster IDs whose observed players get injury
 	// status and NFL team through per-player lookups. Empty disables lookups.
 	AvailabilityTeamIDs []string
@@ -92,7 +94,12 @@ func NewClient(h *http.Client) *Client {
 	if h == nil {
 		h = &http.Client{Timeout: 20 * time.Second}
 	}
-	return &Client{HTTP: h, BaseURL: "https://api.sleeper.app/v1", ProjectionsURL: "https://api.sleeper.app/projections/nfl"}
+	return &Client{
+		HTTP:           h,
+		BaseURL:        "https://api.sleeper.app/v1",
+		ProjectionsURL: "https://api.sleeper.app/projections/nfl",
+		StatsURL:       "https://api.sleeper.app/stats/nfl",
+	}
 }
 
 func (c *Client) get(ctx context.Context, path string, out any) error {

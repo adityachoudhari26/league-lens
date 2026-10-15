@@ -1,0 +1,143 @@
+[
+  {
+    "player_id": "3294",
+    "stats": {
+      "pass_td": 1.0
+    }
+  },
+  {
+    "player_id": "8137",
+    "stats": {
+      "rec_td": 1.0
+    }
+  },
+  {
+    "player_id": "12533",
+    "stats": {
+      "rush_td": 1.0
+    }
+  },
+  {
+    "player_id": "13287",
+    "stats": {}
+  },
+  {
+    "player_id": "7523",
+    "stats": {
+      "pass_td": 2.0
+    }
+  },
+  {
+    "player_id": "7611",
+    "stats": {
+      "rush_td": 1.0
+    }
+  },
+  {
+    "player_id": "8146",
+    "stats": {
+      "rec_td": 1.0
+    }
+  },
+  {
+    "player_id": "8154",
+    "stats": {}
+  },
+  {
+    "player_id": "ATL",
+    "stats": {
+      "def_td": 1.0
+    }
+  },
+  {
+    "player_id": "13417",
+    "stats": {}
+  },
+  {
+    "player_id": "7547",
+    "stats": {}
+  },
+  {
+    "player_id": "9488",
+    "stats": {
+      "rec_td": 1.0
+    }
+  },
+  {
+    "player_id": "11610",
+    "stats": {}
+  },
+  {
+    "player_id": "12517",
+    "stats": {}
+  },
+  {
+    "player_id": "12711",
+    "stats": {
+      "fgm": 3.0
+    }
+  },
+  {
+    "player_id": "13281",
+    "stats": {}
+  },
+  {
+    "player_id": "5012",
+    "stats": {}
+  },
+  {
+    "player_id": "2747",
+    "stats": {
+      "fgm": 5.0
+    }
+  },
+  {
+    "player_id": "5947",
+    "stats": {}
+  },
+  {
+    "player_id": "CHI",
+    "stats": {}
+  },
+  {
+    "player_id": "12490",
+    "stats": {}
+  },
+  {
+    "player_id": "13279",
+    "stats": {}
+  },
+  {
+    "player_id": "13305",
+    "stats": {}
+  },
+  {
+    "player_id": "9484",
+    "stats": {}
+  },
+  {
+    "player_id": "11564",
+    "stats": {
+      "rush_td": 1.0,
+      "pass_td": 4.0
+    }
+  },
+  {
+    "player_id": "12507",
+    "stats": {}
+  },
+  {
+    "player_id": "12529",
+    "stats": {}
+  },
+  {
+    "player_id": "6794",
+    "stats": {
+      "rec_td": 1.0
+    }
+  },
+  {
+    "player_id": "PHI",
+    "stats": {}
+  }
+]
