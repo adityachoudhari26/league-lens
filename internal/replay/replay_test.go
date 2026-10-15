@@ -51,6 +51,11 @@ func TestBuildReplaysMatchupAcrossGames(t *testing.T) {
 			Kind:         fantasy.NFLPlayInterception,
 			Participants: []fantasy.NFLPlayParticipant{{AthleteID: "qb2", Role: "passer"}},
 		},
+		{
+			At: gameTwoStart.Add(5 * time.Minute), Period: 1, Clock: 9 * time.Minute,
+			Kind:         fantasy.NFLPlayFieldGoalGood,
+			Participants: []fantasy.NFLPlayParticipant{{AthleteID: "fgk", Role: "kicker"}},
+		},
 		{At: gameTwoEnd, Period: 4, Kind: fantasy.NFLPlayEndOfGame},
 	}
 	projected := func(value float64) *float64 { return &value }
@@ -63,6 +68,7 @@ func TestBuildReplaysMatchupAcrossGames(t *testing.T) {
 			{Key: "wr", AthleteID: "wr", ProTeam: "SF", FinalPoints: 8.5, Projected: projected(25)},
 			{Key: "qb2", AthleteID: "qb2", ProTeam: "MIA", FinalPoints: -2, Projected: projected(0)},
 			{Key: "dst", TeamB: true, ProTeam: "MIA", FinalPoints: 7, Projected: projected(10)},
+			{Key: "fgk", TeamB: true, AthleteID: "fgk", ProTeam: "MIA", FinalPoints: 5},
 		},
 		Games: []Game{
 			{HomeTeam: "KC", AwayTeam: "SF", Plays: playsOne},
@@ -114,13 +120,24 @@ func TestBuildReplaysMatchupAcrossGames(t *testing.T) {
 		t.Errorf("interception change = %+v, want -2", interception)
 	}
 
-	residual := changeAt(t, timeline, "rb", gameOneEnd.Truncate(time.Minute))
-	if residual.PointsBefore != 6.6 || residual.PointsAfter != 8 {
-		t.Errorf("game-end residual = %+v, want 6.6 to 8", residual)
+	if countChangesAt(timeline, "rb", gameOneEnd.Truncate(time.Minute)) != 0 {
+		t.Errorf("game-end residual produced a change: %+v", timeline.Changes)
 	}
-	dst := changeAt(t, timeline, "dst", gameTwoEnd.Truncate(time.Minute))
-	if dst.PointsBefore != 0 || dst.PointsAfter != 7 {
-		t.Errorf("D/ST anchor = %+v, want 0 to 7 at latest game end", dst)
+	fgAt := gameTwoStart.Add(5 * time.Minute).Truncate(time.Minute)
+	fgKicker := changeAt(t, timeline, "fgk", fgAt)
+	if fgKicker.PointsBefore != 0 || fgKicker.PointsAfter != 3 ||
+		fgKicker.FieldGoalsBefore != 0 || fgKicker.FieldGoalsAfter != 1 {
+		t.Errorf("FG kicker change = %+v, want 0 to 3 for one FG", fgKicker)
+	}
+	if countChangesAt(timeline, "fgk", gameTwoEnd.Truncate(time.Minute)) != 0 {
+		t.Errorf("FG residual produced a change: %+v", timeline.Changes)
+	}
+	if countChangesAt(timeline, "dst", gameTwoEnd.Truncate(time.Minute)) != 0 {
+		t.Errorf("D/ST residual produced a change: %+v", timeline.Changes)
+	}
+	gameEndSample := sampleAt(t, timeline, gameTwoEnd.Truncate(time.Minute))
+	if gameEndSample.ScoreB != 25 {
+		t.Errorf("game-end sample score B = %.4f, want residual-adjusted 25", gameEndSample.ScoreB)
 	}
 
 	if len(timeline.Samples) < 2 {
@@ -131,14 +148,14 @@ func TestBuildReplaysMatchupAcrossGames(t *testing.T) {
 		t.Errorf("pregame sample = %+v, want 0-0 and 0.5", pregame)
 	}
 	final := timeline.Samples[len(timeline.Samples)-1]
-	if final.ScoreA != 11.3 || final.ScoreB != 20 {
-		t.Errorf("final scores = %.4f-%.4f, want 11.3-20", final.ScoreA, final.ScoreB)
+	if final.ScoreA != 11.3 || final.ScoreB != 25 {
+		t.Errorf("final scores = %.4f-%.4f, want 11.3-25", final.ScoreA, final.ScoreB)
 	}
 	if final.Estimate.WinChanceA != 0 {
 		t.Errorf("final win chance = %.4f, want 0", final.Estimate.WinChanceA)
 	}
 	if math.Abs(final.ScoreA-(4.8+8.5-2)) > 0.0001 ||
-		math.Abs(final.ScoreB-(8+5+7)) > 0.0001 {
+		math.Abs(final.ScoreB-(8+5+7+5)) > 0.0001 {
 		t.Errorf("final sample does not match provider totals: %+v", final)
 	}
 }
@@ -186,8 +203,8 @@ func TestBuildReplaysWindowFromStartingValues(t *testing.T) {
 		},
 	})
 
-	if len(timeline.Changes) != 2 {
-		t.Fatalf("window changes = %+v, want one play bucket and one residual", timeline.Changes)
+	if len(timeline.Changes) != 1 {
+		t.Fatalf("window changes = %+v, want only the credited play bucket", timeline.Changes)
 	}
 	playChange := timeline.Changes[0]
 	if !playChange.At.After(from) || playChange.PointsBefore != 4 || playChange.PointsAfter != 5 ||
@@ -195,9 +212,8 @@ func TestBuildReplaysWindowFromStartingValues(t *testing.T) {
 		playChange.FieldGoalsBefore != 1 || playChange.FieldGoalsAfter != 1 {
 		t.Errorf("window play change = %+v, start values should carry through", playChange)
 	}
-	residual := timeline.Changes[1]
-	if !residual.At.Equal(minuteBucket(to)) || residual.PointsBefore != 5 || residual.PointsAfter != 6 {
-		t.Errorf("window residual = %+v, want 5 to 6 at To", residual)
+	if countChangesAt(timeline, "rb", minuteBucket(to)) != 0 {
+		t.Errorf("window residual produced a change: %+v", timeline.Changes)
 	}
 	for _, change := range timeline.Changes {
 		if change.TouchdownsAfter != 1 {
@@ -211,6 +227,9 @@ func TestBuildReplaysWindowFromStartingValues(t *testing.T) {
 	final := timeline.Samples[len(timeline.Samples)-1]
 	if final.ScoreA != 6 || final.Estimate.WinChanceA <= 0.5 {
 		t.Errorf("window final sample = %+v, want in-window score and live estimate", final)
+	}
+	if !final.At.Equal(minuteBucket(to)) {
+		t.Errorf("window adjustment sample time = %s, want bucket %s", final.At, minuteBucket(to))
 	}
 }
 
@@ -236,9 +255,12 @@ func TestBuildWindowAnchorsResidualAtGameEnd(t *testing.T) {
 		}},
 		Rules: []fantasy.ScoringRule{{Stat: fantasy.StatRushingYards, Points: 1, PerUnits: 10}},
 	})
-	residual := changeAt(t, timeline, "rb", gameEnd.Truncate(time.Minute))
-	if residual.PointsBefore != 0.5 || residual.PointsAfter != 3 {
-		t.Errorf("game-end residual = %+v, want 0.5 to 3", residual)
+	if len(timeline.Changes) != 1 {
+		t.Fatalf("game-end residual changes = %+v, want only the credited rush", timeline.Changes)
+	}
+	gameEndSample := sampleAt(t, timeline, gameEnd.Truncate(time.Minute))
+	if gameEndSample.ScoreA != 3 {
+		t.Errorf("game-end adjustment sample = %+v, want score 3", gameEndSample)
 	}
 }
 
@@ -249,9 +271,33 @@ func TestBuildWindowWithoutGamesAnchorsResidualAtTo(t *testing.T) {
 		To:       to,
 		Starters: []Starter{{Key: "dst", StartPoints: 2, FinalPoints: 7}},
 	})
-	if len(timeline.Changes) != 1 || timeline.Changes[0].PointsBefore != 2 ||
-		timeline.Changes[0].PointsAfter != 7 {
-		t.Fatalf("window residual changes = %+v, want 2 to 7", timeline.Changes)
+	if len(timeline.Changes) != 0 {
+		t.Fatalf("uncredited residual changes = %+v, want none", timeline.Changes)
+	}
+	final := timeline.Samples[len(timeline.Samples)-1]
+	if final.ScoreA != 7 || !final.At.Equal(minuteBucket(to)) {
+		t.Fatalf("window residual sample = %+v, want score 7 at To's minute bucket", final)
+	}
+}
+
+func TestBuildAnchorsDefenseResidualInSampleOnly(t *testing.T) {
+	gameEnd := time.Date(2026, time.October, 9, 18, 0, 0, 0, time.UTC)
+	timeline := Build(Input{
+		Starters: []Starter{{Key: "dst", ProTeam: "KC", FinalPoints: 7}},
+		Games: []Game{{
+			HomeTeam: "KC",
+			Plays: []fantasy.NFLPlay{
+				{At: gameEnd.Add(-time.Hour), Period: 1, Kind: fantasy.NFLPlayOther},
+				{At: gameEnd, Period: 4, Kind: fantasy.NFLPlayEndOfGame},
+			},
+		}},
+	})
+	if len(timeline.Changes) != 0 {
+		t.Fatalf("D/ST residual changes = %+v, want no credited change", timeline.Changes)
+	}
+	final := sampleAt(t, timeline, gameEnd.Truncate(time.Minute))
+	if final.ScoreA != 7 {
+		t.Errorf("D/ST end sample = %+v, want score 7", final)
 	}
 }
 
@@ -274,4 +320,15 @@ func countChangesAt(timeline Timeline, key string, at time.Time) int {
 		}
 	}
 	return count
+}
+
+func sampleAt(t *testing.T, timeline Timeline, at time.Time) Sample {
+	t.Helper()
+	for _, sample := range timeline.Samples {
+		if sample.At.Equal(at) {
+			return sample
+		}
+	}
+	t.Fatalf("no sample at %s in %+v", at, timeline.Samples)
+	return Sample{}
 }

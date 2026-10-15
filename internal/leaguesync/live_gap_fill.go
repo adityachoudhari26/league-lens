@@ -22,6 +22,17 @@ type gapStarterCounts struct {
 	fieldGoals bool
 }
 
+type windowedStarterTarget struct {
+	teamID   pgtype.UUID
+	playerID pgtype.UUID
+}
+
+type windowedTimelineOptions struct {
+	gapStartedAt     *time.Time
+	rejectNewerThan  *time.Time
+	includeEndSample bool
+}
+
 // requestWinChanceGapFill schedules one stale live window for background replay.
 func (r *Runner) requestWinChanceGapFill(matchupID pgtype.UUID, startedAt time.Time) bool {
 	if !matchupID.Valid || startedAt.IsZero() {
@@ -223,28 +234,62 @@ func (r *Runner) saveLiveGapTimeline(
 	starterRows map[string]store.ListWinChanceGapStartersRow,
 	counts map[string]gapStarterCounts,
 ) (int, int, error) {
+	targets := make(map[string]windowedStarterTarget, len(starterRows))
+	for key, row := range starterRows {
+		targets[key] = windowedStarterTarget{teamID: row.TeamID, playerID: row.PlayerID}
+	}
+	return r.saveWindowedTimeline(ctx, matchupID, startedAt, endedAt, timeline, targets, counts,
+		windowedTimelineOptions{gapStartedAt: &startedAt})
+}
+
+// saveWindowedTimeline persists a replay window after validating its gap or concurrent-history guard.
+func (r *Runner) saveWindowedTimeline(
+	ctx context.Context,
+	matchupID pgtype.UUID,
+	from, to time.Time,
+	timeline replay.Timeline,
+	starterRows map[string]windowedStarterTarget,
+	counts map[string]gapStarterCounts,
+	options windowedTimelineOptions,
+) (int, int, error) {
 	sampleCount, changeCount := 0, 0
 	err := r.db.InTx(ctx, func(queries *store.Queries) error {
 		if err := queries.LockImportWrites(ctx); err != nil {
 			return err
 		}
-		gap, err := queries.LoadWinChanceGap(ctx, store.LoadWinChanceGapParams{
-			MatchupID: matchupID,
-			StartedAt: pgtype.Timestamptz{Time: startedAt, Valid: true},
-		})
-		if err != nil {
-			return err
+		if options.gapStartedAt != nil {
+			gap, err := queries.LoadWinChanceGap(ctx, store.LoadWinChanceGapParams{
+				MatchupID: matchupID,
+				StartedAt: pgtype.Timestamptz{Time: *options.gapStartedAt, Valid: true},
+			})
+			if err != nil {
+				return err
+			}
+			if gap.FilledAt.Valid {
+				return nil
+			}
 		}
-		if gap.FilledAt.Valid {
-			return nil
+		if options.rejectNewerThan != nil {
+			hasNewerHistory, err := queries.MatchupHasWinChanceHistoryAfter(ctx,
+				store.MatchupHasWinChanceHistoryAfterParams{
+					MatchupID: matchupID,
+					After:     pgtype.Timestamptz{Time: *options.rejectNewerThan, Valid: true},
+				})
+			if err != nil {
+				return err
+			}
+			if hasNewerHistory.Valid && hasNewerHistory.Bool {
+				return nil
+			}
 		}
 		seen := make(map[time.Time]bool, len(timeline.Samples))
 		for _, sample := range timeline.Samples {
-			if !sample.At.After(startedAt) || !sample.At.Before(endedAt) {
+			if !sample.At.After(from) || sample.At.After(to) ||
+				(!options.includeEndSample && !sample.At.Before(to)) {
 				continue
 			}
 			at := uniqueBackfillSampleTime(sample.At, seen)
-			if !at.Before(endedAt) {
+			if at.After(to) || (!options.includeEndSample && !at.Before(to)) {
 				continue
 			}
 			params, err := newWinChanceSample(matchupID, at, sample.ScoreA, sample.ScoreB, sample.Estimate)
@@ -257,9 +302,12 @@ func (r *Runner) saveLiveGapTimeline(
 			sampleCount++
 		}
 		for _, change := range timeline.Changes {
+			if !change.At.After(from) || change.At.After(to) {
+				continue
+			}
 			row, found := starterRows[change.Key]
 			if !found {
-				return fmt.Errorf("replay returned unknown live gap starter")
+				return fmt.Errorf("replay returned unknown windowed starter")
 			}
 			pointsBefore, err := fourDecimalNumeric(change.PointsBefore)
 			if err != nil {
@@ -271,7 +319,7 @@ func (r *Runner) saveLiveGapTimeline(
 			}
 			knownCounts := counts[change.Key]
 			if err := queries.InsertLineupPointChange(ctx, store.InsertLineupPointChangeParams{
-				MatchupID: matchupID, TeamID: row.TeamID, PlayerID: row.PlayerID,
+				MatchupID: matchupID, TeamID: row.teamID, PlayerID: row.playerID,
 				ObservedAt:       pgtype.Timestamptz{Time: change.At, Valid: true},
 				PointsBefore:     pointsBefore,
 				PointsAfter:      pointsAfter,
@@ -284,10 +332,13 @@ func (r *Runner) saveLiveGapTimeline(
 			}
 			changeCount++
 		}
-		return queries.MarkWinChanceGapFilled(ctx, store.MarkWinChanceGapFilledParams{
-			MatchupID: matchupID,
-			StartedAt: pgtype.Timestamptz{Time: startedAt, Valid: true},
-		})
+		if options.gapStartedAt != nil {
+			return queries.MarkWinChanceGapFilled(ctx, store.MarkWinChanceGapFilledParams{
+				MatchupID: matchupID,
+				StartedAt: pgtype.Timestamptz{Time: *options.gapStartedAt, Valid: true},
+			})
+		}
+		return nil
 	})
 	if err != nil {
 		return 0, 0, err

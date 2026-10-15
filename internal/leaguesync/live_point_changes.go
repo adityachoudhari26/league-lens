@@ -68,9 +68,18 @@ func (r *Runner) saveLiveLineupEntry(
 
 	key := liveLineupObservationKey{teamID: teamID, playerID: after.PlayerID}
 	baseline, hasBaseline := observations[key]
-	if !gapStartedAt.IsZero() && after.Starter && hasBaseline {
+	if !gapStartedAt.IsZero() && after.Starter {
+		beforePoints := after.Points
+		beforeTouchdowns := after.Touchdowns
+		beforeFieldGoals := after.FieldGoals
+		if hasBaseline {
+			beforePoints = baseline.Points
+			beforeTouchdowns = baseline.Touchdowns
+			beforeFieldGoals = baseline.FieldGoals
+		}
 		if err := insertWinChanceGapStarter(
-			ctx, queries, matchupID, teamID, gapStartedAt, baseline, after,
+			ctx, queries, matchupID, teamID, gapStartedAt,
+			beforePoints, beforeTouchdowns, beforeFieldGoals, after,
 		); err != nil {
 			return false, err
 		}
@@ -107,10 +116,11 @@ func insertWinChanceGapStarter(
 	queries *store.Queries,
 	matchupID, teamID pgtype.UUID,
 	startedAt time.Time,
-	before store.ListLiveLineupObservationsRow,
+	beforePoints pgtype.Numeric,
+	beforeTouchdowns, beforeFieldGoals pgtype.Int4,
 	after store.UpdateLiveLineupEntryRow,
 ) error {
-	pointsBefore, err := pointsOrZeroNumeric(before.Points)
+	pointsBefore, err := pointsOrZeroNumeric(beforePoints)
 	if err != nil {
 		return err
 	}
@@ -125,9 +135,9 @@ func insertWinChanceGapStarter(
 		PlayerID:         after.PlayerID,
 		PointsBefore:     pointsBefore,
 		PointsAfter:      pointsAfter,
-		TouchdownsBefore: before.Touchdowns,
+		TouchdownsBefore: beforeTouchdowns,
 		TouchdownsAfter:  after.Touchdowns,
-		FieldGoalsBefore: before.FieldGoals,
+		FieldGoalsBefore: beforeFieldGoals,
 		FieldGoalsAfter:  after.FieldGoals,
 	})
 }

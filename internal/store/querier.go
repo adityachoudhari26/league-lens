@@ -52,6 +52,7 @@ type Querier interface {
 	InsertWinChanceGapStarter(ctx context.Context, arg InsertWinChanceGapStarterParams) error
 	InsertWinChanceSample(ctx context.Context, arg InsertWinChanceSampleParams) error
 	IsLeagueAttachedForUser(ctx context.Context, arg IsLeagueAttachedForUserParams) (bool, error)
+	LatestLiveLineupObservationAt(ctx context.Context, matchupID pgtype.UUID) (pgtype.Timestamptz, error)
 	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
 	LatestWinChanceSample(ctx context.Context, matchupID pgtype.UUID) (LatestWinChanceSampleRow, error)
 	// Starter identities and the latest observed roster's NFL team for play-by-play replay.
@@ -104,6 +105,7 @@ type Querier interface {
 	MatchupDetailRound(ctx context.Context, arg MatchupDetailRoundParams) (Matchup, error)
 	MatchupDetailWinChanceSamples(ctx context.Context, arg MatchupDetailWinChanceSamplesParams) ([]MatchupDetailWinChanceSamplesRow, error)
 	MatchupHasWinChanceHistory(ctx context.Context, matchupID pgtype.UUID) (pgtype.Bool, error)
+	MatchupHasWinChanceHistoryAfter(ctx context.Context, arg MatchupHasWinChanceHistoryAfterParams) (pgtype.Bool, error)
 	// The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
 	MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupWinChanceOwnerMatchupParams) (MatchupWinChanceOwnerMatchupRow, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)

@@ -3,11 +3,14 @@ package leaguesync
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
@@ -108,8 +111,30 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	if err != nil {
 		return 0, 0, err
 	}
-	if hasHistory.Valid && hasHistory.Bool {
-		return 0, 0, nil
+	tailReplay := hasHistory.Valid && hasHistory.Bool
+	var from time.Time
+	if tailReplay {
+		latestSample, err := r.db.Queries().LatestWinChanceSample(ctx, matchupID)
+		if err == nil {
+			matchesFinal, err := latestBackfillSampleMatchesFinal(latestSample, matchup.ScoreA, matchup.ScoreB)
+			if err != nil {
+				return 0, 0, err
+			}
+			if matchesFinal {
+				return 0, 0, nil
+			}
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, err
+		}
+
+		latestObservation, err := r.db.Queries().LatestLiveLineupObservationAt(ctx, matchupID)
+		if err != nil {
+			return 0, 0, err
+		}
+		if !latestObservation.Valid {
+			return 0, 0, nil
+		}
+		from = latestObservation.Time
 	}
 	starterRows, err := r.db.Queries().ListBackfillMatchupStarters(ctx, matchupID)
 	if err != nil {
@@ -123,6 +148,17 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	if err != nil {
 		return 0, 0, err
 	}
+	var starterCounts map[string]gapStarterCounts
+	if tailReplay {
+		observations, err := loadLiveLineupObservations(ctx, r.db.Queries(), matchupID)
+		if err != nil {
+			return 0, 0, err
+		}
+		starters, starterCounts, err = tailBackfillStarters(starters, starterRowsByKey, observations)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
 	scoreboard, err := r.sources.NFLWeekScoreboard(ctx, int(matchup.Season), int(week))
 	if err != nil {
 		return 0, 0, err
@@ -131,13 +167,109 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	if err != nil {
 		return 0, 0, err
 	}
-	timeline := replay.Build(replay.Input{
-		Starters: starters, Games: games, Rules: settings.ScoringRules,
-	})
+	input := replay.Input{Starters: starters, Games: games, Rules: settings.ScoringRules}
+	if tailReplay {
+		to := latestBackfillPlayAt(games)
+		if !to.After(from) {
+			to = from.Add(time.Minute)
+		}
+		input.From, input.To = from, to
+	}
+	timeline := replay.Build(input)
 	if len(timeline.Samples) == 0 && len(timeline.Changes) == 0 {
 		return 0, 0, nil
 	}
+	if tailReplay {
+		return r.saveBackfillTailTimeline(ctx, matchupID, from, input.To, timeline,
+			starterRowsByKey, starterCounts)
+	}
 	return r.saveBackfillTimeline(ctx, matchupID, timeline, starterRowsByKey)
+}
+
+// latestBackfillSampleMatchesFinal compares the latest saved scores to the final matchup score.
+func latestBackfillSampleMatchesFinal(
+	sample store.LatestWinChanceSampleRow,
+	scoreA, scoreB pgtype.Numeric,
+) (bool, error) {
+	if !scoreA.Valid || !scoreB.Valid || !sample.ScoreA.Valid || !sample.ScoreB.Valid {
+		return false, nil
+	}
+	sampleA, err := requiredBackfillNumeric(sample.ScoreA)
+	if err != nil {
+		return false, err
+	}
+	sampleB, err := requiredBackfillNumeric(sample.ScoreB)
+	if err != nil {
+		return false, err
+	}
+	finalA, err := requiredBackfillNumeric(scoreA)
+	if err != nil {
+		return false, err
+	}
+	finalB, err := requiredBackfillNumeric(scoreB)
+	if err != nil {
+		return false, err
+	}
+	return math.Round(sampleA*10000) == math.Round(finalA*10000) &&
+		math.Round(sampleB*10000) == math.Round(finalB*10000), nil
+}
+
+func requiredBackfillNumeric(value pgtype.Numeric) (float64, error) {
+	result, err := value.Float64Value()
+	if err != nil {
+		return 0, err
+	}
+	if !result.Valid {
+		return 0, fmt.Errorf("required backfill score is null")
+	}
+	return result.Float64, nil
+}
+
+// tailBackfillStarters anchors a final replay to observed values when available.
+func tailBackfillStarters(
+	starters []replay.Starter,
+	rows map[string]store.ListBackfillMatchupStartersRow,
+	observations map[liveLineupObservationKey]store.ListLiveLineupObservationsRow,
+) ([]replay.Starter, map[string]gapStarterCounts, error) {
+	counts := make(map[string]gapStarterCounts, len(starters))
+	for i, starter := range starters {
+		row := rows[starter.Key]
+		observation, found := observations[liveLineupObservationKey{
+			teamID: row.TeamID, playerID: row.PlayerID,
+		}]
+		if !found {
+			starters[i].StartPoints = starter.FinalPoints
+			starters[i].AthleteID = ""
+			starters[i].ProTeam = ""
+			starters[i].Projected = nil
+			continue
+		}
+		startPoints, err := lineupPointsOrZero(observation.Points)
+		if err != nil {
+			return nil, nil, err
+		}
+		starters[i].StartPoints = startPoints
+		starters[i].StartTouchdowns = int4OrZero(observation.Touchdowns)
+		starters[i].StartFieldGoals = int4OrZero(observation.FieldGoals)
+		counts[starter.Key] = gapStarterCounts{
+			touchdowns: observation.Touchdowns.Valid,
+			fieldGoals: observation.FieldGoals.Valid,
+		}
+	}
+	return starters, counts, nil
+}
+
+// latestBackfillPlayAt returns the end of the final replay window.
+func latestBackfillPlayAt(games []replay.Game) time.Time {
+	var latest time.Time
+	for _, game := range games {
+		for _, play := range game.Plays {
+			if play.At.After(latest) {
+				latest = play.At
+			}
+		}
+	}
+	return latest
 }
 
 func backfillWeek(value []byte) (fantasy.ScoringPeriod, bool, error) {
@@ -271,6 +403,23 @@ func (r *Runner) saveBackfillTimeline(
 		return 0, 0, err
 	}
 	return sampleCount, changeCount, nil
+}
+
+// saveBackfillTailTimeline persists only the reconstructed tail if no newer history appeared.
+func (r *Runner) saveBackfillTailTimeline(
+	ctx context.Context,
+	matchupID pgtype.UUID,
+	from, to time.Time,
+	timeline replay.Timeline,
+	starterRows map[string]store.ListBackfillMatchupStartersRow,
+	counts map[string]gapStarterCounts,
+) (int, int, error) {
+	targets := make(map[string]windowedStarterTarget, len(starterRows))
+	for key, row := range starterRows {
+		targets[key] = windowedStarterTarget{teamID: row.TeamID, playerID: row.PlayerID}
+	}
+	return r.saveWindowedTimeline(ctx, matchupID, from, to, timeline, targets, counts,
+		windowedTimelineOptions{rejectNewerThan: &from, includeEndSample: true})
 }
 
 func uniqueBackfillSampleTime(at time.Time, seen map[time.Time]bool) time.Time {

@@ -97,6 +97,13 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	if _, _, err := runner.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], firstTick); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := pool.Exec(ctx, `
+		DELETE FROM live_lineup_observations
+		WHERE matchup_id=$1
+		AND player_id=(SELECT id FROM players WHERE display_name='Fixture Player')
+	`, candidates[0].MatchupID); err != nil {
+		t.Fatal(err)
+	}
 	tickAt = endedAt
 	secondTick := pointChangeLiveFixture(23.8, 4, 1, 0)
 	liveProvider.live = secondTick
@@ -127,6 +134,25 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	}
 	if gapStarters != 2 {
 		t.Fatalf("saved gap starters = %d, want both matchup starters", gapStarters)
+	}
+	var pointsBefore, pointsAfter string
+	var tdBefore, tdAfter, fgBefore, fgAfter *int32
+	if err := pool.QueryRow(ctx, `
+		SELECT gs.points_before::text,gs.points_after::text,
+			gs.touchdowns_before,gs.touchdowns_after,gs.field_goals_before,gs.field_goals_after
+		FROM win_chance_gap_starters gs
+		JOIN players p ON p.id=gs.player_id
+		WHERE gs.matchup_id=$1 AND gs.started_at=$2 AND p.display_name='Fixture Player'
+	`, matchupID, startedAt).Scan(
+		&pointsBefore, &pointsAfter, &tdBefore, &tdAfter, &fgBefore, &fgAfter,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if pointsBefore != "23.8000" || pointsAfter != "23.8000" ||
+		tdBefore == nil || *tdBefore != 1 || tdAfter == nil || *tdAfter != 1 ||
+		fgBefore == nil || *fgBefore != 0 || fgAfter == nil || *fgAfter != 0 {
+		t.Fatalf("no-baseline gap starter = %s→%s points, TD %v/%v FG %v/%v; want identical after values",
+			pointsBefore, pointsAfter, tdBefore, tdAfter, fgBefore, fgAfter)
 	}
 	if changes := readLineupPointChanges(t, pool); len(changes) != 0 {
 		t.Fatalf("stale tick recorded %d ordinary point changes, want none", len(changes))
@@ -175,8 +201,8 @@ func assertLiveGapFill(t *testing.T, pool *pgxpool.Pool, matchupID string, start
 	`, matchupID, startedAt, endedAt).Scan(&changeCount); err != nil {
 		t.Fatal(err)
 	}
-	if sampleCount != 2 || changeCount != 3 {
-		t.Fatalf("gap history has %d samples and %d changes, want 2 and 3", sampleCount, changeCount)
+	if sampleCount != 2 || changeCount != 2 {
+		t.Fatalf("gap history has %d samples and %d changes, want 2 and 2", sampleCount, changeCount)
 	}
 	var pointsBefore, pointsAfter string
 	var tdBefore, tdAfter *int32
@@ -189,7 +215,36 @@ func assertLiveGapFill(t *testing.T, pool *pgxpool.Pool, matchupID string, start
 	`, matchupID, startedAt).Scan(&pointsBefore, &pointsAfter, &tdBefore, &tdAfter); err != nil {
 		t.Fatal(err)
 	}
-	if pointsBefore != "17.0000" || pointsAfter != "18.0000" || tdBefore != nil || tdAfter != nil {
-		t.Fatalf("gap change = %s to %s, TD counts %v/%v; want 17→18 and unknown counts", pointsBefore, pointsAfter, tdBefore, tdAfter)
+	if pointsBefore != "23.8000" || pointsAfter != "24.8000" ||
+		tdBefore == nil || *tdBefore != 1 || tdAfter == nil || *tdAfter != 1 {
+		t.Fatalf("gap change = %s to %s, TD counts %v/%v; want 23.8→24.8 and unchanged known counts",
+			pointsBefore, pointsAfter, tdBefore, tdAfter)
+	}
+	var targetPoints float64
+	var targetTeamB bool
+	if err := pool.QueryRow(ctx, `
+		SELECT gs.points_after::float8,(gs.team_id=m.team_b_id)::boolean
+		FROM win_chance_gap_starters gs
+		JOIN matchups m ON m.id=gs.matchup_id
+		JOIN players p ON p.id=gs.player_id
+		WHERE gs.matchup_id=$1 AND gs.started_at=$2 AND p.display_name='Fixture Player'
+	`, matchupID, startedAt).Scan(&targetPoints, &targetTeamB); err != nil {
+		t.Fatal(err)
+	}
+	var firstScoreA, firstScoreB float64
+	if err := pool.QueryRow(ctx, `
+		SELECT score_a::float8,score_b::float8 FROM win_chance_samples
+		WHERE matchup_id=$1 AND observed_at > $2 AND observed_at < $3
+		ORDER BY observed_at LIMIT 1
+	`, matchupID, startedAt, endedAt).Scan(&firstScoreA, &firstScoreB); err != nil {
+		t.Fatal(err)
+	}
+	targetScore := firstScoreA
+	if targetTeamB {
+		targetScore = firstScoreB
+	}
+	if targetScore < targetPoints {
+		t.Fatalf("filled sample has %.4f for Fixture Player's side, below the starter's %.4f points",
+			targetScore, targetPoints)
 	}
 }

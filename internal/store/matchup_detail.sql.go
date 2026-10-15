@@ -284,7 +284,8 @@ func (q *Queries) MatchupDetailWinChanceSamples(ctx context.Context, arg Matchup
 }
 
 const matchupWinChanceOwnerMatchup = `-- name: MatchupWinChanceOwnerMatchup :one
-SELECT m.id,m.is_bye,m.status,coalesce(m.team_b_id = ut.team_id,false)::boolean AS owner_is_team_b
+SELECT m.id,m.is_bye,m.status,m.score_a,m.score_b,
+ coalesce(m.team_b_id = ut.team_id,false)::boolean AS owner_is_team_b
 FROM matchups m
 JOIN user_teams ut ON ut.league_season_id=m.league_season_id AND (ut.team_id=m.team_a_id OR ut.team_id=m.team_b_id)
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
@@ -302,6 +303,8 @@ type MatchupWinChanceOwnerMatchupRow struct {
 	ID           pgtype.UUID
 	IsBye        bool
 	Status       string
+	ScoreA       pgtype.Numeric
+	ScoreB       pgtype.Numeric
 	OwnerIsTeamB bool
 }
 
@@ -313,6 +316,8 @@ func (q *Queries) MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupW
 		&i.ID,
 		&i.IsBye,
 		&i.Status,
+		&i.ScoreA,
+		&i.ScoreB,
 		&i.OwnerIsTeamB,
 	)
 	return i, err

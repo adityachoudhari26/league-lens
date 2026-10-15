@@ -573,8 +573,26 @@ func TestMatchupWinChance(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertMatchupWinChance(t, chance.WinChance, ownerTeamID, firstSampleAt)
-	if chance.Building || backfill.calls != 1 {
-		t.Fatalf("existing history building=%t, backfill calls=%d; want false and unchanged", chance.Building, backfill.calls)
+	if !chance.Building || backfill.calls != 2 {
+		t.Fatalf("incomplete history building=%t, backfill calls=%d; want true and a second request", chance.Building, backfill.calls)
+	}
+	if _, err := pool.Exec(ctx, `
+		UPDATE matchups m SET score_a=s.score_a,score_b=s.score_b
+		FROM (
+			SELECT matchup_id,score_a,score_b FROM win_chance_samples
+			WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1
+		) s
+		WHERE m.id=$1 AND m.id=s.matchup_id
+	`, matchupID); err != nil {
+		t.Fatal(err)
+	}
+	chance, err = client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: matchupID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertMatchupWinChance(t, chance.WinChance, ownerTeamID, firstSampleAt)
+	if chance.Building || backfill.calls != 2 {
+		t.Fatalf("complete history building=%t, backfill calls=%d; want false and no request", chance.Building, backfill.calls)
 	}
 
 	period := int32(1)
@@ -609,7 +627,7 @@ func TestMatchupWinChance(t *testing.T) {
 	if byeChance.WinChance != nil || byeChance.Building {
 		t.Fatalf("bye win chance = %v, building = %t; want empty and false", byeChance.WinChance, byeChance.Building)
 	}
-	if backfill.calls != 1 {
+	if backfill.calls != 2 {
 		t.Fatalf("bye requested a backfill, calls = %d", backfill.calls)
 	}
 

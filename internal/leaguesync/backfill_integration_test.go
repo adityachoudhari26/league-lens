@@ -11,6 +11,7 @@ import (
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
+	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
 type backfillSources struct {
@@ -158,6 +159,124 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 	}
 	if savedSamples != wantSamples || savedChanges != wantChanges {
 		t.Fatalf("second backfill changed saved history to %d samples/%d changes", savedSamples, savedChanges)
+	}
+
+	if _, err := pool.Exec(context.Background(),
+		`DELETE FROM lineup_point_changes WHERE matchup_id=$1`, matchupID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(context.Background(),
+		`DELETE FROM win_chance_samples WHERE matchup_id=$1`, matchupID); err != nil {
+		t.Fatal(err)
+	}
+	tailAt := now.Add(10 * time.Minute)
+	tailStarters, err := db.Queries().ListBackfillMatchupStarters(context.Background(), matchupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, starter := range tailStarters {
+		startPoints := 0.0
+		if starter.AthleteID == "101" {
+			startPoints = 4
+		}
+		points, err := fourDecimalNumeric(startPoints)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.Queries().UpsertLiveLineupObservation(context.Background(),
+			store.UpsertLiveLineupObservationParams{
+				MatchupID: matchupID, TeamID: starter.TeamID, PlayerID: starter.PlayerID,
+				Points: points, Touchdowns: pgtype.Int4{Int32: 0, Valid: true},
+				FieldGoals: pgtype.Int4{Int32: 0, Valid: true},
+				ObservedAt: pgtype.Timestamptz{Time: tailAt, Valid: true},
+			}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	half, err := fourDecimalNumeric(0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	four, err := fourDecimalNumeric(4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zero, err := fourDecimalNumeric(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fourteen, err := fourDecimalNumeric(14)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Queries().InsertWinChanceSample(context.Background(), store.InsertWinChanceSampleParams{
+		MatchupID: matchupID, ObservedAt: pgtype.Timestamptz{Time: tailAt, Valid: true},
+		TeamAWinChance: half, ScoreA: four, ScoreB: zero, ProjectedA: fourteen, ProjectedB: fourteen,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	tailSamples, tailChanges, err := runner.backfillMatchup(context.Background(), matchupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tailSamples == 0 || tailChanges != 1 || sources.scoreCalls != 2 || sources.playCalls != 2 {
+		t.Fatalf("tail backfill wrote %d samples/%d changes with %d scoreboard and %d play calls",
+			tailSamples, tailChanges, sources.scoreCalls, sources.playCalls)
+	}
+	var tailSampleCount, tailChangeCount int
+	var lastTailSampleAt time.Time
+	var lastTailScoreA, lastTailScoreB string
+	if err := pool.QueryRow(context.Background(), `
+		SELECT count(*),
+			(SELECT observed_at FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1),
+			(SELECT score_a::text FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1),
+			(SELECT score_b::text FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1)
+		FROM win_chance_samples WHERE matchup_id=$1 AND observed_at > $2
+	`, matchupID, tailAt).Scan(&tailSampleCount, &lastTailSampleAt, &lastTailScoreA, &lastTailScoreB); err != nil {
+		t.Fatal(err)
+	}
+	if tailSampleCount != tailSamples || !lastTailSampleAt.After(tailAt) ||
+		lastTailScoreA != "7.0000" || lastTailScoreB != "0.0000" {
+		t.Fatalf("tail history has %d new samples; latest %s is %s-%s",
+			tailSampleCount, lastTailSampleAt, lastTailScoreA, lastTailScoreB)
+	}
+	if err := pool.QueryRow(context.Background(),
+		`SELECT count(*) FROM lineup_point_changes WHERE matchup_id=$1`, matchupID,
+	).Scan(&tailChangeCount); err != nil {
+		t.Fatal(err)
+	}
+	var changeAt time.Time
+	var changeBefore, changeAfter string
+	if err := pool.QueryRow(context.Background(), `
+		SELECT observed_at,points_before::text,points_after::text
+		FROM lineup_point_changes WHERE matchup_id=$1 ORDER BY observed_at
+	`, matchupID).Scan(&changeAt, &changeBefore, &changeAfter); err != nil {
+		t.Fatal(err)
+	}
+	if tailChangeCount != 1 || !changeAt.After(tailAt) ||
+		changeBefore != "4.0000" || changeAfter != "11.0000" {
+		t.Fatalf("tail changes = %d; credited change %s %s→%s, want one post-T play 4→11",
+			tailChangeCount, changeAt, changeBefore, changeAfter)
+	}
+	samplesBeforeRepeat, changesBeforeRepeat := tailSampleCount, tailChangeCount
+	sampleCount, changeCount, err = runner.backfillMatchup(context.Background(), matchupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sampleCount != 0 || changeCount != 0 || sources.scoreCalls != 2 || sources.playCalls != 2 {
+		t.Fatalf("completed tail replay wrote %d/%d with %d scoreboard and %d play calls",
+			sampleCount, changeCount, sources.scoreCalls, sources.playCalls)
+	}
+	if err := pool.QueryRow(context.Background(), `
+		SELECT (SELECT count(*) FROM win_chance_samples WHERE matchup_id=$1 AND observed_at > $2),
+			(SELECT count(*) FROM lineup_point_changes WHERE matchup_id=$1)
+	`, matchupID, tailAt).Scan(&tailSampleCount, &tailChangeCount); err != nil {
+		t.Fatal(err)
+	}
+	if tailSampleCount != samplesBeforeRepeat || tailChangeCount != changesBeforeRepeat {
+		t.Fatalf("repeat tail replay changed history to %d samples/%d changes",
+			tailSampleCount, tailChangeCount)
 	}
 
 	var ineligibleMatchupID pgtype.UUID

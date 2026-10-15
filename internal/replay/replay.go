@@ -175,7 +175,7 @@ func anchorResiduals(
 			events[bucket] = map[int]playerDelta{}
 		}
 		delta := events[bucket][starterIndex]
-		delta.points += residual
+		delta.adjustment += residual
 		events[bucket][starterIndex] = delta
 	}
 }
@@ -203,7 +203,7 @@ func replayChangesAndSamples(
 		)
 	}
 	for _, bucket := range sortedBuckets(events) {
-		changesBefore := len(result.Changes)
+		bucketChanged := false
 		starterIndices := make([]int, 0, len(events[bucket]))
 		for starterIndex := range events[bucket] {
 			starterIndices = append(starterIndices, starterIndex)
@@ -212,23 +212,32 @@ func replayChangesAndSamples(
 		for _, starterIndex := range starterIndices {
 			delta := events[bucket][starterIndex]
 			before := states[starterIndex]
-			after := playerState{
+			creditedAfter := playerState{
 				points:     before.points + delta.points,
 				touchdowns: before.touchdowns + delta.touchdowns,
 				fieldGoals: before.fieldGoals + delta.fieldGoals,
 			}
-			pointsBefore, pointsAfter := round4(before.points), round4(after.points)
-			if pointsBefore != pointsAfter || before.touchdowns != after.touchdowns || before.fieldGoals != after.fieldGoals {
+			pointsBefore, pointsAfter := round4(before.points), round4(creditedAfter.points)
+			if pointsBefore != pointsAfter ||
+				before.touchdowns != creditedAfter.touchdowns ||
+				before.fieldGoals != creditedAfter.fieldGoals {
 				result.Changes = append(result.Changes, Change{
 					Key: in.Starters[starterIndex].Key, At: bucket,
 					PointsBefore: pointsBefore, PointsAfter: pointsAfter,
-					TouchdownsBefore: before.touchdowns, TouchdownsAfter: after.touchdowns,
-					FieldGoalsBefore: before.fieldGoals, FieldGoalsAfter: after.fieldGoals,
+					TouchdownsBefore: before.touchdowns, TouchdownsAfter: creditedAfter.touchdowns,
+					FieldGoalsBefore: before.fieldGoals, FieldGoalsAfter: creditedAfter.fieldGoals,
 				})
+			}
+			after := creditedAfter
+			after.points += delta.adjustment
+			if round4(before.points) != round4(after.points) ||
+				before.touchdowns != after.touchdowns ||
+				before.fieldGoals != after.fieldGoals {
+				bucketChanged = true
 			}
 			states[starterIndex] = after
 		}
-		if len(result.Changes) > changesBefore {
+		if bucketChanged {
 			scoreA, scoreB := sideScores(in.Starters, states)
 			result.Samples = appendSample(result.Samples, replaySample(
 				in, games, starterGames, latestAt, bucket, scoreA, scoreB, false, false,

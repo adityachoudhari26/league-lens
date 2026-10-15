@@ -12,7 +12,7 @@ import (
 )
 
 const backfillMatchup = `-- name: BackfillMatchup :one
-SELECT m.status,m.is_bye,m.scoring_periods_json,l.season,l.settings_json
+SELECT m.status,m.is_bye,m.scoring_periods_json,l.season,l.settings_json,m.score_a,m.score_b
 FROM matchups m
 JOIN league_seasons l ON l.id=m.league_season_id
 WHERE m.id = $1
@@ -24,6 +24,8 @@ type BackfillMatchupRow struct {
 	ScoringPeriodsJson []byte
 	Season             int32
 	SettingsJson       []byte
+	ScoreA             pgtype.Numeric
+	ScoreB             pgtype.Numeric
 }
 
 func (q *Queries) BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (BackfillMatchupRow, error) {
@@ -35,6 +37,8 @@ func (q *Queries) BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (B
 		&i.ScoringPeriodsJson,
 		&i.Season,
 		&i.SettingsJson,
+		&i.ScoreA,
+		&i.ScoreB,
 	)
 	return i, err
 }
@@ -165,6 +169,18 @@ func (q *Queries) InsertWinChanceSample(ctx context.Context, arg InsertWinChance
 		arg.ProjectedB,
 	)
 	return err
+}
+
+const latestLiveLineupObservationAt = `-- name: LatestLiveLineupObservationAt :one
+SELECT max(observed_at)::timestamptz AS observed_at
+FROM live_lineup_observations WHERE matchup_id = $1
+`
+
+func (q *Queries) LatestLiveLineupObservationAt(ctx context.Context, matchupID pgtype.UUID) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, latestLiveLineupObservationAt, matchupID)
+	var observed_at pgtype.Timestamptz
+	err := row.Scan(&observed_at)
+	return observed_at, err
 }
 
 const latestWinChanceSample = `-- name: LatestWinChanceSample :one
@@ -612,6 +628,28 @@ SELECT EXISTS (
 
 func (q *Queries) MatchupHasWinChanceHistory(ctx context.Context, matchupID pgtype.UUID) (pgtype.Bool, error) {
 	row := q.db.QueryRow(ctx, matchupHasWinChanceHistory, matchupID)
+	var has_history pgtype.Bool
+	err := row.Scan(&has_history)
+	return has_history, err
+}
+
+const matchupHasWinChanceHistoryAfter = `-- name: MatchupHasWinChanceHistoryAfter :one
+SELECT EXISTS (
+ SELECT 1 FROM win_chance_samples s
+ WHERE s.matchup_id = $1 AND s.observed_at > $2
+) OR EXISTS (
+ SELECT 1 FROM lineup_point_changes c
+ WHERE c.matchup_id = $1 AND c.observed_at > $2
+) AS has_history
+`
+
+type MatchupHasWinChanceHistoryAfterParams struct {
+	MatchupID pgtype.UUID
+	After     pgtype.Timestamptz
+}
+
+func (q *Queries) MatchupHasWinChanceHistoryAfter(ctx context.Context, arg MatchupHasWinChanceHistoryAfterParams) (pgtype.Bool, error) {
+	row := q.db.QueryRow(ctx, matchupHasWinChanceHistoryAfter, arg.MatchupID, arg.After)
 	var has_history pgtype.Bool
 	err := row.Scan(&has_history)
 	return has_history, err

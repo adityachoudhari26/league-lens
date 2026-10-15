@@ -57,7 +57,7 @@ LEFT JOIN roster_entries e ON e.snapshot_id=s.id AND e.player_id=ml.player_id
 WHERE ml.matchup_id = @matchup_id AND ml.starter;
 
 -- name: BackfillMatchup :one
-SELECT m.status,m.is_bye,m.scoring_periods_json,l.season,l.settings_json
+SELECT m.status,m.is_bye,m.scoring_periods_json,l.season,l.settings_json,m.score_a,m.score_b
 FROM matchups m
 JOIN league_seasons l ON l.id=m.league_season_id
 WHERE m.id = @matchup_id;
@@ -104,6 +104,19 @@ SELECT EXISTS (
 -- name: LatestWinChanceSample :one
 SELECT team_a_win_chance, score_a, score_b, projected_a, projected_b
 FROM win_chance_samples WHERE matchup_id = @matchup_id ORDER BY observed_at DESC LIMIT 1;
+
+-- name: LatestLiveLineupObservationAt :one
+SELECT max(observed_at)::timestamptz AS observed_at
+FROM live_lineup_observations WHERE matchup_id = @matchup_id;
+
+-- name: MatchupHasWinChanceHistoryAfter :one
+SELECT EXISTS (
+ SELECT 1 FROM win_chance_samples s
+ WHERE s.matchup_id = @matchup_id AND s.observed_at > @after
+) OR EXISTS (
+ SELECT 1 FROM lineup_point_changes c
+ WHERE c.matchup_id = @matchup_id AND c.observed_at > @after
+) AS has_history;
 
 -- name: InsertWinChanceSample :exec
 INSERT INTO win_chance_samples (matchup_id, observed_at, team_a_win_chance, score_a, score_b, projected_a, projected_b)

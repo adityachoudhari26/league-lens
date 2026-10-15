@@ -4,6 +4,7 @@ import "github.com/adityachoudhari26/league-lens/internal/fantasy"
 
 type playerDelta struct {
 	points     float64
+	adjustment float64
 	touchdowns int
 	fieldGoals int
 	credited   bool
@@ -133,6 +134,7 @@ func addStat(delta *playerDelta, stat fantasy.Stat, value float64, rulePoints ma
 func addDelta(before, after playerDelta) playerDelta {
 	return playerDelta{
 		points:     before.points + after.points,
+		adjustment: before.adjustment + after.adjustment,
 		touchdowns: before.touchdowns + after.touchdowns,
 		fieldGoals: before.fieldGoals + after.fieldGoals,
 		credited:   before.credited || after.credited,
