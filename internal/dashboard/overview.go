@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"connectrpc.com/connect/v2"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -36,6 +37,7 @@ func overviewTeam(row store.OverviewTeamsRow) *v1.OverviewTeam {
 		Name:       row.Name,
 		LeagueId:   row.LeagueID.String(),
 		LeagueName: row.LeagueName,
+		LeagueUrl:  providerLeagueURL(row.Provider, row.ExternalLeagueID, row.Season),
 		Provider:   row.Provider,
 		Season:     row.Season,
 		ObservedAt: timestamp(row.ObservedAt),
@@ -44,6 +46,33 @@ func overviewTeam(row store.OverviewTeamsRow) *v1.OverviewTeam {
 		team.ScoringPeriod = &row.Period
 	}
 	return team
+}
+
+// providerLeagueURL returns the provider's league home page, built with net/url so
+// IDs are escaped; unknown providers get "" so the UI shows plain text.
+func providerLeagueURL(provider, externalLeagueID string, season int32) string {
+	switch provider {
+	case "espn":
+		return (&url.URL{
+			Scheme: "https",
+			Host:   "fantasy.espn.com",
+			Path:   "/football/league",
+			RawQuery: url.Values{
+				"leagueId": {externalLeagueID},
+				"seasonId": {fmt.Sprint(season)},
+			}.Encode(),
+		}).String()
+	case "sleeper":
+		escapedID := url.PathEscape(externalLeagueID)
+		return (&url.URL{
+			Scheme:  "https",
+			Host:    "sleeper.com",
+			Path:    "/leagues/" + externalLeagueID,
+			RawPath: "/leagues/" + escapedID,
+		}).String()
+	default:
+		return ""
+	}
 }
 
 func coverage(state, explanation string) *v1.OverviewCoverage {

@@ -71,7 +71,7 @@ func (q *Queries) OverviewTeamMatchup(ctx context.Context, arg OverviewTeamMatch
 }
 
 const overviewTeams = `-- name: OverviewTeams :many
-SELECT t.id,t.name,l.id AS league_id,l.name AS league_name,l.provider,l.season,l.settings_json,
+SELECT t.id,t.name,l.id AS league_id,l.name AS league_name,l.provider,l.season,l.external_league_id,l.settings_json,
  s.id AS snapshot_id,coalesce(s.period,0)::integer AS period,coalesce(s.coverage,'')::text AS coverage,s.observed_at
 FROM user_teams ut
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
@@ -93,17 +93,18 @@ ORDER BY l.name,t.name,t.id LIMIT 101
 `
 
 type OverviewTeamsRow struct {
-	ID           pgtype.UUID
-	Name         string
-	LeagueID     pgtype.UUID
-	LeagueName   string
-	Provider     string
-	Season       int32
-	SettingsJson []byte
-	SnapshotID   pgtype.UUID
-	Period       int32
-	Coverage     string
-	ObservedAt   pgtype.Timestamptz
+	ID               pgtype.UUID
+	Name             string
+	LeagueID         pgtype.UUID
+	LeagueName       string
+	Provider         string
+	Season           int32
+	ExternalLeagueID string
+	SettingsJson     []byte
+	SnapshotID       pgtype.UUID
+	Period           int32
+	Coverage         string
+	ObservedAt       pgtype.Timestamptz
 }
 
 // Only selected teams, enabled connections, and the owner's latest imported season.
@@ -123,6 +124,7 @@ func (q *Queries) OverviewTeams(ctx context.Context, userID pgtype.UUID) ([]Over
 			&i.LeagueName,
 			&i.Provider,
 			&i.Season,
+			&i.ExternalLeagueID,
 			&i.SettingsJson,
 			&i.SnapshotID,
 			&i.Period,
