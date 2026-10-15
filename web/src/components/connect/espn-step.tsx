@@ -18,7 +18,7 @@ export function EspnStep({
 }) {
   return (
     <div className="grid gap-5">
-      <BackButton onClick={onBack}>Back to platforms</BackButton>
+      <BackButton label="Back to platforms" onClick={onBack} />
       <EspnBookmarkletOption />
       <EspnCookieOption
         initialCredentials={initialCredentials}

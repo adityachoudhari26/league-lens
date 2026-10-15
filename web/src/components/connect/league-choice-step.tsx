@@ -31,7 +31,7 @@ export function LeagueChoiceStep({
 }) {
   return (
     <div className="grid gap-4">
-      <BackButton onClick={onBack}>Back to credentials</BackButton>
+      <BackButton label="Back to credentials" onClick={onBack} />
       {leagues.length ? (
         <div className="grid gap-2">
           {leagues.map((league) => (

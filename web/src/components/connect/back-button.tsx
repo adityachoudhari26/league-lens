@@ -1,21 +1,24 @@
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function BackButton({
-  children,
+  label,
   onClick,
 }: {
-  children: string
+  label: string
   onClick: () => void
 }) {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="sm"
-      className="w-fit px-0 text-muted-foreground"
+      className="w-fit"
+      aria-label={label}
       onClick={onClick}
     >
-      {children}
+      <ArrowLeft aria-hidden />
+      Back
     </Button>
   )
 }

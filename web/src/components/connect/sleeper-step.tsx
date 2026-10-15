@@ -26,7 +26,7 @@ export function SleeperStep({
 
   return (
     <form className="grid gap-4" onSubmit={(event) => void handleSubmit(event)}>
-      <BackButton onClick={onBack}>Back to platforms</BackButton>
+      <BackButton label="Back to platforms" onClick={onBack} />
       <label className="grid gap-1.5 text-sm" htmlFor="sleeper-username">
         Sleeper username
         <Input
