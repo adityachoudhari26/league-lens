@@ -88,8 +88,8 @@ function PlayerCell({
   )
 }
 
-// Before kickoff only the projection shows, in place of "—". A tone colors
-// whichever number is shown.
+// Points sit on top (0 before kickoff) with the projection underneath. A
+// tone colors the points.
 function PlayerPoints({
   player,
   mirrored,
@@ -99,24 +99,18 @@ function PlayerPoints({
   mirrored?: boolean
   toneClass?: string
 }) {
-  const points = shownPoints(player)
   const projected = player.projectedPoints
-  const showsPoints = points !== undefined || projected === undefined
   return (
     <div
       className={`w-12 shrink-0 tabular-nums ${mirrored ? "text-left" : "text-right"}`}
     >
-      {showsPoints && (
-        <p
-          className={`text-sm ${toneClass ? `font-semibold ${toneClass}` : "text-foreground/70"}`}
-        >
-          {scoreLabel(points)}
-        </p>
-      )}
+      <p
+        className={`text-sm ${toneClass ? `font-semibold ${toneClass}` : "text-foreground/70"}`}
+      >
+        {scoreLabel(shownPoints(player) ?? 0)}
+      </p>
       {projected !== undefined && (
-        <p
-          className={`text-[11px] ${!showsPoints && toneClass ? `font-medium ${toneClass}` : "text-muted-foreground"}`}
-        >
+        <p className="text-[11px] text-muted-foreground">
           {scoreLabel(projected)}
         </p>
       )}
