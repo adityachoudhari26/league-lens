@@ -7,6 +7,7 @@ import {
   type PlayerUpdate,
 } from "@/gen/leaguelens/v1/overview_pb"
 import { overviewQueries } from "@/lib/api/overview"
+import { PlayerCardTrigger } from "@/components/player-card/player-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -116,7 +117,9 @@ function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
             {teams && <> · {teams}</>}
           </p>
           <p className="text-sm font-semibold text-foreground/80">
-            {update.playerName}
+            <PlayerCardTrigger playerId={update.playerId}>
+              {update.playerName}
+            </PlayerCardTrigger>
           </p>
           <h3 className="mt-0.5 text-sm font-medium">{update.headline}</h3>
           {update.summary && (
