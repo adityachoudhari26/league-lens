@@ -12,10 +12,16 @@ type Config struct {
 	HTTPAddr        string
 	DatabaseURL     string
 	LocalOwnerEmail string
+	MigrateOnStart  bool
 }
 
 func Load() (Config, error) {
-	cfg := Config{LocalOwnerEmail: os.Getenv("LOCAL_OWNER_EMAIL"), HTTPAddr: os.Getenv("HTTP_ADDR"), DatabaseURL: os.Getenv("DATABASE_URL")}
+	cfg := Config{
+		LocalOwnerEmail: os.Getenv("LOCAL_OWNER_EMAIL"),
+		HTTPAddr:        os.Getenv("HTTP_ADDR"),
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		MigrateOnStart:  os.Getenv("MIGRATE_ON_START") == "true",
+	}
 	if cfg.LocalOwnerEmail == "" {
 		cfg.LocalOwnerEmail = "owner@localhost"
 	}

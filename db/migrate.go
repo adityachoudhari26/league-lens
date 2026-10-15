@@ -14,7 +14,8 @@ import (
 //go:embed migrations/*.sql
 var migrationFiles embed.FS
 
-// Migrate applies an explicit command. Application startup never changes the schema.
+// Migrate applies an explicit command. Startup migrations are opt-in via
+// MIGRATE_ON_START; development keeps `just migrate` explicit.
 func Migrate(ctx context.Context, conn *sql.DB, direction string) error {
 	files, err := fs.Sub(migrationFiles, "migrations")
 	if err != nil {

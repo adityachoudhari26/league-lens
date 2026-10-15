@@ -58,3 +58,25 @@ func TestLocalOwnerSelection(t *testing.T) {
 		t.Fatal("ignored configured owner")
 	}
 }
+
+func TestMigrateOnStartConfiguration(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://owner:secret@localhost/league_lens")
+	t.Setenv("HTTP_ADDR", "")
+	t.Setenv("MIGRATE_ON_START", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.MigrateOnStart {
+		t.Fatal("startup migrations enabled by default")
+	}
+
+	t.Setenv("MIGRATE_ON_START", "true")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.MigrateOnStart {
+		t.Fatal("ignored enabled startup migrations")
+	}
+}
