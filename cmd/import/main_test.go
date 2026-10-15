@@ -23,6 +23,10 @@ func TestArguments(t *testing.T) {
 	if err := run([]string{"sleeper", "--help"}, &out, &out); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestTopLevelHelp(t *testing.T) {
+	var out bytes.Buffer
 	if err := run([]string{"--help"}, &out, &out); err != nil {
 		t.Fatal(err)
 	}

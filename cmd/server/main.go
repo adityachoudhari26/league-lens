@@ -81,6 +81,9 @@ func run() error {
 	}
 }
 
+// migrateOnStart applies pending migrations before the app pool opens when
+// MIGRATE_ON_START=true, as in Docker. Development keeps `just migrate`
+// explicit, and returned errors omit database credentials.
 func migrateOnStart(ctx context.Context, databaseURL string) error {
 	cfg, err := pgx.ParseConfig(databaseURL)
 	if err != nil {
