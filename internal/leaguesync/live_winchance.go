@@ -136,23 +136,34 @@ func newWinChanceSample(
 	scoreA, scoreB float64,
 	estimate winchance.Result,
 ) (store.InsertWinChanceSampleParams, error) {
-	values := []*float64{&estimate.WinChanceA, &scoreA, &scoreB, &estimate.ProjectedA, &estimate.ProjectedB}
-	numbers := make([]pgtype.Numeric, len(values))
-	for i, value := range values {
-		number, err := liveScore(value)
-		if err != nil {
-			return store.InsertWinChanceSampleParams{}, err
-		}
-		numbers[i] = number
+	teamAWinChance, err := fourDecimalNumeric(estimate.WinChanceA)
+	if err != nil {
+		return store.InsertWinChanceSampleParams{}, err
+	}
+	numericScoreA, err := fourDecimalNumeric(scoreA)
+	if err != nil {
+		return store.InsertWinChanceSampleParams{}, err
+	}
+	numericScoreB, err := fourDecimalNumeric(scoreB)
+	if err != nil {
+		return store.InsertWinChanceSampleParams{}, err
+	}
+	projectedA, err := fourDecimalNumeric(estimate.ProjectedA)
+	if err != nil {
+		return store.InsertWinChanceSampleParams{}, err
+	}
+	projectedB, err := fourDecimalNumeric(estimate.ProjectedB)
+	if err != nil {
+		return store.InsertWinChanceSampleParams{}, err
 	}
 	return store.InsertWinChanceSampleParams{
 		MatchupID:      matchupID,
 		ObservedAt:     pgtype.Timestamptz{Time: observedAt, Valid: true},
-		TeamAWinChance: numbers[0],
-		ScoreA:         numbers[1],
-		ScoreB:         numbers[2],
-		ProjectedA:     numbers[3],
-		ProjectedB:     numbers[4],
+		TeamAWinChance: teamAWinChance,
+		ScoreA:         numericScoreA,
+		ScoreB:         numericScoreB,
+		ProjectedA:     projectedA,
+		ProjectedB:     projectedB,
 	}, nil
 }
 

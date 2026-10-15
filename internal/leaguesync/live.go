@@ -208,7 +208,7 @@ func (r *Runner) logLiveScoreFailure(target Target, err error) {
 		"provider", target.Selection.League.Provider, "code", failureCode(err))
 }
 
-// saveLiveMatchup validates provider identities and persists all live scores atomically.
+// saveLiveMatchup validates provider identities and atomically persists live scores, lineup updates, and changed win-chance samples.
 func (r *Runner) saveLiveMatchup(
 	ctx context.Context,
 	scoreboard fantasy.NFLScoreboard,
@@ -307,11 +307,16 @@ func liveMatchupTeams(
 
 // liveScore preserves importer's four-decimal numeric score scale.
 func liveScore(points *float64) (pgtype.Numeric, error) {
-	var numeric pgtype.Numeric
 	if points == nil {
-		return numeric, nil
+		return pgtype.Numeric{}, nil
 	}
-	err := numeric.Scan(strconv.FormatFloat(*points, 'f', 4, 64))
+	return fourDecimalNumeric(*points)
+}
+
+// fourDecimalNumeric converts a value to the importer's four-decimal numeric scale.
+func fourDecimalNumeric(value float64) (pgtype.Numeric, error) {
+	var numeric pgtype.Numeric
+	err := numeric.Scan(strconv.FormatFloat(value, 'f', 4, 64))
 	return numeric, err
 }
 

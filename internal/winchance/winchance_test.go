@@ -67,7 +67,7 @@ func TestEstimateClampsRemaining(t *testing.T) {
 		Side{Starters: []Starter{{Projected: floatPointer(10), Remaining: -1}}},
 		Side{Starters: []Starter{{Projected: floatPointer(10), Remaining: 2}}},
 	)
-	wantChance := 0.5 * (1 + math.Erf((-10/5.5)/math.Sqrt2))
+	wantChance := 0.5 * (1 + math.Erf((-10/(SpreadPerProjectedPoint*10))/math.Sqrt2))
 	if got.ProjectedA != 0 || got.ProjectedB != 10 {
 		t.Fatalf("projected scores = %v/%v, want 0/10", got.ProjectedA, got.ProjectedB)
 	}
@@ -108,6 +108,7 @@ func TestGameRemaining(t *testing.T) {
 		want float64
 	}{
 		{name: "scheduled", game: fantasy.NFLGameStatus{State: fantasy.NFLGameScheduled}, want: 1},
+		{name: "live before first period", game: fantasy.NFLGameStatus{State: fantasy.NFLGameLive, Period: 0}, want: 1},
 		{name: "live Q1 15:00", game: fantasy.NFLGameStatus{State: fantasy.NFLGameLive, Period: 1, Clock: 15 * time.Minute}, want: 1},
 		{name: "live Q2 7:30", game: fantasy.NFLGameStatus{State: fantasy.NFLGameLive, Period: 2, Clock: 7*time.Minute + 30*time.Second}, want: 0.625},
 		{name: "halftime", game: fantasy.NFLGameStatus{State: fantasy.NFLGameLive, Period: 2}, want: 0.5},

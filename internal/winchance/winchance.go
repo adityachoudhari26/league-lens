@@ -71,8 +71,9 @@ func projectSide(side Side) (float64, float64) {
 	return projected, variance
 }
 
-// GameRemaining returns the fraction of regulation game time remaining. Overtime
-// is treated as complete for live starters; scheduled games remain fully available.
+// GameRemaining returns the fraction of regulation time left. Scheduled games
+// and live games before period 1 have full time remaining; live overtime, final,
+// and postponed games have none.
 func GameRemaining(game fantasy.NFLGameStatus) float64 {
 	switch game.State {
 	case fantasy.NFLGameScheduled:
@@ -80,7 +81,10 @@ func GameRemaining(game fantasy.NFLGameStatus) float64 {
 	case fantasy.NFLGameFinal, fantasy.NFLGamePostponed:
 		return 0
 	case fantasy.NFLGameLive:
-		if game.Period < 1 || game.Period >= 5 {
+		if game.Period < 1 {
+			return 1
+		}
+		if game.Period >= 5 {
 			return 0
 		}
 		fraction := float64(time.Duration(4-game.Period)*15*time.Minute+game.Clock) / float64(60*time.Minute)
