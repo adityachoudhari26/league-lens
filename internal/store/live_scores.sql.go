@@ -97,7 +97,8 @@ func (q *Queries) ListLiveMatchupCandidates(ctx context.Context, arg ListLiveMat
 }
 
 const updateLiveLineupEntry = `-- name: UpdateLiveLineupEntry :execrows
-UPDATE matchup_lineups ml SET points = $1, touchdowns = $2, field_goals = $3
+UPDATE matchup_lineups ml SET points = $1,
+touchdowns = coalesce($2, ml.touchdowns), field_goals = coalesce($3, ml.field_goals)
 FROM player_external_ids x
 WHERE ml.matchup_id = $4 AND ml.team_id = $5 AND ml.player_id = x.player_id
 AND x.provider = $6 AND x.external_id = $7
@@ -113,6 +114,7 @@ type UpdateLiveLineupEntryParams struct {
 	ExternalPlayerID string
 }
 
+// Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
 func (q *Queries) UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (int64, error) {
 	result, err := q.db.Exec(ctx, updateLiveLineupEntry,
 		arg.Points,

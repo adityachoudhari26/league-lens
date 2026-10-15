@@ -15,6 +15,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
 	migrations "github.com/adityachoudhari26/league-lens/db"
@@ -145,6 +146,11 @@ func (s fakeNewsSource) PlayerNews(_ context.Context, players []news.Player) ([]
 }
 
 func openDatabase(t *testing.T) *database.DB {
+	db, _ := openDatabaseWithTestPool(t, false)
+	return db
+}
+
+func openDatabaseWithTestPool(t *testing.T, withPool bool) (*database.DB, *pgxpool.Pool) {
 	t.Helper()
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
@@ -175,7 +181,16 @@ func openDatabase(t *testing.T) *database.DB {
 		t.Fatal(err)
 	}
 	t.Cleanup(db.Close)
-	return db
+
+	if !withPool {
+		return db, nil
+	}
+	pool, err := pgxpool.New(context.Background(), u.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	return db, pool
 }
 
 func leagueData(provider fantasy.ProviderID, homeName string) fantasy.LeagueData {
@@ -251,21 +266,30 @@ func liveMatchupFixture(externalID string) fantasy.LiveMatchup {
 	}
 }
 
-func runLiveLoopUntilScoreboardTick(t *testing.T, db *database.DB, sources *liveScoreSources, source *fakeLiveProvider) {
+func runLiveLoopUntilScoreboardTick(
+	t *testing.T,
+	db *database.DB,
+	pool *pgxpool.Pool,
+	sources *liveScoreSources,
+	source *fakeLiveProvider,
+	wantScoreA string,
+	wantScoreB string,
+) {
 	t.Helper()
 	runner := leaguesync.New(db, owner, sources, "")
 	defer runner.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
+	initialCalls := source.calls.Load()
 	go func() {
 		runner.RunLiveScores(ctx, 10*time.Millisecond)
 		close(done)
 	}()
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
-		if source.calls.Load() > 0 {
+		if source.calls.Load() > initialCalls {
 			var scoreA, scoreB string
-			err := db.Pool().QueryRow(context.Background(), `
+			err := pool.QueryRow(context.Background(), `
 				SELECT m.score_a::text, m.score_b::text FROM matchups m
 				JOIN league_seasons ls ON ls.id=m.league_season_id
 				WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
@@ -275,7 +299,7 @@ func runLiveLoopUntilScoreboardTick(t *testing.T, db *database.DB, sources *live
 				<-done
 				t.Fatal(err)
 			}
-			if scoreA == "120.0000" && scoreB == "200.0000" {
+			if scoreA == wantScoreA && scoreB == wantScoreB {
 				cancel()
 				<-done
 				return
@@ -288,8 +312,26 @@ func runLiveLoopUntilScoreboardTick(t *testing.T, db *database.DB, sources *live
 	t.Fatal("live score tick did not update matchup")
 }
 
+func readSavedLiveLineup(t *testing.T, pool *pgxpool.Pool, playerID string) (string, int32, int32) {
+	t.Helper()
+	var points string
+	var touchdowns, fieldGoals int32
+	err := pool.QueryRow(context.Background(), `
+		SELECT ml.points::text, ml.touchdowns, ml.field_goals
+		FROM matchup_lineups ml
+		JOIN matchups m ON m.id=ml.matchup_id
+		JOIN league_seasons ls ON ls.id=m.league_season_id
+		JOIN player_external_ids x ON x.player_id=ml.player_id AND x.provider='sleeper'
+		WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m' AND x.external_id=$1
+	`, playerID).Scan(&points, &touchdowns, &fieldGoals)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return points, touchdowns, fieldGoals
+}
+
 func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
-	db := openDatabase(t)
+	db, pool := openDatabaseWithTestPool(t, true)
 	data := liveLeagueFixture()
 	initial := &fakeSource{data: data}
 	importerService := importer.Service{DB: db, Source: initial}
@@ -301,7 +343,9 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	liveSource := &fakeLiveProvider{fakeSource: initial, live: liveMatchupFixture("m")}
+	firstTick := liveMatchupFixture("m")
+	firstTick.Lineups[1].Entries[0].Scoring = &fantasy.ScoringCounts{Touchdowns: 1}
+	liveSource := &fakeLiveProvider{fakeSource: initial, live: firstTick}
 	sources := &liveScoreSources{
 		fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
 		board: fantasy.NFLScoreboard{
@@ -309,11 +353,11 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 			Games: []fantasy.NFLGameStatus{{HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive}},
 		},
 	}
-	runLiveLoopUntilScoreboardTick(t, db, sources, liveSource)
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "120.0000", "200.0000")
 
 	ctx := context.Background()
 	var scoreA, scoreB, status string
-	if err := db.Pool().QueryRow(ctx, `
+	if err := pool.QueryRow(ctx, `
 		SELECT m.score_a::text, m.score_b::text, m.status FROM matchups m
 		JOIN league_seasons ls ON ls.id=m.league_season_id
 		WHERE ls.external_league_id='league-sleeper' AND m.external_matchup_id='m'
@@ -324,7 +368,7 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 		t.Fatalf("stored matchup scores/status = %s/%s/%s", scoreA, scoreB, status)
 	}
 
-	rows, err := db.Pool().Query(ctx, `
+	rows, err := pool.Query(ctx, `
 		SELECT x.external_id, ml.points::text, COALESCE(ml.touchdowns, -1), COALESCE(ml.field_goals, -1)
 		FROM matchup_lineups ml
 		JOIN matchups m ON m.id=ml.matchup_id
@@ -353,12 +397,34 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if saved["p"] != (savedLineup{points: "17.0000", touchdowns: 2, fieldGoals: 1}) ||
+	if saved["p"] != (savedLineup{points: "17.0000", touchdowns: 1, fieldGoals: 0}) ||
 		saved["q"] != (savedLineup{points: "22.0000", touchdowns: 1, fieldGoals: 2}) {
 		t.Fatalf("stored live lineups = %+v", saved)
 	}
 	if _, exists := saved["ghost"]; exists {
 		t.Fatal("unknown live player was inserted")
+	}
+
+	nilCountsTick := liveMatchupFixture("m")
+	nilCountsTick.Matchup.TeamA.Score = floatPtr(201)
+	nilCountsTick.Matchup.TeamB.Score = floatPtr(121)
+	nilCountsTick.Lineups[1].Entries[0].Points = floatPtr(18)
+	nilCountsTick.Lineups[1].Entries[0].Scoring = nil
+	liveSource.live = nilCountsTick
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "121.0000", "201.0000")
+	if points, touchdowns, fieldGoals := readSavedLiveLineup(t, pool, "p"); points != "18.0000" || touchdowns != 1 || fieldGoals != 0 {
+		t.Fatalf("nil-count tick saved %s points and %d/%d counts, want 18.0000 and 1/0", points, touchdowns, fieldGoals)
+	}
+
+	zeroCountsTick := liveMatchupFixture("m")
+	zeroCountsTick.Matchup.TeamA.Score = floatPtr(202)
+	zeroCountsTick.Matchup.TeamB.Score = floatPtr(122)
+	zeroCountsTick.Lineups[1].Entries[0].Points = floatPtr(19)
+	zeroCountsTick.Lineups[1].Entries[0].Scoring = &fantasy.ScoringCounts{}
+	liveSource.live = zeroCountsTick
+	runLiveLoopUntilScoreboardTick(t, db, pool, sources, liveSource, "122.0000", "202.0000")
+	if points, touchdowns, fieldGoals := readSavedLiveLineup(t, pool, "p"); points != "19.0000" || touchdowns != 0 || fieldGoals != 0 {
+		t.Fatalf("zero-count tick saved %s points and %d/%d counts, want 19.0000 and 0/0", points, touchdowns, fieldGoals)
 	}
 
 	data.Lineups[0].Entries = []fantasy.LineupEntry{{PlayerID: "p", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(1)}}
@@ -368,7 +434,7 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 	var touchdowns, fieldGoals int32
-	if err := db.Pool().QueryRow(ctx, `
+	if err := pool.QueryRow(ctx, `
 		SELECT touchdowns, field_goals FROM matchup_lineups ml
 		JOIN matchups m ON m.id=ml.matchup_id
 		JOIN league_seasons ls ON ls.id=m.league_season_id
@@ -377,10 +443,10 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 	`).Scan(&touchdowns, &fieldGoals); err != nil {
 		t.Fatal(err)
 	}
-	if touchdowns != 2 || fieldGoals != 1 {
-		t.Fatalf("retained counts = %d/%d, want 2/1", touchdowns, fieldGoals)
+	if touchdowns != 0 || fieldGoals != 0 {
+		t.Fatalf("retained counts = %d/%d, want 0/0", touchdowns, fieldGoals)
 	}
-	if err := db.Pool().QueryRow(ctx, `
+	if err := pool.QueryRow(ctx, `
 		SELECT touchdowns, field_goals FROM matchup_lineups ml
 		JOIN matchups m ON m.id=ml.matchup_id
 		JOIN league_seasons ls ON ls.id=m.league_season_id
@@ -393,7 +459,7 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 		t.Fatalf("second retained counts = %d/%d, want 1/2", touchdowns, fieldGoals)
 	}
 	var dropped int
-	if err := db.Pool().QueryRow(ctx, `
+	if err := pool.QueryRow(ctx, `
 		SELECT count(*) FROM matchup_lineups ml
 		JOIN matchups m ON m.id=ml.matchup_id
 		JOIN league_seasons ls ON ls.id=m.league_season_id
@@ -408,7 +474,7 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 }
 
 func TestLiveScoreLoopRejectsMismatchedMatchupID(t *testing.T) {
-	db := openDatabase(t)
+	db, pool := openDatabaseWithTestPool(t, true)
 	data := liveLeagueFixture()
 	initial := &fakeSource{data: data}
 	importerService := importer.Service{DB: db, Source: initial}
@@ -442,7 +508,7 @@ func TestLiveScoreLoopRejectsMismatchedMatchupID(t *testing.T) {
 	}
 	var scoreA, scoreB string
 	var touchdowns, fieldGoals *int32
-	if err := db.Pool().QueryRow(context.Background(), `
+	if err := pool.QueryRow(context.Background(), `
 		SELECT score_a::text,score_b::text,ml.touchdowns,ml.field_goals FROM matchups m
 		JOIN league_seasons ls ON ls.id=m.league_season_id
 		JOIN matchup_lineups ml ON ml.matchup_id=m.id

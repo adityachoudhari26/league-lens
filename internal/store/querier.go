@@ -99,6 +99,7 @@ type Querier interface {
 	SetConnectionStatusForUser(ctx context.Context, arg SetConnectionStatusForUserParams) (int64, error)
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)
+	// Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
 	UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (int64, error)
 	// Status stays the full sync's job; live reads only refresh scores.
 	UpdateLiveMatchupScores(ctx context.Context, arg UpdateLiveMatchupScoresParams) error

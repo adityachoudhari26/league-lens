@@ -35,7 +35,9 @@ ORDER BY l.provider,l.name;
 UPDATE matchups SET score_a = @score_a, score_b = @score_b, fetched_at = @fetched_at WHERE id = @matchup_id;
 
 -- name: UpdateLiveLineupEntry :execrows
-UPDATE matchup_lineups ml SET points = @points, touchdowns = @touchdowns, field_goals = @field_goals
+-- Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
+UPDATE matchup_lineups ml SET points = @points,
+touchdowns = coalesce(@touchdowns, ml.touchdowns), field_goals = coalesce(@field_goals, ml.field_goals)
 FROM player_external_ids x
 WHERE ml.matchup_id = @matchup_id AND ml.team_id = @team_id AND ml.player_id = x.player_id
 AND x.provider = @provider AND x.external_id = @external_player_id;
