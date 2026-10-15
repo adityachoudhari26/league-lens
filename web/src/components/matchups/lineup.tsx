@@ -9,6 +9,7 @@ import {
   type RoundStatus,
 } from "@/components/matchups/rules"
 import { scoreToneClass } from "@/components/matchups/tones"
+import { PlayerCardTrigger } from "@/components/player-card/player-card"
 
 const slotToneClass: Record<string, string> = {
   QB: "bg-rose-100 text-rose-700 dark:bg-[#3a2a2f] dark:text-[#d99aa8]",
@@ -29,7 +30,7 @@ const slotLabel: Record<string, string> = {
   UNKNOWN: "—",
 }
 
-function InjuryBadge({ status }: { status: string }) {
+export function InjuryBadge({ status }: { status: string }) {
   const severe = status !== "Q"
   return (
     <span
@@ -76,9 +77,12 @@ function PlayerCell({
         <div
           className={`flex items-center gap-1.5 ${mirrored ? "flex-row-reverse" : ""}`}
         >
-          <span className="truncate text-sm font-medium">
+          <PlayerCardTrigger
+            playerId={player.playerId}
+            className="text-sm font-medium"
+          >
             {player.playerName}
-          </span>
+          </PlayerCardTrigger>
           {injury && <InjuryBadge status={injury} />}
         </div>
         <PlayerSubtitle player={player} />
