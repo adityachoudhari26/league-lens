@@ -47,6 +47,8 @@ func (r *Runner) saveLiveLineupEntry(
 	provider string,
 	entry fantasy.LineupEntry,
 	observations map[liveLineupObservationKey]store.ListLiveLineupObservationsRow,
+	observedAt time.Time,
+	gapStartedAt time.Time,
 ) (bool, error) {
 	points, err := liveScore(entry.Points)
 	if err != nil {
@@ -64,9 +66,15 @@ func (r *Runner) saveLiveLineupEntry(
 		return false, err
 	}
 
-	observedAt := r.now()
 	key := liveLineupObservationKey{teamID: teamID, playerID: after.PlayerID}
 	baseline, hasBaseline := observations[key]
+	if !gapStartedAt.IsZero() && after.Starter && hasBaseline {
+		if err := insertWinChanceGapStarter(
+			ctx, queries, matchupID, teamID, gapStartedAt, baseline, after,
+		); err != nil {
+			return false, err
+		}
+	}
 	if err := recordLineupPointChange(
 		ctx, queries, matchupID, teamID, baseline, hasBaseline, after, observedAt,
 	); err != nil {
@@ -76,6 +84,52 @@ func (r *Runner) saveLiveLineupEntry(
 		return false, err
 	}
 	return true, nil
+}
+
+func staleLiveGapStart(
+	observations map[liveLineupObservationKey]store.ListLiveLineupObservationsRow,
+	tickAt time.Time,
+) (time.Time, bool) {
+	var latest time.Time
+	for _, observation := range observations {
+		if observation.ObservedAt.Valid && observation.ObservedAt.Time.After(latest) {
+			latest = observation.ObservedAt.Time
+		}
+	}
+	if latest.IsZero() || tickAt.Sub(latest) <= liveBaselineMaxAge {
+		return time.Time{}, false
+	}
+	return latest, true
+}
+
+func insertWinChanceGapStarter(
+	ctx context.Context,
+	queries *store.Queries,
+	matchupID, teamID pgtype.UUID,
+	startedAt time.Time,
+	before store.ListLiveLineupObservationsRow,
+	after store.UpdateLiveLineupEntryRow,
+) error {
+	pointsBefore, err := pointsOrZeroNumeric(before.Points)
+	if err != nil {
+		return err
+	}
+	pointsAfter, err := pointsOrZeroNumeric(after.Points)
+	if err != nil {
+		return err
+	}
+	return queries.InsertWinChanceGapStarter(ctx, store.InsertWinChanceGapStarterParams{
+		MatchupID:        matchupID,
+		StartedAt:        pgtype.Timestamptz{Time: startedAt, Valid: true},
+		TeamID:           teamID,
+		PlayerID:         after.PlayerID,
+		PointsBefore:     pointsBefore,
+		PointsAfter:      pointsAfter,
+		TouchdownsBefore: before.Touchdowns,
+		TouchdownsAfter:  after.Touchdowns,
+		FieldGoalsBefore: before.FieldGoals,
+		FieldGoalsAfter:  after.FieldGoals,
+	})
 }
 
 // recordLineupPointChange inserts a change only for a starter with a recent live baseline.
