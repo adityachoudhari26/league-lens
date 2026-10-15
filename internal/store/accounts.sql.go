@@ -91,6 +91,25 @@ func (q *Queries) GetUserByEmail(ctx context.Context, dollar_1 string) (User, er
 	return i, err
 }
 
+const setConnectionStatusForUser = `-- name: SetConnectionStatusForUser :execrows
+UPDATE connections SET status=$3,updated_at=now()
+WHERE id=$1 AND user_id=$2
+`
+
+type SetConnectionStatusForUserParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+	Status string
+}
+
+func (q *Queries) SetConnectionStatusForUser(ctx context.Context, arg SetConnectionStatusForUserParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setConnectionStatusForUser, arg.ID, arg.UserID, arg.Status)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const updateConnectionForUser = `-- name: UpdateConnectionForUser :one
 UPDATE connections SET encrypted_credentials=$3,status=$4,updated_at=now()
 WHERE id=$1 AND user_id=$2 RETURNING id, user_id, provider, external_user_id, encrypted_credentials, status, created_at, updated_at

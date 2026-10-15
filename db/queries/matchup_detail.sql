@@ -8,6 +8,8 @@ SELECT ut.team_id,l.season,
   ORDER BY ts.period DESC,ts.observed_at DESC,ts.id DESC LIMIT 1),0)::integer AS observed_period
 FROM user_teams ut
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
+JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
+ AND cl.league_season_id=ut.league_season_id AND cl.user_id=ut.user_id AND cl.detached_at IS NULL
 JOIN league_seasons l ON l.id=ut.league_season_id
 WHERE ut.user_id = @user_id AND ut.league_season_id = @league_season_id;
 
@@ -22,6 +24,8 @@ AND CASE WHEN @period::integer = 0
  ELSE m.period = @period::integer END
 AND EXISTS (
  SELECT 1 FROM user_teams ut JOIN connections c ON c.id=ut.connection_id
+ JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
+  AND cl.league_season_id=ut.league_season_id AND cl.user_id=ut.user_id AND cl.detached_at IS NULL
  WHERE ut.team_id = @team_id AND ut.user_id = @user_id AND c.status<>'disabled'
 )
 ORDER BY m.fetched_at DESC,m.id DESC LIMIT 1;
@@ -43,5 +47,6 @@ LEFT JOIN roster_entries e ON e.snapshot_id=s.id AND e.player_id=ml.player_id
 WHERE ml.matchup_id = @matchup_id AND ml.team_id = @team_id
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=m.league_season_id AND cl.user_id = @user_id AND c.status<>'disabled'
+ WHERE cl.league_season_id=m.league_season_id AND cl.user_id = @user_id
+  AND cl.detached_at IS NULL AND c.status<>'disabled'
 );

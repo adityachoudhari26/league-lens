@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/adityachoudhari26/league-lens/internal/database"
+	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
 )
@@ -47,7 +48,7 @@ type failure struct {
 	at   time.Time
 }
 
-// New creates a runner. An empty catalogPath skips the optional player mapping.
+// New creates a runner with the path to the optional player mapping cache.
 func New(db *database.DB, ownerEmail string, sources SourceFactory, catalogPath string) *Runner {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Runner{
@@ -154,8 +155,8 @@ func (r *Runner) launch(targets []Target) {
 // syncTargets refreshes the NFL schedule and player news alongside league
 // imports so provider-independent reads never delay league data. News uses the
 // rosters saved by the previous sync, so roster changes appear on the next
-// sync. The optional player catalog loads once per batch; one league's failure
-// never stops the others.
+// sync. The catalog loads once per batch, and one league's failure never stops
+// the others.
 func (r *Runner) syncTargets(targets []Target) {
 	var batch sync.WaitGroup
 	batch.Add(2)
@@ -183,7 +184,6 @@ func (r *Runner) loadCatalog() (playerids.Catalog, string) {
 	if r.catalogPath == "" {
 		return nil, ""
 	}
-
 	ctx, cancel := context.WithTimeout(r.ctx, time.Minute)
 	defer cancel()
 	catalog, version, err := playerids.Load(ctx, r.catalogPath)
@@ -202,7 +202,26 @@ func (r *Runner) syncTarget(target Target, catalog playerids.Catalog, version st
 	ctx, cancel := context.WithTimeout(r.ctx, leagueSyncTimeout)
 	defer cancel()
 	err := r.importTarget(ctx, target, catalog, version)
+	if shouldMarkNeedsReconnect(err) {
+		r.markNeedsReconnect(target)
+	}
 	r.recordOutcome(target, err)
+}
+
+func shouldMarkNeedsReconnect(err error) bool {
+	if errors.Is(err, espn.ErrUnauthorized) {
+		return true
+	}
+	var setup setupError
+	return errors.As(err, &setup) && setup == "espn_credentials_unavailable"
+}
+
+func (r *Runner) markNeedsReconnect(target Target) {
+	ctx, cancel := context.WithTimeout(context.Background(), targetReadTimeout)
+	defer cancel()
+	if err := r.db.Queries().MarkConnectionNeedsReconnect(ctx, target.ConnectionID); err != nil {
+		slog.Warn("could not mark provider connection for reconnect", "league", target.ID)
+	}
 }
 
 func (r *Runner) importTarget(ctx context.Context, target Target, catalog playerids.Catalog, version string) error {

@@ -199,12 +199,14 @@ func rejectSupersededImport(ctx context.Context, queries *store.Queries, target 
 }
 
 func completeImport(ctx context.Context, queries *store.Queries, target importTarget) error {
-	if _, err := queries.UpdateConnectionForUser(ctx, store.UpdateConnectionForUserParams{
-		ID:     target.connection.ID,
-		UserID: target.user.ID,
-		Status: "active",
-	}); err != nil {
+	rowsAffected, err := queries.SetConnectionStatusForUser(ctx, store.SetConnectionStatusForUserParams{
+		ID: target.connection.ID, UserID: target.user.ID, Status: "active",
+	})
+	if err != nil {
 		return err
+	}
+	if rowsAffected != 1 {
+		return fmt.Errorf("connection status was not updated")
 	}
 	completedRun, err := queries.CompleteSync(ctx, target.run.ID)
 	if err != nil {

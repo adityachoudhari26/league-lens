@@ -11,7 +11,7 @@ import (
 )
 
 func TestReadinessFailureDoesNotLeakDatabaseError(t *testing.T) {
-	h := NewHandler(func(context.Context) error { return errors.New("password=private-secret") }, nil, nil, nil)
+	h := NewHandler(func(context.Context) error { return errors.New("password=private-secret") }, nil, nil, nil, nil)
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, httptest.NewRequest("GET", "/readyz", nil))
 	if rr.Code != 503 {
@@ -33,7 +33,7 @@ func TestReadyAndUnregisteredEndpoints(t *testing.T) {
 			t.Error("DB check has no deadline")
 		}
 		return nil
-	}, nil, nil, nil)
+	}, nil, nil, nil, nil)
 	for _, tc := range []struct {
 		method, path string
 		status       int
@@ -53,7 +53,7 @@ func TestEmbeddedFrontendServesFilesAndClientRoutes(t *testing.T) {
 		"index.html":    &fstest.MapFile{Data: []byte("<html>app</html>")},
 		"assets/app.js": &fstest.MapFile{Data: []byte("console.log('app')")},
 	}
-	h := NewHandler(func(context.Context) error { return nil }, nil, nil, static)
+	h := NewHandler(func(context.Context) error { return nil }, nil, nil, nil, static)
 	for _, tc := range []struct {
 		path, body, cacheControl string
 		status                   int

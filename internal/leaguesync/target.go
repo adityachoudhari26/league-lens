@@ -16,6 +16,8 @@ import (
 // the provider account that imported it and the teams selected at that time.
 type Target struct {
 	ID                   string
+	ConnectionID         pgtype.UUID
+	EncryptedCredentials []byte
 	Name                 string
 	ExternalAccountID    string
 	Selection            fantasy.ConnectionSelection
@@ -30,6 +32,8 @@ func targetFromRow(row store.ListSyncTargetsRow) Target {
 	}
 	return Target{
 		ID:                   uuidString(row.LeagueSeasonID),
+		ConnectionID:         row.ConnectionID,
+		EncryptedCredentials: row.EncryptedCredentials,
 		Name:                 row.Name,
 		ExternalAccountID:    row.ExternalUserID.String,
 		Selection:            fantasy.ConnectionSelection{League: league, SelectedTeamIDs: row.SelectedTeamIds},

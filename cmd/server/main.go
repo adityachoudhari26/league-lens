@@ -15,12 +15,15 @@ import (
 
 	"github.com/adityachoudhari26/league-lens/db"
 	"github.com/adityachoudhari26/league-lens/internal/config"
+	"github.com/adityachoudhari26/league-lens/internal/connections"
 	"github.com/adityachoudhari26/league-lens/internal/dashboard"
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/espn"
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/httpserver"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
+	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/web"
 )
 
@@ -36,6 +39,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	key, err := secrets.LoadOrCreateKey(cfg.DataDir)
+	if err != nil {
+		return errors.New("cannot load credential encryption key")
+	}
+	box, err := secrets.NewBox(key)
+	if err != nil {
+		return errors.New("cannot initialize credential encryption")
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if cfg.MigrateOnStart {
@@ -48,14 +59,22 @@ func run() error {
 		return errors.New("could not configure database pool; check DATABASE_URL")
 	}
 	defer data.Close()
-	syncRunner := newSyncRunner(data, cfg.LocalOwnerEmail)
+	catalogPath, err := playerids.DefaultCachePath()
+	if err != nil {
+		slog.Warn("player mapping cache unavailable; imports and syncs retain provider identities")
+	}
+	syncRunner := newSyncRunner(data, cfg.LocalOwnerEmail, box, catalogPath)
 	defer syncRunner.Close()
+	connectionService := &connections.Service{
+		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,
+	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
 		Handler: httpserver.RequireLocalHost(httpserver.NewHandler(
 			data.Ping,
 			dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now())),
 			leaguesync.NewHandler(syncRunner),
+			connectionService,
 			web.Dist(),
 		)),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
@@ -103,21 +122,18 @@ func migrateOnStart(ctx context.Context, databaseURL string) error {
 // newProfileSource reads player profiles for the NFL season in progress, which
 // starts in September and runs through the February playoffs.
 func newProfileSource(now time.Time) espn.ProfileSource {
-	season := now.Year()
-	if now.Month() < time.March {
-		season--
-	}
-	return espn.ProfileSource{HTTP: &http.Client{Timeout: 5 * time.Second}, Season: season}
+	return espn.ProfileSource{HTTP: &http.Client{Timeout: 5 * time.Second}, Season: fantasy.CurrentSeason(now)}
 }
 
-// newSyncRunner reads ESPN cookies from the environment, as the import CLI does,
-// until encrypted connection credentials exist. Sleeper needs no credentials.
-func newSyncRunner(data *database.DB, ownerEmail string) *leaguesync.Runner {
+// newSyncRunner uses saved ESPN credentials when available and environment
+// cookies as a fallback. Sleeper needs no credentials.
+func newSyncRunner(
+	data *database.DB,
+	ownerEmail string,
+	box *secrets.Box,
+	catalogPath string,
+) *leaguesync.Runner {
 	credentials := espn.Credentials{S2: os.Getenv("ESPN_S2"), SWID: os.Getenv("ESPN_SWID")}
-	catalogPath, err := playerids.DefaultCachePath()
-	if err != nil {
-		slog.Warn("player mapping cache unavailable; syncs retain provider identities")
-	}
-	sources := leaguesync.ProviderSources{ESPN: credentials}
+	sources := leaguesync.ProviderSources{ESPN: credentials, Box: box}
 	return leaguesync.New(data, ownerEmail, sources, catalogPath)
 }

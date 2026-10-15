@@ -21,6 +21,8 @@ The player info card is authorized: a source-agnostic `playerprofile.Source` int
 
 Checkpoint 12 Docker installation is authorized: a multi-stage Dockerfile with the frontend embedded behind the `embedweb` build tag, the API under `/api`, a localhost-only Host check, opt-in startup migrations (`MIGRATE_ON_START`), and a Compose `app` service published on `127.0.0.1` at `http://league-lens.localhost`. Image publication remains unapproved.
 
+Checkpoint 12 Step 2 connect backend is authorized: encrypted ESPN credentials, ESPN and Sleeper league discovery, the owner-scoped `ConnectionService`, league detach/reattach, and sync from stored ESPN credentials. The in-app connection UI remains pending.
+
 ## Code organization and readability
 
 - Prefer focused, modular functions that each do one recognizable thing. A helper with only four lines is worthwhile when its name expresses a meaningful operation; reuse and line count are not prerequisites for extraction.

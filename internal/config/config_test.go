@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -56,6 +58,31 @@ func TestLocalOwnerSelection(t *testing.T) {
 	}
 	if cfg.LocalOwnerEmail != "custom@example.test" {
 		t.Fatal("ignored configured owner")
+	}
+}
+
+func TestDataDirConfiguration(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://owner:secret@localhost/league_lens")
+	t.Setenv("DATA_DIR", "")
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join(configDir, "league-lens"); cfg.DataDir != want {
+		t.Fatalf("default data directory = %q, want %q", cfg.DataDir, want)
+	}
+
+	t.Setenv("DATA_DIR", "/custom/app-data")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.DataDir != "/custom/app-data" {
+		t.Fatalf("configured data directory = %q", cfg.DataDir)
 	}
 }
 

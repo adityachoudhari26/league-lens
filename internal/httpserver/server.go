@@ -18,6 +18,7 @@ func NewHandler(
 	ping func(context.Context) error,
 	dashboard leaguelensv1connect.DashboardServiceHandler,
 	sync leaguelensv1connect.SyncServiceHandler,
+	connections leaguelensv1connect.ConnectionServiceHandler,
 	static fs.FS,
 ) http.Handler {
 	mux := http.NewServeMux()
@@ -40,13 +41,16 @@ func NewHandler(
 	})
 
 	connectMux := http.NewServeMux()
-	if dashboard != nil || sync != nil {
+	if dashboard != nil || sync != nil || connections != nil {
 		server := connect.NewServer()
 		if dashboard != nil {
 			leaguelensv1connect.RegisterDashboardServiceHandler(server, dashboard)
 		}
 		if sync != nil {
 			leaguelensv1connect.RegisterSyncServiceHandler(server, sync)
+		}
+		if connections != nil {
+			leaguelensv1connect.RegisterConnectionServiceHandler(server, connections)
 		}
 		connecthttp.Mount(connectMux, server, connecthttp.WithReadMaxBytes(64<<10))
 	}

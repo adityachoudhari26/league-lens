@@ -138,7 +138,7 @@ const listMatchupsForUser = `-- name: ListMatchupsForUser :many
 SELECT m.id, m.league_season_id, m.external_matchup_id, m.period, m.team_a_id, m.team_b_id, m.score_a, m.score_b, m.status, m.fetched_at, m.scoring_periods_json, m.is_bye FROM matchups m WHERE m.league_season_id=$2 AND m.period=$3
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=m.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
+ WHERE cl.league_season_id=m.league_season_id AND cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ) ORDER BY m.external_matchup_id
 `
 
@@ -189,7 +189,7 @@ JOIN sync_runs r ON r.id=s.sync_run_id
 WHERE e.snapshot_id=$2 AND r.status='succeeded'
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
+ WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ) ORDER BY e.slot_label,p.display_name
 `
 
@@ -245,7 +245,7 @@ SELECT s.id, s.team_id, s.league_season_id, s.sync_run_id, s.period, s.origin, s
 WHERE s.team_id=$2 AND s.period=$3 AND r.status='succeeded'
 AND EXISTS (
  SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
- WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND c.status<>'disabled'
+ WHERE cl.league_season_id=s.league_season_id AND cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
 ) ORDER BY s.observed_at DESC,s.id DESC
 `
 

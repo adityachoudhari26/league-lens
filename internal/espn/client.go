@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,9 @@ import (
 )
 
 type Credentials struct{ S2, SWID string }
+
+var ErrUnauthorized = errors.New("ESPN rejected credentials")
+
 type Client struct {
 	http        *http.Client
 	credentials Credentials
@@ -23,19 +27,22 @@ type Client struct {
 }
 
 func NewClient(client *http.Client, credentials Credentials, season int) *Client {
+	privateClient := privateHTTPClient(client)
+	credentials.SWID = NormalizeSWID(credentials.SWID)
+	return &Client{http: &privateClient, credentials: credentials, season: season, baseURL: "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl"}
+}
+
+func privateHTTPClient(client *http.Client) http.Client {
 	if client == nil {
 		client = &http.Client{Timeout: 20 * time.Second}
 	}
 	privateClient := *client
-	// Never forward private league cookies through redirects.
 	privateClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	credentials.SWID = normalizeSWID(credentials.SWID)
-	return &Client{http: &privateClient, credentials: credentials, season: season, baseURL: "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl"}
+	return privateClient
 }
 
-// normalizeSWID restores the braces ESPN requires around the SWID cookie value;
-// copying the value from browser tools often drops them.
-func normalizeSWID(swid string) string {
+// NormalizeSWID adds the braces required by ESPN's account endpoints.
+func NormalizeSWID(swid string) string {
 	swid = strings.TrimSpace(swid)
 	if swid == "" || strings.HasPrefix(swid, "{") {
 		return swid
@@ -90,6 +97,9 @@ func (c *Client) fetchJSON(request *http.Request, result *leagueResponse) error 
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
+		if response.StatusCode == http.StatusUnauthorized {
+			return fmt.Errorf("%w: ESPN returned HTTP %d; check league access and credentials", ErrUnauthorized, response.StatusCode)
+		}
 		return fmt.Errorf("ESPN returned HTTP %d; check league access and credentials", response.StatusCode)
 	}
 	const limit = 16 << 20

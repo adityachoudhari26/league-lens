@@ -3,6 +3,7 @@
 package leaguesync_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/news"
+	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -61,6 +63,16 @@ func (fakeSources) NewsSource() news.Source { return emptyNewsSource{} }
 func (f fakeSources) SourceFor(target leaguesync.Target) (fantasy.Provider, error) {
 	return f[target.Selection.League.Provider], nil
 }
+
+type storedCredentialSources struct {
+	leaguesync.ProviderSources
+}
+
+func (storedCredentialSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error) {
+	return nil, nil
+}
+
+func (storedCredentialSources) NewsSource() news.Source { return emptyNewsSource{} }
 
 type fakeNewsSources struct {
 	fakeSources
@@ -305,6 +317,56 @@ func TestMissingESPNCredentialsFailWithoutLosingData(t *testing.T) {
 	}
 	if got := homeTeamName(t, db, fantasy.ProviderESPN); got != "Home" {
 		t.Errorf("espn team = %q, want last successful data", got)
+	}
+}
+
+func TestUnavailableStoredESPNCredentialsMarkReconnect(t *testing.T) {
+	db := openDatabase(t)
+	seedLeague(t, db, fantasy.ProviderESPN)
+	ctx := context.Background()
+	user, err := db.Queries().GetUserByEmail(ctx, owner)
+	if err != nil {
+		t.Fatal(err)
+	}
+	targets, err := db.Queries().ListSyncTargets(ctx, user.ID)
+	if err != nil || len(targets) != 1 {
+		t.Fatalf("sync targets = %d, %v", len(targets), err)
+	}
+	oldBox, err := secrets.NewBox(bytes.Repeat([]byte{5}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	encrypted, err := oldBox.Seal([]byte(`{"s2":"synthetic-s2","swid":"{synthetic-swid}"}`), targets[0].ConnectionID.Bytes[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Queries().UpdateConnectionForUser(ctx, store.UpdateConnectionForUserParams{
+		ID: targets[0].ConnectionID, UserID: user.ID, EncryptedCredentials: encrypted, Status: "active",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	box, err := secrets.NewBox(bytes.Repeat([]byte{6}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	runner := leaguesync.New(db, owner, storedCredentialSources{
+		ProviderSources: leaguesync.ProviderSources{Box: box},
+	}, "")
+	t.Cleanup(runner.Close)
+	if _, err := runner.Start(ctx, false); err != nil {
+		t.Fatal(err)
+	}
+	statuses := waitUntilIdle(t, runner)
+	status := statuses[fantasy.ProviderESPN]
+	if status.ErrorCode != "espn_credentials_unavailable" {
+		t.Fatalf("failure code = %q, want espn_credentials_unavailable", status.ErrorCode)
+	}
+	connection, err := db.Queries().GetConnectionForUser(ctx, store.GetConnectionForUserParams{
+		ID: targets[0].ConnectionID, UserID: user.ID,
+	})
+	if err != nil || connection.Status != "needs_reconnect" {
+		t.Fatalf("connection status = %q, %v", connection.Status, err)
 	}
 }
 

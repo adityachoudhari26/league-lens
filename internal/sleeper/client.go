@@ -101,6 +101,14 @@ func (c *Client) get(ctx context.Context, path string, out any) error {
 
 // getURL reads rawURL into out, naming it by path in errors.
 func (c *Client) getURL(ctx context.Context, rawURL, path string, out any) error {
+	return c.getURLWithNull(ctx, rawURL, path, out, false)
+}
+
+func (c *Client) getURLAllowNull(ctx context.Context, rawURL, path string, out any) error {
+	return c.getURLWithNull(ctx, rawURL, path, out, true)
+}
+
+func (c *Client) getURLWithNull(ctx context.Context, rawURL, path string, out any, allowNull bool) error {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
@@ -119,7 +127,7 @@ func (c *Client) getURL(ctx context.Context, rawURL, path string, out any) error
 	if err != nil {
 		return err
 	}
-	if bytes.Equal(bytes.TrimSpace(b), []byte("null")) {
+	if !allowNull && bytes.Equal(bytes.TrimSpace(b), []byte("null")) {
 		return fmt.Errorf("Sleeper %s returned null", path)
 	}
 	if err = json.Unmarshal(b, out); err != nil {

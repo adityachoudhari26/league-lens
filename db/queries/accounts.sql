@@ -14,3 +14,7 @@ SELECT * FROM connections WHERE id=$1 AND user_id=$2;
 -- name: UpdateConnectionForUser :one
 UPDATE connections SET encrypted_credentials=$3,status=$4,updated_at=now()
 WHERE id=$1 AND user_id=$2 RETURNING *;
+
+-- name: SetConnectionStatusForUser :execrows
+UPDATE connections SET status=$3,updated_at=now()
+WHERE id=$1 AND user_id=$2;

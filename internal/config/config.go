@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -13,6 +14,7 @@ type Config struct {
 	DatabaseURL     string
 	LocalOwnerEmail string
 	MigrateOnStart  bool
+	DataDir         string
 }
 
 func Load() (Config, error) {
@@ -21,12 +23,20 @@ func Load() (Config, error) {
 		HTTPAddr:        os.Getenv("HTTP_ADDR"),
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		MigrateOnStart:  os.Getenv("MIGRATE_ON_START") == "true",
+		DataDir:         os.Getenv("DATA_DIR"),
 	}
 	if cfg.LocalOwnerEmail == "" {
 		cfg.LocalOwnerEmail = "owner@localhost"
 	}
 	if cfg.HTTPAddr == "" {
 		cfg.HTTPAddr = "127.0.0.1:8080"
+	}
+	if cfg.DataDir == "" {
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			return Config{}, errors.New("cannot determine user configuration directory")
+		}
+		cfg.DataDir = filepath.Join(configDir, "league-lens")
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")
