@@ -4,6 +4,8 @@ SELECT e.player_id, coalesce(jsonb_object_agg(x.provider, x.external_id) FILTER 
 FROM users u
 JOIN user_teams ut ON ut.user_id=u.id
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
+JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
+ AND cl.league_season_id=ut.league_season_id AND cl.user_id=ut.user_id AND cl.detached_at IS NULL
 JOIN LATERAL (
  SELECT ts.id FROM team_snapshots ts JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
  WHERE ts.team_id=ut.team_id AND ts.origin='observed'

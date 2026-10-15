@@ -85,9 +85,6 @@ account, subscription, or paid data feed is required.
 These features are planned but not built yet. The full checkpoint tracker is in
 [docs/roadmap.md](docs/roadmap.md).
 
-- [ ] **Connect leagues in the app:** set up ESPN and Sleeper in Settings
-  instead of the command line, with a bookmarklet or pasted cookies for ESPN
-  and a Reconnect flow when cookies expire. The backend for this is done.
 - [ ] **Roster and Standings pages.**
 - [ ] **Connection health:** show when a league's data is stale or its
   credentials need attention.
@@ -139,8 +136,19 @@ Then run `docker compose up -d` again and open
 
 ## Connecting leagues
 
-You connect leagues from the terminal for now. In-app setup is on the
-[roadmap](#roadmap).
+Open the app and click **Connect leagues** on Home or in **Settings → Leagues**:
+
+- **ESPN:** drag the **Connect to League Lens** bookmarklet to your bookmarks
+  bar, open espn.com while signed in, and click it. Or paste your `espn_s2` and
+  `SWID` cookies (DevTools → Application → Cookies → `https://www.espn.com`).
+  The cookies are stored encrypted on your machine and never shown again. If
+  ESPN later rejects them, Home shows a **Reconnect** button.
+- **Sleeper:** enter your Sleeper username.
+
+Then pick the leagues to import. Removing a league in Settings hides it and
+keeps its saved history.
+
+The command-line importer below is an alternative.
 
 ### Sleeper
 

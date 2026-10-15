@@ -54,9 +54,16 @@ LEFT JOIN LATERAL (
  JOIN team_snapshots ts ON ts.id=e.snapshot_id AND ts.origin='observed'
  JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
  WHERE e.player_id=p.id
+ AND EXISTS (
+  SELECT 1 FROM teams tm
+  JOIN connection_leagues cl ON cl.league_season_id=tm.league_season_id
+   AND cl.user_id=$1 AND cl.detached_at IS NULL
+  JOIN connections c ON c.id=cl.connection_id AND c.status<>'disabled'
+  WHERE tm.id=ts.team_id
+ )
  ORDER BY (e.pro_team IS NOT NULL) DESC,(e.injury_status IS NOT NULL) DESC,ts.observed_at DESC,ts.id DESC LIMIT 1
 ) latest ON true
-WHERE p.id = @player_id;
+WHERE p.id = $2;
 
 -- name: NextNFLGame :one
 SELECT week,opponent,kickoff_at FROM nfl_games

@@ -19,6 +19,8 @@ WHERE (m.team_a_id = $1 OR m.team_b_id = $1)
 AND m.scoring_periods_json @> jsonb_build_array($2::integer)
 AND EXISTS (
  SELECT 1 FROM user_teams ut JOIN connections c ON c.id=ut.connection_id
+ JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
+  AND cl.league_season_id=ut.league_season_id AND cl.user_id=ut.user_id AND cl.detached_at IS NULL
  WHERE ut.team_id = $1 AND ut.user_id = $3 AND c.status<>'disabled'
 )
 ORDER BY m.fetched_at DESC,m.id DESC LIMIT 1
@@ -75,6 +77,8 @@ SELECT t.id,t.name,l.id AS league_id,l.name AS league_name,l.provider,l.season,l
  s.id AS snapshot_id,coalesce(s.period,0)::integer AS period,coalesce(s.coverage,'')::text AS coverage,s.observed_at
 FROM user_teams ut
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
+JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
+ AND cl.league_season_id=ut.league_season_id AND cl.user_id=ut.user_id AND cl.detached_at IS NULL
 JOIN teams t ON t.id=ut.team_id
 JOIN league_seasons l ON l.id=ut.league_season_id
 LEFT JOIN LATERAL (
@@ -86,6 +90,9 @@ LEFT JOIN LATERAL (
 WHERE ut.user_id=$1 AND l.season=(
  SELECT max(ls.season) FROM user_teams selected
  JOIN connections active ON active.id=selected.connection_id AND active.status<>'disabled'
+ JOIN connection_leagues attached ON attached.connection_id=selected.connection_id
+  AND attached.league_season_id=selected.league_season_id
+  AND attached.user_id=selected.user_id AND attached.detached_at IS NULL
  JOIN league_seasons ls ON ls.id=selected.league_season_id
  WHERE selected.user_id=$1
 )

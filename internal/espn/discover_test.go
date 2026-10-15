@@ -56,7 +56,14 @@ func TestDiscoverLeaguesUsesFootballPreferences(t *testing.T) {
 			t.Errorf("ESPN S2 cookie count = %d, want 1", s2Cookies)
 		}
 		body := `{"preferences":[
-			{"metaData":{"entry":{"entryId":12,"name":"My Team","gameId":1,"seasonId":2026,"groups":[{"groupId":34,"groupName":"Football League"}]}}},
+			{"metaData":{"entry":{
+				"entryId":12,
+				"name":"Fantasy Football 2026",
+				"entryMetadata":{"teamName":"My Team","teamAbbrev":"MT"},
+				"gameId":1,
+				"seasonId":2026,
+				"groups":[{"groupId":34,"groupName":"Football League"}]
+			}}},
 			{"metaData":{"entry":{"entryId":99,"name":"Other Sport","gameId":2,"seasonId":2026,"groups":[{"groupId":56,"groupName":"Not Football"}]}}},
 			{"metaData":{"entry":{"entryId":13,"name":"Other Team","gameId":1,"seasonId":2026,"groups":[{"groupId":34,"groupName":"Football League"}]}}}
 		]}`

@@ -15,7 +15,10 @@ function AppHeader() {
     select: (state) => state.location.pathname,
   })
   const title =
-    navigation.find((item) => item.path === pathname)?.title ?? "Page not found"
+    pathname === "/connect"
+      ? "Connect leagues"
+      : (navigation.find((item) => item.path === pathname)?.title ??
+        "Page not found")
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border px-4 lg:px-6">
       <div className="flex min-w-0 items-center gap-4">

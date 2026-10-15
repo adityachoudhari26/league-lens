@@ -90,7 +90,7 @@ type Querier interface {
 	OverviewTeams(ctx context.Context, userID pgtype.UUID) ([]OverviewTeamsRow, error)
 	// Injury and NFL team come from the player's latest observed roster entry,
 	// preferring one that reports them (Sleeper only does for selected teams).
-	PlayerCardPlayer(ctx context.Context, playerID pgtype.UUID) (PlayerCardPlayerRow, error)
+	PlayerCardPlayer(ctx context.Context, arg PlayerCardPlayerParams) (PlayerCardPlayerRow, error)
 	RestoreAlert(ctx context.Context, arg RestoreAlertParams) error
 	SelectUserTeam(ctx context.Context, arg SelectUserTeamParams) error
 	SetConnectionStatusForUser(ctx context.Context, arg SetConnectionStatusForUserParams) (int64, error)

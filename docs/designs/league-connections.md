@@ -1,6 +1,6 @@
 # Installation and in-app league connections
 
-Status: Docker installation and the connection backend are implemented; the in-app connection UI remains pending.
+Status: Docker installation, the connection backend, and the in-app connection UI are implemented.
 
 League Lens stays a laptop-only, self-hosted app. Installation remains
 terminal-based through Docker; connecting ESPN and Sleeper leagues moves into the
@@ -30,7 +30,7 @@ The user installs Docker Desktop (Windows or macOS) or OrbStack (macOS), then ru
   `http://localhost` there.
 - Requests whose `Host` is not `localhost`, `127.0.0.1`, `::1`, or a
   `*.localhost` name are rejected, which blocks DNS rebinding.
-- Until the connect UI ships, the image includes the `import` binary for
+- The image includes the `import` binary as an alternative for
   `docker compose exec app import sleeper|espn ...` CLI imports.
 
 ## Connecting leagues
@@ -89,5 +89,5 @@ Each step is a separate pull request, approved before the next begins:
    `ConnectionService` (`ConnectESPN`, `ConnectSleeper`, `ListConnections`,
    `ImportLeagues`, `RemoveLeague`), and sync using stored credentials
    (checkpoints 5, 6, and 7).
-3. Connection UI (pending): the connect dialog, `/connect` bookmarklet page, Settings
+3. Connection UI (implemented): the connect dialog, `/connect` bookmarklet page, Settings
    leagues section, Home empty state, and banner Reconnect (checkpoints 6, 7, and 8).
