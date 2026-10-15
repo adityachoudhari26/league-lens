@@ -1,5 +1,6 @@
 import { scoreLabel } from "@/components/overview/format"
 import { Lineup } from "@/components/matchups/lineup"
+import { ScoreShareBar, StatusPill } from "@/components/matchups/matchup-header"
 import {
   ownerScoreTone,
   recordLabel,
@@ -8,15 +9,11 @@ import {
   type RoundStatus,
   type ScoreTone,
 } from "@/components/matchups/rules"
+import { scoreToneClass } from "@/components/matchups/tones"
 import {
   type MatchupDetail,
   type MatchupLineup,
 } from "@/gen/leaguelens/v1/dashboard_pb"
-
-const scoreToneClass: Record<ScoreTone, string> = {
-  winning: "text-teal-700 dark:text-[#9bc8bf]",
-  losing: "text-red-700 dark:text-[#d79b97]",
-}
 
 function TeamScore({
   side,
@@ -67,20 +64,14 @@ export function MatchupCard({
   const opponent = matchup.opponent
   const hasOpponent = opponent !== undefined
   const status = roundStatus(matchup)
+  const tone = ownerScoreTone(team, opponent, status)
   return (
     <section className="rounded-xl border bg-card">
       <div
         className={`grid items-center gap-4 px-4 py-4 ${hasOpponent ? "grid-cols-[1fr_auto_1fr]" : "grid-cols-[1fr_auto]"}`}
       >
-        <TeamScore
-          side={team}
-          label="You"
-          status={status}
-          tone={ownerScoreTone(team, opponent, status)}
-        />
-        <span className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground">
-          {status}
-        </span>
+        <TeamScore side={team} label="You" status={status} tone={tone} />
+        <StatusPill status={status} tone={tone} />
         {opponent && (
           <TeamScore
             side={opponent}
@@ -88,6 +79,11 @@ export function MatchupCard({
             status={status}
             mirrored
           />
+        )}
+        {opponent && (
+          <div className="col-span-3">
+            <ScoreShareBar team={team} opponent={opponent} status={status} />
+          </div>
         )}
       </div>
       <div className="border-t">

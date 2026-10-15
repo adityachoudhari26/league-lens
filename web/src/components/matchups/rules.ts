@@ -89,3 +89,53 @@ export function gameDetail(player: LineupPlayer) {
 export function playerInfo(player: LineupPlayer) {
   return player.proTeam
 }
+
+/**
+ * Points each side is heading for: the final score once the round is over,
+ * otherwise the projection (actuals for kicked-off starters plus projections).
+ */
+export function expectedScore(side: MatchupLineup, status: RoundStatus) {
+  if (status === "Final") return side.score
+  return side.projectedScore ?? teamScore(side, status)
+}
+
+/**
+ * The owner's share of both sides' expected points, from 0 to 1. Undefined
+ * when either side has nothing to compare yet.
+ */
+export function ownerShare(
+  team: MatchupLineup,
+  opponent: MatchupLineup,
+  status: RoundStatus,
+) {
+  const mine = expectedScore(team, status)
+  const theirs = expectedScore(opponent, status)
+  if (mine === undefined || theirs === undefined || mine + theirs <= 0)
+    return undefined
+  return mine / (mine + theirs)
+}
+
+/**
+ * Whether the owner wins a lineup row: actual points once both players have
+ * them, projected points while neither has played. Mixed rows and ties have
+ * no tone.
+ */
+export function ownerRowTone(
+  mine?: LineupPlayer,
+  theirs?: LineupPlayer,
+): ScoreTone | undefined {
+  if (!mine || !theirs) return undefined
+  const [minePoints, theirPoints] = comparablePoints(mine, theirs)
+  if (minePoints === undefined || theirPoints === undefined) return undefined
+  if (minePoints > theirPoints) return "winning"
+  if (minePoints < theirPoints) return "losing"
+  return undefined
+}
+
+function comparablePoints(mine: LineupPlayer, theirs: LineupPlayer) {
+  const minePoints = shownPoints(mine)
+  const theirPoints = shownPoints(theirs)
+  if (minePoints !== undefined || theirPoints !== undefined)
+    return [minePoints, theirPoints]
+  return [mine.projectedPoints, theirs.projectedPoints]
+}
