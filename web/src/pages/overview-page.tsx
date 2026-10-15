@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { ConnectDialog } from "@/components/connect/connect-dialog"
+import { useConnectDialog } from "@/components/connect/use-connect-dialog"
+import { ConnectEmptyState } from "@/components/overview/connect-empty-state"
+import { EspnReconnectBanner } from "@/components/overview/espn-reconnect-banner"
 import { AttentionSection } from "@/components/overview/attention-section"
 import { MatchupsSection } from "@/components/overview/matchups-section"
 import { UpdatesSection } from "@/components/overview/updates-section"
@@ -14,8 +17,7 @@ import { useLeagueSync } from "@/lib/api/sync"
 export function OverviewPage() {
   const { leagues, syncing, syncUnavailable, refresh } = useLeagueSync()
   const connectionQuery = useQuery(connectionQueries.list)
-  const [connectOpen, setConnectOpen] = useState(false)
-  const [initialProvider, setInitialProvider] = useState<"espn" | undefined>()
+  const connectDialog = useConnectDialog()
   useEffect(() => {
     document.title = "Overview · League Lens"
   }, [])
@@ -29,16 +31,6 @@ export function OverviewPage() {
       connection.provider === "espn" &&
       connection.status === ConnectionStatus.NEEDS_RECONNECT,
   )
-
-  function openConnect(provider?: "espn") {
-    setInitialProvider(provider)
-    setConnectOpen(true)
-  }
-
-  function handleDialogOpenChange(open: boolean) {
-    setConnectOpen(open)
-    if (!open) setInitialProvider(undefined)
-  }
 
   return (
     <>
@@ -54,7 +46,7 @@ export function OverviewPage() {
           </div>
           <div className="flex items-center gap-2">
             {showEmptyState ? (
-              <Button onClick={() => openConnect()} size="sm">
+              <Button onClick={() => connectDialog.openConnect()} size="sm">
                 Connect leagues
               </Button>
             ) : (
@@ -75,18 +67,9 @@ export function OverviewPage() {
           </div>
         </div>
         {needsReconnect && (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-[#5a4a2e] dark:bg-[#332b1f] dark:text-[#e0c48f]">
-            <p role="alert">
-              ESPN rejected the saved cookies, so ESPN leagues can't sync.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => openConnect("espn")}
-            >
-              Reconnect
-            </Button>
-          </div>
+          <EspnReconnectBanner
+            onReconnect={() => connectDialog.openConnect("espn")}
+          />
         )}
         <SyncStatus
           leagues={leagues}
@@ -94,15 +77,7 @@ export function OverviewPage() {
           syncUnavailable={syncUnavailable}
         />
         {showEmptyState ? (
-          <section className="rounded-xl border bg-card px-5 py-8 text-center sm:px-8">
-            <h2 className="text-lg font-semibold">Connect your first league</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Connect ESPN or Sleeper to bring your league into League Lens.
-            </p>
-            <Button className="mt-5" onClick={() => openConnect()}>
-              Connect leagues
-            </Button>
-          </section>
+          <ConnectEmptyState onConnect={() => connectDialog.openConnect()} />
         ) : (
           <div className="grid items-start gap-x-8 gap-y-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
             <div className="grid gap-10">
@@ -114,11 +89,11 @@ export function OverviewPage() {
           </div>
         )}
       </div>
-      {connectOpen && (
+      {connectDialog.open && (
         <ConnectDialog
-          open={connectOpen}
-          onOpenChange={handleDialogOpenChange}
-          initialProvider={initialProvider}
+          open={connectDialog.open}
+          onOpenChange={connectDialog.onOpenChange}
+          initialProvider={connectDialog.initialProvider}
           showSettingsHint
         />
       )}

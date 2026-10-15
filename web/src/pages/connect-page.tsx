@@ -28,7 +28,7 @@ export function ConnectPage() {
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {credentials
               ? "Opening your secure ESPN connection…"
-              : "To connect ESPN, drag the bookmarklet from Settings → Leagues to your bookmarks bar. You can also connect a Sleeper account in Settings."}
+              : "To connect ESPN, open Settings → Leagues → Connect leagues → ESPN and follow the bookmark steps. You can also connect a Sleeper account there."}
           </p>
           {!credentials && (
             <Link
