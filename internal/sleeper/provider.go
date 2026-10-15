@@ -3,9 +3,10 @@ package sleeper
 import (
 	"context"
 	"fmt"
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"net/url"
 	"strconv"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
 var _ fantasy.Provider = (*Client)(nil)
@@ -19,11 +20,17 @@ func (c *Client) readLeague(ctx context.Context, id string) (League, error) {
 		return league, err
 	}
 	year, err := strconv.Atoi(league.Season)
-	if err != nil || year < 1900 || year > 2200 || league.ID != id || league.Sport != "nfl" || league.SeasonType != "regular" || league.TotalRosters < 1 || league.TotalRosters > 100 {
+	if err != nil ||
+		year < 1900 || year > 2200 ||
+		league.ID != id ||
+		league.Sport != "nfl" ||
+		league.SeasonType != "regular" ||
+		league.TotalRosters < 1 || league.TotalRosters > 100 {
 		return league, fmt.Errorf("invalid or unsupported NFL league")
 	}
 	return league, nil
 }
+
 func (c *Client) DescribeLeague(ctx context.Context, id string) (fantasy.League, error) {
 	league, err := c.readLeague(ctx, id)
 	if err != nil {
@@ -31,6 +38,7 @@ func (c *Client) DescribeLeague(ctx context.Context, id string) (fantasy.League,
 	}
 	return normalizeLeague(league)
 }
+
 func (c *Client) FetchLeague(ctx context.Context, league fantasy.League) (fantasy.LeagueData, error) {
 	raw, err := c.readLeague(ctx, league.Ref.ExternalID)
 	if err != nil {
@@ -83,6 +91,7 @@ func (c *Client) ResolveSelection(ctx context.Context, username string, league f
 	}
 	return user.ID, selection, nil
 }
+
 func rosterOwnedBy(roster Roster, userID string) bool {
 	if roster.OwnerID == userID {
 		return true

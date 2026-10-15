@@ -15,19 +15,19 @@ const overviewTeamMatchup = `-- name: OverviewTeamMatchup :one
 SELECT m.id, m.league_season_id, m.external_matchup_id, m.period, m.team_a_id, m.team_b_id, m.score_a, m.score_b, m.status, m.fetched_at, m.scoring_periods_json, m.is_bye,a.name AS team_a_name,b.name AS team_b_name FROM matchups m
 JOIN teams a ON a.id=m.team_a_id
 LEFT JOIN teams b ON b.id=m.team_b_id
-WHERE (m.team_a_id=$1 OR m.team_b_id=$1)
-AND m.scoring_periods_json @> jsonb_build_array($3::integer)
+WHERE (m.team_a_id = $1 OR m.team_b_id = $1)
+AND m.scoring_periods_json @> jsonb_build_array($2::integer)
 AND EXISTS (
  SELECT 1 FROM user_teams ut JOIN connections c ON c.id=ut.connection_id
- WHERE ut.team_id=$1 AND ut.user_id=$2 AND c.status<>'disabled'
+ WHERE ut.team_id = $1 AND ut.user_id = $3 AND c.status<>'disabled'
 )
 ORDER BY m.fetched_at DESC,m.id DESC LIMIT 1
 `
 
 type OverviewTeamMatchupParams struct {
-	TeamAID pgtype.UUID
-	UserID  pgtype.UUID
-	Column3 int32
+	TeamID pgtype.UUID
+	Period int32
+	UserID pgtype.UUID
 }
 
 type OverviewTeamMatchupRow struct {
@@ -49,7 +49,7 @@ type OverviewTeamMatchupRow struct {
 
 // Match the latest observed scoring week, not the greatest (possibly future) round.
 func (q *Queries) OverviewTeamMatchup(ctx context.Context, arg OverviewTeamMatchupParams) (OverviewTeamMatchupRow, error) {
-	row := q.db.QueryRow(ctx, overviewTeamMatchup, arg.TeamAID, arg.UserID, arg.Column3)
+	row := q.db.QueryRow(ctx, overviewTeamMatchup, arg.TeamID, arg.Period, arg.UserID)
 	var i OverviewTeamMatchupRow
 	err := row.Scan(
 		&i.ID,

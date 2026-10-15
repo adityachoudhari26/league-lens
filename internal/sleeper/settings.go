@@ -3,8 +3,9 @@ package sleeper
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"sort"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
 func normalizeSlot(raw string) (fantasy.RosterSlot, []fantasy.Position) {
@@ -29,13 +30,24 @@ func normalizeSlot(raw string) (fantasy.RosterSlot, []fantasy.Position) {
 		return fantasy.SlotUnknown, nil
 	}
 }
+
 func normalizeSettings(raw League) (fantasy.LeagueSettings, error) {
 	var settings fantasy.LeagueSettings
 	for _, position := range raw.Positions {
 		slot, eligible := normalizeSlot(position)
 		settings.RosterSlots = append(settings.RosterSlots, fantasy.SlotDefinition{Slot: slot, Count: 1, EligiblePositions: eligible})
 	}
-	stats := map[string]fantasy.Stat{"pass_yd": fantasy.StatPassingYards, "pass_td": fantasy.StatPassingTouchdowns, "pass_int": fantasy.StatInterceptions, "rush_yd": fantasy.StatRushingYards, "rush_td": fantasy.StatRushingTouchdowns, "rec_yd": fantasy.StatReceivingYards, "rec_td": fantasy.StatReceivingTouchdowns, "rec": fantasy.StatReceptions, "fum_lost": fantasy.StatFumblesLost}
+	stats := map[string]fantasy.Stat{
+		"pass_yd":  fantasy.StatPassingYards,
+		"pass_td":  fantasy.StatPassingTouchdowns,
+		"pass_int": fantasy.StatInterceptions,
+		"rush_yd":  fantasy.StatRushingYards,
+		"rush_td":  fantasy.StatRushingTouchdowns,
+		"rec_yd":   fantasy.StatReceivingYards,
+		"rec_td":   fantasy.StatReceivingTouchdowns,
+		"rec":      fantasy.StatReceptions,
+		"fum_lost": fantasy.StatFumblesLost,
+	}
 	keys := make([]string, 0, len(stats))
 	for key := range stats {
 		keys = append(keys, key)

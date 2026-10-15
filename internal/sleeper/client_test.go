@@ -13,17 +13,17 @@ func TestFetch(t *testing.T) {
 		var file string
 		switch r.URL.Path {
 		case "/user/test":
-			w.Write([]byte(`{"user_id":"owner"}`))
+			_, _ = w.Write([]byte(`{"user_id":"owner"}`))
 			return
 		case "/league/123":
 			file = "league.json"
 		case "/league/123/rosters":
 			file = "rosters.json"
 		case "/league/123/users":
-			w.Write([]byte(`[{"user_id":"owner","display_name":"Owner","metadata":{"team_name":"My Team"}}]`))
+			_, _ = w.Write([]byte(`[{"user_id":"owner","display_name":"Owner","metadata":{"team_name":"My Team"}}]`))
 			return
 		case "/state/nfl":
-			w.Write([]byte(`{"season":"2026","season_type":"regular","week":2}`))
+			_, _ = w.Write([]byte(`{"season":"2026","season_type":"regular","week":2}`))
 			return
 		case "/league/123/matchups/1", "/league/123/matchups/2":
 			file = "week.json"
@@ -32,7 +32,7 @@ func TestFetch(t *testing.T) {
 			if query.Get("season_type") != "regular" || len(query["position[]"]) != len(projectionPositions) {
 				t.Errorf("projections query = %s", r.URL.RawQuery)
 			}
-			w.Write([]byte(`[{"player_id":"10","stats":{"rec":2}}]`))
+			_, _ = w.Write([]byte(`[{"player_id":"10","stats":{"rec":2}}]`))
 			return
 		case "/projections/nfl/2026/2":
 			w.WriteHeader(http.StatusInternalServerError)
@@ -45,7 +45,7 @@ func TestFetch(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		w.Write(b)
+		_, _ = w.Write(b)
 	}))
 	defer srv.Close()
 	c := NewClient(srv.Client())
@@ -85,7 +85,9 @@ func TestFetch(t *testing.T) {
 func TestRejectBadResponses(t *testing.T) {
 	for _, body := range []string{`null`, `{}`, `not json`, `{"league_id":"wrong"}`} {
 		t.Run(body, func(t *testing.T) {
-			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(body)) }))
+			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte(body))
+			}))
 			defer s.Close()
 			c := NewClient(s.Client())
 			c.BaseURL = s.URL

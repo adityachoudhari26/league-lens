@@ -71,7 +71,13 @@ func lineupMatchupKey(match matchupResponse) matchupKey {
 // matchupLineups normalizes the lineups ESPN reported for one matchup's sides.
 // Sides that are not sides of the normalized matchup, or that have no lineup
 // block, get no lineup.
-func matchupLineups(key matchupKey, match matchupResponse, normalizedTeams map[string]bool, week int, players map[string]fantasy.Player) ([]fantasy.MatchupLineup, error) {
+func matchupLineups(
+	key matchupKey,
+	match matchupResponse,
+	normalizedTeams map[string]bool,
+	week int,
+	players map[string]fantasy.Player,
+) ([]fantasy.MatchupLineup, error) {
 	var lineups []fantasy.MatchupLineup
 	for _, side := range []*sideResponse{match.Home, match.Away} {
 		if !hasReportedLineup(side, normalizedTeams) {

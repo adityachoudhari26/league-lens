@@ -3,6 +3,7 @@ package espn
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -25,6 +26,7 @@ func fixture(t *testing.T) map[string]any {
 	}
 	return v
 }
+
 func fixtureClient(t *testing.T, change func(map[string]any, *http.Request)) *Client {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,13 +45,16 @@ func fixtureClient(t *testing.T, change func(map[string]any, *http.Request)) *Cl
 		if change != nil {
 			change(v, r)
 		}
-		json.NewEncoder(w).Encode(v)
+		if err := json.NewEncoder(w).Encode(v); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	c := NewClient(server.Client(), Credentials{S2: "private-token", SWID: "{account}"}, 2026)
 	c.baseURL = server.URL
 	return c
 }
+
 func TestFetchNormalizedLeague(t *testing.T) {
 	c := fixtureClient(t, nil)
 	league, err := c.DescribeLeague(context.Background(), "123")
@@ -91,6 +96,7 @@ func TestFetchNormalizedLeague(t *testing.T) {
 		t.Fatal("missing team defense")
 	}
 }
+
 func TestRejectsWrongHistoricalWeek(t *testing.T) {
 	c := fixtureClient(t, func(v map[string]any, r *http.Request) { v["scoringPeriodId"] = 3 })
 	league, err := c.DescribeLeague(context.Background(), "123")
@@ -101,6 +107,7 @@ func TestRejectsWrongHistoricalWeek(t *testing.T) {
 		t.Fatal("accepted current roster as history")
 	}
 }
+
 func TestUnavailableRosterIsNotEmptySnapshot(t *testing.T) {
 	c := fixtureClient(t, func(v map[string]any, r *http.Request) {
 		if r.URL.Query().Get("scoringPeriodId") == "1" {
@@ -116,12 +123,14 @@ func TestUnavailableRosterIsNotEmptySnapshot(t *testing.T) {
 		t.Fatalf("invented missing roster: %d", len(data.Rosters))
 	}
 }
+
 func TestRejectsIncompleteTeams(t *testing.T) {
 	c := fixtureClient(t, func(v map[string]any, r *http.Request) { v["teams"] = v["teams"].([]any)[:1] })
 	if _, err := c.DescribeLeague(context.Background(), "123"); err == nil {
 		t.Fatal("accepted incomplete league")
 	}
 }
+
 func TestHTTPFailuresDoNotLeakSecrets(t *testing.T) {
 	for _, code := range []int{401, 403, 500, 200, 302} {
 		t.Run(strconv.Itoa(code), func(t *testing.T) {
@@ -131,7 +140,7 @@ func TestHTTPFailuresDoNotLeakSecrets(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Location", destination.URL)
 				w.WriteHeader(code)
-				w.Write([]byte("private-token"))
+				_, _ = w.Write([]byte("private-token"))
 			}))
 			defer server.Close()
 			c := NewClient(server.Client(), Credentials{S2: "private-token", SWID: "{account}"}, 2026)
@@ -158,6 +167,7 @@ func TestPartialScheduleCannotDeleteStoredPairings(t *testing.T) {
 		t.Fatal("missing opponent is not a confirmed bye")
 	}
 }
+
 func TestUnknownSlotAndEmptyRoster(t *testing.T) {
 	c := fixtureClient(t, func(v map[string]any, r *http.Request) {
 		teams := v["teams"].([]any)
@@ -177,11 +187,12 @@ func TestUnknownSlotAndEmptyRoster(t *testing.T) {
 		t.Fatal("explicit empty roster lost")
 	}
 }
+
 func TestCancellation(t *testing.T) {
 	c := fixtureClient(t, nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := c.DescribeLeague(ctx, "123"); err != context.Canceled {
+	if _, err := c.DescribeLeague(ctx, "123"); !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancellation lost: %v", err)
 	}
 }

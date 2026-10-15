@@ -10,10 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // GetOverviewAttention lists lineup issues for the owner's starters in each
@@ -86,9 +87,17 @@ func dropDismissedAlerts(ctx context.Context, q *store.Queries, owner pgtype.UUI
 
 func attentionCoverage(scheduleLoaded bool) *v1.OverviewCoverage {
 	if scheduleLoaded {
-		return coverage("partial", "Checks your starters for empty slots, injury designations, and byes as of each league's last sync. Late inactives can arrive after a sync.")
+		return coverage(
+			"partial",
+			"Checks your starters for empty slots, injury designations, and byes as of each league's last sync. "+
+				"Late inactives can arrive after a sync.",
+		)
 	}
-	return coverage("partial", "Checks your starters for empty slots and injury designations as of each league's last sync. Bye checks are unavailable until the NFL schedule loads.")
+	return coverage(
+		"partial",
+		"Checks your starters for empty slots and injury designations as of each league's last sync. "+
+			"Bye checks are unavailable until the NFL schedule loads.",
+	)
 }
 
 func emptySlotAlerts(team store.OverviewTeamsRow, settings fantasy.LeagueSettings, entries []store.ListSnapshotRosterForUserRow) []*v1.LineupAlert {
@@ -149,7 +158,10 @@ func byeAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUser
 		PlayerName: entry.DisplayName,
 		ProTeam:    entry.ProTeam.String,
 		Title:      fmt.Sprintf("Your starting %s is on bye", slotName(slot)),
-		Detail:     fmt.Sprintf("%s (%s) has no game in week %d. Start someone else before your first kickoff.", entry.DisplayName, entry.ProTeam.String, team.Period),
+		Detail: fmt.Sprintf(
+			"%s (%s) has no game in week %d. Start someone else before your first kickoff.",
+			entry.DisplayName, entry.ProTeam.String, team.Period,
+		),
 	}
 	alert.Fingerprint = alertFingerprint(alert, team.Period)
 	return alert
@@ -157,7 +169,13 @@ func byeAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUser
 
 // injuryAlert maps designations to severity: out, IR, and doubtful need action;
 // questionable is worth monitoring. Active and unknown statuses are silent.
-func injuryAlert(team store.OverviewTeamsRow, entry store.ListSnapshotRosterForUserRow, slot fantasy.RosterSlot, game store.ListNFLGamesForWeekRow, hasGame bool) *v1.LineupAlert {
+func injuryAlert(
+	team store.OverviewTeamsRow,
+	entry store.ListSnapshotRosterForUserRow,
+	slot fantasy.RosterSlot,
+	game store.ListNFLGamesForWeekRow,
+	hasGame bool,
+) *v1.LineupAlert {
 	status := fantasy.InjuryStatus(entry.InjuryStatus.String)
 	label, severity := map[fantasy.InjuryStatus]string{
 		fantasy.InjuryOut:          "out",

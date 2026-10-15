@@ -1,12 +1,13 @@
 package importer
 
 import (
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
-	"github.com/adityachoudhari26/league-lens/internal/playerids"
 	"math"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/playerids"
 )
 
 func TestRejectMultipleSelectedTeams(t *testing.T) {
@@ -29,7 +30,13 @@ func TestMissingScore(t *testing.T) {
 }
 
 func TestSnapshotHashIgnoresEntryOrder(t *testing.T) {
-	snapshot := fantasy.RosterSnapshot{Coverage: fantasy.CoverageFull, Entries: []fantasy.RosterEntry{{PlayerID: "2", Slot: fantasy.SlotBench}, {PlayerID: "1", Slot: fantasy.SlotQB}}}
+	snapshot := fantasy.RosterSnapshot{
+		Coverage: fantasy.CoverageFull,
+		Entries: []fantasy.RosterEntry{
+			{PlayerID: "2", Slot: fantasy.SlotBench},
+			{PlayerID: "1", Slot: fantasy.SlotQB},
+		},
+	}
 	first, err := snapshotHash(snapshot)
 	if err != nil {
 		t.Fatal(err)
@@ -40,9 +47,19 @@ func TestSnapshotHashIgnoresEntryOrder(t *testing.T) {
 		t.Fatal("provider ordering changed identity")
 	}
 }
+
 func TestRejectConflictingAlias(t *testing.T) {
 	service := Service{Catalog: playerids.Catalog{"10": {IDs: map[string]string{"sleeper": "10", "espn": "100"}}}}
-	_, err := service.playerIdentity(fantasy.ProviderSleeper, fantasy.Player{ExternalID: "10", Kind: fantasy.PlayerPerson, KnownIDs: []fantasy.PlayerID{{Namespace: fantasy.PlayerIDESPN, ExternalID: "other"}}})
+	_, err := service.playerIdentity(
+		fantasy.ProviderSleeper,
+		fantasy.Player{
+			ExternalID: "10",
+			Kind:       fantasy.PlayerPerson,
+			KnownIDs: []fantasy.PlayerID{
+				{Namespace: fantasy.PlayerIDESPN, ExternalID: "other"},
+			},
+		},
+	)
 	if err == nil {
 		t.Fatal("conflicting aliases accepted")
 	}
@@ -59,9 +76,25 @@ func lineupPayload() (fantasy.LeagueData, fantasy.League, fantasy.ConnectionSele
 		FetchedAt: time.Now(),
 		Teams:     []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}},
 		Players:   []fantasy.Player{{ExternalID: "10", Name: "QB", Kind: fantasy.PlayerPerson}, {ExternalID: "20", Name: "RB", Kind: fantasy.PlayerPerson}},
-		Matchups:  []fantasy.Matchup{{ExternalID: "m1", Period: 1, TeamA: fantasy.MatchupSide{TeamID: "1"}, TeamB: &fantasy.MatchupSide{TeamID: "2"}, Status: fantasy.MatchupFinal}},
+		Matchups: []fantasy.Matchup{
+			{
+				ExternalID: "m1",
+				Period:     1,
+				TeamA:      fantasy.MatchupSide{TeamID: "1"},
+				TeamB:      &fantasy.MatchupSide{TeamID: "2"},
+				Status:     fantasy.MatchupFinal,
+			},
+		},
 		Lineups: []fantasy.MatchupLineup{
-			{Period: 1, MatchupID: "m1", TeamID: "1", Entries: []fantasy.LineupEntry{{PlayerID: "10", Slot: fantasy.SlotQB, Starter: true, Points: &ten}, {PlayerID: "20", Slot: fantasy.SlotBench}}},
+			{
+				Period:    1,
+				MatchupID: "m1",
+				TeamID:    "1",
+				Entries: []fantasy.LineupEntry{
+					{PlayerID: "10", Slot: fantasy.SlotQB, Starter: true, Points: &ten},
+					{PlayerID: "20", Slot: fantasy.SlotBench},
+				},
+			},
 			{Period: 1, MatchupID: "m1", TeamID: "2", Entries: []fantasy.LineupEntry{}},
 		},
 	}

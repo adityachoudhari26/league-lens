@@ -27,6 +27,7 @@ func appendMatchups(data *fantasy.LeagueData, raw leagueResponse) error {
 	data.CompleteMatchupPeriods = completeMatchupPeriods(data.Matchups, len(raw.Teams))
 	return nil
 }
+
 func scoringWeekBounds(weeks []int) (int, int, error) {
 	if len(weeks) == 0 {
 		return 0, 0, fmt.Errorf("ESPN matchup scoring weeks unavailable")
@@ -45,6 +46,7 @@ func scoringWeekBounds(weeks []int) (int, int, error) {
 	}
 	return first, last, nil
 }
+
 func normalizeMatchup(raw matchupResponse, weeks []int, last, current int) (fantasy.Matchup, error) {
 	matchup := fantasy.Matchup{ExternalID: strconv.Itoa(raw.ID), Period: fantasy.MatchupPeriod(raw.Period), Status: fantasy.MatchupUnknown}
 	if raw.ID <= 0 || raw.Period <= 0 || (raw.Home == nil && raw.Away == nil) {
@@ -68,6 +70,7 @@ func normalizeMatchup(raw matchupResponse, weeks []int, last, current int) (fant
 	// Missing opponent alone does not prove a bye.
 	return matchup, nil
 }
+
 func completeMatchupPeriods(matchups []fantasy.Matchup, teamCount int) []fantasy.MatchupPeriod {
 	teamsByPeriod := map[fantasy.MatchupPeriod]map[string]bool{}
 	for _, match := range matchups {
@@ -88,6 +91,7 @@ func completeMatchupPeriods(matchups []fantasy.Matchup, teamCount int) []fantasy
 	sort.Slice(periods, func(i, j int) bool { return periods[i] < periods[j] })
 	return periods
 }
+
 func normalizeSide(raw sideResponse) fantasy.MatchupSide {
 	return fantasy.MatchupSide{TeamID: strconv.Itoa(raw.TeamID), Score: raw.Points}
 }

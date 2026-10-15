@@ -24,6 +24,7 @@ func prepareSource(ctx context.Context, options importOptions) (fantasy.Provider
 	client.AvailabilityTeamIDs = selection.SelectedTeamIDs
 	return client, accountID, selection, err
 }
+
 func prepareESPN(ctx context.Context, options importOptions) (fantasy.Provider, string, fantasy.ConnectionSelection, error) {
 	credentials := espn.Credentials{S2: os.Getenv("ESPN_S2"), SWID: os.Getenv("ESPN_SWID")}
 	if credentials.S2 == "" || credentials.SWID == "" {

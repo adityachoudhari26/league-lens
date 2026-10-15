@@ -9,12 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -98,11 +99,22 @@ func (s *Service) startImport(ctx context.Context, request Request, header fanta
 		if err != nil {
 			return err
 		}
-		league, err := queries.EnsureLeagueSeason(ctx, store.EnsureLeagueSeasonParams{Provider: string(header.Ref.Provider), ExternalLeagueID: header.Ref.ExternalID, Season: int32(header.Ref.Season), Name: header.Name, SettingsJson: settings})
+		league, err := queries.EnsureLeagueSeason(ctx, store.EnsureLeagueSeasonParams{
+			Provider:         string(header.Ref.Provider),
+			ExternalLeagueID: header.Ref.ExternalID,
+			Season:           int32(header.Ref.Season),
+			Name:             header.Name,
+			SettingsJson:     settings,
+		})
 		if err != nil {
 			return err
 		}
-		if err = queries.AttachLeague(ctx, store.AttachLeagueParams{ConnectionID: connection.ID, LeagueSeasonID: league.ID, UserID: user.ID, Provider: string(header.Ref.Provider)}); err != nil {
+		if err = queries.AttachLeague(ctx, store.AttachLeagueParams{
+			ConnectionID:   connection.ID,
+			LeagueSeasonID: league.ID,
+			UserID:         user.ID,
+			Provider:       string(header.Ref.Provider),
+		}); err != nil {
 			return err
 		}
 		kind := "initial"
@@ -126,7 +138,11 @@ func ensureOwner(ctx context.Context, queries *store.Queries, email string) (sto
 }
 
 func ensureProviderConnection(ctx context.Context, queries *store.Queries, userID pgtype.UUID, provider, externalID string) (store.Connection, error) {
-	connection, err := queries.FindProviderConnection(ctx, store.FindProviderConnectionParams{UserID: userID, Provider: provider, ExternalUserID: text(externalID)})
+	connection, err := queries.FindProviderConnection(ctx, store.FindProviderConnectionParams{
+		UserID:         userID,
+		Provider:       provider,
+		ExternalUserID: text(externalID),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		connection, err = queries.CreateConnection(ctx, store.CreateConnectionParams{UserID: userID, Provider: provider, ExternalUserID: text(externalID)})
 	}
@@ -152,7 +168,13 @@ func (s *Service) saveImport(ctx context.Context, target importTarget, data fant
 		// Persist metadata from the fetched payload, not an earlier description.
 		league := target.league
 		var err error
-		if _, err = queries.UpsertLeagueSeason(ctx, store.UpsertLeagueSeasonParams{Provider: league.Provider, ExternalLeagueID: league.ExternalLeagueID, Season: league.Season, Name: data.League.Name, SettingsJson: settings}); err != nil {
+		if _, err = queries.UpsertLeagueSeason(ctx, store.UpsertLeagueSeasonParams{
+			Provider:         league.Provider,
+			ExternalLeagueID: league.ExternalLeagueID,
+			Season:           league.Season,
+			Name:             data.League.Name,
+			SettingsJson:     settings,
+		}); err != nil {
 			return err
 		}
 		writer := newLeagueWriter(s, queries, target, data)
@@ -177,14 +199,22 @@ func rejectSupersededImport(ctx context.Context, queries *store.Queries, target 
 }
 
 func completeImport(ctx context.Context, queries *store.Queries, target importTarget) error {
-	if _, err := queries.UpdateConnectionForUser(ctx, store.UpdateConnectionForUserParams{ID: target.connection.ID, UserID: target.user.ID, Status: "active"}); err != nil {
+	if _, err := queries.UpdateConnectionForUser(ctx, store.UpdateConnectionForUserParams{
+		ID:     target.connection.ID,
+		UserID: target.user.ID,
+		Status: "active",
+	}); err != nil {
 		return err
 	}
 	completedRun, err := queries.CompleteSync(ctx, target.run.ID)
 	if err != nil {
 		return err
 	}
-	return queries.MarkLeagueSynced(ctx, store.MarkLeagueSyncedParams{ConnectionID: target.connection.ID, LeagueSeasonID: target.league.ID, LastSuccessfulSyncAt: completedRun.CompletedAt})
+	return queries.MarkLeagueSynced(ctx, store.MarkLeagueSyncedParams{
+		ConnectionID:         target.connection.ID,
+		LeagueSeasonID:       target.league.ID,
+		LastSuccessfulSyncAt: completedRun.CompletedAt,
+	})
 }
 
 // RecordedSyncError is an import failure saved on its sync run, carrying the

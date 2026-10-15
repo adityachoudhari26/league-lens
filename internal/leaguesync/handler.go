@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 )
 
 // Handler exposes a Runner as the Connect SyncService.

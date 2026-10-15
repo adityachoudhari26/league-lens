@@ -5,8 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
 // scheduleMaxAge bounds how often the NFL schedule is reloaded; kickoff times rarely move.

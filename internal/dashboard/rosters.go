@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 
-	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
-	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+
+	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
+	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
 // GetTeamRoster returns the latest observed roster unless a scoring week is requested.

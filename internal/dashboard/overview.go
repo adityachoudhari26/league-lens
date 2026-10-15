@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect/v2"
+	"github.com/jackc/pgx/v5/pgtype"
+
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // readOverview bounds reads to 100 selected teams in the latest imported season.
@@ -30,7 +31,15 @@ func (s *Service) readOverview(ctx context.Context, fn func(context.Context, *st
 }
 
 func overviewTeam(row store.OverviewTeamsRow) *v1.OverviewTeam {
-	team := &v1.OverviewTeam{Id: row.ID.String(), Name: row.Name, LeagueId: row.LeagueID.String(), LeagueName: row.LeagueName, Provider: row.Provider, Season: row.Season, ObservedAt: timestamp(row.ObservedAt)}
+	team := &v1.OverviewTeam{
+		Id:         row.ID.String(),
+		Name:       row.Name,
+		LeagueId:   row.LeagueID.String(),
+		LeagueName: row.LeagueName,
+		Provider:   row.Provider,
+		Season:     row.Season,
+		ObservedAt: timestamp(row.ObservedAt),
+	}
 	if row.Period > 0 {
 		team.ScoringPeriod = &row.Period
 	}

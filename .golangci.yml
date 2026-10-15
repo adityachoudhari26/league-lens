@@ -1,0 +1,38 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - errorlint
+    - lll
+    - misspell
+  settings:
+    lll:
+      line-length: 160
+  exclusions:
+    generated: strict
+    presets:
+      - std-error-handling
+    rules:
+      # Go allows error strings to start with a proper noun; Sleeper is the provider's name.
+      - linters:
+          - staticcheck
+        text: ST1005
+        source: 'Errorf\("Sleeper '
+    paths:
+      - internal/gen/
+      - internal/store/
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/adityachoudhari26/league-lens
+  exclusions:
+    generated: strict
+    paths:
+      - internal/gen/
+      - internal/store/

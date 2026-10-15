@@ -41,7 +41,9 @@ func boxscoreFixtureClient(t *testing.T, change func(map[string]any, *http.Reque
 		if change != nil {
 			change(value, r)
 		}
-		json.NewEncoder(w).Encode(value)
+		if err := json.NewEncoder(w).Encode(value); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	client := NewClient(server.Client(), Credentials{S2: "private-token", SWID: "{account}"}, 2026)

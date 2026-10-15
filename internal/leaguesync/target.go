@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // Target is one attached league season, reconstructed from its earlier import:

@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
 type Store interface {

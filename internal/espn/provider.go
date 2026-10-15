@@ -87,8 +87,17 @@ func sortedPlayers(players map[string]fantasy.Player) []fantasy.Player {
 	}
 	return result
 }
+
 func normalizeLeague(raw leagueResponse) (fantasy.League, error) {
-	league := fantasy.League{Ref: fantasy.LeagueRef{Provider: fantasy.ProviderESPN, ExternalID: strconv.FormatInt(raw.ID, 10), Season: raw.Season}, Name: raw.Settings.Name, TeamCount: raw.Settings.Size}
+	league := fantasy.League{
+		Ref: fantasy.LeagueRef{
+			Provider:   fantasy.ProviderESPN,
+			ExternalID: strconv.FormatInt(raw.ID, 10),
+			Season:     raw.Season,
+		},
+		Name:      raw.Settings.Name,
+		TeamCount: raw.Settings.Size,
+	}
 	if league.Name == "" || league.TeamCount < 1 || league.TeamCount > 100 {
 		return league, fmt.Errorf("invalid ESPN league settings")
 	}
@@ -99,6 +108,7 @@ func normalizeLeague(raw leagueResponse) (fantasy.League, error) {
 	league.Settings = settings
 	return league, err
 }
+
 func validateTeams(raw, current leagueResponse) error {
 	if len(raw.Teams) != current.Settings.Size {
 		return fmt.Errorf("incomplete ESPN team list")
@@ -116,6 +126,7 @@ func validateTeams(raw, current leagueResponse) error {
 	}
 	return nil
 }
+
 func normalizeTeam(raw teamResponse) fantasy.Team {
 	name := raw.Name
 	if name == "" {
@@ -123,6 +134,7 @@ func normalizeTeam(raw teamResponse) fantasy.Team {
 	}
 	return fantasy.Team{ExternalID: strconv.Itoa(raw.ID), Name: name, Record: normalizeRecord(raw)}
 }
+
 func normalizeRecord(raw teamResponse) *fantasy.TeamRecord {
 	if raw.Record == nil || raw.Record.Overall == nil {
 		return nil

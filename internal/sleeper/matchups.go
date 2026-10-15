@@ -2,9 +2,10 @@ package sleeper
 
 import (
 	"fmt"
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"sort"
 	"strconv"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
 func normalizeMatchups(rows []Matchup, week int, historical bool) ([]fantasy.Matchup, error) {
@@ -32,7 +33,13 @@ func normalizeMatchups(rows []Matchup, week int, historical bool) ([]fantasy.Mat
 		if historical {
 			status = fantasy.MatchupFinal
 		}
-		matchup := fantasy.Matchup{ExternalID: key, Period: fantasy.MatchupPeriod(week), ScoringPeriods: []fantasy.ScoringPeriod{fantasy.ScoringPeriod(week)}, TeamA: normalizeSide(opponents[0]), Status: status}
+		matchup := fantasy.Matchup{
+			ExternalID:     key,
+			Period:         fantasy.MatchupPeriod(week),
+			ScoringPeriods: []fantasy.ScoringPeriod{fantasy.ScoringPeriod(week)},
+			TeamA:          normalizeSide(opponents[0]),
+			Status:         status,
+		}
 		if len(opponents) == 2 {
 			opponent := normalizeSide(opponents[1])
 			matchup.TeamB = &opponent
@@ -42,6 +49,7 @@ func normalizeMatchups(rows []Matchup, week int, historical bool) ([]fantasy.Mat
 	}
 	return result, nil
 }
+
 func normalizeSide(raw Matchup) fantasy.MatchupSide {
 	points := raw.Points
 	if raw.CustomPoints != nil {

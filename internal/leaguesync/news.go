@@ -7,9 +7,10 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/adityachoudhari26/league-lens/internal/news"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // refreshPlayerNews refreshes saved items from the previous roster snapshot.

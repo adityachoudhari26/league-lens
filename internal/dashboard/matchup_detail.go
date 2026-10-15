@@ -9,12 +9,13 @@ import (
 	"slices"
 	"time"
 
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
-	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
-	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
+	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
 // GetMatchupDetail returns the owner's selected team's matchup and saved lineup.
@@ -63,7 +64,13 @@ func readMatchupDetail(ctx context.Context, q *store.Queries, owner, leagueSeaso
 }
 
 // readMatchupRound returns false when no observed week or matching round is available.
-func readMatchupRound(ctx context.Context, q *store.Queries, owner, leagueSeasonID pgtype.UUID, selectedTeam store.MatchupDetailOwnerTeamRow, period *int32) (store.Matchup, bool, error) {
+func readMatchupRound(
+	ctx context.Context,
+	q *store.Queries,
+	owner, leagueSeasonID pgtype.UUID,
+	selectedTeam store.MatchupDetailOwnerTeamRow,
+	period *int32,
+) (store.Matchup, bool, error) {
 	if period == nil && selectedTeam.ObservedPeriod == 0 {
 		return store.Matchup{}, false, nil
 	}
@@ -101,7 +108,14 @@ func loadMatchupSchedule(ctx context.Context, q *store.Queries, season int32, sc
 }
 
 // matchupDetailMessage orients the owner first, swaps scores when the owner is team B, and omits an absent opponent.
-func matchupDetailMessage(ctx context.Context, q *store.Queries, owner, selectedTeamID pgtype.UUID, matchup store.Matchup, schedule weekSchedule, now time.Time) (*v1.MatchupDetail, error) {
+func matchupDetailMessage(
+	ctx context.Context,
+	q *store.Queries,
+	owner, selectedTeamID pgtype.UUID,
+	matchup store.Matchup,
+	schedule weekSchedule,
+	now time.Time,
+) (*v1.MatchupDetail, error) {
 	teamScore, opponentScore := matchup.ScoreA, matchup.ScoreB
 	opponentID := matchup.TeamBID
 	if matchup.TeamBID == selectedTeamID {
@@ -131,7 +145,15 @@ func matchupDetailMessage(ctx context.Context, q *store.Queries, owner, selected
 }
 
 // matchupLineupMessage maps a team's saved starters and bench, including IR and taxi entries; an empty lineup still has its name and score.
-func matchupLineupMessage(ctx context.Context, q *store.Queries, owner, teamID pgtype.UUID, score pgtype.Numeric, matchupID pgtype.UUID, schedule weekSchedule, now time.Time) (*v1.MatchupLineup, error) {
+func matchupLineupMessage(
+	ctx context.Context,
+	q *store.Queries,
+	owner, teamID pgtype.UUID,
+	score pgtype.Numeric,
+	matchupID pgtype.UUID,
+	schedule weekSchedule,
+	now time.Time,
+) (*v1.MatchupLineup, error) {
 	team, err := q.DashboardTeam(ctx, store.DashboardTeamParams{ID: teamID, UserID: owner})
 	if err != nil {
 		return nil, err

@@ -143,7 +143,12 @@ func (c *Client) Header(ctx context.Context, username, leagueID string) (Header,
 		return h, err
 	}
 	year, err := strconv.Atoi(h.League.Season)
-	if err != nil || year < 1900 || year > 2200 || h.League.ID != leagueID || h.League.Sport != "nfl" || h.League.SeasonType != "regular" || h.League.TotalRosters < 1 || h.League.TotalRosters > 100 {
+	if err != nil ||
+		year < 1900 || year > 2200 ||
+		h.League.ID != leagueID ||
+		h.League.Sport != "nfl" ||
+		h.League.SeasonType != "regular" ||
+		h.League.TotalRosters < 1 || h.League.TotalRosters > 100 {
 		return h, fmt.Errorf("invalid or unsupported NFL league")
 	}
 	return h, nil

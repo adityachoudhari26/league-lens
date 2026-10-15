@@ -15,7 +15,14 @@ import (
 // every non-starter as bench, like roster history. Rows without players or
 // starters are unavailable and get no lineup. Projections are the week's
 // projected stat lines by player, scored with the league's scoring.
-func normalizeLineups(rows []Matchup, matchups []fantasy.Matchup, positions []string, designations map[int]Roster, projections map[string]map[string]float64, scoring map[string]float64) ([]fantasy.MatchupLineup, error) {
+func normalizeLineups(
+	rows []Matchup,
+	matchups []fantasy.Matchup,
+	positions []string,
+	designations map[int]Roster,
+	projections map[string]map[string]float64,
+	scoring map[string]float64,
+) ([]fantasy.MatchupLineup, error) {
 	rowsByTeam := map[string]Matchup{}
 	for _, row := range rows {
 		rowsByTeam[strconv.Itoa(row.RosterID)] = row
@@ -48,7 +55,13 @@ func matchupTeamIDs(matchup fantasy.Matchup) []string {
 // projections. Starter points add up to Sleeper's points, not a custom_points
 // override. rosterEntries gives only starters a slot index, which marks them
 // as starters.
-func lineupEntries(row Matchup, positions []string, roster Roster, projections map[string]map[string]float64, scoring map[string]float64) ([]fantasy.LineupEntry, error) {
+func lineupEntries(
+	row Matchup,
+	positions []string,
+	roster Roster,
+	projections map[string]map[string]float64,
+	scoring map[string]float64,
+) ([]fantasy.LineupEntry, error) {
 	reserve := benchedOnly(roster.Reserve, row)
 	taxi := benchedOnly(roster.Taxi, row)
 	entries, _, err := rosterEntries(row.Players, row.Starters, reserve, taxi, positions)

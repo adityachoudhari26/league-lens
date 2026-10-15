@@ -3,9 +3,10 @@ package dashboard
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ListMatchups reads an accessible league's requested matchup round.
