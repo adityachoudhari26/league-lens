@@ -79,11 +79,39 @@ function PlayerCell({
         </div>
         <PlayerSubtitle player={player} />
       </div>
-      <span
-        className={`w-12 shrink-0 text-sm tabular-nums ${mirrored ? "text-left" : "text-right"} ${leading ? "font-semibold" : "text-foreground/70"}`}
-      >
-        {scoreLabel(shownPoints(player))}
-      </span>
+      <PlayerPoints player={player} mirrored={mirrored} leading={leading} />
+    </div>
+  )
+}
+
+// Before kickoff only the projection shows, in place of "—".
+function PlayerPoints({
+  player,
+  mirrored,
+  leading,
+}: {
+  player: LineupPlayer
+  mirrored?: boolean
+  leading?: boolean
+}) {
+  const points = shownPoints(player)
+  const projected = player.projectedPoints
+  return (
+    <div
+      className={`w-12 shrink-0 tabular-nums ${mirrored ? "text-left" : "text-right"}`}
+    >
+      {(points !== undefined || projected === undefined) && (
+        <p
+          className={`text-sm ${leading ? "font-semibold" : "text-foreground/70"}`}
+        >
+          {scoreLabel(points)}
+        </p>
+      )}
+      {projected !== undefined && (
+        <p className="text-[11px] text-muted-foreground">
+          {scoreLabel(projected)}
+        </p>
+      )}
     </div>
   )
 }
