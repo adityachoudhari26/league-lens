@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/keymoments"
 	"github.com/adityachoudhari26/league-lens/internal/store"
@@ -23,6 +24,7 @@ func (s *Service) GetMatchupWinChance(
 	}
 
 	response := &v1.GetMatchupWinChanceResponse{}
+	requestBackfill := false
 	err = s.read(ctx, func(ctx context.Context, q *store.Queries, owner pgtype.UUID) error {
 		matchup, err := q.MatchupWinChanceOwnerMatchup(ctx, store.MatchupWinChanceOwnerMatchupParams{
 			MatchupID: matchupID,
@@ -35,10 +37,15 @@ func (s *Service) GetMatchupWinChance(
 			return nil
 		}
 		response.WinChance, err = matchupWinChanceMessage(ctx, q, owner, matchup.ID, matchup.OwnerIsTeamB)
+		requestBackfill = err == nil && response.WinChance == nil &&
+			matchup.Status == string(fantasy.MatchupFinal)
 		return err
 	})
 	if err != nil {
 		return nil, err
+	}
+	if requestBackfill && s.backfill != nil {
+		response.Building = s.backfill.RequestWinChanceBackfill(matchupID)
 	}
 	return response, nil
 }

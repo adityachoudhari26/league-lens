@@ -29,6 +29,14 @@ func (s *scoreboardTestSources) NFLScoreboard(context.Context) (fantasy.NFLScore
 	return s.board, nil
 }
 
+func (s *scoreboardTestSources) NFLWeekScoreboard(context.Context, int, int) (fantasy.NFLScoreboard, error) {
+	return s.board, nil
+}
+
+func (*scoreboardTestSources) NFLGamePlays(context.Context, string) ([]fantasy.NFLPlay, error) {
+	return nil, nil
+}
+
 func (*scoreboardTestSources) NewsSource() news.Source { return nil }
 
 func TestActiveNFLTeamsUsesFifteenMinuteWindow(t *testing.T) {

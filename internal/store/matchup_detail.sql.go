@@ -284,7 +284,7 @@ func (q *Queries) MatchupDetailWinChanceSamples(ctx context.Context, arg Matchup
 }
 
 const matchupWinChanceOwnerMatchup = `-- name: MatchupWinChanceOwnerMatchup :one
-SELECT m.id,m.is_bye,coalesce(m.team_b_id = ut.team_id,false)::boolean AS owner_is_team_b
+SELECT m.id,m.is_bye,m.status,coalesce(m.team_b_id = ut.team_id,false)::boolean AS owner_is_team_b
 FROM matchups m
 JOIN user_teams ut ON ut.league_season_id=m.league_season_id AND (ut.team_id=m.team_a_id OR ut.team_id=m.team_b_id)
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
@@ -301,6 +301,7 @@ type MatchupWinChanceOwnerMatchupParams struct {
 type MatchupWinChanceOwnerMatchupRow struct {
 	ID           pgtype.UUID
 	IsBye        bool
+	Status       string
 	OwnerIsTeamB bool
 }
 
@@ -308,6 +309,11 @@ type MatchupWinChanceOwnerMatchupRow struct {
 func (q *Queries) MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupWinChanceOwnerMatchupParams) (MatchupWinChanceOwnerMatchupRow, error) {
 	row := q.db.QueryRow(ctx, matchupWinChanceOwnerMatchup, arg.MatchupID, arg.UserID)
 	var i MatchupWinChanceOwnerMatchupRow
-	err := row.Scan(&i.ID, &i.IsBye, &i.OwnerIsTeamB)
+	err := row.Scan(
+		&i.ID,
+		&i.IsBye,
+		&i.Status,
+		&i.OwnerIsTeamB,
+	)
 	return i, err
 }

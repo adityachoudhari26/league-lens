@@ -194,7 +194,7 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 		t.Fatalf("stored credentials were not usable for sync: %v", err)
 	}
 
-	dashboardService := dashboard.New(db, service.OwnerEmail, nil)
+	dashboardService := dashboard.New(db, service.OwnerEmail, nil, nil)
 	visible, err := dashboardService.ListLeagues(ctx, &v1.ListLeaguesRequest{})
 	if err != nil || len(visible.Leagues) != 1 {
 		t.Fatalf("league before detach: %v, %v", visible, err)

@@ -63,6 +63,14 @@ func (fakeSources) NFLScoreboard(context.Context) (fantasy.NFLScoreboard, error)
 	return fantasy.NFLScoreboard{}, nil
 }
 
+func (fakeSources) NFLWeekScoreboard(context.Context, int, int) (fantasy.NFLScoreboard, error) {
+	return fantasy.NFLScoreboard{}, nil
+}
+
+func (fakeSources) NFLGamePlays(context.Context, string) ([]fantasy.NFLPlay, error) {
+	return nil, nil
+}
+
 func (fakeSources) NewsSource() news.Source { return emptyNewsSource{} }
 
 func (f fakeSources) SourceFor(target Target) (fantasy.Provider, error) {

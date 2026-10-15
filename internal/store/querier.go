@@ -17,6 +17,7 @@ type Querier interface {
 	AddPlayerProfileStat(ctx context.Context, arg AddPlayerProfileStatParams) error
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
 	AttachLeague(ctx context.Context, arg AttachLeagueParams) error
+	BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (BackfillMatchupRow, error)
 	ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeamsParams) error
 	CompleteSync(ctx context.Context, id pgtype.UUID) (SyncRun, error)
 	CreateConnection(ctx context.Context, arg CreateConnectionParams) (Connection, error)
@@ -47,10 +48,14 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
 	InsertLineupPointChange(ctx context.Context, arg InsertLineupPointChangeParams) error
+	InsertWinChanceGap(ctx context.Context, arg InsertWinChanceGapParams) error
+	InsertWinChanceGapStarter(ctx context.Context, arg InsertWinChanceGapStarterParams) error
 	InsertWinChanceSample(ctx context.Context, arg InsertWinChanceSampleParams) error
 	IsLeagueAttachedForUser(ctx context.Context, arg IsLeagueAttachedForUserParams) (bool, error)
 	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
 	LatestWinChanceSample(ctx context.Context, matchupID pgtype.UUID) (LatestWinChanceSampleRow, error)
+	// Starter identities and the latest observed roster's NFL team for play-by-play replay.
+	ListBackfillMatchupStarters(ctx context.Context, matchupID pgtype.UUID) ([]ListBackfillMatchupStartersRow, error)
 	ListConnectionLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionLeaguesForUserRow, error)
 	ListConnectionsForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionsForUserRow, error)
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
@@ -77,11 +82,16 @@ type Querier interface {
 	// Selected teams come from earlier imports.
 	ListSyncTargets(ctx context.Context, userID pgtype.UUID) ([]ListSyncTargetsRow, error)
 	ListTeamsForUser(ctx context.Context, arg ListTeamsForUserParams) ([]Team, error)
+	ListUnfilledWinChanceGaps(ctx context.Context) ([]ListUnfilledWinChanceGapsRow, error)
+	// Gap before/after values plus the starter's latest projection and ESPN/NFL identity.
+	ListWinChanceGapStarters(ctx context.Context, arg ListWinChanceGapStartersParams) ([]ListWinChanceGapStartersRow, error)
+	LoadWinChanceGap(ctx context.Context, arg LoadWinChanceGapParams) (LoadWinChanceGapRow, error)
 	// Serialize the brief write phase, including shared identity creation, across importers.
 	// No network calls run while this transaction lock is held.
 	LockImportWrites(ctx context.Context) error
 	MarkConnectionNeedsReconnect(ctx context.Context, id pgtype.UUID) error
 	MarkLeagueSynced(ctx context.Context, arg MarkLeagueSyncedParams) error
+	MarkWinChanceGapFilled(ctx context.Context, arg MarkWinChanceGapFilledParams) error
 	// Injury and NFL team are current: they come from the team's latest observed
 	// snapshot, so players dropped since then have neither.
 	MatchupDetailLineup(ctx context.Context, arg MatchupDetailLineupParams) ([]MatchupDetailLineupRow, error)
@@ -93,6 +103,7 @@ type Querier interface {
 	// matching OverviewTeamMatchup.
 	MatchupDetailRound(ctx context.Context, arg MatchupDetailRoundParams) (Matchup, error)
 	MatchupDetailWinChanceSamples(ctx context.Context, arg MatchupDetailWinChanceSamplesParams) ([]MatchupDetailWinChanceSamplesRow, error)
+	MatchupHasWinChanceHistory(ctx context.Context, matchupID pgtype.UUID) (pgtype.Bool, error)
 	// The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
 	MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupWinChanceOwnerMatchupParams) (MatchupWinChanceOwnerMatchupRow, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)

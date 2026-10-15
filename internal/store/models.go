@@ -226,6 +226,26 @@ type UserTeam struct {
 	TeamID         pgtype.UUID
 }
 
+type WinChanceGap struct {
+	MatchupID pgtype.UUID
+	StartedAt pgtype.Timestamptz
+	EndedAt   pgtype.Timestamptz
+	FilledAt  pgtype.Timestamptz
+}
+
+type WinChanceGapStarter struct {
+	MatchupID        pgtype.UUID
+	StartedAt        pgtype.Timestamptz
+	TeamID           pgtype.UUID
+	PlayerID         pgtype.UUID
+	PointsBefore     pgtype.Numeric
+	PointsAfter      pgtype.Numeric
+	TouchdownsBefore pgtype.Int4
+	TouchdownsAfter  pgtype.Int4
+	FieldGoalsBefore pgtype.Int4
+	FieldGoalsAfter  pgtype.Int4
+}
+
 type WinChanceSample struct {
 	MatchupID      pgtype.UUID
 	ObservedAt     pgtype.Timestamptz

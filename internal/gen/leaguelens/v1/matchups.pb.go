@@ -633,6 +633,7 @@ type GetMatchupWinChanceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Absent on a bye or when no live samples or moments are saved.
 	WinChance     *MatchupWinChance `protobuf:"bytes,1,opt,name=win_chance,json=winChance,proto3" json:"win_chance,omitempty"`
+	Building      bool              `protobuf:"varint,2,opt,name=building,proto3" json:"building,omitempty"` // True while a finished matchup's history is being rebuilt; ask again shortly.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -672,6 +673,13 @@ func (x *GetMatchupWinChanceResponse) GetWinChance() *MatchupWinChance {
 		return x.WinChance
 	}
 	return nil
+}
+
+func (x *GetMatchupWinChanceResponse) GetBuilding() bool {
+	if x != nil {
+		return x.Building
+	}
+	return false
 }
 
 // MatchupDetail is oriented around the owner: team is always the
@@ -1238,10 +1246,11 @@ const file_leaguelens_v1_matchups_proto_rawDesc = "" +
 	"\amatchup\x18\x01 \x01(\v2\x1c.leaguelens.v1.MatchupDetailR\amatchup\";\n" +
 	"\x1aGetMatchupWinChanceRequest\x12\x1d\n" +
 	"\n" +
-	"matchup_id\x18\x01 \x01(\tR\tmatchupId\"]\n" +
+	"matchup_id\x18\x01 \x01(\tR\tmatchupId\"y\n" +
 	"\x1bGetMatchupWinChanceResponse\x12>\n" +
 	"\n" +
-	"win_chance\x18\x01 \x01(\v2\x1f.leaguelens.v1.MatchupWinChanceR\twinChance\"\xba\x02\n" +
+	"win_chance\x18\x01 \x01(\v2\x1f.leaguelens.v1.MatchupWinChanceR\twinChance\x12\x1a\n" +
+	"\bbuilding\x18\x02 \x01(\bR\bbuilding\"\xba\x02\n" +
 	"\rMatchupDetail\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
 	"\x0ematchup_period\x18\x02 \x01(\x05R\rmatchupPeriod\x124\n" +
