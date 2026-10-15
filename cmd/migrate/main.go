@@ -6,9 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/adityachoudhari26/league-lens/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
+
+	"github.com/adityachoudhari26/league-lens/db"
 )
 
 func main() {

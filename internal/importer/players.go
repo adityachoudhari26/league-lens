@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 
-	"github.com/adityachoudhari26/league-lens/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
 var identityProviders = [...]string{"sleeper", "espn", "gsis", "mfl"}
@@ -22,7 +24,12 @@ type playerIdentity struct {
 }
 
 func (s *Service) playerIdentity(provider fantasy.ProviderID, player fantasy.Player) (playerIdentity, error) {
-	identity := playerIdentity{name: player.Name, kind: string(player.Kind), externalIDs: map[string]string{string(provider): player.ExternalID}, mappingSource: "provider"}
+	identity := playerIdentity{
+		name:          player.Name,
+		kind:          string(player.Kind),
+		externalIDs:   map[string]string{string(provider): player.ExternalID},
+		mappingSource: "provider",
+	}
 	for _, alias := range player.KnownIDs {
 		identity.externalIDs[string(alias.Namespace)] = alias.ExternalID
 	}
@@ -105,7 +112,13 @@ func addPlayerAliases(ctx context.Context, queries *store.Queries, playerID pgty
 		if externalID == "" {
 			continue
 		}
-		_, err := queries.AddPlayerExternalID(ctx, store.AddPlayerExternalIDParams{Provider: provider, ExternalID: externalID, PlayerID: playerID, MappingSource: identity.mappingSource, SourceVersion: identity.sourceVersion})
+		_, err := queries.AddPlayerExternalID(ctx, store.AddPlayerExternalIDParams{
+			Provider:      provider,
+			ExternalID:    externalID,
+			PlayerID:      playerID,
+			MappingSource: identity.mappingSource,
+			SourceVersion: identity.sourceVersion,
+		})
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return err
 		}

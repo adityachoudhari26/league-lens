@@ -25,10 +25,10 @@ ORDER BY l.name,t.name,t.id LIMIT 101;
 SELECT m.*,a.name AS team_a_name,b.name AS team_b_name FROM matchups m
 JOIN teams a ON a.id=m.team_a_id
 LEFT JOIN teams b ON b.id=m.team_b_id
-WHERE (m.team_a_id=$1 OR m.team_b_id=$1)
-AND m.scoring_periods_json @> jsonb_build_array($3::integer)
+WHERE (m.team_a_id = @team_id OR m.team_b_id = @team_id)
+AND m.scoring_periods_json @> jsonb_build_array(@period::integer)
 AND EXISTS (
  SELECT 1 FROM user_teams ut JOIN connections c ON c.id=ut.connection_id
- WHERE ut.team_id=$1 AND ut.user_id=$2 AND c.status<>'disabled'
+ WHERE ut.team_id = @team_id AND ut.user_id = @user_id AND c.status<>'disabled'
 )
 ORDER BY m.fetched_at DESC,m.id DESC LIMIT 1;

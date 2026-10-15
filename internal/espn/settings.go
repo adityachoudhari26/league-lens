@@ -10,7 +10,14 @@ import (
 )
 
 func normalizeSlot(id int) (fantasy.RosterSlot, []fantasy.Position) {
-	positions := map[int]fantasy.Position{0: fantasy.PositionQB, 2: fantasy.PositionRB, 4: fantasy.PositionWR, 6: fantasy.PositionTE, 16: fantasy.PositionDEF, 17: fantasy.PositionK}
+	positions := map[int]fantasy.Position{
+		0:  fantasy.PositionQB,
+		2:  fantasy.PositionRB,
+		4:  fantasy.PositionWR,
+		6:  fantasy.PositionTE,
+		16: fantasy.PositionDEF,
+		17: fantasy.PositionK,
+	}
 	if position, ok := positions[id]; ok {
 		return fantasy.RosterSlot(position), []fantasy.Position{position}
 	}
@@ -31,6 +38,7 @@ func normalizeSlot(id int) (fantasy.RosterSlot, []fantasy.Position) {
 		return fantasy.SlotUnknown, nil
 	}
 }
+
 func normalizeSettings(raw settingsResponse) (fantasy.LeagueSettings, error) {
 	var settings fantasy.LeagueSettings
 	var roster struct {
@@ -68,6 +76,7 @@ func normalizeSettings(raw settingsResponse) (fantasy.LeagueSettings, error) {
 	settings.ProviderSettings, err = json.Marshal(raw)
 	return settings, err
 }
+
 func normalizeScoring(raw json.RawMessage) ([]fantasy.ScoringRule, error) {
 	if len(raw) == 0 {
 		return nil, nil
@@ -83,7 +92,17 @@ func normalizeScoring(raw json.RawMessage) ([]fantasy.ScoringRule, error) {
 	if json.Unmarshal(raw, &scoring) != nil {
 		return nil, fmt.Errorf("invalid ESPN scoring settings")
 	}
-	stats := map[int]fantasy.Stat{3: fantasy.StatPassingYards, 4: fantasy.StatPassingTouchdowns, 20: fantasy.StatInterceptions, 24: fantasy.StatRushingYards, 25: fantasy.StatRushingTouchdowns, 42: fantasy.StatReceivingYards, 43: fantasy.StatReceivingTouchdowns, 53: fantasy.StatReceptions, 72: fantasy.StatFumblesLost}
+	stats := map[int]fantasy.Stat{
+		3:  fantasy.StatPassingYards,
+		4:  fantasy.StatPassingTouchdowns,
+		20: fantasy.StatInterceptions,
+		24: fantasy.StatRushingYards,
+		25: fantasy.StatRushingTouchdowns,
+		42: fantasy.StatReceivingYards,
+		43: fantasy.StatReceivingTouchdowns,
+		53: fantasy.StatReceptions,
+		72: fantasy.StatFumblesLost,
+	}
 	var rules []fantasy.ScoringRule
 	for _, item := range scoring.Items {
 		stat, known := stats[item.StatID]

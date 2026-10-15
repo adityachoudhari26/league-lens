@@ -26,18 +26,19 @@ func (q *Queries) ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeams
 }
 
 const deleteStaleMatchups = `-- name: DeleteStaleMatchups :exec
-DELETE FROM matchups WHERE league_season_id=$1 AND period=$2
+DELETE FROM matchups
+WHERE league_season_id = $1 AND period = $2
 AND external_matchup_id <> ALL($3::text[])
 `
 
 type DeleteStaleMatchupsParams struct {
-	LeagueSeasonID pgtype.UUID
-	Period         int32
-	Column3        []string
+	LeagueSeasonID     pgtype.UUID
+	Period             int32
+	ExternalMatchupIds []string
 }
 
 func (q *Queries) DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error {
-	_, err := q.db.Exec(ctx, deleteStaleMatchups, arg.LeagueSeasonID, arg.Period, arg.Column3)
+	_, err := q.db.Exec(ctx, deleteStaleMatchups, arg.LeagueSeasonID, arg.Period, arg.ExternalMatchupIds)
 	return err
 }
 

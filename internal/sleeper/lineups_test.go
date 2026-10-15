@@ -16,7 +16,12 @@ import (
 func lineupFixtureData(t *testing.T) fantasy.LeagueData {
 	t.Helper()
 	raw := Data{Period: 2, ObservedAt: time.Now().UTC(), State: State{SeasonType: "regular"}}
-	for name, target := range map[string]any{"league.json": &raw.League, "rosters.json": &raw.Rosters, "lineup_weeks.json": &raw.Weeks, "lineup_projections.json": &raw.Projections} {
+	for name, target := range map[string]any{
+		"league.json":             &raw.League,
+		"rosters.json":            &raw.Rosters,
+		"lineup_weeks.json":       &raw.Weeks,
+		"lineup_projections.json": &raw.Projections,
+	} {
 		body, err := os.ReadFile("testdata/" + name)
 		if err != nil {
 			t.Fatal(err)

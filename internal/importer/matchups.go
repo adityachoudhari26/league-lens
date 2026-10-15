@@ -2,10 +2,12 @@ package importer
 
 import (
 	"context"
+	"strconv"
+
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
-	"strconv"
 )
 
 // matchupKey identifies a matchup within a league season; external matchup IDs
@@ -30,7 +32,11 @@ func (w *leagueWriter) writeMatchups(ctx context.Context) error {
 		if ids == nil {
 			ids = []string{}
 		}
-		if err := w.queries.DeleteStaleMatchups(ctx, store.DeleteStaleMatchupsParams{LeagueSeasonID: w.target.league.ID, Period: int32(period), Column3: ids}); err != nil {
+		if err := w.queries.DeleteStaleMatchups(ctx, store.DeleteStaleMatchupsParams{
+			LeagueSeasonID:     w.target.league.ID,
+			Period:             int32(period),
+			ExternalMatchupIds: ids,
+		}); err != nil {
 			return err
 		}
 	}
@@ -41,12 +47,22 @@ func (w *leagueWriter) writeMatchups(ctx context.Context) error {
 	}
 	return nil
 }
+
 func (w *leagueWriter) writeMatchup(ctx context.Context, matchup fantasy.Matchup) error {
 	periods, err := optionalJSON(matchup.ScoringPeriods)
 	if err != nil {
 		return err
 	}
-	params := store.UpsertMatchupParams{LeagueSeasonID: w.target.league.ID, ExternalMatchupID: matchup.ExternalID, Period: int32(matchup.Period), TeamAID: w.teams[matchup.TeamA.TeamID].ID, Status: string(matchup.Status), FetchedAt: timestamp(w.data.FetchedAt), ScoringPeriodsJson: periods, IsBye: matchup.IsBye}
+	params := store.UpsertMatchupParams{
+		LeagueSeasonID:     w.target.league.ID,
+		ExternalMatchupID:  matchup.ExternalID,
+		Period:             int32(matchup.Period),
+		TeamAID:            w.teams[matchup.TeamA.TeamID].ID,
+		Status:             string(matchup.Status),
+		FetchedAt:          timestamp(w.data.FetchedAt),
+		ScoringPeriodsJson: periods,
+		IsBye:              matchup.IsBye,
+	}
 	params.ScoreA, err = score(matchup.TeamA.Score)
 	if err != nil {
 		return err
@@ -112,6 +128,7 @@ func (w *leagueWriter) insertLineupEntry(ctx context.Context, matchupID, teamID 
 		ProjectedPoints: projected,
 	})
 }
+
 func score(points *float64) (pgtype.Numeric, error) {
 	var numeric pgtype.Numeric
 	if points == nil {

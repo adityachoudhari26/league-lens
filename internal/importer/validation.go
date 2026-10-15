@@ -2,9 +2,10 @@ package importer
 
 import (
 	"fmt"
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"math"
 	"strings"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
 func validateData(data fantasy.LeagueData, described fantasy.League, selection fantasy.ConnectionSelection) error {
@@ -106,6 +107,7 @@ func validateLineupEntries(entries []fantasy.LineupEntry, players map[string]boo
 	}
 	return nil
 }
+
 func validatePlayers(players []fantasy.Player, provider fantasy.ProviderID) (map[string]bool, error) {
 	ids := map[string]bool{}
 	for _, player := range players {
@@ -134,6 +136,7 @@ func validatePlayers(players []fantasy.Player, provider fantasy.ProviderID) (map
 	}
 	return ids, nil
 }
+
 func validateRoster(roster fantasy.RosterSnapshot, teams, players map[string]bool) error {
 	if !teams[roster.TeamID] || roster.ScoringPeriod < 1 || roster.ScoringPeriod > math.MaxInt32 || roster.ObservedAt.IsZero() {
 		return fmt.Errorf("invalid roster identity or period")
@@ -157,6 +160,7 @@ func validateRoster(roster fantasy.RosterSnapshot, teams, players map[string]boo
 	}
 	return validateRecord(roster.Record)
 }
+
 func validateMatchup(matchup fantasy.Matchup, teams map[string]bool) error {
 	if matchup.ExternalID == "" || matchup.Period < 1 || matchup.Period > math.MaxInt32 || !teams[matchup.TeamA.TeamID] {
 		return fmt.Errorf("invalid matchup")
@@ -183,12 +187,14 @@ func validateMatchup(matchup fantasy.Matchup, teams map[string]bool) error {
 	}
 	return nil
 }
+
 func validateRecord(record *fantasy.TeamRecord) error {
 	if record != nil && (record.Wins < 0 || record.Losses < 0 || record.Ties < 0 || !finiteScore(record.PointsFor) || !finiteScore(record.PointsAgainst)) {
 		return fmt.Errorf("invalid team record")
 	}
 	return nil
 }
+
 func finiteScore(score *float64) bool {
 	return score == nil || (!math.IsNaN(*score) && !math.IsInf(*score, 0))
 }

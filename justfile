@@ -59,12 +59,16 @@ build:
     go build -o bin/migrate ./cmd/migrate
     go build -o bin/import ./cmd/import
 
-# Check Go, shell syntax, formatting, and whitespace without changing files.
-check:
+# Check Go, shell syntax, formatting, lint, and whitespace without changing files.
+check: lint
     go vet ./...
     sh -n scripts/test-db.sh
     git diff --check
     @test -z "$(gofmt -l cmd internal db)" || (echo 'Run just fmt'; exit 1)
+
+# Run golangci-lint (linters and import/format checks) with the pinned version.
+lint:
+    go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run
 
 # Format Go source files.
 fmt:

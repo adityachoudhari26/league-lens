@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"slices"
 
+	"github.com/jackc/pgx/v5/pgtype"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func timestamp(value pgtype.Timestamptz) *timestamppb.Timestamp {
@@ -19,7 +20,14 @@ func timestamp(value pgtype.Timestamptz) *timestamppb.Timestamp {
 }
 
 func leagueMessage(row store.DashboardLeagueRow) *v1.League {
-	result := &v1.League{Id: row.ID.String(), Provider: row.Provider, ExternalId: row.ExternalLeagueID, Season: row.Season, Name: row.Name, LastSuccessfulSyncAt: timestamp(row.LastSuccessfulSyncAt)}
+	result := &v1.League{
+		Id:                   row.ID.String(),
+		Provider:             row.Provider,
+		ExternalId:           row.ExternalLeagueID,
+		Season:               row.Season,
+		Name:                 row.Name,
+		LastSuccessfulSyncAt: timestamp(row.LastSuccessfulSyncAt),
+	}
 	for _, id := range row.SelectedTeamIds {
 		result.SelectedTeamIds = append(result.SelectedTeamIds, id.String())
 	}
@@ -47,14 +55,34 @@ func teamRecordMessage(raw []byte) (*v1.TeamRecord, error) {
 	if err := json.Unmarshal(raw, &record); err != nil {
 		return nil, err
 	}
-	return &v1.TeamRecord{Wins: int32(record.Wins), Losses: int32(record.Losses), Ties: int32(record.Ties), PointsFor: record.PointsFor, PointsAgainst: record.PointsAgainst}, nil
+	return &v1.TeamRecord{
+		Wins:          int32(record.Wins),
+		Losses:        int32(record.Losses),
+		Ties:          int32(record.Ties),
+		PointsFor:     record.PointsFor,
+		PointsAgainst: record.PointsAgainst,
+	}, nil
 }
 
 // rosterMessage preserves snapshot provenance, coverage, and optional position data.
 func rosterMessage(row store.TeamSnapshot, entries []store.ListSnapshotRosterForUserRow) (*v1.RosterSnapshot, error) {
-	result := &v1.RosterSnapshot{Id: row.ID.String(), TeamId: row.TeamID.String(), ScoringPeriod: row.Period, Origin: row.Origin, Coverage: row.Coverage, ObservedAt: timestamp(row.ObservedAt), EffectiveAt: timestamp(row.EffectiveAt)}
+	result := &v1.RosterSnapshot{
+		Id:            row.ID.String(),
+		TeamId:        row.TeamID.String(),
+		ScoringPeriod: row.Period,
+		Origin:        row.Origin,
+		Coverage:      row.Coverage,
+		ObservedAt:    timestamp(row.ObservedAt),
+		EffectiveAt:   timestamp(row.EffectiveAt),
+	}
 	for _, entry := range entries {
-		item := &v1.RosterEntry{PlayerId: entry.PlayerID.String(), PlayerName: entry.DisplayName, PlayerKind: entry.EntityType, Slot: entry.SlotLabel.String, ProviderSlotId: entry.ProviderSlotID.String}
+		item := &v1.RosterEntry{
+			PlayerId:       entry.PlayerID.String(),
+			PlayerName:     entry.DisplayName,
+			PlayerKind:     entry.EntityType,
+			Slot:           entry.SlotLabel.String,
+			ProviderSlotId: entry.ProviderSlotID.String,
+		}
 		if len(entry.EligiblePositionsJson) > 0 {
 			item.EligiblePositions = &v1.Positions{}
 			if err := json.Unmarshal(entry.EligiblePositionsJson, &item.EligiblePositions.Values); err != nil {
@@ -72,7 +100,15 @@ func matchupMessage(row store.Matchup) (*v1.Matchup, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := &v1.Matchup{Id: row.ID.String(), ExternalId: row.ExternalMatchupID, MatchupPeriod: row.Period, TeamA: a, IsBye: row.IsBye, Status: row.Status, FetchedAt: timestamp(row.FetchedAt)}
+	result := &v1.Matchup{
+		Id:            row.ID.String(),
+		ExternalId:    row.ExternalMatchupID,
+		MatchupPeriod: row.Period,
+		TeamA:         a,
+		IsBye:         row.IsBye,
+		Status:        row.Status,
+		FetchedAt:     timestamp(row.FetchedAt),
+	}
 	if row.TeamBID.Valid {
 		result.TeamB, err = matchupSide(row.TeamBID, row.ScoreB)
 		if err != nil {

@@ -2,10 +2,11 @@ package sleeper
 
 import (
 	"encoding/json"
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
 var _ fantasy.Provider = (*Client)(nil)

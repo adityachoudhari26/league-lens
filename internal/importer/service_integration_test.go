@@ -7,17 +7,19 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	migrations "github.com/adityachoudhari26/league-lens/db"
-	"github.com/adityachoudhari26/league-lens/internal/database"
-	"github.com/adityachoudhari26/league-lens/internal/fantasy"
-	"github.com/adityachoudhari26/league-lens/internal/playerids"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/stdlib"
 	"maps"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
+
+	migrations "github.com/adityachoudhari26/league-lens/db"
+	"github.com/adityachoudhari26/league-lens/internal/database"
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/playerids"
 )
 
 func fixture(t *testing.T) fantasy.LeagueData {
@@ -52,6 +54,7 @@ type fixtureSource struct {
 func (f *fixtureSource) DescribeLeague(context.Context, string) (fantasy.League, error) {
 	return f.data.League, nil
 }
+
 func (f *fixtureSource) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData, error) {
 	return f.data, f.err
 }

@@ -7,19 +7,27 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const playerNewsCoverage = "Latest RotoWire news via ESPN from the past 7 days, saved at each sync. Players ESPN can't identify have no news."
 
 var (
-	injuryHeadline        = regexp.MustCompile(`(?i)injur|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|quad|bruise|rib|ribs|wrist|finger|hand|elbow|neck|chest|thumb|achilles|oblique|pectoral|abdomen|illness|ruled out|questionable|doubtful|practice|sidelined|ir)\b`)
+	injuryHeadline = regexp.MustCompile(
+		`(?i)injur|\b(?:ankle|knee|hamstring|concussion|groin|shoulder|calf|foot|toe|hip|quad|` +
+			`bruise|rib|ribs|wrist|finger|hand|elbow|neck|chest|thumb|achilles|oblique|pectoral|` +
+			`abdomen|illness|ruled out|questionable|doubtful|practice|sidelined|ir)\b`,
+	)
 	injuryParenthetical   = regexp.MustCompile(`\b[A-Z][A-Za-z'.-]+ \([a-z]+(?:[ -][a-z]+){0,2}\)`)
 	practiceSquadHeadline = regexp.MustCompile(`(?i)\bpractice\s+squad\b`)
-	transactionHeadline   = regexp.MustCompile(`(?i)\b(?:signed|re-signed|released|waived|traded|claimed|activated|promoted|elevated|cut|acquired|suspended|reinstated)\b`)
+	transactionHeadline   = regexp.MustCompile(
+		`(?i)\b(?:signed|re-signed|released|waived|traded|claimed|activated|promoted|elevated|` +
+			`cut|acquired|suspended|reinstated)\b`,
+	)
 )
 
 type playerSummary struct {

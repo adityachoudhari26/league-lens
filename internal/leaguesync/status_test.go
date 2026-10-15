@@ -56,8 +56,20 @@ func TestStatusOfDerivesState(t *testing.T) {
 	}{
 		{name: "never synced", target: Target{ID: "x"}, wantState: StateNeverSynced},
 		{name: "succeeded", target: Target{ID: "x", LastSuccessfulSyncAt: succeeded}, wantState: StateSucceeded},
-		{name: "syncing wins over failure", target: Target{ID: "x"}, running: true, failure: &failure{code: "provider_fetch_failed", at: testNow}, wantState: StateSyncing},
-		{name: "failed", target: Target{ID: "x", LastSuccessfulSyncAt: succeeded}, failure: &failure{code: "espn_credentials_missing", at: testNow}, wantState: StateFailed, wantCode: "espn_credentials_missing"},
+		{
+			name:      "syncing wins over failure",
+			target:    Target{ID: "x"},
+			running:   true,
+			failure:   &failure{code: "provider_fetch_failed", at: testNow},
+			wantState: StateSyncing,
+		},
+		{
+			name:      "failed",
+			target:    Target{ID: "x", LastSuccessfulSyncAt: succeeded},
+			failure:   &failure{code: "espn_credentials_missing", at: testNow},
+			wantState: StateFailed,
+			wantCode:  "espn_credentials_missing",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			runner := testRunner()

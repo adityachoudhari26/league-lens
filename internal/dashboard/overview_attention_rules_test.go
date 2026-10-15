@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func TestAlertFingerprintTracksCurrentSituation(t *testing.T) {
@@ -66,7 +67,13 @@ func TestStarterAlerts(t *testing.T) {
 	team := store.OverviewTeamsRow{Period: 6, Provider: "espn"}
 	text := func(value string) pgtype.Text { return pgtype.Text{String: value, Valid: value != ""} }
 	entry := func(id byte, slot, status, proTeam string) store.ListSnapshotRosterForUserRow {
-		return store.ListSnapshotRosterForUserRow{PlayerID: pgtype.UUID{Bytes: [16]byte{id}, Valid: true}, DisplayName: "Player " + slot, SlotLabel: text(slot), InjuryStatus: text(status), ProTeam: text(proTeam)}
+		return store.ListSnapshotRosterForUserRow{
+			PlayerID:     pgtype.UUID{Bytes: [16]byte{id}, Valid: true},
+			DisplayName:  "Player " + slot,
+			SlotLabel:    text(slot),
+			InjuryStatus: text(status),
+			ProTeam:      text(proTeam),
+		}
 	}
 	game := func(team string, kickoff time.Time) store.ListNFLGamesForWeekRow {
 		return store.ListNFLGamesForWeekRow{Team: team, KickoffAt: pgtype.Timestamptz{Time: kickoff, Valid: true}}

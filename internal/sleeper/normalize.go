@@ -20,8 +20,14 @@ func normalizeLeague(raw League) (fantasy.League, error) {
 	if err != nil {
 		return fantasy.League{}, err
 	}
-	return fantasy.League{Ref: fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: raw.ID, Season: year}, Name: raw.Name, TeamCount: raw.TotalRosters, Settings: settings}, nil
+	return fantasy.League{
+		Ref:       fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: raw.ID, Season: year},
+		Name:      raw.Name,
+		TeamCount: raw.TotalRosters,
+		Settings:  settings,
+	}, nil
 }
+
 func normalizeData(raw Data) (fantasy.LeagueData, error) {
 	league, err := normalizeLeague(raw.League)
 	if err != nil {
@@ -97,6 +103,7 @@ func normalizeData(raw Data) (fantasy.LeagueData, error) {
 	data.Players = encounteredPlayers(data.Rosters, data.Lineups)
 	return data, nil
 }
+
 func normalizeTeam(roster Roster, name string) (fantasy.Team, error) {
 	if name == "" {
 		name = fmt.Sprintf("Team %d", roster.ID)
@@ -128,9 +135,16 @@ func normalizeTeam(roster Roster, name string) (fantasy.Team, error) {
 	if err = json.Unmarshal(values, &fields); err != nil {
 		return team, err
 	}
-	team.Record = &fantasy.TeamRecord{Wins: fields.Wins, Losses: fields.Losses, Ties: fields.Ties, PointsFor: combinedPoints(fields.For, fields.ForDecimal), PointsAgainst: combinedPoints(fields.Against, fields.AgainstDecimal)}
+	team.Record = &fantasy.TeamRecord{
+		Wins:          fields.Wins,
+		Losses:        fields.Losses,
+		Ties:          fields.Ties,
+		PointsFor:     combinedPoints(fields.For, fields.ForDecimal),
+		PointsAgainst: combinedPoints(fields.Against, fields.AgainstDecimal),
+	}
 	return team, nil
 }
+
 func combinedPoints(whole, decimal *float64) *float64 {
 	if whole == nil {
 		return nil
@@ -141,6 +155,7 @@ func combinedPoints(whole, decimal *float64) *float64 {
 	}
 	return &points
 }
+
 func normalizeRoster(roster Roster, positions []string) (fantasy.RosterSnapshot, error) {
 	entries, coverage, err := rosterEntries(roster.Players, roster.Starters, roster.Reserve, roster.Taxi, positions)
 	snapshot := fantasy.RosterSnapshot{TeamID: strconv.Itoa(roster.ID), Coverage: fantasy.RosterCoverage(coverage)}

@@ -81,7 +81,13 @@ func parseNFLSchedule(body []byte, season int) ([]fantasy.NFLGame, error) {
 			if opponent == "" || record.Date <= 0 {
 				continue
 			}
-			games = append(games, fantasy.NFLGame{Season: season, Week: fantasy.ScoringPeriod(week), Team: abbreviation, Opponent: opponent, KickoffAt: time.UnixMilli(record.Date).UTC()})
+			games = append(games, fantasy.NFLGame{
+				Season:    season,
+				Week:      fantasy.ScoringPeriod(week),
+				Team:      abbreviation,
+				Opponent:  opponent,
+				KickoffAt: time.UnixMilli(record.Date).UTC(),
+			})
 		}
 	}
 	if len(games) == 0 {

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect/v2"
+
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )

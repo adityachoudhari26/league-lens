@@ -31,7 +31,17 @@ func TestAnnotateAvailabilityLooksUpSelectedTeamPlayers(t *testing.T) {
 	client := &Client{HTTP: server.Client(), BaseURL: server.URL, AvailabilityTeamIDs: []string{"7"}}
 
 	data := fantasy.LeagueData{Rosters: []fantasy.RosterSnapshot{
-		{TeamID: "7", Origin: fantasy.SnapshotObserved, Entries: []fantasy.RosterEntry{{PlayerID: "1"}, {PlayerID: "2"}, {PlayerID: "3"}, {PlayerID: "missing"}, {PlayerID: "1"}}},
+		{
+			TeamID: "7",
+			Origin: fantasy.SnapshotObserved,
+			Entries: []fantasy.RosterEntry{
+				{PlayerID: "1"},
+				{PlayerID: "2"},
+				{PlayerID: "3"},
+				{PlayerID: "missing"},
+				{PlayerID: "1"},
+			},
+		},
 		{TeamID: "7", Origin: fantasy.SnapshotHistory, Entries: []fantasy.RosterEntry{{PlayerID: "1"}}},
 		{TeamID: "8", Origin: fantasy.SnapshotObserved, Entries: []fantasy.RosterEntry{{PlayerID: "2"}}},
 	}}

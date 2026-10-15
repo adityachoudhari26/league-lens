@@ -23,8 +23,9 @@ SELECT EXISTS (
 DELETE FROM user_teams WHERE connection_id=$1 AND league_season_id=$2;
 
 -- name: DeleteStaleMatchups :exec
-DELETE FROM matchups WHERE league_season_id=$1 AND period=$2
-AND external_matchup_id <> ALL($3::text[]);
+DELETE FROM matchups
+WHERE league_season_id = @league_season_id AND period = @period
+AND external_matchup_id <> ALL(@external_matchup_ids::text[]);
 
 -- name: UpdateMappedPlayerName :exec
 UPDATE players SET display_name=$2,updated_at=now() WHERE id=$1 AND display_name<>$2;
