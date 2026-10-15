@@ -113,6 +113,70 @@ func (q *Queries) MatchupDetailOwnerTeam(ctx context.Context, arg MatchupDetailO
 	return i, err
 }
 
+const matchupDetailPointChanges = `-- name: MatchupDetailPointChanges :many
+SELECT c.observed_at,c.team_id,c.player_id,p.display_name,c.points_before,c.points_after,
+ c.touchdowns_before,c.touchdowns_after,c.field_goals_before,c.field_goals_after
+FROM lineup_point_changes c
+JOIN matchups m ON m.id=c.matchup_id
+JOIN players p ON p.id=c.player_id
+WHERE c.matchup_id = $1
+AND EXISTS (
+ SELECT 1 FROM connection_leagues cl JOIN connections c2 ON c2.id=cl.connection_id
+ WHERE cl.league_season_id=m.league_season_id AND cl.user_id = $2
+  AND cl.detached_at IS NULL AND c2.status<>'disabled'
+)
+ORDER BY c.observed_at,c.team_id,c.player_id
+`
+
+type MatchupDetailPointChangesParams struct {
+	MatchupID pgtype.UUID
+	UserID    pgtype.UUID
+}
+
+type MatchupDetailPointChangesRow struct {
+	ObservedAt       pgtype.Timestamptz
+	TeamID           pgtype.UUID
+	PlayerID         pgtype.UUID
+	DisplayName      string
+	PointsBefore     pgtype.Numeric
+	PointsAfter      pgtype.Numeric
+	TouchdownsBefore pgtype.Int4
+	TouchdownsAfter  pgtype.Int4
+	FieldGoalsBefore pgtype.Int4
+	FieldGoalsAfter  pgtype.Int4
+}
+
+func (q *Queries) MatchupDetailPointChanges(ctx context.Context, arg MatchupDetailPointChangesParams) ([]MatchupDetailPointChangesRow, error) {
+	rows, err := q.db.Query(ctx, matchupDetailPointChanges, arg.MatchupID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MatchupDetailPointChangesRow{}
+	for rows.Next() {
+		var i MatchupDetailPointChangesRow
+		if err := rows.Scan(
+			&i.ObservedAt,
+			&i.TeamID,
+			&i.PlayerID,
+			&i.DisplayName,
+			&i.PointsBefore,
+			&i.PointsAfter,
+			&i.TouchdownsBefore,
+			&i.TouchdownsAfter,
+			&i.FieldGoalsBefore,
+			&i.FieldGoalsAfter,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const matchupDetailRound = `-- name: MatchupDetailRound :one
 SELECT m.id, m.league_season_id, m.external_matchup_id, m.period, m.team_a_id, m.team_b_id, m.score_a, m.score_b, m.status, m.fetched_at, m.scoring_periods_json, m.is_bye FROM matchups m
 WHERE m.league_season_id = $1
@@ -163,4 +227,58 @@ func (q *Queries) MatchupDetailRound(ctx context.Context, arg MatchupDetailRound
 		&i.IsBye,
 	)
 	return i, err
+}
+
+const matchupDetailWinChanceSamples = `-- name: MatchupDetailWinChanceSamples :many
+SELECT s.observed_at,s.team_a_win_chance,s.score_a,s.score_b,s.projected_a,s.projected_b
+FROM win_chance_samples s
+JOIN matchups m ON m.id=s.matchup_id
+WHERE s.matchup_id = $1
+AND EXISTS (
+ SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
+ WHERE cl.league_season_id=m.league_season_id AND cl.user_id = $2
+  AND cl.detached_at IS NULL AND c.status<>'disabled'
+)
+ORDER BY s.observed_at
+`
+
+type MatchupDetailWinChanceSamplesParams struct {
+	MatchupID pgtype.UUID
+	UserID    pgtype.UUID
+}
+
+type MatchupDetailWinChanceSamplesRow struct {
+	ObservedAt     pgtype.Timestamptz
+	TeamAWinChance pgtype.Numeric
+	ScoreA         pgtype.Numeric
+	ScoreB         pgtype.Numeric
+	ProjectedA     pgtype.Numeric
+	ProjectedB     pgtype.Numeric
+}
+
+func (q *Queries) MatchupDetailWinChanceSamples(ctx context.Context, arg MatchupDetailWinChanceSamplesParams) ([]MatchupDetailWinChanceSamplesRow, error) {
+	rows, err := q.db.Query(ctx, matchupDetailWinChanceSamples, arg.MatchupID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MatchupDetailWinChanceSamplesRow{}
+	for rows.Next() {
+		var i MatchupDetailWinChanceSamplesRow
+		if err := rows.Scan(
+			&i.ObservedAt,
+			&i.TeamAWinChance,
+			&i.ScoreA,
+			&i.ScoreB,
+			&i.ProjectedA,
+			&i.ProjectedB,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

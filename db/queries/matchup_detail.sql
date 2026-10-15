@@ -50,3 +50,29 @@ AND EXISTS (
  WHERE cl.league_season_id=m.league_season_id AND cl.user_id = @user_id
   AND cl.detached_at IS NULL AND c.status<>'disabled'
 );
+
+-- name: MatchupDetailWinChanceSamples :many
+SELECT s.observed_at,s.team_a_win_chance,s.score_a,s.score_b,s.projected_a,s.projected_b
+FROM win_chance_samples s
+JOIN matchups m ON m.id=s.matchup_id
+WHERE s.matchup_id = @matchup_id
+AND EXISTS (
+ SELECT 1 FROM connection_leagues cl JOIN connections c ON c.id=cl.connection_id
+ WHERE cl.league_season_id=m.league_season_id AND cl.user_id = @user_id
+  AND cl.detached_at IS NULL AND c.status<>'disabled'
+)
+ORDER BY s.observed_at;
+
+-- name: MatchupDetailPointChanges :many
+SELECT c.observed_at,c.team_id,c.player_id,p.display_name,c.points_before,c.points_after,
+ c.touchdowns_before,c.touchdowns_after,c.field_goals_before,c.field_goals_after
+FROM lineup_point_changes c
+JOIN matchups m ON m.id=c.matchup_id
+JOIN players p ON p.id=c.player_id
+WHERE c.matchup_id = @matchup_id
+AND EXISTS (
+ SELECT 1 FROM connection_leagues cl JOIN connections c2 ON c2.id=cl.connection_id
+ WHERE cl.league_season_id=m.league_season_id AND cl.user_id = @user_id
+  AND cl.detached_at IS NULL AND c2.status<>'disabled'
+)
+ORDER BY c.observed_at,c.team_id,c.player_id;

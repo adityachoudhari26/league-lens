@@ -5,6 +5,7 @@ package dashboard_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -475,6 +476,17 @@ func TestMatchupDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertDefaultMatchupDetail(t, detail.Matchup)
+	if detail.Matchup.WinChance != nil {
+		t.Fatalf("win chance without saved samples or moments = %v, want nil", detail.Matchup.WinChance)
+	}
+
+	firstSampleAt := now.Truncate(time.Microsecond).Add(-2 * time.Minute)
+	insertMatchupWinChanceFixture(t, db, detail.Matchup, firstSampleAt)
+	detail, err = client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertMatchupWinChance(t, detail.Matchup, firstSampleAt)
 
 	period := int32(1)
 	firstPeriod, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
@@ -482,6 +494,9 @@ func TestMatchupDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertMatchupWithoutSchedule(t, firstPeriod.Matchup)
+	if firstPeriod.Matchup.WinChance != nil {
+		t.Fatalf("period one win chance = %v, want nil", firstPeriod.Matchup.WinChance)
+	}
 
 	period = 3
 	bye, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
@@ -489,6 +504,9 @@ func TestMatchupDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertByeMatchupDetail(t, bye.Matchup)
+	if bye.Matchup.WinChance != nil {
+		t.Fatalf("bye win chance = %v, want nil", bye.Matchup.WinChance)
+	}
 
 	period = 5
 	missing, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID, MatchupPeriod: &period})
@@ -497,6 +515,123 @@ func TestMatchupDetail(t *testing.T) {
 	}
 
 	assertMatchupDetailAccessErrors(t, db, client, leagueSeasonID)
+}
+
+func insertMatchupWinChanceFixture(t *testing.T, db *database.DB, detail *v1.MatchupDetail, firstAt time.Time) {
+	t.Helper()
+	ctx := context.Background()
+	matchupID := matchupDetailUUID(t, detail.Id)
+	ownerTeamID := matchupDetailUUID(t, detail.Team.TeamId)
+	var rbID, qbID pgtype.UUID
+	for _, player := range detail.Team.Starters {
+		switch player.PlayerName {
+		case "Running Back":
+			rbID = matchupDetailUUID(t, player.PlayerId)
+		case "Quarterback":
+			qbID = matchupDetailUUID(t, player.PlayerId)
+		}
+	}
+	if !rbID.Valid || !qbID.Valid {
+		t.Fatalf("owner starter IDs missing: rb=%v qb=%v", rbID, qbID)
+	}
+
+	secondAt := firstAt.Add(time.Minute)
+	for _, sample := range []store.InsertWinChanceSampleParams{
+		{
+			MatchupID: matchupID, ObservedAt: pgtype.Timestamptz{Time: firstAt, Valid: true},
+			TeamAWinChance: matchupDetailNumeric(t, "0.6000"),
+			ScoreA:         matchupDetailNumeric(t, "112.5000"),
+			ScoreB:         matchupDetailNumeric(t, "98.5000"),
+			ProjectedA:     matchupDetailNumeric(t, "130.2500"),
+			ProjectedB:     matchupDetailNumeric(t, "118.7500"),
+		},
+		{
+			MatchupID: matchupID, ObservedAt: pgtype.Timestamptz{Time: secondAt, Valid: true},
+			TeamAWinChance: matchupDetailNumeric(t, "0.3000"),
+			ScoreA:         matchupDetailNumeric(t, "115.5000"),
+			ScoreB:         matchupDetailNumeric(t, "99.5000"),
+			ProjectedA:     matchupDetailNumeric(t, "132.2500"),
+			ProjectedB:     matchupDetailNumeric(t, "120.7500"),
+		},
+	} {
+		if err := db.Queries().InsertWinChanceSample(ctx, sample); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	zero := pgtype.Int4{Int32: 0, Valid: true}
+	one := pgtype.Int4{Int32: 1, Valid: true}
+	for _, change := range []store.InsertLineupPointChangeParams{
+		{
+			MatchupID: matchupID, TeamID: ownerTeamID, PlayerID: rbID,
+			ObservedAt:   pgtype.Timestamptz{Time: secondAt, Valid: true},
+			PointsBefore: matchupDetailNumeric(t, "8.5000"), PointsAfter: matchupDetailNumeric(t, "15.3000"),
+			TouchdownsBefore: zero, TouchdownsAfter: one, FieldGoalsBefore: zero, FieldGoalsAfter: zero,
+		},
+		{
+			MatchupID: matchupID, TeamID: ownerTeamID, PlayerID: qbID,
+			ObservedAt:   pgtype.Timestamptz{Time: secondAt, Valid: true},
+			PointsBefore: matchupDetailNumeric(t, "0.0000"), PointsAfter: matchupDetailNumeric(t, "0.4000"),
+			TouchdownsBefore: zero, TouchdownsAfter: zero, FieldGoalsBefore: zero, FieldGoalsAfter: zero,
+		},
+	} {
+		if err := db.Queries().InsertLineupPointChange(ctx, change); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func assertMatchupWinChance(t *testing.T, detail *v1.MatchupDetail, firstAt time.Time) {
+	t.Helper()
+	if detail.WinChance == nil || len(detail.WinChance.Samples) != 2 || len(detail.WinChance.Moments) != 1 {
+		t.Fatalf("win chance detail = %v, want two samples and one classified moment", detail.WinChance)
+	}
+	assertWinChanceSample(t, detail.WinChance.Samples[0], firstAt, 0.4, 98.5, 112.5, 118.75, 130.25)
+	assertWinChanceSample(t, detail.WinChance.Samples[1], firstAt.Add(time.Minute), 0.7, 99.5, 115.5, 120.75, 132.25)
+
+	moment := detail.WinChance.Moments[0]
+	if moment.Kind != v1.KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN ||
+		math.Abs(moment.Points-6.8) > 1e-9 ||
+		moment.TeamId != detail.Team.TeamId ||
+		moment.PlayerName != "Running Back" {
+		t.Fatalf("key moment = %v, want owner TD +6.8 for Running Back", moment)
+	}
+}
+
+func assertWinChanceSample(
+	t *testing.T,
+	sample *v1.WinChanceSample,
+	observedAt time.Time,
+	winChance, teamScore, opponentScore, teamProjected, opponentProjected float64,
+) {
+	t.Helper()
+	if sample == nil || sample.ObservedAt == nil || !sample.ObservedAt.AsTime().Equal(observedAt) ||
+		math.Abs(sample.TeamWinChance-winChance) > 1e-9 ||
+		math.Abs(sample.TeamScore-teamScore) > 1e-9 ||
+		math.Abs(sample.OpponentScore-opponentScore) > 1e-9 ||
+		math.Abs(sample.TeamProjected-teamProjected) > 1e-9 ||
+		math.Abs(sample.OpponentProjected-opponentProjected) > 1e-9 {
+		t.Fatalf("win chance sample = %v, want chance %.4f scores %.4f/%.4f projected %.4f/%.4f at %s",
+			sample, winChance, teamScore, opponentScore, teamProjected, opponentProjected, observedAt)
+	}
+}
+
+func matchupDetailUUID(t *testing.T, value string) pgtype.UUID {
+	t.Helper()
+	var id pgtype.UUID
+	if err := id.Scan(value); err != nil {
+		t.Fatal(err)
+	}
+	return id
+}
+
+func matchupDetailNumeric(t *testing.T, value string) pgtype.Numeric {
+	t.Helper()
+	var result pgtype.Numeric
+	if err := result.Scan(value); err != nil {
+		t.Fatal(err)
+	}
+	return result
 }
 
 func addMatchupDetailSchedule(t *testing.T, db *database.DB, now time.Time) {

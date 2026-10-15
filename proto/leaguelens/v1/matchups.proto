@@ -53,6 +53,35 @@ message MatchupDetail {
   MatchupLineup team = 5;
   MatchupLineup opponent = 6; // Absent on a bye.
   google.protobuf.Timestamp fetched_at = 7;
+  MatchupWinChance win_chance = 8; // Absent on a bye or when no live samples or moments are saved.
+}
+// MatchupWinChance is oriented around the owner like MatchupDetail.
+message MatchupWinChance {
+  repeated WinChanceSample samples = 1; // Oldest first; the last is current.
+  repeated KeyMoment moments = 2; // Oldest first.
+}
+message WinChanceSample {
+  google.protobuf.Timestamp observed_at = 1;
+  double team_win_chance = 2; // 0..1 for the owner's team.
+  double team_score = 3;
+  double opponent_score = 4;
+  double team_projected = 5; // Live projected total.
+  double opponent_projected = 6;
+}
+enum KeyMomentKind {
+  KEY_MOMENT_KIND_UNSPECIFIED = 0;
+  KEY_MOMENT_KIND_TOUCHDOWN = 1;
+  KEY_MOMENT_KIND_FIELD_GOAL = 2;
+  KEY_MOMENT_KIND_PLAY = 3;
+}
+// KeyMoment is a starter's league-scored point change classified by keymoments.Classify.
+message KeyMoment {
+  google.protobuf.Timestamp observed_at = 1;
+  string team_id = 2; // Matches MatchupLineup.team_id.
+  string player_id = 3;
+  string player_name = 4;
+  KeyMomentKind kind = 5;
+  double points = 6; // After minus before; negative is a drop.
 }
 enum MatchupStatus {
   MATCHUP_STATUS_UNSPECIFIED = 0;
