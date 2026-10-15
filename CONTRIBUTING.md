@@ -1,6 +1,6 @@
 # Contributing to League Lens
 
-Follow the checkpoints in [README.md](README.md). Keep each change focused and explain what changed and how it was verified.
+Follow the checkpoints in [docs/roadmap.md](docs/roadmap.md). See [docs/development.md](docs/development.md) for running from source. Keep each change focused and explain what changed and how it was verified.
 
 ## Branches and pull requests
 
