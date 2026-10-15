@@ -19,16 +19,21 @@ type Store interface {
 	InTx(context.Context, func(*store.Queries) error) error
 }
 
+type WinChanceBackfill interface {
+	RequestWinChanceBackfill(pgtype.UUID) bool
+}
+
 type Service struct {
 	db         Store
 	ownerEmail string
 	profiles   playerprofile.Source
+	backfill   WinChanceBackfill
 }
 
-// New builds the dashboard service. A nil profiles source leaves player cards
-// with stored data and any saved profile.
-func New(db Store, ownerEmail string, profiles playerprofile.Source) *Service {
-	return &Service{db: db, ownerEmail: ownerEmail, profiles: profiles}
+// New builds the dashboard service. Nil optional sources disable profile fetches
+// or finished-matchup backfills.
+func New(db Store, ownerEmail string, profiles playerprofile.Source, backfill WinChanceBackfill) *Service {
+	return &Service{db: db, ownerEmail: ownerEmail, profiles: profiles, backfill: backfill}
 }
 
 // read resolves the configured local owner and runs scoped queries within one

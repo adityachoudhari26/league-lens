@@ -16,6 +16,8 @@ type SourceFactory interface {
 	SourceFor(Target) (fantasy.Provider, error)
 	NFLSchedule(ctx context.Context, season int) ([]fantasy.NFLGame, error)
 	NFLScoreboard(ctx context.Context) (fantasy.NFLScoreboard, error)
+	NFLWeekScoreboard(ctx context.Context, season, week int) (fantasy.NFLScoreboard, error)
+	NFLGamePlays(ctx context.Context, eventID string) ([]fantasy.NFLPlay, error)
 	NewsSource() news.Source
 }
 
@@ -57,6 +59,16 @@ func (p ProviderSources) NFLSchedule(ctx context.Context, season int) ([]fantasy
 // NFLScoreboard reads the public ESPN scoreboard shared by every provider.
 func (ProviderSources) NFLScoreboard(ctx context.Context) (fantasy.NFLScoreboard, error) {
 	return espn.FetchNFLScoreboard(ctx, nil)
+}
+
+// NFLWeekScoreboard reads the public ESPN scoreboard for a regular-season week.
+func (ProviderSources) NFLWeekScoreboard(ctx context.Context, season, week int) (fantasy.NFLScoreboard, error) {
+	return espn.FetchNFLWeekScoreboard(ctx, nil, season, week)
+}
+
+// NFLGamePlays reads public ESPN play-by-play without provider credentials.
+func (ProviderSources) NFLGamePlays(ctx context.Context, eventID string) ([]fantasy.NFLPlay, error) {
+	return espn.FetchNFLGamePlays(ctx, nil, eventID)
 }
 
 // NewsSource returns ESPN's public fantasy player-news feed adapter.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -54,10 +55,27 @@ type scoreboardEvent struct {
 // FetchNFLScoreboard reads ESPN's public NFL scoreboard for the current week.
 // It needs no league cookies and sends none.
 func FetchNFLScoreboard(ctx context.Context, client *http.Client) (fantasy.NFLScoreboard, error) {
+	return fetchNFLScoreboard(ctx, client, nflScoreboardURL)
+}
+
+// FetchNFLWeekScoreboard reads ESPN's public regular-season scoreboard for a historical week.
+func FetchNFLWeekScoreboard(ctx context.Context, client *http.Client, season, week int) (fantasy.NFLScoreboard, error) {
+	if season < 1900 || season > 2200 || week < 1 || week > 30 {
+		return fantasy.NFLScoreboard{}, fmt.Errorf("valid NFL season and week required")
+	}
+	query := url.Values{
+		"dates":      {strconv.Itoa(season)},
+		"seasontype": {"2"},
+		"week":       {strconv.Itoa(week)},
+	}
+	return fetchNFLScoreboard(ctx, client, nflScoreboardURL+"?"+query.Encode())
+}
+
+func fetchNFLScoreboard(ctx context.Context, client *http.Client, endpoint string) (fantasy.NFLScoreboard, error) {
 	if client == nil {
 		client = &http.Client{Timeout: 20 * time.Second}
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, nflScoreboardURL, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return fantasy.NFLScoreboard{}, err
 	}

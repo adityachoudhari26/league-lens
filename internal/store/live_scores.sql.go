@@ -11,6 +11,38 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const backfillMatchup = `-- name: BackfillMatchup :one
+SELECT m.status,m.is_bye,m.scoring_periods_json,l.season,l.settings_json,m.score_a,m.score_b
+FROM matchups m
+JOIN league_seasons l ON l.id=m.league_season_id
+WHERE m.id = $1
+`
+
+type BackfillMatchupRow struct {
+	Status             string
+	IsBye              bool
+	ScoringPeriodsJson []byte
+	Season             int32
+	SettingsJson       []byte
+	ScoreA             pgtype.Numeric
+	ScoreB             pgtype.Numeric
+}
+
+func (q *Queries) BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (BackfillMatchupRow, error) {
+	row := q.db.QueryRow(ctx, backfillMatchup, matchupID)
+	var i BackfillMatchupRow
+	err := row.Scan(
+		&i.Status,
+		&i.IsBye,
+		&i.ScoringPeriodsJson,
+		&i.Season,
+		&i.SettingsJson,
+		&i.ScoreA,
+		&i.ScoreB,
+	)
+	return i, err
+}
+
 const insertLineupPointChange = `-- name: InsertLineupPointChange :exec
 INSERT INTO lineup_point_changes (
  matchup_id, team_id, player_id, observed_at, points_before, points_after,
@@ -52,6 +84,64 @@ func (q *Queries) InsertLineupPointChange(ctx context.Context, arg InsertLineupP
 	return err
 }
 
+const insertWinChanceGap = `-- name: InsertWinChanceGap :exec
+INSERT INTO win_chance_gaps (matchup_id, started_at, ended_at)
+VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING
+`
+
+type InsertWinChanceGapParams struct {
+	MatchupID pgtype.UUID
+	StartedAt pgtype.Timestamptz
+	EndedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) InsertWinChanceGap(ctx context.Context, arg InsertWinChanceGapParams) error {
+	_, err := q.db.Exec(ctx, insertWinChanceGap, arg.MatchupID, arg.StartedAt, arg.EndedAt)
+	return err
+}
+
+const insertWinChanceGapStarter = `-- name: InsertWinChanceGapStarter :exec
+INSERT INTO win_chance_gap_starters (
+ matchup_id, started_at, team_id, player_id,
+ points_before, points_after, touchdowns_before, touchdowns_after, field_goals_before, field_goals_after
+)
+VALUES (
+ $1, $2, $3, $4,
+ $5, $6, $7, $8, $9, $10
+)
+ON CONFLICT DO NOTHING
+`
+
+type InsertWinChanceGapStarterParams struct {
+	MatchupID        pgtype.UUID
+	StartedAt        pgtype.Timestamptz
+	TeamID           pgtype.UUID
+	PlayerID         pgtype.UUID
+	PointsBefore     pgtype.Numeric
+	PointsAfter      pgtype.Numeric
+	TouchdownsBefore pgtype.Int4
+	TouchdownsAfter  pgtype.Int4
+	FieldGoalsBefore pgtype.Int4
+	FieldGoalsAfter  pgtype.Int4
+}
+
+func (q *Queries) InsertWinChanceGapStarter(ctx context.Context, arg InsertWinChanceGapStarterParams) error {
+	_, err := q.db.Exec(ctx, insertWinChanceGapStarter,
+		arg.MatchupID,
+		arg.StartedAt,
+		arg.TeamID,
+		arg.PlayerID,
+		arg.PointsBefore,
+		arg.PointsAfter,
+		arg.TouchdownsBefore,
+		arg.TouchdownsAfter,
+		arg.FieldGoalsBefore,
+		arg.FieldGoalsAfter,
+	)
+	return err
+}
+
 const insertWinChanceSample = `-- name: InsertWinChanceSample :exec
 INSERT INTO win_chance_samples (matchup_id, observed_at, team_a_win_chance, score_a, score_b, projected_a, projected_b)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -81,6 +171,18 @@ func (q *Queries) InsertWinChanceSample(ctx context.Context, arg InsertWinChance
 	return err
 }
 
+const latestLiveLineupObservationAt = `-- name: LatestLiveLineupObservationAt :one
+SELECT max(observed_at)::timestamptz AS observed_at
+FROM live_lineup_observations WHERE matchup_id = $1
+`
+
+func (q *Queries) LatestLiveLineupObservationAt(ctx context.Context, matchupID pgtype.UUID) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, latestLiveLineupObservationAt, matchupID)
+	var observed_at pgtype.Timestamptz
+	err := row.Scan(&observed_at)
+	return observed_at, err
+}
+
 const latestWinChanceSample = `-- name: LatestWinChanceSample :one
 SELECT team_a_win_chance, score_a, score_b, projected_a, projected_b
 FROM win_chance_samples WHERE matchup_id = $1 ORDER BY observed_at DESC LIMIT 1
@@ -105,6 +207,77 @@ func (q *Queries) LatestWinChanceSample(ctx context.Context, matchupID pgtype.UU
 		&i.ProjectedB,
 	)
 	return i, err
+}
+
+const listBackfillMatchupStarters = `-- name: ListBackfillMatchupStarters :many
+SELECT ml.team_id,ml.player_id,ml.points,ml.projected_points,
+ (ml.team_id=m.team_b_id)::boolean AS team_b,
+ coalesce(x.external_id,'')::text AS athlete_id,
+ coalesce(nullif(e.pro_team,''), CASE
+  WHEN p.entity_type='team_defense' THEN sleeper.external_id
+  ELSE ''
+ END,'')::text AS pro_team
+FROM matchup_lineups ml
+JOIN matchups m ON m.id=ml.matchup_id
+JOIN players p ON p.id=ml.player_id
+LEFT JOIN LATERAL (
+ SELECT x.external_id FROM player_external_ids x
+ WHERE x.player_id=ml.player_id AND x.provider='espn' AND x.external_id ~ '^[0-9]+$'
+ ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
+) x ON true
+LEFT JOIN LATERAL (
+ SELECT x.external_id FROM player_external_ids x
+ WHERE x.player_id=ml.player_id AND x.provider='sleeper' AND x.external_id ~ '^[A-Z]{2,3}$'
+ ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
+) sleeper ON true
+LEFT JOIN LATERAL (
+ SELECT ts.id FROM team_snapshots ts
+ JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
+ WHERE ts.team_id=ml.team_id AND ts.origin='observed'
+ ORDER BY ts.period DESC,ts.observed_at DESC,ts.id DESC LIMIT 1
+) s ON true
+LEFT JOIN roster_entries e ON e.snapshot_id=s.id AND e.player_id=ml.player_id
+WHERE ml.matchup_id = $1 AND ml.starter
+ORDER BY ml.team_id,ml.player_id
+`
+
+type ListBackfillMatchupStartersRow struct {
+	TeamID          pgtype.UUID
+	PlayerID        pgtype.UUID
+	Points          pgtype.Numeric
+	ProjectedPoints pgtype.Numeric
+	TeamB           bool
+	AthleteID       string
+	ProTeam         string
+}
+
+// Starter identities and the latest observed roster's NFL team for play-by-play replay.
+func (q *Queries) ListBackfillMatchupStarters(ctx context.Context, matchupID pgtype.UUID) ([]ListBackfillMatchupStartersRow, error) {
+	rows, err := q.db.Query(ctx, listBackfillMatchupStarters, matchupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBackfillMatchupStartersRow{}
+	for rows.Next() {
+		var i ListBackfillMatchupStartersRow
+		if err := rows.Scan(
+			&i.TeamID,
+			&i.PlayerID,
+			&i.Points,
+			&i.ProjectedPoints,
+			&i.TeamB,
+			&i.AthleteID,
+			&i.ProTeam,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listLiveLineupObservations = `-- name: ListLiveLineupObservations :many
@@ -271,6 +444,215 @@ func (q *Queries) ListLiveMatchupStarters(ctx context.Context, matchupID pgtype.
 		return nil, err
 	}
 	return items, nil
+}
+
+const listUnfilledWinChanceGaps = `-- name: ListUnfilledWinChanceGaps :many
+SELECT matchup_id, started_at
+FROM win_chance_gaps
+WHERE filled_at IS NULL AND ended_at >= now() - interval '24 hours'
+ORDER BY ended_at, matchup_id
+`
+
+type ListUnfilledWinChanceGapsRow struct {
+	MatchupID pgtype.UUID
+	StartedAt pgtype.Timestamptz
+}
+
+func (q *Queries) ListUnfilledWinChanceGaps(ctx context.Context) ([]ListUnfilledWinChanceGapsRow, error) {
+	rows, err := q.db.Query(ctx, listUnfilledWinChanceGaps)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUnfilledWinChanceGapsRow{}
+	for rows.Next() {
+		var i ListUnfilledWinChanceGapsRow
+		if err := rows.Scan(&i.MatchupID, &i.StartedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWinChanceGapStarters = `-- name: ListWinChanceGapStarters :many
+SELECT gs.team_id, gs.player_id, gs.points_before, gs.points_after,
+ gs.touchdowns_before, gs.touchdowns_after, gs.field_goals_before, gs.field_goals_after,
+ ml.projected_points, (gs.team_id=m.team_b_id)::boolean AS team_b,
+ coalesce(x.external_id,'')::text AS athlete_id,
+ coalesce(nullif(e.pro_team,''), CASE
+  WHEN p.entity_type='team_defense' THEN sleeper.external_id
+  ELSE ''
+ END,'')::text AS pro_team
+FROM win_chance_gap_starters gs
+JOIN matchups m ON m.id=gs.matchup_id
+JOIN matchup_lineups ml ON ml.matchup_id=gs.matchup_id AND ml.team_id=gs.team_id AND ml.player_id=gs.player_id
+JOIN players p ON p.id=gs.player_id
+LEFT JOIN LATERAL (
+ SELECT x.external_id FROM player_external_ids x
+ WHERE x.player_id=gs.player_id AND x.provider='espn' AND x.external_id ~ '^[0-9]+$'
+ ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
+) x ON true
+LEFT JOIN LATERAL (
+ SELECT x.external_id FROM player_external_ids x
+ WHERE x.player_id=gs.player_id AND x.provider='sleeper' AND x.external_id ~ '^[A-Z]{2,3}$'
+ ORDER BY x.last_verified_at DESC NULLS LAST,x.external_id LIMIT 1
+) sleeper ON true
+LEFT JOIN LATERAL (
+ SELECT ts.id FROM team_snapshots ts
+ JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
+ WHERE ts.team_id=gs.team_id AND ts.origin='observed'
+ ORDER BY ts.period DESC,ts.observed_at DESC,ts.id DESC LIMIT 1
+) s ON true
+LEFT JOIN roster_entries e ON e.snapshot_id=s.id AND e.player_id=gs.player_id
+WHERE gs.matchup_id = $1 AND gs.started_at = $2
+ORDER BY gs.team_id,gs.player_id
+`
+
+type ListWinChanceGapStartersParams struct {
+	MatchupID pgtype.UUID
+	StartedAt pgtype.Timestamptz
+}
+
+type ListWinChanceGapStartersRow struct {
+	TeamID           pgtype.UUID
+	PlayerID         pgtype.UUID
+	PointsBefore     pgtype.Numeric
+	PointsAfter      pgtype.Numeric
+	TouchdownsBefore pgtype.Int4
+	TouchdownsAfter  pgtype.Int4
+	FieldGoalsBefore pgtype.Int4
+	FieldGoalsAfter  pgtype.Int4
+	ProjectedPoints  pgtype.Numeric
+	TeamB            bool
+	AthleteID        string
+	ProTeam          string
+}
+
+// Gap before/after values plus the starter's latest projection and ESPN/NFL identity.
+func (q *Queries) ListWinChanceGapStarters(ctx context.Context, arg ListWinChanceGapStartersParams) ([]ListWinChanceGapStartersRow, error) {
+	rows, err := q.db.Query(ctx, listWinChanceGapStarters, arg.MatchupID, arg.StartedAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListWinChanceGapStartersRow{}
+	for rows.Next() {
+		var i ListWinChanceGapStartersRow
+		if err := rows.Scan(
+			&i.TeamID,
+			&i.PlayerID,
+			&i.PointsBefore,
+			&i.PointsAfter,
+			&i.TouchdownsBefore,
+			&i.TouchdownsAfter,
+			&i.FieldGoalsBefore,
+			&i.FieldGoalsAfter,
+			&i.ProjectedPoints,
+			&i.TeamB,
+			&i.AthleteID,
+			&i.ProTeam,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const loadWinChanceGap = `-- name: LoadWinChanceGap :one
+SELECT g.started_at, g.ended_at, g.filled_at,
+ m.scoring_periods_json, l.season, l.settings_json
+FROM win_chance_gaps g
+JOIN matchups m ON m.id=g.matchup_id
+JOIN league_seasons l ON l.id=m.league_season_id
+WHERE g.matchup_id = $1 AND g.started_at = $2
+`
+
+type LoadWinChanceGapParams struct {
+	MatchupID pgtype.UUID
+	StartedAt pgtype.Timestamptz
+}
+
+type LoadWinChanceGapRow struct {
+	StartedAt          pgtype.Timestamptz
+	EndedAt            pgtype.Timestamptz
+	FilledAt           pgtype.Timestamptz
+	ScoringPeriodsJson []byte
+	Season             int32
+	SettingsJson       []byte
+}
+
+func (q *Queries) LoadWinChanceGap(ctx context.Context, arg LoadWinChanceGapParams) (LoadWinChanceGapRow, error) {
+	row := q.db.QueryRow(ctx, loadWinChanceGap, arg.MatchupID, arg.StartedAt)
+	var i LoadWinChanceGapRow
+	err := row.Scan(
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.FilledAt,
+		&i.ScoringPeriodsJson,
+		&i.Season,
+		&i.SettingsJson,
+	)
+	return i, err
+}
+
+const markWinChanceGapFilled = `-- name: MarkWinChanceGapFilled :exec
+UPDATE win_chance_gaps SET filled_at=now()
+WHERE matchup_id = $1 AND started_at = $2 AND filled_at IS NULL
+`
+
+type MarkWinChanceGapFilledParams struct {
+	MatchupID pgtype.UUID
+	StartedAt pgtype.Timestamptz
+}
+
+func (q *Queries) MarkWinChanceGapFilled(ctx context.Context, arg MarkWinChanceGapFilledParams) error {
+	_, err := q.db.Exec(ctx, markWinChanceGapFilled, arg.MatchupID, arg.StartedAt)
+	return err
+}
+
+const matchupHasWinChanceHistory = `-- name: MatchupHasWinChanceHistory :one
+SELECT EXISTS (
+ SELECT 1 FROM win_chance_samples s WHERE s.matchup_id = $1
+) OR EXISTS (
+ SELECT 1 FROM lineup_point_changes c WHERE c.matchup_id = $1
+) AS has_history
+`
+
+func (q *Queries) MatchupHasWinChanceHistory(ctx context.Context, matchupID pgtype.UUID) (pgtype.Bool, error) {
+	row := q.db.QueryRow(ctx, matchupHasWinChanceHistory, matchupID)
+	var has_history pgtype.Bool
+	err := row.Scan(&has_history)
+	return has_history, err
+}
+
+const matchupHasWinChanceHistoryAfter = `-- name: MatchupHasWinChanceHistoryAfter :one
+SELECT EXISTS (
+ SELECT 1 FROM win_chance_samples s
+ WHERE s.matchup_id = $1 AND s.observed_at > $2
+) OR EXISTS (
+ SELECT 1 FROM lineup_point_changes c
+ WHERE c.matchup_id = $1 AND c.observed_at > $2
+) AS has_history
+`
+
+type MatchupHasWinChanceHistoryAfterParams struct {
+	MatchupID pgtype.UUID
+	After     pgtype.Timestamptz
+}
+
+func (q *Queries) MatchupHasWinChanceHistoryAfter(ctx context.Context, arg MatchupHasWinChanceHistoryAfterParams) (pgtype.Bool, error) {
+	row := q.db.QueryRow(ctx, matchupHasWinChanceHistoryAfter, arg.MatchupID, arg.After)
+	var has_history pgtype.Bool
+	err := row.Scan(&has_history)
+	return has_history, err
 }
 
 const updateLiveLineupEntry = `-- name: UpdateLiveLineupEntry :one

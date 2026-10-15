@@ -1,0 +1,105 @@
+{
+  "pageCount": 1,
+  "items": [
+    {
+      "type": {"id": "5"},
+      "wallclock": "2026-10-09T00:18:03Z",
+      "period": {"number": 1},
+      "clock": {"value": 833},
+      "statYardage": 4,
+      "participants": [
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4361579"}, "type": "rusher"}
+      ]
+    },
+    {
+      "type": {"id": "24"},
+      "wallclock": "2026-10-09T00:17:06Z",
+      "period": {"number": 1},
+      "clock": {"value": 888},
+      "statYardage": 8,
+      "participants": [
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/2577417"}, "type": "passer"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4361579"}, "type": "receiver"}
+      ]
+    },
+    {
+      "type": {"id": "68"},
+      "wallclock": "2026-10-09T00:22:49Z",
+      "period": {"number": 1},
+      "clock": {"value": 651},
+      "statYardage": 1,
+      "pointAfterAttempt": {"id": 61},
+      "participants": [
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4361579"}, "type": "rusher"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4361579"}, "type": "scorer"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/3953687"}, "type": "kicker"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/3953687"}, "type": "patScorer"}
+      ]
+    },
+    {
+      "type": {"id": "67"},
+      "wallclock": "2026-10-09T00:45:44Z",
+      "period": {"number": 2},
+      "clock": {"value": 893},
+      "statYardage": 5,
+      "pointAfterAttempt": {"id": 61},
+      "participants": [
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4596472"}, "type": "passer"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4596448"}, "type": "receiver"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4596448"}, "type": "scorer"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/3150744"}, "type": "kicker"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/3150744?lang=en"}, "type": "patScorer"}
+      ]
+    },
+    {
+      "type": {"id": "59"},
+      "wallclock": "2026-10-09T01:34:45Z",
+      "period": {"number": 2},
+      "clock": {"value": 21},
+      "statYardage": 41,
+      "participants": [
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/3953687"}, "type": "kicker"}
+      ]
+    },
+    {
+      "type": {"id": "26"},
+      "wallclock": "2026-10-09T02:03:55Z",
+      "period": {"number": 3},
+      "clock": {"value": 651},
+      "statYardage": 1,
+      "participants": [
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/2577417"}, "type": "passer"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4686334"}, "type": "returner"}
+      ]
+    },
+    {
+      "type": {"id": "67"},
+      "wallclock": "2026-10-09T02:57:45Z",
+      "period": {"number": 4},
+      "clock": {"value": 326},
+      "statYardage": 18,
+      "pointAfterAttempt": {"id": 15},
+      "participants": [
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/2577417"}, "type": "passer"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/2577417"}, "type": "patPasser"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4426354"}, "type": "receiver"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/4426354"}, "type": "scorer"},
+        {"athlete": {"$ref": "https://sports.core.api.espn.com/v2/athletes/5083754"}, "type": "patScorer"}
+      ]
+    },
+    {
+      "type": {"id": "66"},
+      "wallclock": "2026-10-09T03:18:24Z",
+      "period": {"number": 4},
+      "clock": {"value": 0},
+      "statYardage": 0,
+      "participants": []
+    },
+    {
+      "type": {"id": "5"},
+      "period": {"number": 1},
+      "clock": {"value": 900},
+      "statYardage": 0
+    }
+  ]
+}

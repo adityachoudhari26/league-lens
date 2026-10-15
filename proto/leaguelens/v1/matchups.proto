@@ -49,6 +49,7 @@ message GetMatchupWinChanceRequest {
 message GetMatchupWinChanceResponse {
   // Absent on a bye or when no live samples or moments are saved.
   MatchupWinChance win_chance = 1;
+  bool building = 2; // True while a finished matchup's history is being rebuilt; ask again shortly.
 }
 // MatchupDetail is oriented around the owner: team is always the
 // owner's side, opponent the other side.

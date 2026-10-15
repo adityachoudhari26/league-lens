@@ -17,6 +17,7 @@ import (
 	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
 	migrations "github.com/adityachoudhari26/league-lens/db"
@@ -41,6 +42,11 @@ func (s source) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData
 }
 
 func openDatabase(t *testing.T) *database.DB {
+	db, _ := openDatabaseWithTestPool(t, false)
+	return db
+}
+
+func openDatabaseWithTestPool(t *testing.T, withPool bool) (*database.DB, *pgxpool.Pool) {
 	t.Helper()
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
@@ -71,7 +77,15 @@ func openDatabase(t *testing.T) *database.DB {
 		t.Fatal(err)
 	}
 	t.Cleanup(db.Close)
-	return db
+	if !withPool {
+		return db, nil
+	}
+	pool, err := pgxpool.New(context.Background(), u.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	return db, pool
 }
 
 func importLeague(t *testing.T, db *database.DB, owner string, provider fantasy.ProviderID) {
@@ -98,8 +112,27 @@ func importLeague(t *testing.T, db *database.DB, owner string, provider fantasy.
 }
 
 func clientFor(t *testing.T, db *database.DB, owner string) leaguelensv1connect.DashboardServiceClient {
+	return clientForBackfill(t, db, owner, nil)
+}
+
+type fakeWinChanceBackfill struct {
+	calls  int
+	result bool
+}
+
+func (f *fakeWinChanceBackfill) RequestWinChanceBackfill(pgtype.UUID) bool {
+	f.calls++
+	return f.result
+}
+
+func clientForBackfill(
+	t *testing.T,
+	db *database.DB,
+	owner string,
+	backfill dashboard.WinChanceBackfill,
+) leaguelensv1connect.DashboardServiceClient {
 	t.Helper()
-	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, nil), nil, nil, nil))
+	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, nil, backfill), nil, nil, nil))
 	t.Cleanup(server.Close)
 	return leaguelensv1connect.NewDashboardServiceClient(connect.NewClient(connecthttp.NewTransport(server.Client(), server.URL+"/api", connecthttp.WithProtoJSON())))
 }
@@ -501,18 +534,24 @@ func TestMatchupDetail(t *testing.T) {
 }
 
 func TestMatchupWinChance(t *testing.T) {
-	db := openDatabase(t)
+	db, pool := openDatabaseWithTestPool(t, true)
 	ctx := context.Background()
 	leagueSeasonID := importMatchupDetailFixture(t, db)
 	now := time.Now().UTC()
 	addMatchupDetailSchedule(t, db, now)
+	if _, err := pool.Exec(ctx, `
+		UPDATE matchups SET status='final'
+		WHERE external_matchup_id IN ('period-1','period-2')
+	`); err != nil {
+		t.Fatal(err)
+	}
 
-	client := clientFor(t, db, "matchup-owner@test")
+	backfill := &fakeWinChanceBackfill{result: true}
+	client := clientForBackfill(t, db, "matchup-owner@test", backfill)
 	detail, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID})
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertDefaultMatchupDetail(t, detail.Matchup)
 	matchupID := detail.Matchup.Id
 	ownerTeamID := detail.Matchup.Team.TeamId
 
@@ -523,6 +562,9 @@ func TestMatchupWinChance(t *testing.T) {
 	if chance.WinChance != nil {
 		t.Fatalf("win chance without saved samples or moments = %v, want nil", chance.WinChance)
 	}
+	if !chance.Building || backfill.calls != 1 {
+		t.Fatalf("empty final matchup building=%t, backfill calls=%d; want true and 1", chance.Building, backfill.calls)
+	}
 
 	firstSampleAt := now.Truncate(time.Microsecond).Add(-2 * time.Minute)
 	insertMatchupWinChanceFixture(t, db, detail.Matchup, firstSampleAt)
@@ -531,6 +573,27 @@ func TestMatchupWinChance(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertMatchupWinChance(t, chance.WinChance, ownerTeamID, firstSampleAt)
+	if !chance.Building || backfill.calls != 2 {
+		t.Fatalf("incomplete history building=%t, backfill calls=%d; want true and a second request", chance.Building, backfill.calls)
+	}
+	if _, err := pool.Exec(ctx, `
+		UPDATE matchups m SET score_a=s.score_a,score_b=s.score_b
+		FROM (
+			SELECT matchup_id,score_a,score_b FROM win_chance_samples
+			WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1
+		) s
+		WHERE m.id=$1 AND m.id=s.matchup_id
+	`, matchupID); err != nil {
+		t.Fatal(err)
+	}
+	chance, err = client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: matchupID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertMatchupWinChance(t, chance.WinChance, ownerTeamID, firstSampleAt)
+	if chance.Building || backfill.calls != 2 {
+		t.Fatalf("complete history building=%t, backfill calls=%d; want false and no request", chance.Building, backfill.calls)
+	}
 
 	period := int32(1)
 	firstPeriod, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{
@@ -540,12 +603,13 @@ func TestMatchupWinChance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	firstPeriodChance, err := client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: firstPeriod.Matchup.Id})
+	nilBackfillClient := clientFor(t, db, "matchup-owner@test")
+	firstPeriodChance, err := nilBackfillClient.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{MatchupId: firstPeriod.Matchup.Id})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if firstPeriodChance.WinChance != nil {
-		t.Fatalf("period one win chance = %v, want nil", firstPeriodChance.WinChance)
+	if firstPeriodChance.WinChance != nil || firstPeriodChance.Building {
+		t.Fatalf("period one win chance = %v, building = %t; want empty and false", firstPeriodChance.WinChance, firstPeriodChance.Building)
 	}
 
 	period = 3
@@ -560,8 +624,11 @@ func TestMatchupWinChance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if byeChance.WinChance != nil {
-		t.Fatalf("bye win chance = %v, want nil", byeChance.WinChance)
+	if byeChance.WinChance != nil || byeChance.Building {
+		t.Fatalf("bye win chance = %v, building = %t; want empty and false", byeChance.WinChance, byeChance.Building)
+	}
+	if backfill.calls != 2 {
+		t.Fatalf("bye requested a backfill, calls = %d", backfill.calls)
 	}
 
 	if _, err = db.Queries().CreateUser(ctx, "matchup-other-win-chance@test"); err != nil {

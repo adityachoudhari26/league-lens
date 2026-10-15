@@ -54,6 +54,7 @@ func (r *Runner) runLiveScoreTick(ctx context.Context, lastLive map[string]time.
 	if scoreboard.SeasonType != 2 {
 		return
 	}
+	defer r.requestUnfilledWinChanceGaps(ctx)
 
 	now := r.now()
 	recordLiveTeams(scoreboard.Games, now, lastLive)
@@ -208,7 +209,7 @@ func (r *Runner) logLiveScoreFailure(target Target, err error) {
 		"provider", target.Selection.League.Provider, "code", failureCode(err))
 }
 
-// saveLiveMatchup validates provider identities and atomically persists scores, lineup observations, point changes, and win-chance samples.
+// saveLiveMatchup validates provider identities and atomically persists scores, lineup observations, point changes, gaps, and win-chance samples.
 func (r *Runner) saveLiveMatchup(
 	ctx context.Context,
 	scoreboard fantasy.NFLScoreboard,
@@ -217,6 +218,7 @@ func (r *Runner) saveLiveMatchup(
 	live fantasy.LiveMatchup,
 ) (int, int, error) {
 	updatedEntries, skippedEntries := 0, 0
+	tickAt := r.now()
 	err := r.db.InTx(ctx, func(queries *store.Queries) error {
 		if err := queries.LockImportWrites(ctx); err != nil {
 			return err
@@ -251,11 +253,21 @@ func (r *Runner) saveLiveMatchup(
 		if err != nil {
 			return err
 		}
+		gapStartedAt, gapExists := staleLiveGapStart(observations, tickAt)
+		if gapExists {
+			if err := queries.InsertWinChanceGap(ctx, store.InsertWinChanceGapParams{
+				MatchupID: candidate.MatchupID,
+				StartedAt: pgtype.Timestamptz{Time: gapStartedAt, Valid: true},
+				EndedAt:   pgtype.Timestamptz{Time: tickAt, Valid: true},
+			}); err != nil {
+				return err
+			}
+		}
 		for _, lineup := range live.Lineups {
 			for _, entry := range lineup.Entries {
 				updated, err := r.saveLiveLineupEntry(
 					ctx, queries, candidate.MatchupID, teamIDs[lineup.TeamID],
-					string(target.Selection.League.Provider), entry, observations,
+					string(target.Selection.League.Provider), entry, observations, tickAt, gapStartedAt,
 				)
 				if err != nil {
 					return err

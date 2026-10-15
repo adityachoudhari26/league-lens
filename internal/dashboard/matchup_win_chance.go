@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/keymoments"
 	"github.com/adityachoudhari26/league-lens/internal/store"
@@ -23,6 +24,7 @@ func (s *Service) GetMatchupWinChance(
 	}
 
 	response := &v1.GetMatchupWinChanceResponse{}
+	requestBackfill := false
 	err = s.read(ctx, func(ctx context.Context, q *store.Queries, owner pgtype.UUID) error {
 		matchup, err := q.MatchupWinChanceOwnerMatchup(ctx, store.MatchupWinChanceOwnerMatchupParams{
 			MatchupID: matchupID,
@@ -35,12 +37,50 @@ func (s *Service) GetMatchupWinChance(
 			return nil
 		}
 		response.WinChance, err = matchupWinChanceMessage(ctx, q, owner, matchup.ID, matchup.OwnerIsTeamB)
-		return err
+		if err != nil || matchup.Status != string(fantasy.MatchupFinal) {
+			return err
+		}
+		matchesFinal, err := matchupWinChanceMatchesFinal(
+			response.WinChance, matchup.ScoreA, matchup.ScoreB, matchup.OwnerIsTeamB,
+		)
+		if err != nil {
+			return err
+		}
+		requestBackfill = response.WinChance == nil || !matchesFinal
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	if requestBackfill && s.backfill != nil {
+		response.Building = s.backfill.RequestWinChanceBackfill(matchupID)
+	}
 	return response, nil
+}
+
+// matchupWinChanceMatchesFinal reports whether the latest owner-oriented sample has the saved final score.
+func matchupWinChanceMatchesFinal(
+	winChance *v1.MatchupWinChance,
+	scoreA, scoreB pgtype.Numeric,
+	ownerIsTeamB bool,
+) (bool, error) {
+	if winChance == nil || len(winChance.Samples) == 0 || !scoreA.Valid || !scoreB.Valid {
+		return false, nil
+	}
+	finalA, err := requiredNumericValue(scoreA)
+	if err != nil {
+		return false, err
+	}
+	finalB, err := requiredNumericValue(scoreB)
+	if err != nil {
+		return false, err
+	}
+	if ownerIsTeamB {
+		finalA, finalB = finalB, finalA
+	}
+	latest := winChance.Samples[len(winChance.Samples)-1]
+	return math.Round(latest.TeamScore*10000) == math.Round(finalA*10000) &&
+		math.Round(latest.OpponentScore*10000) == math.Round(finalB*10000), nil
 }
 
 // matchupWinChanceMessage loads a matchup's saved samples and classified starter moments.

@@ -20,8 +20,10 @@ const (
 	// StaleAfter is how old saved data may be before a load-triggered sync refreshes it.
 	StaleAfter = 15 * time.Minute
 
-	leagueSyncTimeout = 5 * time.Minute
-	targetReadTimeout = 5 * time.Second
+	leagueSyncTimeout              = 5 * time.Minute
+	targetReadTimeout              = 5 * time.Second
+	winChanceBackfillTimeout       = 2 * time.Minute
+	winChanceBackfillFailureWindow = 10 * time.Minute
 )
 
 // Runner refreshes the local owner's leagues in the background through the
@@ -41,6 +43,9 @@ type Runner struct {
 	mu       sync.Mutex
 	running  map[string]bool
 	failures map[string]failure
+
+	backfillRunning  map[string]bool
+	backfillFailures map[string]failure
 }
 
 // failure is the most recent failed sync of a league since its last success.
@@ -53,21 +58,25 @@ type failure struct {
 func New(db *database.DB, ownerEmail string, sources SourceFactory, catalogPath string) *Runner {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Runner{
-		db:          db,
-		ownerEmail:  ownerEmail,
-		sources:     sources,
-		catalogPath: catalogPath,
-		now:         time.Now,
-		ctx:         ctx,
-		cancel:      cancel,
-		running:     map[string]bool{},
-		failures:    map[string]failure{},
+		db:               db,
+		ownerEmail:       ownerEmail,
+		sources:          sources,
+		catalogPath:      catalogPath,
+		now:              time.Now,
+		ctx:              ctx,
+		cancel:           cancel,
+		running:          map[string]bool{},
+		failures:         map[string]failure{},
+		backfillRunning:  map[string]bool{},
+		backfillFailures: map[string]failure{},
 	}
 }
 
 // Close cancels in-flight syncs and waits for them to record their outcome.
 func (r *Runner) Close() {
+	r.mu.Lock()
 	r.cancel()
+	r.mu.Unlock()
 	r.wg.Wait()
 }
 

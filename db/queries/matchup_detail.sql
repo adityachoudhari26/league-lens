@@ -79,7 +79,8 @@ ORDER BY c.observed_at,c.team_id,c.player_id;
 
 -- name: MatchupWinChanceOwnerMatchup :one
 -- The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
-SELECT m.id,m.is_bye,coalesce(m.team_b_id = ut.team_id,false)::boolean AS owner_is_team_b
+SELECT m.id,m.is_bye,m.status,m.score_a,m.score_b,
+ coalesce(m.team_b_id = ut.team_id,false)::boolean AS owner_is_team_b
 FROM matchups m
 JOIN user_teams ut ON ut.league_season_id=m.league_season_id AND (ut.team_id=m.team_a_id OR ut.team_id=m.team_b_id)
 JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
