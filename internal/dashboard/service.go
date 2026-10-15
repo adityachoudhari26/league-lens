@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/adityachoudhari26/league-lens/internal/playerprofile"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -21,9 +22,14 @@ type Store interface {
 type Service struct {
 	db         Store
 	ownerEmail string
+	profiles   playerprofile.Source
 }
 
-func New(db Store, ownerEmail string) *Service { return &Service{db: db, ownerEmail: ownerEmail} }
+// New builds the dashboard service. A nil profiles source leaves player cards
+// with stored data and any saved profile.
+func New(db Store, ownerEmail string, profiles playerprofile.Source) *Service {
+	return &Service{db: db, ownerEmail: ownerEmail, profiles: profiles}
+}
 
 // read resolves the configured local owner and runs scoped queries within one
 // consistent read-only transaction, bounded by a five-second deadline.
