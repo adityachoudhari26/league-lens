@@ -13,10 +13,11 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
-// refreshPlayerNews refreshes saved items from the previous roster snapshot.
-// It is best-effort: failures keep existing news and never affect league syncs.
-func (r *Runner) refreshPlayerNews() {
-	ctx, cancel := context.WithTimeout(r.ctx, time.Minute)
+// RefreshPlayerNews refreshes saved news for players in the current roster snapshots.
+// It runs during syncs and after league imports, so new rosters get news without
+// waiting for a stale sync. Failures keep existing news and never affect league syncs.
+func (r *Runner) RefreshPlayerNews(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
 	if err := r.updatePlayerNews(ctx); err != nil {

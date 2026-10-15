@@ -166,7 +166,7 @@ func (r *Runner) syncTargets(targets []Target) {
 	}()
 	go func() {
 		defer batch.Done()
-		r.refreshPlayerNews()
+		r.RefreshPlayerNews(r.ctx)
 	}()
 
 	catalog, version := r.loadCatalog()
