@@ -20,10 +20,13 @@ type fanResponse struct {
 	Preferences []struct {
 		MetaData struct {
 			Entry struct {
-				EntryID  int    `json:"entryId"`
-				Name     string `json:"name"`
-				GameID   int    `json:"gameId"`
-				SeasonID int    `json:"seasonId"`
+				EntryID       int    `json:"entryId"`
+				Name          string `json:"name"`
+				EntryMetadata struct {
+					TeamName string `json:"teamName"`
+				} `json:"entryMetadata"`
+				GameID   int `json:"gameId"`
+				SeasonID int `json:"seasonId"`
 				Groups   []struct {
 					GroupID   int    `json:"groupId"`
 					GroupName string `json:"groupName"`
@@ -110,6 +113,10 @@ func discoveredFootballLeagues(response fanResponse) []fantasy.DiscoveredLeague 
 			}
 			leagueID := strconv.Itoa(group.GroupID)
 			teamID := strconv.Itoa(entry.EntryID)
+			teamName := strings.TrimSpace(entry.EntryMetadata.TeamName)
+			if teamName == "" {
+				teamName = strings.TrimSpace(entry.Name)
+			}
 			key := leagueID + ":" + strconv.Itoa(entry.SeasonID) + ":" + teamID
 			if seen[key] {
 				continue
@@ -119,7 +126,7 @@ func discoveredFootballLeagues(response fanResponse) []fantasy.DiscoveredLeague 
 				Ref:      fantasy.LeagueRef{Provider: fantasy.ProviderESPN, ExternalID: leagueID, Season: entry.SeasonID},
 				Name:     strings.TrimSpace(group.GroupName),
 				TeamID:   teamID,
-				TeamName: strings.TrimSpace(entry.Name),
+				TeamName: teamName,
 			})
 		}
 	}
