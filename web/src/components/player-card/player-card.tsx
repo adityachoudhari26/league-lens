@@ -235,7 +235,7 @@ function BlurbSection({ blurb }: { blurb: PlayerBlurb }) {
           {title}
         </p>
       )}
-      <p className="max-h-35 overflow-y-auto overscroll-contain pr-1 text-sm leading-5 [scrollbar-width:thin]">
+      <p className="max-h-35 overflow-y-auto overscroll-contain pr-1 text-sm leading-5 scrollbar-subtle">
         {blurb.text}
       </p>
       {blurb.url && (
