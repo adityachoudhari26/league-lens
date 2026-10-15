@@ -22,6 +22,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type KeyMomentKind int32
+
+const (
+	KeyMomentKind_KEY_MOMENT_KIND_UNSPECIFIED KeyMomentKind = 0
+	KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN   KeyMomentKind = 1
+	KeyMomentKind_KEY_MOMENT_KIND_FIELD_GOAL  KeyMomentKind = 2
+	KeyMomentKind_KEY_MOMENT_KIND_PLAY        KeyMomentKind = 3
+)
+
+// Enum value maps for KeyMomentKind.
+var (
+	KeyMomentKind_name = map[int32]string{
+		0: "KEY_MOMENT_KIND_UNSPECIFIED",
+		1: "KEY_MOMENT_KIND_TOUCHDOWN",
+		2: "KEY_MOMENT_KIND_FIELD_GOAL",
+		3: "KEY_MOMENT_KIND_PLAY",
+	}
+	KeyMomentKind_value = map[string]int32{
+		"KEY_MOMENT_KIND_UNSPECIFIED": 0,
+		"KEY_MOMENT_KIND_TOUCHDOWN":   1,
+		"KEY_MOMENT_KIND_FIELD_GOAL":  2,
+		"KEY_MOMENT_KIND_PLAY":        3,
+	}
+)
+
+func (x KeyMomentKind) Enum() *KeyMomentKind {
+	p := new(KeyMomentKind)
+	*p = x
+	return p
+}
+
+func (x KeyMomentKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (KeyMomentKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_leaguelens_v1_matchups_proto_enumTypes[0].Descriptor()
+}
+
+func (KeyMomentKind) Type() protoreflect.EnumType {
+	return &file_leaguelens_v1_matchups_proto_enumTypes[0]
+}
+
+func (x KeyMomentKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use KeyMomentKind.Descriptor instead.
+func (KeyMomentKind) EnumDescriptor() ([]byte, []int) {
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{0}
+}
+
 type MatchupStatus int32
 
 const (
@@ -61,11 +113,11 @@ func (x MatchupStatus) String() string {
 }
 
 func (MatchupStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_leaguelens_v1_matchups_proto_enumTypes[0].Descriptor()
+	return file_leaguelens_v1_matchups_proto_enumTypes[1].Descriptor()
 }
 
 func (MatchupStatus) Type() protoreflect.EnumType {
-	return &file_leaguelens_v1_matchups_proto_enumTypes[0]
+	return &file_leaguelens_v1_matchups_proto_enumTypes[1]
 }
 
 func (x MatchupStatus) Number() protoreflect.EnumNumber {
@@ -74,7 +126,7 @@ func (x MatchupStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MatchupStatus.Descriptor instead.
 func (MatchupStatus) EnumDescriptor() ([]byte, []int) {
-	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{0}
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{1}
 }
 
 // GameState is derived from nfl_games kickoffs. Live and final are not
@@ -118,11 +170,11 @@ func (x GameState) String() string {
 }
 
 func (GameState) Descriptor() protoreflect.EnumDescriptor {
-	return file_leaguelens_v1_matchups_proto_enumTypes[1].Descriptor()
+	return file_leaguelens_v1_matchups_proto_enumTypes[2].Descriptor()
 }
 
 func (GameState) Type() protoreflect.EnumType {
-	return &file_leaguelens_v1_matchups_proto_enumTypes[1]
+	return &file_leaguelens_v1_matchups_proto_enumTypes[2]
 }
 
 func (x GameState) Number() protoreflect.EnumNumber {
@@ -131,7 +183,7 @@ func (x GameState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GameState.Descriptor instead.
 func (GameState) EnumDescriptor() ([]byte, []int) {
-	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{1}
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{2}
 }
 
 type ListMatchupsRequest struct {
@@ -533,6 +585,95 @@ func (x *GetMatchupDetailResponse) GetMatchup() *MatchupDetail {
 	return nil
 }
 
+type GetMatchupWinChanceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MatchupId     string                 `protobuf:"bytes,1,opt,name=matchup_id,json=matchupId,proto3" json:"matchup_id,omitempty"` // MatchupDetail.id; must include the owner's selected team.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMatchupWinChanceRequest) Reset() {
+	*x = GetMatchupWinChanceRequest{}
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMatchupWinChanceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMatchupWinChanceRequest) ProtoMessage() {}
+
+func (x *GetMatchupWinChanceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMatchupWinChanceRequest.ProtoReflect.Descriptor instead.
+func (*GetMatchupWinChanceRequest) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetMatchupWinChanceRequest) GetMatchupId() string {
+	if x != nil {
+		return x.MatchupId
+	}
+	return ""
+}
+
+type GetMatchupWinChanceResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Absent on a bye or when no live samples or moments are saved.
+	WinChance     *MatchupWinChance `protobuf:"bytes,1,opt,name=win_chance,json=winChance,proto3" json:"win_chance,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMatchupWinChanceResponse) Reset() {
+	*x = GetMatchupWinChanceResponse{}
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMatchupWinChanceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMatchupWinChanceResponse) ProtoMessage() {}
+
+func (x *GetMatchupWinChanceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMatchupWinChanceResponse.ProtoReflect.Descriptor instead.
+func (*GetMatchupWinChanceResponse) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetMatchupWinChanceResponse) GetWinChance() *MatchupWinChance {
+	if x != nil {
+		return x.WinChance
+	}
+	return nil
+}
+
 // MatchupDetail is oriented around the owner: team is always the
 // owner's side, opponent the other side.
 type MatchupDetail struct {
@@ -550,7 +691,7 @@ type MatchupDetail struct {
 
 func (x *MatchupDetail) Reset() {
 	*x = MatchupDetail{}
-	mi := &file_leaguelens_v1_matchups_proto_msgTypes[7]
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -562,7 +703,7 @@ func (x *MatchupDetail) String() string {
 func (*MatchupDetail) ProtoMessage() {}
 
 func (x *MatchupDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_matchups_proto_msgTypes[7]
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -575,7 +716,7 @@ func (x *MatchupDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MatchupDetail.ProtoReflect.Descriptor instead.
 func (*MatchupDetail) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{7}
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MatchupDetail) GetId() string {
@@ -627,6 +768,228 @@ func (x *MatchupDetail) GetFetchedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// MatchupWinChance is oriented around the owner like MatchupDetail.
+type MatchupWinChance struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Samples       []*WinChanceSample     `protobuf:"bytes,1,rep,name=samples,proto3" json:"samples,omitempty"` // Oldest first; the last is current.
+	Moments       []*KeyMoment           `protobuf:"bytes,2,rep,name=moments,proto3" json:"moments,omitempty"` // Oldest first.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MatchupWinChance) Reset() {
+	*x = MatchupWinChance{}
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchupWinChance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchupWinChance) ProtoMessage() {}
+
+func (x *MatchupWinChance) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchupWinChance.ProtoReflect.Descriptor instead.
+func (*MatchupWinChance) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MatchupWinChance) GetSamples() []*WinChanceSample {
+	if x != nil {
+		return x.Samples
+	}
+	return nil
+}
+
+func (x *MatchupWinChance) GetMoments() []*KeyMoment {
+	if x != nil {
+		return x.Moments
+	}
+	return nil
+}
+
+type WinChanceSample struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ObservedAt        *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=observed_at,json=observedAt,proto3" json:"observed_at,omitempty"`
+	TeamWinChance     float64                `protobuf:"fixed64,2,opt,name=team_win_chance,json=teamWinChance,proto3" json:"team_win_chance,omitempty"` // 0..1 for the owner's team.
+	TeamScore         float64                `protobuf:"fixed64,3,opt,name=team_score,json=teamScore,proto3" json:"team_score,omitempty"`
+	OpponentScore     float64                `protobuf:"fixed64,4,opt,name=opponent_score,json=opponentScore,proto3" json:"opponent_score,omitempty"`
+	TeamProjected     float64                `protobuf:"fixed64,5,opt,name=team_projected,json=teamProjected,proto3" json:"team_projected,omitempty"` // Live projected total.
+	OpponentProjected float64                `protobuf:"fixed64,6,opt,name=opponent_projected,json=opponentProjected,proto3" json:"opponent_projected,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *WinChanceSample) Reset() {
+	*x = WinChanceSample{}
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WinChanceSample) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WinChanceSample) ProtoMessage() {}
+
+func (x *WinChanceSample) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WinChanceSample.ProtoReflect.Descriptor instead.
+func (*WinChanceSample) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *WinChanceSample) GetObservedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ObservedAt
+	}
+	return nil
+}
+
+func (x *WinChanceSample) GetTeamWinChance() float64 {
+	if x != nil {
+		return x.TeamWinChance
+	}
+	return 0
+}
+
+func (x *WinChanceSample) GetTeamScore() float64 {
+	if x != nil {
+		return x.TeamScore
+	}
+	return 0
+}
+
+func (x *WinChanceSample) GetOpponentScore() float64 {
+	if x != nil {
+		return x.OpponentScore
+	}
+	return 0
+}
+
+func (x *WinChanceSample) GetTeamProjected() float64 {
+	if x != nil {
+		return x.TeamProjected
+	}
+	return 0
+}
+
+func (x *WinChanceSample) GetOpponentProjected() float64 {
+	if x != nil {
+		return x.OpponentProjected
+	}
+	return 0
+}
+
+// KeyMoment is a starter's league-scored point change classified by keymoments.Classify.
+type KeyMoment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ObservedAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=observed_at,json=observedAt,proto3" json:"observed_at,omitempty"`
+	TeamId        string                 `protobuf:"bytes,2,opt,name=team_id,json=teamId,proto3" json:"team_id,omitempty"` // Matches MatchupLineup.team_id.
+	PlayerId      string                 `protobuf:"bytes,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	PlayerName    string                 `protobuf:"bytes,4,opt,name=player_name,json=playerName,proto3" json:"player_name,omitempty"`
+	Kind          KeyMomentKind          `protobuf:"varint,5,opt,name=kind,proto3,enum=leaguelens.v1.KeyMomentKind" json:"kind,omitempty"`
+	Points        float64                `protobuf:"fixed64,6,opt,name=points,proto3" json:"points,omitempty"` // After minus before; negative is a drop.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KeyMoment) Reset() {
+	*x = KeyMoment{}
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KeyMoment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KeyMoment) ProtoMessage() {}
+
+func (x *KeyMoment) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KeyMoment.ProtoReflect.Descriptor instead.
+func (*KeyMoment) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *KeyMoment) GetObservedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ObservedAt
+	}
+	return nil
+}
+
+func (x *KeyMoment) GetTeamId() string {
+	if x != nil {
+		return x.TeamId
+	}
+	return ""
+}
+
+func (x *KeyMoment) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *KeyMoment) GetPlayerName() string {
+	if x != nil {
+		return x.PlayerName
+	}
+	return ""
+}
+
+func (x *KeyMoment) GetKind() KeyMomentKind {
+	if x != nil {
+		return x.Kind
+	}
+	return KeyMomentKind_KEY_MOMENT_KIND_UNSPECIFIED
+}
+
+func (x *KeyMoment) GetPoints() float64 {
+	if x != nil {
+		return x.Points
+	}
+	return 0
+}
+
 type MatchupLineup struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	TeamId             string                 `protobuf:"bytes,1,opt,name=team_id,json=teamId,proto3" json:"team_id,omitempty"`
@@ -647,7 +1010,7 @@ type MatchupLineup struct {
 
 func (x *MatchupLineup) Reset() {
 	*x = MatchupLineup{}
-	mi := &file_leaguelens_v1_matchups_proto_msgTypes[8]
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -659,7 +1022,7 @@ func (x *MatchupLineup) String() string {
 func (*MatchupLineup) ProtoMessage() {}
 
 func (x *MatchupLineup) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_matchups_proto_msgTypes[8]
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -672,7 +1035,7 @@ func (x *MatchupLineup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MatchupLineup.ProtoReflect.Descriptor instead.
 func (*MatchupLineup) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{8}
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MatchupLineup) GetTeamId() string {
@@ -748,7 +1111,7 @@ type LineupPlayer struct {
 
 func (x *LineupPlayer) Reset() {
 	*x = LineupPlayer{}
-	mi := &file_leaguelens_v1_matchups_proto_msgTypes[9]
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -760,7 +1123,7 @@ func (x *LineupPlayer) String() string {
 func (*LineupPlayer) ProtoMessage() {}
 
 func (x *LineupPlayer) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_matchups_proto_msgTypes[9]
+	mi := &file_leaguelens_v1_matchups_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -773,7 +1136,7 @@ func (x *LineupPlayer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LineupPlayer.ProtoReflect.Descriptor instead.
 func (*LineupPlayer) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{9}
+	return file_leaguelens_v1_matchups_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *LineupPlayer) GetPlayerId() string {
@@ -872,7 +1235,13 @@ const file_leaguelens_v1_matchups_proto_rawDesc = "" +
 	"\x0ematchup_period\x18\x02 \x01(\x05H\x00R\rmatchupPeriod\x88\x01\x01B\x11\n" +
 	"\x0f_matchup_period\"R\n" +
 	"\x18GetMatchupDetailResponse\x126\n" +
-	"\amatchup\x18\x01 \x01(\v2\x1c.leaguelens.v1.MatchupDetailR\amatchup\"\xba\x02\n" +
+	"\amatchup\x18\x01 \x01(\v2\x1c.leaguelens.v1.MatchupDetailR\amatchup\";\n" +
+	"\x1aGetMatchupWinChanceRequest\x12\x1d\n" +
+	"\n" +
+	"matchup_id\x18\x01 \x01(\tR\tmatchupId\"]\n" +
+	"\x1bGetMatchupWinChanceResponse\x12>\n" +
+	"\n" +
+	"win_chance\x18\x01 \x01(\v2\x1f.leaguelens.v1.MatchupWinChanceR\twinChance\"\xba\x02\n" +
 	"\rMatchupDetail\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
 	"\x0ematchup_period\x18\x02 \x01(\x05R\rmatchupPeriod\x124\n" +
@@ -881,7 +1250,28 @@ const file_leaguelens_v1_matchups_proto_rawDesc = "" +
 	"\x04team\x18\x05 \x01(\v2\x1c.leaguelens.v1.MatchupLineupR\x04team\x128\n" +
 	"\bopponent\x18\x06 \x01(\v2\x1c.leaguelens.v1.MatchupLineupR\bopponent\x129\n" +
 	"\n" +
-	"fetched_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tfetchedAt\"\xfe\x02\n" +
+	"fetched_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tfetchedAt\"\x80\x01\n" +
+	"\x10MatchupWinChance\x128\n" +
+	"\asamples\x18\x01 \x03(\v2\x1e.leaguelens.v1.WinChanceSampleR\asamples\x122\n" +
+	"\amoments\x18\x02 \x03(\v2\x18.leaguelens.v1.KeyMomentR\amoments\"\x92\x02\n" +
+	"\x0fWinChanceSample\x12;\n" +
+	"\vobserved_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"observedAt\x12&\n" +
+	"\x0fteam_win_chance\x18\x02 \x01(\x01R\rteamWinChance\x12\x1d\n" +
+	"\n" +
+	"team_score\x18\x03 \x01(\x01R\tteamScore\x12%\n" +
+	"\x0eopponent_score\x18\x04 \x01(\x01R\ropponentScore\x12%\n" +
+	"\x0eteam_projected\x18\x05 \x01(\x01R\rteamProjected\x12-\n" +
+	"\x12opponent_projected\x18\x06 \x01(\x01R\x11opponentProjected\"\xe9\x01\n" +
+	"\tKeyMoment\x12;\n" +
+	"\vobserved_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"observedAt\x12\x17\n" +
+	"\ateam_id\x18\x02 \x01(\tR\x06teamId\x12\x1b\n" +
+	"\tplayer_id\x18\x03 \x01(\tR\bplayerId\x12\x1f\n" +
+	"\vplayer_name\x18\x04 \x01(\tR\n" +
+	"playerName\x120\n" +
+	"\x04kind\x18\x05 \x01(\x0e2\x1c.leaguelens.v1.KeyMomentKindR\x04kind\x12\x16\n" +
+	"\x06points\x18\x06 \x01(\x01R\x06points\"\xfe\x02\n" +
 	"\rMatchupLineup\x12\x17\n" +
 	"\ateam_id\x18\x01 \x01(\tR\x06teamId\x12\x1b\n" +
 	"\tteam_name\x18\x02 \x01(\tR\bteamName\x121\n" +
@@ -907,7 +1297,12 @@ const file_leaguelens_v1_matchups_proto_rawDesc = "" +
 	"kickoff_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tkickoffAt\x12.\n" +
 	"\x10projected_points\x18\t \x01(\x01H\x01R\x0fprojectedPoints\x88\x01\x01B\t\n" +
 	"\a_pointsB\x13\n" +
-	"\x11_projected_points*\xa3\x01\n" +
+	"\x11_projected_points*\x89\x01\n" +
+	"\rKeyMomentKind\x12\x1f\n" +
+	"\x1bKEY_MOMENT_KIND_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19KEY_MOMENT_KIND_TOUCHDOWN\x10\x01\x12\x1e\n" +
+	"\x1aKEY_MOMENT_KIND_FIELD_GOAL\x10\x02\x12\x18\n" +
+	"\x14KEY_MOMENT_KIND_PLAY\x10\x03*\xa3\x01\n" +
 	"\rMatchupStatus\x12\x1e\n" +
 	"\x1aMATCHUP_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18MATCHUP_STATUS_SCHEDULED\x10\x01\x12\x1e\n" +
@@ -933,47 +1328,59 @@ func file_leaguelens_v1_matchups_proto_rawDescGZIP() []byte {
 	return file_leaguelens_v1_matchups_proto_rawDescData
 }
 
-var file_leaguelens_v1_matchups_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_leaguelens_v1_matchups_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_leaguelens_v1_matchups_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_leaguelens_v1_matchups_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_leaguelens_v1_matchups_proto_goTypes = []any{
-	(MatchupStatus)(0),               // 0: leaguelens.v1.MatchupStatus
-	(GameState)(0),                   // 1: leaguelens.v1.GameState
-	(*ListMatchupsRequest)(nil),      // 2: leaguelens.v1.ListMatchupsRequest
-	(*ListMatchupsResponse)(nil),     // 3: leaguelens.v1.ListMatchupsResponse
-	(*Matchup)(nil),                  // 4: leaguelens.v1.Matchup
-	(*ScoringPeriods)(nil),           // 5: leaguelens.v1.ScoringPeriods
-	(*MatchupSide)(nil),              // 6: leaguelens.v1.MatchupSide
-	(*GetMatchupDetailRequest)(nil),  // 7: leaguelens.v1.GetMatchupDetailRequest
-	(*GetMatchupDetailResponse)(nil), // 8: leaguelens.v1.GetMatchupDetailResponse
-	(*MatchupDetail)(nil),            // 9: leaguelens.v1.MatchupDetail
-	(*MatchupLineup)(nil),            // 10: leaguelens.v1.MatchupLineup
-	(*LineupPlayer)(nil),             // 11: leaguelens.v1.LineupPlayer
-	(*timestamppb.Timestamp)(nil),    // 12: google.protobuf.Timestamp
-	(*TeamRecord)(nil),               // 13: leaguelens.v1.TeamRecord
-	(InjuryStatus)(0),                // 14: leaguelens.v1.InjuryStatus
+	(KeyMomentKind)(0),                  // 0: leaguelens.v1.KeyMomentKind
+	(MatchupStatus)(0),                  // 1: leaguelens.v1.MatchupStatus
+	(GameState)(0),                      // 2: leaguelens.v1.GameState
+	(*ListMatchupsRequest)(nil),         // 3: leaguelens.v1.ListMatchupsRequest
+	(*ListMatchupsResponse)(nil),        // 4: leaguelens.v1.ListMatchupsResponse
+	(*Matchup)(nil),                     // 5: leaguelens.v1.Matchup
+	(*ScoringPeriods)(nil),              // 6: leaguelens.v1.ScoringPeriods
+	(*MatchupSide)(nil),                 // 7: leaguelens.v1.MatchupSide
+	(*GetMatchupDetailRequest)(nil),     // 8: leaguelens.v1.GetMatchupDetailRequest
+	(*GetMatchupDetailResponse)(nil),    // 9: leaguelens.v1.GetMatchupDetailResponse
+	(*GetMatchupWinChanceRequest)(nil),  // 10: leaguelens.v1.GetMatchupWinChanceRequest
+	(*GetMatchupWinChanceResponse)(nil), // 11: leaguelens.v1.GetMatchupWinChanceResponse
+	(*MatchupDetail)(nil),               // 12: leaguelens.v1.MatchupDetail
+	(*MatchupWinChance)(nil),            // 13: leaguelens.v1.MatchupWinChance
+	(*WinChanceSample)(nil),             // 14: leaguelens.v1.WinChanceSample
+	(*KeyMoment)(nil),                   // 15: leaguelens.v1.KeyMoment
+	(*MatchupLineup)(nil),               // 16: leaguelens.v1.MatchupLineup
+	(*LineupPlayer)(nil),                // 17: leaguelens.v1.LineupPlayer
+	(*timestamppb.Timestamp)(nil),       // 18: google.protobuf.Timestamp
+	(*TeamRecord)(nil),                  // 19: leaguelens.v1.TeamRecord
+	(InjuryStatus)(0),                   // 20: leaguelens.v1.InjuryStatus
 }
 var file_leaguelens_v1_matchups_proto_depIdxs = []int32{
-	4,  // 0: leaguelens.v1.ListMatchupsResponse.matchups:type_name -> leaguelens.v1.Matchup
-	5,  // 1: leaguelens.v1.Matchup.scoring_periods:type_name -> leaguelens.v1.ScoringPeriods
-	6,  // 2: leaguelens.v1.Matchup.team_a:type_name -> leaguelens.v1.MatchupSide
-	6,  // 3: leaguelens.v1.Matchup.team_b:type_name -> leaguelens.v1.MatchupSide
-	12, // 4: leaguelens.v1.Matchup.fetched_at:type_name -> google.protobuf.Timestamp
-	9,  // 5: leaguelens.v1.GetMatchupDetailResponse.matchup:type_name -> leaguelens.v1.MatchupDetail
-	0,  // 6: leaguelens.v1.MatchupDetail.status:type_name -> leaguelens.v1.MatchupStatus
-	10, // 7: leaguelens.v1.MatchupDetail.team:type_name -> leaguelens.v1.MatchupLineup
-	10, // 8: leaguelens.v1.MatchupDetail.opponent:type_name -> leaguelens.v1.MatchupLineup
-	12, // 9: leaguelens.v1.MatchupDetail.fetched_at:type_name -> google.protobuf.Timestamp
-	13, // 10: leaguelens.v1.MatchupLineup.record:type_name -> leaguelens.v1.TeamRecord
-	11, // 11: leaguelens.v1.MatchupLineup.starters:type_name -> leaguelens.v1.LineupPlayer
-	11, // 12: leaguelens.v1.MatchupLineup.bench:type_name -> leaguelens.v1.LineupPlayer
-	14, // 13: leaguelens.v1.LineupPlayer.injury_status:type_name -> leaguelens.v1.InjuryStatus
-	1,  // 14: leaguelens.v1.LineupPlayer.game_state:type_name -> leaguelens.v1.GameState
-	12, // 15: leaguelens.v1.LineupPlayer.kickoff_at:type_name -> google.protobuf.Timestamp
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	5,  // 0: leaguelens.v1.ListMatchupsResponse.matchups:type_name -> leaguelens.v1.Matchup
+	6,  // 1: leaguelens.v1.Matchup.scoring_periods:type_name -> leaguelens.v1.ScoringPeriods
+	7,  // 2: leaguelens.v1.Matchup.team_a:type_name -> leaguelens.v1.MatchupSide
+	7,  // 3: leaguelens.v1.Matchup.team_b:type_name -> leaguelens.v1.MatchupSide
+	18, // 4: leaguelens.v1.Matchup.fetched_at:type_name -> google.protobuf.Timestamp
+	12, // 5: leaguelens.v1.GetMatchupDetailResponse.matchup:type_name -> leaguelens.v1.MatchupDetail
+	13, // 6: leaguelens.v1.GetMatchupWinChanceResponse.win_chance:type_name -> leaguelens.v1.MatchupWinChance
+	1,  // 7: leaguelens.v1.MatchupDetail.status:type_name -> leaguelens.v1.MatchupStatus
+	16, // 8: leaguelens.v1.MatchupDetail.team:type_name -> leaguelens.v1.MatchupLineup
+	16, // 9: leaguelens.v1.MatchupDetail.opponent:type_name -> leaguelens.v1.MatchupLineup
+	18, // 10: leaguelens.v1.MatchupDetail.fetched_at:type_name -> google.protobuf.Timestamp
+	14, // 11: leaguelens.v1.MatchupWinChance.samples:type_name -> leaguelens.v1.WinChanceSample
+	15, // 12: leaguelens.v1.MatchupWinChance.moments:type_name -> leaguelens.v1.KeyMoment
+	18, // 13: leaguelens.v1.WinChanceSample.observed_at:type_name -> google.protobuf.Timestamp
+	18, // 14: leaguelens.v1.KeyMoment.observed_at:type_name -> google.protobuf.Timestamp
+	0,  // 15: leaguelens.v1.KeyMoment.kind:type_name -> leaguelens.v1.KeyMomentKind
+	19, // 16: leaguelens.v1.MatchupLineup.record:type_name -> leaguelens.v1.TeamRecord
+	17, // 17: leaguelens.v1.MatchupLineup.starters:type_name -> leaguelens.v1.LineupPlayer
+	17, // 18: leaguelens.v1.MatchupLineup.bench:type_name -> leaguelens.v1.LineupPlayer
+	20, // 19: leaguelens.v1.LineupPlayer.injury_status:type_name -> leaguelens.v1.InjuryStatus
+	2,  // 20: leaguelens.v1.LineupPlayer.game_state:type_name -> leaguelens.v1.GameState
+	18, // 21: leaguelens.v1.LineupPlayer.kickoff_at:type_name -> google.protobuf.Timestamp
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_leaguelens_v1_matchups_proto_init() }
@@ -985,15 +1392,15 @@ func file_leaguelens_v1_matchups_proto_init() {
 	file_leaguelens_v1_players_proto_init()
 	file_leaguelens_v1_matchups_proto_msgTypes[4].OneofWrappers = []any{}
 	file_leaguelens_v1_matchups_proto_msgTypes[5].OneofWrappers = []any{}
-	file_leaguelens_v1_matchups_proto_msgTypes[8].OneofWrappers = []any{}
-	file_leaguelens_v1_matchups_proto_msgTypes[9].OneofWrappers = []any{}
+	file_leaguelens_v1_matchups_proto_msgTypes[13].OneofWrappers = []any{}
+	file_leaguelens_v1_matchups_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leaguelens_v1_matchups_proto_rawDesc), len(file_leaguelens_v1_matchups_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   10,
+			NumEnums:      3,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

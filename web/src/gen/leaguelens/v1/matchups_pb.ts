@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/matchups.proto.
  */
 export const file_leaguelens_v1_matchups: GenFile = /*@__PURE__*/
-  fileDesc("ChxsZWFndWVsZW5zL3YxL21hdGNodXBzLnByb3RvEg1sZWFndWVsZW5zLnYxIkcKE0xpc3RNYXRjaHVwc1JlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgCIAEoBSJAChRMaXN0TWF0Y2h1cHNSZXNwb25zZRIoCghtYXRjaHVwcxgBIAMoCzIWLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cCKiAgoHTWF0Y2h1cBIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgDIAEoBRI2Cg9zY29yaW5nX3BlcmlvZHMYBCABKAsyHS5sZWFndWVsZW5zLnYxLlNjb3JpbmdQZXJpb2RzEioKBnRlYW1fYRgFIAEoCzIaLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cFNpZGUSKgoGdGVhbV9iGAYgASgLMhoubGVhZ3VlbGVucy52MS5NYXRjaHVwU2lkZRIOCgZpc19ieWUYByABKAgSDgoGc3RhdHVzGAggASgJEi4KCmZldGNoZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiAKDlNjb3JpbmdQZXJpb2RzEg4KBnZhbHVlcxgBIAMoBSI8CgtNYXRjaHVwU2lkZRIPCgd0ZWFtX2lkGAEgASgJEhIKBXNjb3JlGAIgASgBSACIAQFCCAoGX3Njb3JlImMKF0dldE1hdGNodXBEZXRhaWxSZXF1ZXN0EhgKEGxlYWd1ZV9zZWFzb25faWQYASABKAkSGwoObWF0Y2h1cF9wZXJpb2QYAiABKAVIAIgBAUIRCg9fbWF0Y2h1cF9wZXJpb2QiSQoYR2V0TWF0Y2h1cERldGFpbFJlc3BvbnNlEi0KB21hdGNodXAYASABKAsyHC5sZWFndWVsZW5zLnYxLk1hdGNodXBEZXRhaWwi/QEKDU1hdGNodXBEZXRhaWwSCgoCaWQYASABKAkSFgoObWF0Y2h1cF9wZXJpb2QYAiABKAUSLAoGc3RhdHVzGAMgASgOMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwU3RhdHVzEg4KBmlzX2J5ZRgEIAEoCBIqCgR0ZWFtGAUgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCG9wcG9uZW50GAYgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCmZldGNoZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIqgCCg1NYXRjaHVwTGluZXVwEg8KB3RlYW1faWQYASABKAkSEQoJdGVhbV9uYW1lGAIgASgJEikKBnJlY29yZBgDIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBISCgVzY29yZRgEIAEoAUgAiAEBEh0KFXN0YXJ0ZXJzX2xlZnRfdG9fcGxheRgFIAEoBRItCghzdGFydGVycxgGIAMoCzIbLmxlYWd1ZWxlbnMudjEuTGluZXVwUGxheWVyEioKBWJlbmNoGAcgAygLMhsubGVhZ3VlbGVucy52MS5MaW5ldXBQbGF5ZXISHAoPcHJvamVjdGVkX3Njb3JlGAggASgBSAGIAQFCCAoGX3Njb3JlQhIKEF9wcm9qZWN0ZWRfc2NvcmUivAIKDExpbmV1cFBsYXllchIRCglwbGF5ZXJfaWQYASABKAkSEwoLcGxheWVyX25hbWUYAiABKAkSDAoEc2xvdBgDIAEoCRITCgZwb2ludHMYBCABKAFIAIgBARIyCg1pbmp1cnlfc3RhdHVzGAUgASgOMhsubGVhZ3VlbGVucy52MS5Jbmp1cnlTdGF0dXMSEAoIcHJvX3RlYW0YBiABKAkSLAoKZ2FtZV9zdGF0ZRgHIAEoDjIYLmxlYWd1ZWxlbnMudjEuR2FtZVN0YXRlEi4KCmtpY2tvZmZfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEh0KEHByb2plY3RlZF9wb2ludHMYCSABKAFIAYgBAUIJCgdfcG9pbnRzQhMKEV9wcm9qZWN0ZWRfcG9pbnRzKqMBCg1NYXRjaHVwU3RhdHVzEh4KGk1BVENIVVBfU1RBVFVTX1VOU1BFQ0lGSUVEEAASHAoYTUFUQ0hVUF9TVEFUVVNfU0NIRURVTEVEEAESHgoaTUFUQ0hVUF9TVEFUVVNfSU5fUFJPR1JFU1MQAhIYChRNQVRDSFVQX1NUQVRVU19GSU5BTBADEhoKFk1BVENIVVBfU1RBVFVTX1VOS05PV04QBCqKAQoJR2FtZVN0YXRlEhoKFkdBTUVfU1RBVEVfVU5TUEVDSUZJRUQQABIaChZHQU1FX1NUQVRFX05PVF9TVEFSVEVEEAESGQoVR0FNRV9TVEFURV9LSUNLRURfT0ZGEAISEgoOR0FNRV9TVEFURV9CWUUQAxIWChJHQU1FX1NUQVRFX1VOS05PV04QBEJSWlBnaXRodWIuY29tL2FkaXR5YWNob3VkaGFyaTI2L2xlYWd1ZS1sZW5zL2ludGVybmFsL2dlbi9sZWFndWVsZW5zL3YxO2xlYWd1ZWxlbnN2MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_leaguelens_v1_leagues, file_leaguelens_v1_players]);
+  fileDesc("ChxsZWFndWVsZW5zL3YxL21hdGNodXBzLnByb3RvEg1sZWFndWVsZW5zLnYxIkcKE0xpc3RNYXRjaHVwc1JlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgCIAEoBSJAChRMaXN0TWF0Y2h1cHNSZXNwb25zZRIoCghtYXRjaHVwcxgBIAMoCzIWLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cCKiAgoHTWF0Y2h1cBIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgDIAEoBRI2Cg9zY29yaW5nX3BlcmlvZHMYBCABKAsyHS5sZWFndWVsZW5zLnYxLlNjb3JpbmdQZXJpb2RzEioKBnRlYW1fYRgFIAEoCzIaLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cFNpZGUSKgoGdGVhbV9iGAYgASgLMhoubGVhZ3VlbGVucy52MS5NYXRjaHVwU2lkZRIOCgZpc19ieWUYByABKAgSDgoGc3RhdHVzGAggASgJEi4KCmZldGNoZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiAKDlNjb3JpbmdQZXJpb2RzEg4KBnZhbHVlcxgBIAMoBSI8CgtNYXRjaHVwU2lkZRIPCgd0ZWFtX2lkGAEgASgJEhIKBXNjb3JlGAIgASgBSACIAQFCCAoGX3Njb3JlImMKF0dldE1hdGNodXBEZXRhaWxSZXF1ZXN0EhgKEGxlYWd1ZV9zZWFzb25faWQYASABKAkSGwoObWF0Y2h1cF9wZXJpb2QYAiABKAVIAIgBAUIRCg9fbWF0Y2h1cF9wZXJpb2QiSQoYR2V0TWF0Y2h1cERldGFpbFJlc3BvbnNlEi0KB21hdGNodXAYASABKAsyHC5sZWFndWVsZW5zLnYxLk1hdGNodXBEZXRhaWwiMAoaR2V0TWF0Y2h1cFdpbkNoYW5jZVJlcXVlc3QSEgoKbWF0Y2h1cF9pZBgBIAEoCSJSChtHZXRNYXRjaHVwV2luQ2hhbmNlUmVzcG9uc2USMwoKd2luX2NoYW5jZRgBIAEoCzIfLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cFdpbkNoYW5jZSL9AQoNTWF0Y2h1cERldGFpbBIKCgJpZBgBIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgCIAEoBRIsCgZzdGF0dXMYAyABKA4yHC5sZWFndWVsZW5zLnYxLk1hdGNodXBTdGF0dXMSDgoGaXNfYnllGAQgASgIEioKBHRlYW0YBSABKAsyHC5sZWFndWVsZW5zLnYxLk1hdGNodXBMaW5ldXASLgoIb3Bwb25lbnQYBiABKAsyHC5sZWFndWVsZW5zLnYxLk1hdGNodXBMaW5ldXASLgoKZmV0Y2hlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAibgoQTWF0Y2h1cFdpbkNoYW5jZRIvCgdzYW1wbGVzGAEgAygLMh4ubGVhZ3VlbGVucy52MS5XaW5DaGFuY2VTYW1wbGUSKQoHbW9tZW50cxgCIAMoCzIYLmxlYWd1ZWxlbnMudjEuS2V5TW9tZW50IrsBCg9XaW5DaGFuY2VTYW1wbGUSLwoLb2JzZXJ2ZWRfYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhcKD3RlYW1fd2luX2NoYW5jZRgCIAEoARISCgp0ZWFtX3Njb3JlGAMgASgBEhYKDm9wcG9uZW50X3Njb3JlGAQgASgBEhYKDnRlYW1fcHJvamVjdGVkGAUgASgBEhoKEm9wcG9uZW50X3Byb2plY3RlZBgGIAEoASKxAQoJS2V5TW9tZW50Ei8KC29ic2VydmVkX2F0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgd0ZWFtX2lkGAIgASgJEhEKCXBsYXllcl9pZBgDIAEoCRITCgtwbGF5ZXJfbmFtZRgEIAEoCRIqCgRraW5kGAUgASgOMhwubGVhZ3VlbGVucy52MS5LZXlNb21lbnRLaW5kEg4KBnBvaW50cxgGIAEoASKoAgoNTWF0Y2h1cExpbmV1cBIPCgd0ZWFtX2lkGAEgASgJEhEKCXRlYW1fbmFtZRgCIAEoCRIpCgZyZWNvcmQYAyABKAsyGS5sZWFndWVsZW5zLnYxLlRlYW1SZWNvcmQSEgoFc2NvcmUYBCABKAFIAIgBARIdChVzdGFydGVyc19sZWZ0X3RvX3BsYXkYBSABKAUSLQoIc3RhcnRlcnMYBiADKAsyGy5sZWFndWVsZW5zLnYxLkxpbmV1cFBsYXllchIqCgViZW5jaBgHIAMoCzIbLmxlYWd1ZWxlbnMudjEuTGluZXVwUGxheWVyEhwKD3Byb2plY3RlZF9zY29yZRgIIAEoAUgBiAEBQggKBl9zY29yZUISChBfcHJvamVjdGVkX3Njb3JlIrwCCgxMaW5ldXBQbGF5ZXISEQoJcGxheWVyX2lkGAEgASgJEhMKC3BsYXllcl9uYW1lGAIgASgJEgwKBHNsb3QYAyABKAkSEwoGcG9pbnRzGAQgASgBSACIAQESMgoNaW5qdXJ5X3N0YXR1cxgFIAEoDjIbLmxlYWd1ZWxlbnMudjEuSW5qdXJ5U3RhdHVzEhAKCHByb190ZWFtGAYgASgJEiwKCmdhbWVfc3RhdGUYByABKA4yGC5sZWFndWVsZW5zLnYxLkdhbWVTdGF0ZRIuCgpraWNrb2ZmX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIdChBwcm9qZWN0ZWRfcG9pbnRzGAkgASgBSAGIAQFCCQoHX3BvaW50c0ITChFfcHJvamVjdGVkX3BvaW50cyqJAQoNS2V5TW9tZW50S2luZBIfChtLRVlfTU9NRU5UX0tJTkRfVU5TUEVDSUZJRUQQABIdChlLRVlfTU9NRU5UX0tJTkRfVE9VQ0hET1dOEAESHgoaS0VZX01PTUVOVF9LSU5EX0ZJRUxEX0dPQUwQAhIYChRLRVlfTU9NRU5UX0tJTkRfUExBWRADKqMBCg1NYXRjaHVwU3RhdHVzEh4KGk1BVENIVVBfU1RBVFVTX1VOU1BFQ0lGSUVEEAASHAoYTUFUQ0hVUF9TVEFUVVNfU0NIRURVTEVEEAESHgoaTUFUQ0hVUF9TVEFUVVNfSU5fUFJPR1JFU1MQAhIYChRNQVRDSFVQX1NUQVRVU19GSU5BTBADEhoKFk1BVENIVVBfU1RBVFVTX1VOS05PV04QBCqKAQoJR2FtZVN0YXRlEhoKFkdBTUVfU1RBVEVfVU5TUEVDSUZJRUQQABIaChZHQU1FX1NUQVRFX05PVF9TVEFSVEVEEAESGQoVR0FNRV9TVEFURV9LSUNLRURfT0ZGEAISEgoOR0FNRV9TVEFURV9CWUUQAxIWChJHQU1FX1NUQVRFX1VOS05PV04QBEJSWlBnaXRodWIuY29tL2FkaXR5YWNob3VkaGFyaTI2L2xlYWd1ZS1sZW5zL2ludGVybmFsL2dlbi9sZWFndWVsZW5zL3YxO2xlYWd1ZWxlbnN2MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_leaguelens_v1_leagues, file_leaguelens_v1_players]);
 
 /**
  * @generated from message leaguelens.v1.ListMatchupsRequest
@@ -207,6 +207,44 @@ export const GetMatchupDetailResponseSchema: GenMessage<GetMatchupDetailResponse
   messageDesc(file_leaguelens_v1_matchups, 6);
 
 /**
+ * @generated from message leaguelens.v1.GetMatchupWinChanceRequest
+ */
+export type GetMatchupWinChanceRequest = Message<"leaguelens.v1.GetMatchupWinChanceRequest"> & {
+  /**
+   * MatchupDetail.id; must include the owner's selected team.
+   *
+   * @generated from field: string matchup_id = 1;
+   */
+  matchupId: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.GetMatchupWinChanceRequest.
+ * Use `create(GetMatchupWinChanceRequestSchema)` to create a new message.
+ */
+export const GetMatchupWinChanceRequestSchema: GenMessage<GetMatchupWinChanceRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_matchups, 7);
+
+/**
+ * @generated from message leaguelens.v1.GetMatchupWinChanceResponse
+ */
+export type GetMatchupWinChanceResponse = Message<"leaguelens.v1.GetMatchupWinChanceResponse"> & {
+  /**
+   * Absent on a bye or when no live samples or moments are saved.
+   *
+   * @generated from field: leaguelens.v1.MatchupWinChance win_chance = 1;
+   */
+  winChance?: MatchupWinChance | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.GetMatchupWinChanceResponse.
+ * Use `create(GetMatchupWinChanceResponseSchema)` to create a new message.
+ */
+export const GetMatchupWinChanceResponseSchema: GenMessage<GetMatchupWinChanceResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_matchups, 8);
+
+/**
  * MatchupDetail is oriented around the owner: team is always the
  * owner's side, opponent the other side.
  *
@@ -256,7 +294,129 @@ export type MatchupDetail = Message<"leaguelens.v1.MatchupDetail"> & {
  * Use `create(MatchupDetailSchema)` to create a new message.
  */
 export const MatchupDetailSchema: GenMessage<MatchupDetail> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_matchups, 7);
+  messageDesc(file_leaguelens_v1_matchups, 9);
+
+/**
+ * MatchupWinChance is oriented around the owner like MatchupDetail.
+ *
+ * @generated from message leaguelens.v1.MatchupWinChance
+ */
+export type MatchupWinChance = Message<"leaguelens.v1.MatchupWinChance"> & {
+  /**
+   * Oldest first; the last is current.
+   *
+   * @generated from field: repeated leaguelens.v1.WinChanceSample samples = 1;
+   */
+  samples: WinChanceSample[];
+
+  /**
+   * Oldest first.
+   *
+   * @generated from field: repeated leaguelens.v1.KeyMoment moments = 2;
+   */
+  moments: KeyMoment[];
+};
+
+/**
+ * Describes the message leaguelens.v1.MatchupWinChance.
+ * Use `create(MatchupWinChanceSchema)` to create a new message.
+ */
+export const MatchupWinChanceSchema: GenMessage<MatchupWinChance> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_matchups, 10);
+
+/**
+ * @generated from message leaguelens.v1.WinChanceSample
+ */
+export type WinChanceSample = Message<"leaguelens.v1.WinChanceSample"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp observed_at = 1;
+   */
+  observedAt?: Timestamp | undefined;
+
+  /**
+   * 0..1 for the owner's team.
+   *
+   * @generated from field: double team_win_chance = 2;
+   */
+  teamWinChance: number;
+
+  /**
+   * @generated from field: double team_score = 3;
+   */
+  teamScore: number;
+
+  /**
+   * @generated from field: double opponent_score = 4;
+   */
+  opponentScore: number;
+
+  /**
+   * Live projected total.
+   *
+   * @generated from field: double team_projected = 5;
+   */
+  teamProjected: number;
+
+  /**
+   * @generated from field: double opponent_projected = 6;
+   */
+  opponentProjected: number;
+};
+
+/**
+ * Describes the message leaguelens.v1.WinChanceSample.
+ * Use `create(WinChanceSampleSchema)` to create a new message.
+ */
+export const WinChanceSampleSchema: GenMessage<WinChanceSample> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_matchups, 11);
+
+/**
+ * KeyMoment is a starter's league-scored point change classified by keymoments.Classify.
+ *
+ * @generated from message leaguelens.v1.KeyMoment
+ */
+export type KeyMoment = Message<"leaguelens.v1.KeyMoment"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp observed_at = 1;
+   */
+  observedAt?: Timestamp | undefined;
+
+  /**
+   * Matches MatchupLineup.team_id.
+   *
+   * @generated from field: string team_id = 2;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: string player_id = 3;
+   */
+  playerId: string;
+
+  /**
+   * @generated from field: string player_name = 4;
+   */
+  playerName: string;
+
+  /**
+   * @generated from field: leaguelens.v1.KeyMomentKind kind = 5;
+   */
+  kind: KeyMomentKind;
+
+  /**
+   * After minus before; negative is a drop.
+   *
+   * @generated from field: double points = 6;
+   */
+  points: number;
+};
+
+/**
+ * Describes the message leaguelens.v1.KeyMoment.
+ * Use `create(KeyMomentSchema)` to create a new message.
+ */
+export const KeyMomentSchema: GenMessage<KeyMoment> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_matchups, 12);
 
 /**
  * @generated from message leaguelens.v1.MatchupLineup
@@ -320,7 +480,7 @@ export type MatchupLineup = Message<"leaguelens.v1.MatchupLineup"> & {
  * Use `create(MatchupLineupSchema)` to create a new message.
  */
 export const MatchupLineupSchema: GenMessage<MatchupLineup> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_matchups, 8);
+  messageDesc(file_leaguelens_v1_matchups, 13);
 
 /**
  * @generated from message leaguelens.v1.LineupPlayer
@@ -387,7 +547,38 @@ export type LineupPlayer = Message<"leaguelens.v1.LineupPlayer"> & {
  * Use `create(LineupPlayerSchema)` to create a new message.
  */
 export const LineupPlayerSchema: GenMessage<LineupPlayer> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_matchups, 9);
+  messageDesc(file_leaguelens_v1_matchups, 14);
+
+/**
+ * @generated from enum leaguelens.v1.KeyMomentKind
+ */
+export enum KeyMomentKind {
+  /**
+   * @generated from enum value: KEY_MOMENT_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: KEY_MOMENT_KIND_TOUCHDOWN = 1;
+   */
+  TOUCHDOWN = 1,
+
+  /**
+   * @generated from enum value: KEY_MOMENT_KIND_FIELD_GOAL = 2;
+   */
+  FIELD_GOAL = 2,
+
+  /**
+   * @generated from enum value: KEY_MOMENT_KIND_PLAY = 3;
+   */
+  PLAY = 3,
+}
+
+/**
+ * Describes the enum leaguelens.v1.KeyMomentKind.
+ */
+export const KeyMomentKindSchema: GenEnum<KeyMomentKind> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_matchups, 0);
 
 /**
  * @generated from enum leaguelens.v1.MatchupStatus
@@ -423,7 +614,7 @@ export enum MatchupStatus {
  * Describes the enum leaguelens.v1.MatchupStatus.
  */
 export const MatchupStatusSchema: GenEnum<MatchupStatus> = /*@__PURE__*/
-  enumDesc(file_leaguelens_v1_matchups, 0);
+  enumDesc(file_leaguelens_v1_matchups, 1);
 
 /**
  * GameState is derived from nfl_games kickoffs. Live and final are not
@@ -464,5 +655,5 @@ export enum GameState {
  * Describes the enum leaguelens.v1.GameState.
  */
 export const GameStateSchema: GenEnum<GameState> = /*@__PURE__*/
-  enumDesc(file_leaguelens_v1_matchups, 1);
+  enumDesc(file_leaguelens_v1_matchups, 2);
 

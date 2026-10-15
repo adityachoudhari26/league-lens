@@ -24,7 +24,8 @@ var File_leaguelens_v1_dashboard_proto protoreflect.FileDescriptor
 
 const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"\n" +
-	"\x1dleaguelens/v1/dashboard.proto\x12\rleaguelens.v1\x1a\x1cleaguelens/v1/overview.proto\x1a\x1bleaguelens/v1/leagues.proto\x1a\x1bleaguelens/v1/rosters.proto\x1a\x1cleaguelens/v1/matchups.proto\x1a\x1bleaguelens/v1/players.proto2\xda\t\n" +
+	"\x1dleaguelens/v1/dashboard.proto\x12\rleaguelens.v1\x1a\x1cleaguelens/v1/overview.proto\x1a\x1bleaguelens/v1/leagues.proto\x1a\x1bleaguelens/v1/rosters.proto\x1a\x1cleaguelens/v1/matchups.proto\x1a\x1bleaguelens/v1/players.proto2\xc8\n" +
+	"\n" +
 	"\x10DashboardService\x12o\n" +
 	"\x14GetOverviewAttention\x12*.leaguelens.v1.GetOverviewAttentionRequest\x1a+.leaguelens.v1.GetOverviewAttentionResponse\x12i\n" +
 	"\x12DismissLineupAlert\x12(.leaguelens.v1.DismissLineupAlertRequest\x1a).leaguelens.v1.DismissLineupAlertResponse\x12i\n" +
@@ -36,7 +37,8 @@ const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"\tGetLeague\x12\x1f.leaguelens.v1.GetLeagueRequest\x1a .leaguelens.v1.GetLeagueResponse\x12Z\n" +
 	"\rGetTeamRoster\x12#.leaguelens.v1.GetTeamRosterRequest\x1a$.leaguelens.v1.GetTeamRosterResponse\x12W\n" +
 	"\fListMatchups\x12\".leaguelens.v1.ListMatchupsRequest\x1a#.leaguelens.v1.ListMatchupsResponse\x12c\n" +
-	"\x10GetMatchupDetail\x12&.leaguelens.v1.GetMatchupDetailRequest\x1a'.leaguelens.v1.GetMatchupDetailResponse\x12Z\n" +
+	"\x10GetMatchupDetail\x12&.leaguelens.v1.GetMatchupDetailRequest\x1a'.leaguelens.v1.GetMatchupDetailResponse\x12l\n" +
+	"\x13GetMatchupWinChance\x12).leaguelens.v1.GetMatchupWinChanceRequest\x1a*.leaguelens.v1.GetMatchupWinChanceResponse\x12Z\n" +
 	"\rGetPlayerCard\x12#.leaguelens.v1.GetPlayerCardRequest\x1a$.leaguelens.v1.GetPlayerCardResponseBRZPgithub.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1b\x06proto3"
 
 var file_leaguelens_v1_dashboard_proto_goTypes = []any{
@@ -51,19 +53,21 @@ var file_leaguelens_v1_dashboard_proto_goTypes = []any{
 	(*GetTeamRosterRequest)(nil),             // 8: leaguelens.v1.GetTeamRosterRequest
 	(*ListMatchupsRequest)(nil),              // 9: leaguelens.v1.ListMatchupsRequest
 	(*GetMatchupDetailRequest)(nil),          // 10: leaguelens.v1.GetMatchupDetailRequest
-	(*GetPlayerCardRequest)(nil),             // 11: leaguelens.v1.GetPlayerCardRequest
-	(*GetOverviewAttentionResponse)(nil),     // 12: leaguelens.v1.GetOverviewAttentionResponse
-	(*DismissLineupAlertResponse)(nil),       // 13: leaguelens.v1.DismissLineupAlertResponse
-	(*RestoreLineupAlertResponse)(nil),       // 14: leaguelens.v1.RestoreLineupAlertResponse
-	(*GetOverviewMatchupsResponse)(nil),      // 15: leaguelens.v1.GetOverviewMatchupsResponse
-	(*GetOverviewPlayerUpdatesResponse)(nil), // 16: leaguelens.v1.GetOverviewPlayerUpdatesResponse
-	(*GetOverviewLookingAheadResponse)(nil),  // 17: leaguelens.v1.GetOverviewLookingAheadResponse
-	(*ListLeaguesResponse)(nil),              // 18: leaguelens.v1.ListLeaguesResponse
-	(*GetLeagueResponse)(nil),                // 19: leaguelens.v1.GetLeagueResponse
-	(*GetTeamRosterResponse)(nil),            // 20: leaguelens.v1.GetTeamRosterResponse
-	(*ListMatchupsResponse)(nil),             // 21: leaguelens.v1.ListMatchupsResponse
-	(*GetMatchupDetailResponse)(nil),         // 22: leaguelens.v1.GetMatchupDetailResponse
-	(*GetPlayerCardResponse)(nil),            // 23: leaguelens.v1.GetPlayerCardResponse
+	(*GetMatchupWinChanceRequest)(nil),       // 11: leaguelens.v1.GetMatchupWinChanceRequest
+	(*GetPlayerCardRequest)(nil),             // 12: leaguelens.v1.GetPlayerCardRequest
+	(*GetOverviewAttentionResponse)(nil),     // 13: leaguelens.v1.GetOverviewAttentionResponse
+	(*DismissLineupAlertResponse)(nil),       // 14: leaguelens.v1.DismissLineupAlertResponse
+	(*RestoreLineupAlertResponse)(nil),       // 15: leaguelens.v1.RestoreLineupAlertResponse
+	(*GetOverviewMatchupsResponse)(nil),      // 16: leaguelens.v1.GetOverviewMatchupsResponse
+	(*GetOverviewPlayerUpdatesResponse)(nil), // 17: leaguelens.v1.GetOverviewPlayerUpdatesResponse
+	(*GetOverviewLookingAheadResponse)(nil),  // 18: leaguelens.v1.GetOverviewLookingAheadResponse
+	(*ListLeaguesResponse)(nil),              // 19: leaguelens.v1.ListLeaguesResponse
+	(*GetLeagueResponse)(nil),                // 20: leaguelens.v1.GetLeagueResponse
+	(*GetTeamRosterResponse)(nil),            // 21: leaguelens.v1.GetTeamRosterResponse
+	(*ListMatchupsResponse)(nil),             // 22: leaguelens.v1.ListMatchupsResponse
+	(*GetMatchupDetailResponse)(nil),         // 23: leaguelens.v1.GetMatchupDetailResponse
+	(*GetMatchupWinChanceResponse)(nil),      // 24: leaguelens.v1.GetMatchupWinChanceResponse
+	(*GetPlayerCardResponse)(nil),            // 25: leaguelens.v1.GetPlayerCardResponse
 }
 var file_leaguelens_v1_dashboard_proto_depIdxs = []int32{
 	0,  // 0: leaguelens.v1.DashboardService.GetOverviewAttention:input_type -> leaguelens.v1.GetOverviewAttentionRequest
@@ -77,21 +81,23 @@ var file_leaguelens_v1_dashboard_proto_depIdxs = []int32{
 	8,  // 8: leaguelens.v1.DashboardService.GetTeamRoster:input_type -> leaguelens.v1.GetTeamRosterRequest
 	9,  // 9: leaguelens.v1.DashboardService.ListMatchups:input_type -> leaguelens.v1.ListMatchupsRequest
 	10, // 10: leaguelens.v1.DashboardService.GetMatchupDetail:input_type -> leaguelens.v1.GetMatchupDetailRequest
-	11, // 11: leaguelens.v1.DashboardService.GetPlayerCard:input_type -> leaguelens.v1.GetPlayerCardRequest
-	12, // 12: leaguelens.v1.DashboardService.GetOverviewAttention:output_type -> leaguelens.v1.GetOverviewAttentionResponse
-	13, // 13: leaguelens.v1.DashboardService.DismissLineupAlert:output_type -> leaguelens.v1.DismissLineupAlertResponse
-	14, // 14: leaguelens.v1.DashboardService.RestoreLineupAlert:output_type -> leaguelens.v1.RestoreLineupAlertResponse
-	15, // 15: leaguelens.v1.DashboardService.GetOverviewMatchups:output_type -> leaguelens.v1.GetOverviewMatchupsResponse
-	16, // 16: leaguelens.v1.DashboardService.GetOverviewPlayerUpdates:output_type -> leaguelens.v1.GetOverviewPlayerUpdatesResponse
-	17, // 17: leaguelens.v1.DashboardService.GetOverviewLookingAhead:output_type -> leaguelens.v1.GetOverviewLookingAheadResponse
-	18, // 18: leaguelens.v1.DashboardService.ListLeagues:output_type -> leaguelens.v1.ListLeaguesResponse
-	19, // 19: leaguelens.v1.DashboardService.GetLeague:output_type -> leaguelens.v1.GetLeagueResponse
-	20, // 20: leaguelens.v1.DashboardService.GetTeamRoster:output_type -> leaguelens.v1.GetTeamRosterResponse
-	21, // 21: leaguelens.v1.DashboardService.ListMatchups:output_type -> leaguelens.v1.ListMatchupsResponse
-	22, // 22: leaguelens.v1.DashboardService.GetMatchupDetail:output_type -> leaguelens.v1.GetMatchupDetailResponse
-	23, // 23: leaguelens.v1.DashboardService.GetPlayerCard:output_type -> leaguelens.v1.GetPlayerCardResponse
-	12, // [12:24] is the sub-list for method output_type
-	0,  // [0:12] is the sub-list for method input_type
+	11, // 11: leaguelens.v1.DashboardService.GetMatchupWinChance:input_type -> leaguelens.v1.GetMatchupWinChanceRequest
+	12, // 12: leaguelens.v1.DashboardService.GetPlayerCard:input_type -> leaguelens.v1.GetPlayerCardRequest
+	13, // 13: leaguelens.v1.DashboardService.GetOverviewAttention:output_type -> leaguelens.v1.GetOverviewAttentionResponse
+	14, // 14: leaguelens.v1.DashboardService.DismissLineupAlert:output_type -> leaguelens.v1.DismissLineupAlertResponse
+	15, // 15: leaguelens.v1.DashboardService.RestoreLineupAlert:output_type -> leaguelens.v1.RestoreLineupAlertResponse
+	16, // 16: leaguelens.v1.DashboardService.GetOverviewMatchups:output_type -> leaguelens.v1.GetOverviewMatchupsResponse
+	17, // 17: leaguelens.v1.DashboardService.GetOverviewPlayerUpdates:output_type -> leaguelens.v1.GetOverviewPlayerUpdatesResponse
+	18, // 18: leaguelens.v1.DashboardService.GetOverviewLookingAhead:output_type -> leaguelens.v1.GetOverviewLookingAheadResponse
+	19, // 19: leaguelens.v1.DashboardService.ListLeagues:output_type -> leaguelens.v1.ListLeaguesResponse
+	20, // 20: leaguelens.v1.DashboardService.GetLeague:output_type -> leaguelens.v1.GetLeagueResponse
+	21, // 21: leaguelens.v1.DashboardService.GetTeamRoster:output_type -> leaguelens.v1.GetTeamRosterResponse
+	22, // 22: leaguelens.v1.DashboardService.ListMatchups:output_type -> leaguelens.v1.ListMatchupsResponse
+	23, // 23: leaguelens.v1.DashboardService.GetMatchupDetail:output_type -> leaguelens.v1.GetMatchupDetailResponse
+	24, // 24: leaguelens.v1.DashboardService.GetMatchupWinChance:output_type -> leaguelens.v1.GetMatchupWinChanceResponse
+	25, // 25: leaguelens.v1.DashboardService.GetPlayerCard:output_type -> leaguelens.v1.GetPlayerCardResponse
+	13, // [13:26] is the sub-list for method output_type
+	0,  // [0:13] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

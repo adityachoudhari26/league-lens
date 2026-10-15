@@ -88,9 +88,13 @@ type Querier interface {
 	// The owner's selected team in the league (user_teams allows at most one) and
 	// the scoring week of its latest observed snapshot (0 when none).
 	MatchupDetailOwnerTeam(ctx context.Context, arg MatchupDetailOwnerTeamParams) (MatchupDetailOwnerTeamRow, error)
+	MatchupDetailPointChanges(ctx context.Context, arg MatchupDetailPointChangesParams) ([]MatchupDetailPointChangesRow, error)
 	// A period of 0 means omitted: the round containing the observed scoring week,
 	// matching OverviewTeamMatchup.
 	MatchupDetailRound(ctx context.Context, arg MatchupDetailRoundParams) (Matchup, error)
+	MatchupDetailWinChanceSamples(ctx context.Context, arg MatchupDetailWinChanceSamplesParams) ([]MatchupDetailWinChanceSamplesRow, error)
+	// The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
+	MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupWinChanceOwnerMatchupParams) (MatchupWinChanceOwnerMatchupRow, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)
 	NextNFLGame(ctx context.Context, arg NextNFLGameParams) (NextNFLGameRow, error)
 	// Match the latest observed scoring week, not the greatest (possibly future) round.
