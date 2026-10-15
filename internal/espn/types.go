@@ -58,9 +58,10 @@ type playerResponse struct {
 	Stats         []statResponse `json:"stats"`
 }
 type statResponse struct {
-	SourceID        int `json:"statSourceId"`
-	SplitTypeID     int `json:"statSplitTypeId"`
-	ScoringPeriodID int `json:"scoringPeriodId"`
+	SourceID        int      `json:"statSourceId"`
+	SplitTypeID     int      `json:"statSplitTypeId"`
+	ScoringPeriodID int      `json:"scoringPeriodId"`
+	AppliedTotal    *float64 `json:"appliedTotal"` // League-scored total for this stat line.
 }
 type matchupResponse struct {
 	ID     int           `json:"id"`
