@@ -13,7 +13,7 @@ import { scoreToneClass } from "@/components/matchups/tones"
 import {
   type MatchupDetail,
   type MatchupLineup,
-} from "@/gen/leaguelens/v1/dashboard_pb"
+} from "@/gen/leaguelens/v1/matchups_pb"
 
 function TeamScore({
   side,

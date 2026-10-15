@@ -3,7 +3,7 @@ import {
   type RoundStatus,
   type ScoreTone,
 } from "@/components/matchups/rules"
-import { type MatchupLineup } from "@/gen/leaguelens/v1/dashboard_pb"
+import { type MatchupLineup } from "@/gen/leaguelens/v1/matchups_pb"
 
 const statusToneClass: Record<RoundStatus, string> = {
   Upcoming: "bg-sky-100 text-sky-700 dark:bg-[#23303a] dark:text-[#9bbfd9]",

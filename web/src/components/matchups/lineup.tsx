@@ -1,5 +1,5 @@
 import { scoreLabel } from "@/components/overview/format"
-import { GameState, type LineupPlayer } from "@/gen/leaguelens/v1/dashboard_pb"
+import { GameState, type LineupPlayer } from "@/gen/leaguelens/v1/matchups_pb"
 import {
   gameDetail,
   injuryLabel,

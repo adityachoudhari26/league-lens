@@ -6,7 +6,7 @@ import {
   type PlayerCard,
   type PlayerDraft,
   type PlayerStat,
-} from "@/gen/leaguelens/v1/dashboard_pb"
+} from "@/gen/leaguelens/v1/players_pb"
 
 // A saved profile older than this means the live fetch failed and the card
 // shows the last one that worked.

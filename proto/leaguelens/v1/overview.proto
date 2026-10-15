@@ -1,6 +1,7 @@
 syntax = "proto3";
 package leaguelens.v1;
 import "google/protobuf/timestamp.proto";
+import "leaguelens/v1/players.proto";
 option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
 
 // Sections report coverage explicitly: an empty array is not proof of no issues.
@@ -60,16 +61,6 @@ enum AlertKind {
   ALERT_KIND_EMPTY_SLOT = 1;
   ALERT_KIND_INJURY = 2;
   ALERT_KIND_BYE = 3;
-}
-// Provider injury designations normalized across ESPN and Sleeper.
-enum InjuryStatus {
-  INJURY_STATUS_UNSPECIFIED = 0;
-  INJURY_STATUS_ACTIVE = 1;
-  INJURY_STATUS_QUESTIONABLE = 2;
-  INJURY_STATUS_DOUBTFUL = 3;
-  INJURY_STATUS_OUT = 4;
-  INJURY_STATUS_INJURED_RESERVE = 5;
-  INJURY_STATUS_UNKNOWN = 6;
 }
 message GetOverviewMatchupsRequest {}
 message GetOverviewMatchupsResponse {
