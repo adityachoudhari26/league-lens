@@ -34,13 +34,14 @@ ORDER BY l.provider,l.name;
 -- Status stays the full sync's job; live reads only refresh scores.
 UPDATE matchups SET score_a = @score_a, score_b = @score_b, fetched_at = @fetched_at WHERE id = @matchup_id;
 
--- name: UpdateLiveLineupEntry :execrows
+-- name: UpdateLiveLineupEntry :many
 -- Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
 UPDATE matchup_lineups ml SET points = @points,
 touchdowns = coalesce(@touchdowns, ml.touchdowns), field_goals = coalesce(@field_goals, ml.field_goals)
 FROM player_external_ids x
 WHERE ml.matchup_id = @matchup_id AND ml.team_id = @team_id AND ml.player_id = x.player_id
-AND x.provider = @provider AND x.external_id = @external_player_id;
+AND x.provider = @provider AND x.external_id = @external_player_id
+RETURNING ml.player_id, ml.starter, ml.points, ml.touchdowns, ml.field_goals;
 
 -- name: ListLiveMatchupStarters :many
 -- Both sides' starters with projections and NFL team from each team's latest observed snapshot ('' when unknown).
@@ -63,3 +64,29 @@ FROM win_chance_samples WHERE matchup_id = @matchup_id ORDER BY observed_at DESC
 INSERT INTO win_chance_samples (matchup_id, observed_at, team_a_win_chance, score_a, score_b, projected_a, projected_b)
 VALUES (@matchup_id, @observed_at, @team_a_win_chance, @score_a, @score_b, @projected_a, @projected_b)
 ON CONFLICT (matchup_id, observed_at) DO NOTHING;
+
+-- name: ListLiveLineupObservations :many
+SELECT team_id, player_id, points, touchdowns, field_goals, observed_at
+FROM live_lineup_observations WHERE matchup_id = @matchup_id;
+
+-- name: UpsertLiveLineupObservation :exec
+INSERT INTO live_lineup_observations (
+ matchup_id, team_id, player_id, points, touchdowns, field_goals, observed_at
+)
+VALUES (@matchup_id, @team_id, @player_id, @points, @touchdowns, @field_goals, @observed_at)
+ON CONFLICT (matchup_id, team_id, player_id) DO UPDATE SET
+ points = EXCLUDED.points,
+ touchdowns = EXCLUDED.touchdowns,
+ field_goals = EXCLUDED.field_goals,
+ observed_at = EXCLUDED.observed_at;
+
+-- name: InsertLineupPointChange :exec
+INSERT INTO lineup_point_changes (
+ matchup_id, team_id, player_id, observed_at, points_before, points_after,
+ touchdowns_before, touchdowns_after, field_goals_before, field_goals_after
+)
+VALUES (
+ @matchup_id, @team_id, @player_id, @observed_at, @points_before, @points_after,
+ @touchdowns_before, @touchdowns_after, @field_goals_before, @field_goals_after
+)
+ON CONFLICT DO NOTHING;

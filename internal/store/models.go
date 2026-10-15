@@ -46,6 +46,29 @@ type LeagueSeason struct {
 	UpdatedAt        pgtype.Timestamptz
 }
 
+type LineupPointChange struct {
+	MatchupID        pgtype.UUID
+	TeamID           pgtype.UUID
+	PlayerID         pgtype.UUID
+	ObservedAt       pgtype.Timestamptz
+	PointsBefore     pgtype.Numeric
+	PointsAfter      pgtype.Numeric
+	TouchdownsBefore pgtype.Int4
+	TouchdownsAfter  pgtype.Int4
+	FieldGoalsBefore pgtype.Int4
+	FieldGoalsAfter  pgtype.Int4
+}
+
+type LiveLineupObservation struct {
+	MatchupID  pgtype.UUID
+	TeamID     pgtype.UUID
+	PlayerID   pgtype.UUID
+	Points     pgtype.Numeric
+	Touchdowns pgtype.Int4
+	FieldGoals pgtype.Int4
+	ObservedAt pgtype.Timestamptz
+}
+
 type Matchup struct {
 	ID                 pgtype.UUID
 	LeagueSeasonID     pgtype.UUID

@@ -46,6 +46,7 @@ type Querier interface {
 	GetPlayerProfile(ctx context.Context, playerID pgtype.UUID) (PlayerProfile, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
+	InsertLineupPointChange(ctx context.Context, arg InsertLineupPointChangeParams) error
 	InsertWinChanceSample(ctx context.Context, arg InsertWinChanceSampleParams) error
 	IsLeagueAttachedForUser(ctx context.Context, arg IsLeagueAttachedForUserParams) (bool, error)
 	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
@@ -55,6 +56,7 @@ type Querier interface {
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
 	ListDismissedAlerts(ctx context.Context, arg ListDismissedAlertsParams) ([]string, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
+	ListLiveLineupObservations(ctx context.Context, matchupID pgtype.UUID) ([]ListLiveLineupObservationsRow, error)
 	// The owner's single-week matchup for @week in each attached league of @season,
 	// with the NFL teams of both sides' starters from each team's latest observed
 	// snapshot ('' when a starter's team is unknown).
@@ -104,11 +106,12 @@ type Querier interface {
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)
 	// Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
-	UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (int64, error)
+	UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) ([]UpdateLiveLineupEntryRow, error)
 	// Status stays the full sync's job; live reads only refresh scores.
 	UpdateLiveMatchupScores(ctx context.Context, arg UpdateLiveMatchupScoresParams) error
 	UpdateMappedPlayerName(ctx context.Context, arg UpdateMappedPlayerNameParams) error
 	UpsertLeagueSeason(ctx context.Context, arg UpsertLeagueSeasonParams) (LeagueSeason, error)
+	UpsertLiveLineupObservation(ctx context.Context, arg UpsertLiveLineupObservationParams) error
 	UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (Matchup, error)
 	// Live TD/FG counts survive a full sync; only the live loop writes them.
 	UpsertMatchupLineupEntry(ctx context.Context, arg UpsertMatchupLineupEntryParams) error
