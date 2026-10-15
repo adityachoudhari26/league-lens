@@ -44,18 +44,18 @@ remain stable even though the API and frontend work happened before owner setup.
 - [ ] **5. Add owner setup and credential protection.**
   - [x] Local owner selection through `LOCAL_OWNER_EMAIL`; this is an identity label, not authentication.
   - [ ] Review and implement protected owner setup, authentication, and server-side sessions with closed registration.
-  - [ ] Add encrypted provider credential storage and document encryption-key backup requirements.
+  - [ ] Add encrypted provider credential storage and document encryption-key backup requirements. Proposed in [league connections](docs/designs/league-connections.md#credential-storage): AES-256-GCM with a generated key file; a lost key only requires reconnecting ESPN.
   - [ ] Verify unauthorized access is rejected and setup cannot be claimed without its token before supporting public exposure.
 
 - [ ] **6. Complete ESPN connection setup.**
   - [x] Shared-provider Go adapter and CLI import: full league, rosters, records, encountered players, and available current-season matchup/roster history.
   - [x] Fixture coverage for normalization, invalid authentication, historical weeks, missing data, and multiweek scores; failures preserve previously imported data.
-  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states.
+  - [ ] Add in-app league/team selection, credential configuration, and reconnect/error states. Proposed: bookmarklet or pasted cookies, league discovery through ESPN's fan API, and Reconnect when cookies are rejected ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **7. Complete Sleeper connection setup.**
   - [x] Shared-provider Go adapter and CLI import using a username and league ID, including team selection and available current-season history.
   - [x] Fixture coverage for mappings and missing data; public username lookup is selection, not proof of ownership.
-  - [ ] Add in-app username lookup and league/team selection.
+  - [ ] Add in-app username lookup and league/team selection ([design](docs/designs/league-connections.md#connecting-leagues)).
 
 - [ ] **8. Build the combined dashboard.**
   - [x] Responsive shell, collapsible navigation, and persistent Light/Dark/System appearance.
@@ -65,6 +65,7 @@ remain stable even though the API and frontend work happened before owner setup.
   - [x] Exact cross-provider player mapping with provider-ID fallback; only encountered players are stored, and uncertain identities are not joined by name.
   - [ ] Build Roster, Matchups, and Standings pages one at a time, with league selection where useful.
   - [ ] Show connection health and stale-data state. (Refresh now runs provider sync; see checkpoint 9.)
+  - [ ] Replace the empty overview with a Connect leagues entry point, and manage connections in Settings.
 
 - [ ] **9. Make synchronization automatic.** In progress: on-demand sync is implemented; scheduling remains.
   - [x] Reuse the import service behind a server-side sync operation (`SyncService`); keep the CLI as a development tool.
@@ -87,7 +88,7 @@ remain stable even though the API and frontend work happened before owner setup.
 
 - [ ] **12. Package and verify self-hosting.**
   - [x] Local Postgres Compose service and documented development commands.
-  - [ ] Production image and routing for the built frontend and Connect API.
+  - [ ] Production image and routing for the built frontend and Connect API. Proposed: Docker Desktop plus `docker compose up`, served at `http://league-lens.localhost` with startup migrations ([design](docs/designs/league-connections.md#installation)).
   - [ ] Installation, migrations, upgrades, persistent volumes, and backup/restore documentation.
   - [ ] Verify a clean installation and restore; document HTTPS and complete owner protection before public exposure.
 
