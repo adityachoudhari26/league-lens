@@ -103,7 +103,7 @@ function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
 
   return (
     <details className="group rounded-lg border border-border bg-card">
-      <summary className="flex cursor-pointer list-none items-start gap-3 rounded-lg px-3 py-2.5 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-start gap-3 rounded-lg px-4 py-3 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
         <category.Icon
           aria-hidden="true"
           className={`mt-0.5 size-4 shrink-0 ${category.accent}`}
@@ -133,7 +133,7 @@ function PlayerUpdateCard({ update }: { update: PlayerUpdate }) {
           className="size-4 shrink-0 text-muted-foreground group-open:rotate-180"
         />
       </summary>
-      <div className="border-t px-3 py-2.5 text-sm leading-6 text-muted-foreground">
+      <div className="border-t px-4 py-3 text-sm leading-6 text-muted-foreground">
         {update.summary && <p>{update.summary}</p>}
         <p className="mt-2 text-xs">
           {update.sourceLabel} · {observedTime(update.publishedAt)}

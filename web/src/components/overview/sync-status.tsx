@@ -62,7 +62,7 @@ export function SyncStatus({
     return null
 
   return (
-    <div className="mb-4 grid gap-2 text-sm">
+    <div className="mb-6 grid gap-2 text-sm">
       {syncUnavailable && (
         <p role="alert" className="text-muted-foreground">
           Couldn’t reach the sync service. Showing saved data.

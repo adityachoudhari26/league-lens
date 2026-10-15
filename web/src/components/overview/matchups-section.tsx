@@ -33,7 +33,7 @@ function MatchupCard({ matchup }: { matchup: OverviewMatchup }) {
           : ""}{" "}
         · {matchup.status.replaceAll("_", " ")}
       </p>
-      <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         <div>
           <p className="text-xs text-muted-foreground">You</p>
           <p className="mt-0.5 text-sm font-medium">{team?.name}</p>
@@ -50,14 +50,14 @@ function MatchupCard({ matchup }: { matchup: OverviewMatchup }) {
           </p>
         </div>
       </div>
-      <p className="mt-2.5 border-t pt-2 text-xs text-muted-foreground">
+      <p className="mt-3 border-t pt-2.5 text-xs text-muted-foreground">
         {matchup.fetchedAt
           ? `Last imported ${observedTime(matchup.fetchedAt)}`
           : "No imported matchup for this scoring week."}
       </p>
     </>
   )
-  const cardClass = `rounded-lg border border-t-2 bg-card px-3 py-2.5 ${espn ? "border-t-rose-400 dark:border-t-[#946570]" : "border-t-violet-400 dark:border-t-[#84759f]"}`
+  const cardClass = `rounded-lg border border-t-2 bg-card px-4 py-3.5 ${espn ? "border-t-rose-400 dark:border-t-[#946570]" : "border-t-violet-400 dark:border-t-[#84759f]"}`
   if (!team) return <article className={cardClass}>{body}</article>
   return (
     <Link
@@ -83,7 +83,7 @@ export function MatchupsSection() {
           }}
         />
       ) : query.data.matchups.length ? (
-        <div className="grid gap-2">
+        <div className="grid gap-3">
           {query.data.matchups.map((matchup) => (
             <MatchupCard key={matchup.team?.id} matchup={matchup} />
           ))}
