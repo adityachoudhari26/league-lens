@@ -1,6 +1,8 @@
 // Primary colors from ESPN's public NFL teams endpoint, keyed by the team
 // abbreviations our adapters store. Pittsburgh and Las Vegas use their
-// secondary color because their black primary would disappear on the card.
+// secondary color because their black primary would disappear on the card,
+// Denver, Houston and Seattle use their signature orange, red and green over
+// ESPN's navy primaries.
 const TEAM_COLORS: Record<string, string> = {
   ARI: "#a40227",
   ATL: "#a71930",
@@ -11,10 +13,10 @@ const TEAM_COLORS: Record<string, string> = {
   CIN: "#fb4f14",
   CLE: "#472a08",
   DAL: "#002a5c",
-  DEN: "#0a2343",
+  DEN: "#fc4c02",
   DET: "#0076b6",
   GB: "#204e32",
-  HOU: "#021018",
+  HOU: "#eb0028",
   IND: "#003b75",
   JAX: "#007487",
   KC: "#e31837",
@@ -30,7 +32,7 @@ const TEAM_COLORS: Record<string, string> = {
   PHI: "#06424d",
   PIT: "#ffb612",
   SF: "#aa0000",
-  SEA: "#002a5c",
+  SEA: "#69be28",
   TB: "#bd1c36",
   TEN: "#4495d2",
   WAS: "#5a1414",

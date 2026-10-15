@@ -152,7 +152,7 @@ function PlayerCardDetails({ card }: { card: PlayerCard }) {
     // near-black teams stay visible on the dark surface.
     <div
       style={color ? teamAccentStyle(color) : undefined}
-      className="[--team-accent:var(--team)] dark:[--team-accent:oklch(from_var(--team)_max(l,0.62)_max(c,0.12)_h)]"
+      className="[--team-accent:var(--team)] dark:[--team-accent:oklch(from_var(--team)_max(l,0.62)_max(c,min(c*4,0.12))_h)]"
     >
       {color && <div className="h-1 bg-(--team-accent)" />}
       <PlayerCardHeader card={card} teamTinted={color !== undefined} />
