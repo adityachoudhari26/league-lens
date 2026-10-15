@@ -6,6 +6,7 @@ import {
   ownerRowTone,
   playerInfo,
   shownPoints,
+  type RoundStatus,
 } from "@/components/matchups/rules"
 import { scoreToneClass } from "@/components/matchups/tones"
 
@@ -139,13 +140,15 @@ function LineupRow({
   mine,
   theirs,
   hasOpponent,
+  status,
 }: {
   slot: string
   mine?: LineupPlayer
   theirs?: LineupPlayer
   hasOpponent: boolean
+  status: RoundStatus
 }) {
-  const tone = ownerRowTone(mine, theirs)
+  const tone = ownerRowTone(status, mine, theirs)
   if (!hasOpponent)
     return (
       <div className="grid grid-cols-[1fr_3rem] items-center gap-2 px-3 py-2">
@@ -166,10 +169,12 @@ export function Lineup({
   mine,
   theirs,
   hasOpponent,
+  status,
 }: {
   mine: LineupPlayer[]
   theirs: LineupPlayer[]
   hasOpponent: boolean
+  status: RoundStatus
 }) {
   const rows = Array.from({ length: Math.max(mine.length, theirs.length) })
   return (
@@ -181,6 +186,7 @@ export function Lineup({
           mine={mine[index]}
           theirs={theirs[index]}
           hasOpponent={hasOpponent}
+          status={status}
         />
       ))}
     </div>

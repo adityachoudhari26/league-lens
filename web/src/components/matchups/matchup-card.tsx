@@ -91,6 +91,7 @@ export function MatchupCard({
           mine={team.starters}
           theirs={opponent?.starters ?? []}
           hasOpponent={hasOpponent}
+          status={status}
         />
       </div>
       <details className="group border-t">
@@ -103,6 +104,7 @@ export function MatchupCard({
             mine={team.bench}
             theirs={opponent?.bench ?? []}
             hasOpponent={hasOpponent}
+            status={status}
           />
         </div>
       </details>

@@ -43,11 +43,16 @@ export function teamScore(side: MatchupLineup, status: RoundStatus) {
   return status === "Upcoming" ? undefined : side.score
 }
 
+/**
+ * Whether the owner won the round. Only finished rounds get a tone, so the
+ * header score stays neutral while a week is upcoming or in progress.
+ */
 export function ownerScoreTone(
   team: MatchupLineup,
   opponent: MatchupLineup | undefined,
   status: RoundStatus,
 ): ScoreTone | undefined {
+  if (status !== "Final") return undefined
   const mine = teamScore(team, status)
   const theirs = opponent && teamScore(opponent, status)
   if (mine === undefined || theirs === undefined) return undefined
@@ -116,26 +121,20 @@ export function ownerShare(
 }
 
 /**
- * Whether the owner wins a lineup row: actual points once both players have
- * them, projected points while neither has played. Mixed rows and ties have
- * no tone.
+ * Whether the owner won a lineup row. Only finished rounds get a tone, so
+ * upcoming and in-progress weeks stay neutral. Rows where either player has
+ * no points (bye, did not play) and ties have no tone.
  */
 export function ownerRowTone(
+  status: RoundStatus,
   mine?: LineupPlayer,
   theirs?: LineupPlayer,
 ): ScoreTone | undefined {
-  if (!mine || !theirs) return undefined
-  const [minePoints, theirPoints] = comparablePoints(mine, theirs)
+  if (status !== "Final" || !mine || !theirs) return undefined
+  const minePoints = shownPoints(mine)
+  const theirPoints = shownPoints(theirs)
   if (minePoints === undefined || theirPoints === undefined) return undefined
   if (minePoints > theirPoints) return "winning"
   if (minePoints < theirPoints) return "losing"
   return undefined
-}
-
-function comparablePoints(mine: LineupPlayer, theirs: LineupPlayer) {
-  const minePoints = shownPoints(mine)
-  const theirPoints = shownPoints(theirs)
-  if (minePoints !== undefined || theirPoints !== undefined)
-    return [minePoints, theirPoints]
-  return [mine.projectedPoints, theirs.projectedPoints]
 }
