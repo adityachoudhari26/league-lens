@@ -136,6 +136,9 @@ func assertESPNLiveEntry(t *testing.T, lineup fantasy.MatchupLineup, playerID st
 	if entry == nil {
 		t.Fatalf("player %s not found in lineup for team %s", playerID, lineup.TeamID)
 	}
+	if !entry.Starter {
+		t.Errorf("player %s is not a starter", playerID)
+	}
 	if entry.Points == nil || *entry.Points != points {
 		t.Errorf("player %s points = %v, want %v", playerID, entry.Points, points)
 	}

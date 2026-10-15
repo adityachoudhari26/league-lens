@@ -97,18 +97,24 @@ func (w *leagueWriter) writeLineups(ctx context.Context) error {
 func (w *leagueWriter) replaceLineup(ctx context.Context, lineup fantasy.MatchupLineup) error {
 	matchupID := w.matchups[matchupKey{period: lineup.Period, externalID: lineup.MatchupID}]
 	teamID := w.teams[lineup.TeamID].ID
-	if err := w.queries.DeleteMatchupLineup(ctx, store.DeleteMatchupLineupParams{MatchupID: matchupID, TeamID: teamID}); err != nil {
+	playerIDs := make([]pgtype.UUID, 0, len(lineup.Entries))
+	for _, entry := range lineup.Entries {
+		playerIDs = append(playerIDs, w.players[entry.PlayerID])
+	}
+	if err := w.queries.DeleteMatchupLineupPlayersNotIn(ctx, store.DeleteMatchupLineupPlayersNotInParams{
+		MatchupID: matchupID, TeamID: teamID, PlayerIds: playerIDs,
+	}); err != nil {
 		return err
 	}
 	for _, entry := range lineup.Entries {
-		if err := w.insertLineupEntry(ctx, matchupID, teamID, entry); err != nil {
+		if err := w.upsertLineupEntry(ctx, matchupID, teamID, entry); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (w *leagueWriter) insertLineupEntry(ctx context.Context, matchupID, teamID pgtype.UUID, entry fantasy.LineupEntry) error {
+func (w *leagueWriter) upsertLineupEntry(ctx context.Context, matchupID, teamID pgtype.UUID, entry fantasy.LineupEntry) error {
 	points, err := score(entry.Points)
 	if err != nil {
 		return err
@@ -117,7 +123,7 @@ func (w *leagueWriter) insertLineupEntry(ctx context.Context, matchupID, teamID 
 	if err != nil {
 		return err
 	}
-	return w.queries.InsertMatchupLineupEntry(ctx, store.InsertMatchupLineupEntryParams{
+	return w.queries.UpsertMatchupLineupEntry(ctx, store.UpsertMatchupLineupEntryParams{
 		MatchupID:       matchupID,
 		TeamID:          teamID,
 		PlayerID:        w.players[entry.PlayerID],

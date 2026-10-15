@@ -59,6 +59,7 @@ type LineupEntry struct {
 	// Points, and Points never stands in for it.
 	ProjectedPoints *float64
 
-	// Scoring is nil when the provider gave no counts; never inferred from points.
+	// Full-sync LeagueData never sets Scoring. FetchLiveMatchup sets it on each
+	// entry when counts are available; otherwise it is nil and never inferred from points.
 	Scoring *ScoringCounts
 }

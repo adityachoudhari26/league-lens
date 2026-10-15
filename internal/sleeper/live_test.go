@@ -15,7 +15,7 @@ func TestFetchLiveMatchupIncludesScoresAndScoringCounts(t *testing.T) {
 	matchupBody := sleeperLiveFixture(t, "live_matchup_week5.json")
 	statsBody := sleeperLiveFixture(t, "live_stats_week5.json")
 	client, statsCalls := sleeperLiveFixtureClient(t, matchupBody, statsBody, http.StatusOK)
-	live, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest(true, "7"))
+	live, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest("7"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,6 +35,9 @@ func TestFetchLiveMatchupIncludesScoresAndScoringCounts(t *testing.T) {
 		for _, entry := range lineup.Entries {
 			if entry.Starter {
 				starters++
+				if entry.Scoring == nil {
+					t.Errorf("starter %s scoring is nil after successful stats fetch", entry.PlayerID)
+				}
 			}
 		}
 		if starters != 10 {
@@ -50,7 +53,7 @@ func TestFetchLiveMatchupIncludesScoresAndScoringCounts(t *testing.T) {
 func TestFetchLiveMatchupKeepsPointsWhenStatsRequestFails(t *testing.T) {
 	matchupBody := sleeperLiveFixture(t, "live_matchup_week5.json")
 	client, statsCalls := sleeperLiveFixtureClient(t, matchupBody, nil, http.StatusServiceUnavailable)
-	live, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest(true, "7"))
+	live, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest("7"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,24 +69,6 @@ func TestFetchLiveMatchupKeepsPointsWhenStatsRequestFails(t *testing.T) {
 				t.Errorf("entry %s scoring = %+v, want nil after stats failure", entry.PlayerID, entry.Scoring)
 			}
 		}
-	}
-}
-
-func TestFetchLiveMatchupSkipsStatsWhenCountsAreDisabled(t *testing.T) {
-	matchupBody := sleeperLiveFixture(t, "live_matchup_week5.json")
-	client, statsCalls := sleeperLiveFixtureClient(t, matchupBody, nil, http.StatusOK)
-	live, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest(false, "7"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if *statsCalls != 0 {
-		t.Fatalf("stats requests = %d, want none", *statsCalls)
-	}
-	if live.Matchup.TeamA.Score == nil || *live.Matchup.TeamA.Score != 168.67 {
-		t.Fatalf("owner score = %v, want 168.67", live.Matchup.TeamA.Score)
-	}
-	if entry := findSleeperLiveEntry(live, "11564"); entry == nil || entry.Scoring != nil {
-		t.Errorf("entry scoring = %+v, want nil when counts are disabled", entry)
 	}
 }
 
@@ -105,7 +90,7 @@ func TestFetchLiveMatchupGivesStarterWithoutStatsZeroCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 	client, _ := sleeperLiveFixtureClient(t, matchupBody, statsBody, http.StatusOK)
-	live, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest(true, "7"))
+	live, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest("7"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +104,7 @@ func TestFetchLiveMatchupGivesStarterWithoutStatsZeroCounts(t *testing.T) {
 func TestFetchLiveMatchupReturnsErrorForUnknownRoster(t *testing.T) {
 	matchupBody := sleeperLiveFixture(t, "live_matchup_week5.json")
 	client, _ := sleeperLiveFixtureClient(t, matchupBody, nil, http.StatusOK)
-	if _, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest(true, "999")); err == nil {
+	if _, err := client.FetchLiveMatchup(context.Background(), sleeperLiveLeague(), sleeperLiveRequest("999")); err == nil {
 		t.Fatal("unknown roster did not return an error")
 	}
 }
@@ -170,12 +155,11 @@ func sleeperLiveLeague() fantasy.League {
 	}
 }
 
-func sleeperLiveRequest(includeCounts bool, rosterID string) fantasy.LiveMatchupRequest {
+func sleeperLiveRequest(rosterID string) fantasy.LiveMatchupRequest {
 	return fantasy.LiveMatchupRequest{
-		Week:                 5,
-		Period:               5,
-		TeamID:               rosterID,
-		IncludeScoringCounts: includeCounts,
+		Week:   5,
+		Period: 5,
+		TeamID: rosterID,
 	}
 }
 

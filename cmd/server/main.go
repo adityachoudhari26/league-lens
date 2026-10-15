@@ -65,6 +65,9 @@ func run() error {
 	}
 	syncRunner := newSyncRunner(data, cfg.LocalOwnerEmail, box, catalogPath)
 	defer syncRunner.Close()
+	if cfg.LiveScores {
+		go syncRunner.RunLiveScores(ctx, time.Minute)
+	}
 	connectionService := &connections.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,
 		RefreshPlayerNews: syncRunner.RefreshPlayerNews,

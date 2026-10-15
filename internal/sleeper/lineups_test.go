@@ -57,6 +57,13 @@ func TestLineupEntriesCarrySlotsStartersAndPoints(t *testing.T) {
 	if len(data.Lineups) != 4 {
 		t.Fatalf("lineups = %d, want 4", len(data.Lineups))
 	}
+	for _, lineup := range data.Lineups {
+		for _, entry := range lineup.Entries {
+			if entry.Scoring != nil {
+				t.Errorf("full-sync player %s has scoring counts %+v", entry.PlayerID, entry.Scoring)
+			}
+		}
+	}
 
 	history := findLineup(t, data, 1, "1")
 	want := map[string]fantasy.LineupEntry{

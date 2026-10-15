@@ -27,7 +27,7 @@ type Querier interface {
 	DashboardMatchupPeriods(ctx context.Context, arg DashboardMatchupPeriodsParams) ([]int32, error)
 	DashboardRoster(ctx context.Context, arg DashboardRosterParams) (TeamSnapshot, error)
 	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
-	DeleteMatchupLineup(ctx context.Context, arg DeleteMatchupLineupParams) error
+	DeleteMatchupLineupPlayersNotIn(ctx context.Context, arg DeleteMatchupLineupPlayersNotInParams) error
 	DeleteNFLSeason(ctx context.Context, season int32) error
 	DeletePlayerProfileStats(ctx context.Context, playerID pgtype.UUID) error
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
@@ -46,7 +46,6 @@ type Querier interface {
 	GetPlayerProfile(ctx context.Context, playerID pgtype.UUID) (PlayerProfile, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
-	InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error
 	IsLeagueAttachedForUser(ctx context.Context, arg IsLeagueAttachedForUserParams) (bool, error)
 	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
 	ListConnectionLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionLeaguesForUserRow, error)
@@ -54,6 +53,10 @@ type Querier interface {
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
 	ListDismissedAlerts(ctx context.Context, arg ListDismissedAlertsParams) ([]string, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
+	// The owner's single-week matchup for @week in each attached league of @season,
+	// with the NFL teams of both sides' starters from each team's latest observed
+	// snapshot ('' when a starter's team is unknown).
+	ListLiveMatchupCandidates(ctx context.Context, arg ListLiveMatchupCandidatesParams) ([]ListLiveMatchupCandidatesRow, error)
 	ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUserParams) ([]Matchup, error)
 	ListNFLGamesForWeek(ctx context.Context, arg ListNFLGamesForWeekParams) ([]ListNFLGamesForWeekRow, error)
 	// Players on the owner's selected teams' latest succeeded observed snapshot, with every known external ID.
@@ -96,9 +99,15 @@ type Querier interface {
 	SetConnectionStatusForUser(ctx context.Context, arg SetConnectionStatusForUserParams) (int64, error)
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)
+	// Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
+	UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (int64, error)
+	// Status stays the full sync's job; live reads only refresh scores.
+	UpdateLiveMatchupScores(ctx context.Context, arg UpdateLiveMatchupScoresParams) error
 	UpdateMappedPlayerName(ctx context.Context, arg UpdateMappedPlayerNameParams) error
 	UpsertLeagueSeason(ctx context.Context, arg UpsertLeagueSeasonParams) (LeagueSeason, error)
 	UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (Matchup, error)
+	// Live TD/FG counts survive a full sync; only the live loop writes them.
+	UpsertMatchupLineupEntry(ctx context.Context, arg UpsertMatchupLineupEntryParams) error
 	UpsertPlayerProfile(ctx context.Context, arg UpsertPlayerProfileParams) error
 	UpsertTeam(ctx context.Context, arg UpsertTeamParams) (Team, error)
 	UpsertTeamSnapshot(ctx context.Context, arg UpsertTeamSnapshotParams) (TeamSnapshot, error)

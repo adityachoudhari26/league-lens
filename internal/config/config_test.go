@@ -107,3 +107,26 @@ func TestMigrateOnStartConfiguration(t *testing.T) {
 		t.Fatal("ignored enabled startup migrations")
 	}
 }
+
+func TestLiveScoresConfiguration(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://owner:secret@localhost/league_lens")
+	t.Setenv("HTTP_ADDR", "")
+	for _, test := range []struct {
+		value string
+		want  bool
+	}{
+		{"", true},
+		{"true", true},
+		{"False", true},
+		{"false", false},
+	} {
+		t.Setenv("LIVE_SCORES", test.value)
+		cfg, err := Load()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.LiveScores != test.want {
+			t.Errorf("LIVE_SCORES=%q enabled=%t, want %t", test.value, cfg.LiveScores, test.want)
+		}
+	}
+}

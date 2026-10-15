@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/espn"
@@ -95,27 +96,32 @@ func (r *Runner) Status(ctx context.Context) ([]Status, error) {
 }
 
 func (r *Runner) listTargets(ctx context.Context) ([]Target, error) {
+	_, targets, err := r.listTargetsWithOwner(ctx)
+	return targets, err
+}
+
+func (r *Runner) listTargetsWithOwner(ctx context.Context) (pgtype.UUID, []Target, error) {
 	ctx, cancel := context.WithTimeout(ctx, targetReadTimeout)
 	defer cancel()
 
 	queries := r.db.Queries()
 	owner, err := queries.GetUserByEmail(ctx, r.ownerEmail)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
+		return pgtype.UUID{}, nil, nil
 	}
 	if err != nil {
-		return nil, err
+		return pgtype.UUID{}, nil, err
 	}
 
 	rows, err := queries.ListSyncTargets(ctx, owner.ID)
 	if err != nil {
-		return nil, err
+		return pgtype.UUID{}, nil, err
 	}
 	targets := make([]Target, 0, len(rows))
 	for _, row := range rows {
 		targets = append(targets, targetFromRow(row))
 	}
-	return targets, nil
+	return owner.ID, targets, nil
 }
 
 // claimTargets marks the targets this request will sync, skipping leagues

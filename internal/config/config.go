@@ -14,6 +14,7 @@ type Config struct {
 	DatabaseURL     string
 	LocalOwnerEmail string
 	MigrateOnStart  bool
+	LiveScores      bool
 	DataDir         string
 }
 
@@ -23,6 +24,7 @@ func Load() (Config, error) {
 		HTTPAddr:        os.Getenv("HTTP_ADDR"),
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		MigrateOnStart:  os.Getenv("MIGRATE_ON_START") == "true",
+		LiveScores:      os.Getenv("LIVE_SCORES") != "false",
 		DataDir:         os.Getenv("DATA_DIR"),
 	}
 	if cfg.LocalOwnerEmail == "" {
