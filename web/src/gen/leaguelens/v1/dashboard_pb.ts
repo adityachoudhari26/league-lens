@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/dashboard.proto.
  */
 export const file_leaguelens_v1_dashboard: GenFile = /*@__PURE__*/
-  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Rhc2hib2FyZC5wcm90bxINbGVhZ3VlbGVucy52MSI7ChJMaXN0TGVhZ3Vlc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiVgoTTGlzdExlYWd1ZXNSZXNwb25zZRImCgdsZWFndWVzGAEgAygLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIiwKEEdldExlYWd1ZVJlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCSKBAQoRR2V0TGVhZ3VlUmVzcG9uc2USJQoGbGVhZ3VlGAEgASgLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSIgoFdGVhbXMYAiADKAsyEy5sZWFndWVsZW5zLnYxLlRlYW0SIQoZYXZhaWxhYmxlX21hdGNodXBfcGVyaW9kcxgDIAMoBSKxAQoGTGVhZ3VlEgoKAmlkGAEgASgJEhAKCHByb3ZpZGVyGAIgASgJEhMKC2V4dGVybmFsX2lkGAMgASgJEg4KBnNlYXNvbhgEIAEoBRIMCgRuYW1lGAUgASgJEhkKEXNlbGVjdGVkX3RlYW1faWRzGAYgAygJEjsKF2xhc3Rfc3VjY2Vzc2Z1bF9zeW5jX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKOAQoEVGVhbRIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEhAKCHNlbGVjdGVkGAQgASgIEikKBnJlY29yZBgFIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBIRCgRyYW5rGAYgASgFSACIAQFCBwoFX3JhbmsikAEKClRlYW1SZWNvcmQSDAoEd2lucxgBIAEoBRIOCgZsb3NzZXMYAiABKAUSDAoEdGllcxgDIAEoBRIXCgpwb2ludHNfZm9yGAQgASgBSACIAQESGwoOcG9pbnRzX2FnYWluc3QYBSABKAFIAYgBAUINCgtfcG9pbnRzX2ZvckIRCg9fcG9pbnRzX2FnYWluc3QiVwoUR2V0VGVhbVJvc3RlclJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIbCg5zY29yaW5nX3BlcmlvZBgCIAEoBUgAiAEBQhEKD19zY29yaW5nX3BlcmlvZCJIChVHZXRUZWFtUm9zdGVyUmVzcG9uc2USLwoIc25hcHNob3QYASABKAsyHS5sZWFndWVsZW5zLnYxLlJvc3RlclNuYXBzaG90IvcBCg5Sb3N0ZXJTbmFwc2hvdBIKCgJpZBgBIAEoCRIPCgd0ZWFtX2lkGAIgASgJEhYKDnNjb3JpbmdfcGVyaW9kGAMgASgFEg4KBm9yaWdpbhgEIAEoCRIQCghjb3ZlcmFnZRgFIAEoCRIvCgtvYnNlcnZlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMZWZmZWN0aXZlX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbnRyaWVzGAggAygLMhoubGVhZ3VlbGVucy52MS5Sb3N0ZXJFbnRyeSKoAQoLUm9zdGVyRW50cnkSEQoJcGxheWVyX2lkGAEgASgJEhMKC3BsYXllcl9uYW1lGAIgASgJEhMKC3BsYXllcl9raW5kGAMgASgJEgwKBHNsb3QYBCABKAkSGAoQcHJvdmlkZXJfc2xvdF9pZBgFIAEoCRI0ChJlbGlnaWJsZV9wb3NpdGlvbnMYBiABKAsyGC5sZWFndWVsZW5zLnYxLlBvc2l0aW9ucyIbCglQb3NpdGlvbnMSDgoGdmFsdWVzGAEgAygJIkcKE0xpc3RNYXRjaHVwc1JlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgCIAEoBSJAChRMaXN0TWF0Y2h1cHNSZXNwb25zZRIoCghtYXRjaHVwcxgBIAMoCzIWLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cCKiAgoHTWF0Y2h1cBIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgDIAEoBRI2Cg9zY29yaW5nX3BlcmlvZHMYBCABKAsyHS5sZWFndWVsZW5zLnYxLlNjb3JpbmdQZXJpb2RzEioKBnRlYW1fYRgFIAEoCzIaLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cFNpZGUSKgoGdGVhbV9iGAYgASgLMhoubGVhZ3VlbGVucy52MS5NYXRjaHVwU2lkZRIOCgZpc19ieWUYByABKAgSDgoGc3RhdHVzGAggASgJEi4KCmZldGNoZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiAKDlNjb3JpbmdQZXJpb2RzEg4KBnZhbHVlcxgBIAMoBSI8CgtNYXRjaHVwU2lkZRIPCgd0ZWFtX2lkGAEgASgJEhIKBXNjb3JlGAIgASgBSACIAQFCCAoGX3Njb3JlImMKF0dldE1hdGNodXBEZXRhaWxSZXF1ZXN0EhgKEGxlYWd1ZV9zZWFzb25faWQYASABKAkSGwoObWF0Y2h1cF9wZXJpb2QYAiABKAVIAIgBAUIRCg9fbWF0Y2h1cF9wZXJpb2QiSQoYR2V0TWF0Y2h1cERldGFpbFJlc3BvbnNlEi0KB21hdGNodXAYASABKAsyHC5sZWFndWVsZW5zLnYxLk1hdGNodXBEZXRhaWwi/QEKDU1hdGNodXBEZXRhaWwSCgoCaWQYASABKAkSFgoObWF0Y2h1cF9wZXJpb2QYAiABKAUSLAoGc3RhdHVzGAMgASgOMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwU3RhdHVzEg4KBmlzX2J5ZRgEIAEoCBIqCgR0ZWFtGAUgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCG9wcG9uZW50GAYgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCmZldGNoZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIqgCCg1NYXRjaHVwTGluZXVwEg8KB3RlYW1faWQYASABKAkSEQoJdGVhbV9uYW1lGAIgASgJEikKBnJlY29yZBgDIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBISCgVzY29yZRgEIAEoAUgAiAEBEh0KFXN0YXJ0ZXJzX2xlZnRfdG9fcGxheRgFIAEoBRItCghzdGFydGVycxgGIAMoCzIbLmxlYWd1ZWxlbnMudjEuTGluZXVwUGxheWVyEioKBWJlbmNoGAcgAygLMhsubGVhZ3VlbGVucy52MS5MaW5ldXBQbGF5ZXISHAoPcHJvamVjdGVkX3Njb3JlGAggASgBSAGIAQFCCAoGX3Njb3JlQhIKEF9wcm9qZWN0ZWRfc2NvcmUivAIKDExpbmV1cFBsYXllchIRCglwbGF5ZXJfaWQYASABKAkSEwoLcGxheWVyX25hbWUYAiABKAkSDAoEc2xvdBgDIAEoCRITCgZwb2ludHMYBCABKAFIAIgBARIyCg1pbmp1cnlfc3RhdHVzGAUgASgOMhsubGVhZ3VlbGVucy52MS5Jbmp1cnlTdGF0dXMSEAoIcHJvX3RlYW0YBiABKAkSLAoKZ2FtZV9zdGF0ZRgHIAEoDjIYLmxlYWd1ZWxlbnMudjEuR2FtZVN0YXRlEi4KCmtpY2tvZmZfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEh0KEHByb2plY3RlZF9wb2ludHMYCSABKAFIAYgBAUIJCgdfcG9pbnRzQhMKEV9wcm9qZWN0ZWRfcG9pbnRzKqMBCg1NYXRjaHVwU3RhdHVzEh4KGk1BVENIVVBfU1RBVFVTX1VOU1BFQ0lGSUVEEAASHAoYTUFUQ0hVUF9TVEFUVVNfU0NIRURVTEVEEAESHgoaTUFUQ0hVUF9TVEFUVVNfSU5fUFJPR1JFU1MQAhIYChRNQVRDSFVQX1NUQVRVU19GSU5BTBADEhoKFk1BVENIVVBfU1RBVFVTX1VOS05PV04QBCqKAQoJR2FtZVN0YXRlEhoKFkdBTUVfU1RBVEVfVU5TUEVDSUZJRUQQABIaChZHQU1FX1NUQVRFX05PVF9TVEFSVEVEEAESGQoVR0FNRV9TVEFURV9LSUNLRURfT0ZGEAISEgoOR0FNRV9TVEFURV9CWUUQAxIWChJHQU1FX1NUQVRFX1VOS05PV04QBDL+CAoQRGFzaGJvYXJkU2VydmljZRJvChRHZXRPdmVydmlld0F0dGVudGlvbhIqLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdBdHRlbnRpb25SZXF1ZXN0GisubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld0F0dGVudGlvblJlc3BvbnNlEmkKEkRpc21pc3NMaW5ldXBBbGVydBIoLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0xpbmV1cEFsZXJ0UmVxdWVzdBopLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0xpbmV1cEFsZXJ0UmVzcG9uc2USaQoSUmVzdG9yZUxpbmV1cEFsZXJ0EigubGVhZ3VlbGVucy52MS5SZXN0b3JlTGluZXVwQWxlcnRSZXF1ZXN0GikubGVhZ3VlbGVucy52MS5SZXN0b3JlTGluZXVwQWxlcnRSZXNwb25zZRJsChNHZXRPdmVydmlld01hdGNodXBzEikubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld01hdGNodXBzUmVxdWVzdBoqLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdNYXRjaHVwc1Jlc3BvbnNlEnsKGEdldE92ZXJ2aWV3UGxheWVyVXBkYXRlcxIuLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVxdWVzdBovLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzUmVzcG9uc2USeAoXR2V0T3ZlcnZpZXdMb29raW5nQWhlYWQSLS5sZWFndWVsZW5zLnYxLkdldE92ZXJ2aWV3TG9va2luZ0FoZWFkUmVxdWVzdBouLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdMb29raW5nQWhlYWRSZXNwb25zZRJUCgtMaXN0TGVhZ3VlcxIhLmxlYWd1ZWxlbnMudjEuTGlzdExlYWd1ZXNSZXF1ZXN0GiIubGVhZ3VlbGVucy52MS5MaXN0TGVhZ3Vlc1Jlc3BvbnNlEk4KCUdldExlYWd1ZRIfLmxlYWd1ZWxlbnMudjEuR2V0TGVhZ3VlUmVxdWVzdBogLmxlYWd1ZWxlbnMudjEuR2V0TGVhZ3VlUmVzcG9uc2USWgoNR2V0VGVhbVJvc3RlchIjLmxlYWd1ZWxlbnMudjEuR2V0VGVhbVJvc3RlclJlcXVlc3QaJC5sZWFndWVsZW5zLnYxLkdldFRlYW1Sb3N0ZXJSZXNwb25zZRJXCgxMaXN0TWF0Y2h1cHMSIi5sZWFndWVsZW5zLnYxLkxpc3RNYXRjaHVwc1JlcXVlc3QaIy5sZWFndWVsZW5zLnYxLkxpc3RNYXRjaHVwc1Jlc3BvbnNlEmMKEEdldE1hdGNodXBEZXRhaWwSJi5sZWFndWVsZW5zLnYxLkdldE1hdGNodXBEZXRhaWxSZXF1ZXN0GicubGVhZ3VlbGVucy52MS5HZXRNYXRjaHVwRGV0YWlsUmVzcG9uc2VCUlpQZ2l0aHViLmNvbS9hZGl0eWFjaG91ZGhhcmkyNi9sZWFndWUtbGVucy9pbnRlcm5hbC9nZW4vbGVhZ3VlbGVucy92MTtsZWFndWVsZW5zdjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_leaguelens_v1_overview]);
+  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Rhc2hib2FyZC5wcm90bxINbGVhZ3VlbGVucy52MSI7ChJMaXN0TGVhZ3Vlc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiVgoTTGlzdExlYWd1ZXNSZXNwb25zZRImCgdsZWFndWVzGAEgAygLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIiwKEEdldExlYWd1ZVJlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCSKBAQoRR2V0TGVhZ3VlUmVzcG9uc2USJQoGbGVhZ3VlGAEgASgLMhUubGVhZ3VlbGVucy52MS5MZWFndWUSIgoFdGVhbXMYAiADKAsyEy5sZWFndWVsZW5zLnYxLlRlYW0SIQoZYXZhaWxhYmxlX21hdGNodXBfcGVyaW9kcxgDIAMoBSKxAQoGTGVhZ3VlEgoKAmlkGAEgASgJEhAKCHByb3ZpZGVyGAIgASgJEhMKC2V4dGVybmFsX2lkGAMgASgJEg4KBnNlYXNvbhgEIAEoBRIMCgRuYW1lGAUgASgJEhkKEXNlbGVjdGVkX3RlYW1faWRzGAYgAygJEjsKF2xhc3Rfc3VjY2Vzc2Z1bF9zeW5jX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKOAQoEVGVhbRIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEhAKCHNlbGVjdGVkGAQgASgIEikKBnJlY29yZBgFIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBIRCgRyYW5rGAYgASgFSACIAQFCBwoFX3JhbmsikAEKClRlYW1SZWNvcmQSDAoEd2lucxgBIAEoBRIOCgZsb3NzZXMYAiABKAUSDAoEdGllcxgDIAEoBRIXCgpwb2ludHNfZm9yGAQgASgBSACIAQESGwoOcG9pbnRzX2FnYWluc3QYBSABKAFIAYgBAUINCgtfcG9pbnRzX2ZvckIRCg9fcG9pbnRzX2FnYWluc3QiVwoUR2V0VGVhbVJvc3RlclJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIbCg5zY29yaW5nX3BlcmlvZBgCIAEoBUgAiAEBQhEKD19zY29yaW5nX3BlcmlvZCJIChVHZXRUZWFtUm9zdGVyUmVzcG9uc2USLwoIc25hcHNob3QYASABKAsyHS5sZWFndWVsZW5zLnYxLlJvc3RlclNuYXBzaG90IvcBCg5Sb3N0ZXJTbmFwc2hvdBIKCgJpZBgBIAEoCRIPCgd0ZWFtX2lkGAIgASgJEhYKDnNjb3JpbmdfcGVyaW9kGAMgASgFEg4KBm9yaWdpbhgEIAEoCRIQCghjb3ZlcmFnZRgFIAEoCRIvCgtvYnNlcnZlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMZWZmZWN0aXZlX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbnRyaWVzGAggAygLMhoubGVhZ3VlbGVucy52MS5Sb3N0ZXJFbnRyeSKoAQoLUm9zdGVyRW50cnkSEQoJcGxheWVyX2lkGAEgASgJEhMKC3BsYXllcl9uYW1lGAIgASgJEhMKC3BsYXllcl9raW5kGAMgASgJEgwKBHNsb3QYBCABKAkSGAoQcHJvdmlkZXJfc2xvdF9pZBgFIAEoCRI0ChJlbGlnaWJsZV9wb3NpdGlvbnMYBiABKAsyGC5sZWFndWVsZW5zLnYxLlBvc2l0aW9ucyIbCglQb3NpdGlvbnMSDgoGdmFsdWVzGAEgAygJIkcKE0xpc3RNYXRjaHVwc1JlcXVlc3QSGAoQbGVhZ3VlX3NlYXNvbl9pZBgBIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgCIAEoBSJAChRMaXN0TWF0Y2h1cHNSZXNwb25zZRIoCghtYXRjaHVwcxgBIAMoCzIWLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cCKiAgoHTWF0Y2h1cBIKCgJpZBgBIAEoCRITCgtleHRlcm5hbF9pZBgCIAEoCRIWCg5tYXRjaHVwX3BlcmlvZBgDIAEoBRI2Cg9zY29yaW5nX3BlcmlvZHMYBCABKAsyHS5sZWFndWVsZW5zLnYxLlNjb3JpbmdQZXJpb2RzEioKBnRlYW1fYRgFIAEoCzIaLmxlYWd1ZWxlbnMudjEuTWF0Y2h1cFNpZGUSKgoGdGVhbV9iGAYgASgLMhoubGVhZ3VlbGVucy52MS5NYXRjaHVwU2lkZRIOCgZpc19ieWUYByABKAgSDgoGc3RhdHVzGAggASgJEi4KCmZldGNoZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiAKDlNjb3JpbmdQZXJpb2RzEg4KBnZhbHVlcxgBIAMoBSI8CgtNYXRjaHVwU2lkZRIPCgd0ZWFtX2lkGAEgASgJEhIKBXNjb3JlGAIgASgBSACIAQFCCAoGX3Njb3JlImMKF0dldE1hdGNodXBEZXRhaWxSZXF1ZXN0EhgKEGxlYWd1ZV9zZWFzb25faWQYASABKAkSGwoObWF0Y2h1cF9wZXJpb2QYAiABKAVIAIgBAUIRCg9fbWF0Y2h1cF9wZXJpb2QiSQoYR2V0TWF0Y2h1cERldGFpbFJlc3BvbnNlEi0KB21hdGNodXAYASABKAsyHC5sZWFndWVsZW5zLnYxLk1hdGNodXBEZXRhaWwi/QEKDU1hdGNodXBEZXRhaWwSCgoCaWQYASABKAkSFgoObWF0Y2h1cF9wZXJpb2QYAiABKAUSLAoGc3RhdHVzGAMgASgOMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwU3RhdHVzEg4KBmlzX2J5ZRgEIAEoCBIqCgR0ZWFtGAUgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCG9wcG9uZW50GAYgASgLMhwubGVhZ3VlbGVucy52MS5NYXRjaHVwTGluZXVwEi4KCmZldGNoZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIqgCCg1NYXRjaHVwTGluZXVwEg8KB3RlYW1faWQYASABKAkSEQoJdGVhbV9uYW1lGAIgASgJEikKBnJlY29yZBgDIAEoCzIZLmxlYWd1ZWxlbnMudjEuVGVhbVJlY29yZBISCgVzY29yZRgEIAEoAUgAiAEBEh0KFXN0YXJ0ZXJzX2xlZnRfdG9fcGxheRgFIAEoBRItCghzdGFydGVycxgGIAMoCzIbLmxlYWd1ZWxlbnMudjEuTGluZXVwUGxheWVyEioKBWJlbmNoGAcgAygLMhsubGVhZ3VlbGVucy52MS5MaW5ldXBQbGF5ZXISHAoPcHJvamVjdGVkX3Njb3JlGAggASgBSAGIAQFCCAoGX3Njb3JlQhIKEF9wcm9qZWN0ZWRfc2NvcmUivAIKDExpbmV1cFBsYXllchIRCglwbGF5ZXJfaWQYASABKAkSEwoLcGxheWVyX25hbWUYAiABKAkSDAoEc2xvdBgDIAEoCRITCgZwb2ludHMYBCABKAFIAIgBARIyCg1pbmp1cnlfc3RhdHVzGAUgASgOMhsubGVhZ3VlbGVucy52MS5Jbmp1cnlTdGF0dXMSEAoIcHJvX3RlYW0YBiABKAkSLAoKZ2FtZV9zdGF0ZRgHIAEoDjIYLmxlYWd1ZWxlbnMudjEuR2FtZVN0YXRlEi4KCmtpY2tvZmZfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEh0KEHByb2plY3RlZF9wb2ludHMYCSABKAFIAYgBAUIJCgdfcG9pbnRzQhMKEV9wcm9qZWN0ZWRfcG9pbnRzIikKFEdldFBsYXllckNhcmRSZXF1ZXN0EhEKCXBsYXllcl9pZBgBIAEoCSJAChVHZXRQbGF5ZXJDYXJkUmVzcG9uc2USJwoEY2FyZBgBIAEoCzIZLmxlYWd1ZWxlbnMudjEuUGxheWVyQ2FyZCLiBQoKUGxheWVyQ2FyZBIRCglwbGF5ZXJfaWQYASABKAkSEwoLcGxheWVyX25hbWUYAiABKAkSLgoLcGxheWVyX2tpbmQYAyABKA4yGS5sZWFndWVsZW5zLnYxLlBsYXllcktpbmQSEAoIcHJvX3RlYW0YBCABKAkSEAoIcG9zaXRpb24YBSABKAkSMgoNaW5qdXJ5X3N0YXR1cxgGIAEoDjIbLmxlYWd1ZWxlbnMudjEuSW5qdXJ5U3RhdHVzEioKCW5leHRfZ2FtZRgHIAEoCzIXLmxlYWd1ZWxlbnMudjEuTmV4dEdhbWUSFAoMaGVhZHNob3RfdXJsGAggASgJEg4KBmplcnNleRgJIAEoCRIQCgNhZ2UYCiABKAVIAIgBARIaCg1oZWlnaHRfaW5jaGVzGAsgASgFSAGIAQESFwoKd2VpZ2h0X2xicxgMIAEoBUgCiAEBEg8KB2NvbGxlZ2UYDSABKAkSKQoFZHJhZnQYDiABKAsyGi5sZWFndWVsZW5zLnYxLlBsYXllckRyYWZ0EhoKDXBvc2l0aW9uX3JhbmsYDyABKAVIA4gBARIdChBwZXJjZW50X3Jvc3RlcmVkGBAgASgBSASIAQESHAoPcGVyY2VudF9zdGFydGVkGBEgASgBSAWIAQESKQoFYmx1cmIYEiABKAsyGi5sZWFndWVsZW5zLnYxLlBsYXllckJsdXJiEi8KDHNlYXNvbl9zdGF0cxgTIAMoCzIZLmxlYWd1ZWxlbnMudjEuUGxheWVyU3RhdBI2ChJwcm9maWxlX2ZldGNoZWRfYXQYFCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgYKBF9hZ2VCEAoOX2hlaWdodF9pbmNoZXNCDQoLX3dlaWdodF9sYnNCEAoOX3Bvc2l0aW9uX3JhbmtCEwoRX3BlcmNlbnRfcm9zdGVyZWRCEgoQX3BlcmNlbnRfc3RhcnRlZCJMCghOZXh0R2FtZRIQCghvcHBvbmVudBgBIAEoCRIuCgpraWNrb2ZmX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCI4CgtQbGF5ZXJEcmFmdBIMCgR5ZWFyGAEgASgFEg0KBXJvdW5kGAIgASgFEgwKBHBpY2sYAyABKAUipAEKC1BsYXllckJsdXJiEiwKBGtpbmQYASABKA4yHi5sZWFndWVsZW5zLnYxLlBsYXllckJsdXJiS2luZBIMCgR0ZXh0GAIgASgJEhEKBHdlZWsYAyABKAVIAIgBARIwCgxwdWJsaXNoZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgsKA3VybBgFIAEoCUIHCgVfd2VlayJGCgpQbGF5ZXJTdGF0Eg0KBWxhYmVsGAEgASgJEg0KBXZhbHVlGAIgASgBEhEKBHJhbmsYAyABKAVIAIgBAUIHCgVfcmFuayqjAQoNTWF0Y2h1cFN0YXR1cxIeChpNQVRDSFVQX1NUQVRVU19VTlNQRUNJRklFRBAAEhwKGE1BVENIVVBfU1RBVFVTX1NDSEVEVUxFRBABEh4KGk1BVENIVVBfU1RBVFVTX0lOX1BST0dSRVNTEAISGAoUTUFUQ0hVUF9TVEFUVVNfRklOQUwQAxIaChZNQVRDSFVQX1NUQVRVU19VTktOT1dOEAQqigEKCUdhbWVTdGF0ZRIaChZHQU1FX1NUQVRFX1VOU1BFQ0lGSUVEEAASGgoWR0FNRV9TVEFURV9OT1RfU1RBUlRFRBABEhkKFUdBTUVfU1RBVEVfS0lDS0VEX09GRhACEhIKDkdBTUVfU1RBVEVfQllFEAMSFgoSR0FNRV9TVEFURV9VTktOT1dOEAQqXwoKUGxheWVyS2luZBIbChdQTEFZRVJfS0lORF9VTlNQRUNJRklFRBAAEhYKElBMQVlFUl9LSU5EX1BFUlNPThABEhwKGFBMQVlFUl9LSU5EX1RFQU1fREVGRU5TRRACKpwBCg9QbGF5ZXJCbHVyYktpbmQSIQodUExBWUVSX0JMVVJCX0tJTkRfVU5TUEVDSUZJRUQQABIkCiBQTEFZRVJfQkxVUkJfS0lORF9XRUVLTFlfT1VUTE9PSxABEhoKFlBMQVlFUl9CTFVSQl9LSU5EX05FV1MQAhIkCiBQTEFZRVJfQkxVUkJfS0lORF9TRUFTT05fT1VUTE9PSxADMtoJChBEYXNoYm9hcmRTZXJ2aWNlEm8KFEdldE92ZXJ2aWV3QXR0ZW50aW9uEioubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld0F0dGVudGlvblJlcXVlc3QaKy5sZWFndWVsZW5zLnYxLkdldE92ZXJ2aWV3QXR0ZW50aW9uUmVzcG9uc2USaQoSRGlzbWlzc0xpbmV1cEFsZXJ0EigubGVhZ3VlbGVucy52MS5EaXNtaXNzTGluZXVwQWxlcnRSZXF1ZXN0GikubGVhZ3VlbGVucy52MS5EaXNtaXNzTGluZXVwQWxlcnRSZXNwb25zZRJpChJSZXN0b3JlTGluZXVwQWxlcnQSKC5sZWFndWVsZW5zLnYxLlJlc3RvcmVMaW5ldXBBbGVydFJlcXVlc3QaKS5sZWFndWVsZW5zLnYxLlJlc3RvcmVMaW5ldXBBbGVydFJlc3BvbnNlEmwKE0dldE92ZXJ2aWV3TWF0Y2h1cHMSKS5sZWFndWVsZW5zLnYxLkdldE92ZXJ2aWV3TWF0Y2h1cHNSZXF1ZXN0GioubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld01hdGNodXBzUmVzcG9uc2USewoYR2V0T3ZlcnZpZXdQbGF5ZXJVcGRhdGVzEi4ubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld1BsYXllclVwZGF0ZXNSZXF1ZXN0Gi8ubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld1BsYXllclVwZGF0ZXNSZXNwb25zZRJ4ChdHZXRPdmVydmlld0xvb2tpbmdBaGVhZBItLmxlYWd1ZWxlbnMudjEuR2V0T3ZlcnZpZXdMb29raW5nQWhlYWRSZXF1ZXN0Gi4ubGVhZ3VlbGVucy52MS5HZXRPdmVydmlld0xvb2tpbmdBaGVhZFJlc3BvbnNlElQKC0xpc3RMZWFndWVzEiEubGVhZ3VlbGVucy52MS5MaXN0TGVhZ3Vlc1JlcXVlc3QaIi5sZWFndWVsZW5zLnYxLkxpc3RMZWFndWVzUmVzcG9uc2USTgoJR2V0TGVhZ3VlEh8ubGVhZ3VlbGVucy52MS5HZXRMZWFndWVSZXF1ZXN0GiAubGVhZ3VlbGVucy52MS5HZXRMZWFndWVSZXNwb25zZRJaCg1HZXRUZWFtUm9zdGVyEiMubGVhZ3VlbGVucy52MS5HZXRUZWFtUm9zdGVyUmVxdWVzdBokLmxlYWd1ZWxlbnMudjEuR2V0VGVhbVJvc3RlclJlc3BvbnNlElcKDExpc3RNYXRjaHVwcxIiLmxlYWd1ZWxlbnMudjEuTGlzdE1hdGNodXBzUmVxdWVzdBojLmxlYWd1ZWxlbnMudjEuTGlzdE1hdGNodXBzUmVzcG9uc2USYwoQR2V0TWF0Y2h1cERldGFpbBImLmxlYWd1ZWxlbnMudjEuR2V0TWF0Y2h1cERldGFpbFJlcXVlc3QaJy5sZWFndWVsZW5zLnYxLkdldE1hdGNodXBEZXRhaWxSZXNwb25zZRJaCg1HZXRQbGF5ZXJDYXJkEiMubGVhZ3VlbGVucy52MS5HZXRQbGF5ZXJDYXJkUmVxdWVzdBokLmxlYWd1ZWxlbnMudjEuR2V0UGxheWVyQ2FyZFJlc3BvbnNlQlJaUGdpdGh1Yi5jb20vYWRpdHlhY2hvdWRoYXJpMjYvbGVhZ3VlLWxlbnMvaW50ZXJuYWwvZ2VuL2xlYWd1ZWxlbnMvdjE7bGVhZ3VlbGVuc3YxYgZwcm90bzM", [file_google_protobuf_timestamp, file_leaguelens_v1_overview]);
 
 /**
  * @generated from message leaguelens.v1.ListLeaguesRequest
@@ -764,6 +764,315 @@ export const LineupPlayerSchema: GenMessage<LineupPlayer> = /*@__PURE__*/
   messageDesc(file_leaguelens_v1_dashboard, 21);
 
 /**
+ * @generated from message leaguelens.v1.GetPlayerCardRequest
+ */
+export type GetPlayerCardRequest = Message<"leaguelens.v1.GetPlayerCardRequest"> & {
+  /**
+   * @generated from field: string player_id = 1;
+   */
+  playerId: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.GetPlayerCardRequest.
+ * Use `create(GetPlayerCardRequestSchema)` to create a new message.
+ */
+export const GetPlayerCardRequestSchema: GenMessage<GetPlayerCardRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 22);
+
+/**
+ * @generated from message leaguelens.v1.GetPlayerCardResponse
+ */
+export type GetPlayerCardResponse = Message<"leaguelens.v1.GetPlayerCardResponse"> & {
+  /**
+   * @generated from field: leaguelens.v1.PlayerCard card = 1;
+   */
+  card?: PlayerCard | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.GetPlayerCardResponse.
+ * Use `create(GetPlayerCardResponseSchema)` to create a new message.
+ */
+export const GetPlayerCardResponseSchema: GenMessage<GetPlayerCardResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 23);
+
+/**
+ * PlayerCard combines stored player data with the player's source profile.
+ * Profile fields are empty or absent when the source didn't report them, and
+ * all of them are when no profile could be fetched (profile_fetched_at absent).
+ * A profile older than 12 hours is served only when a refetch fails.
+ *
+ * @generated from message leaguelens.v1.PlayerCard
+ */
+export type PlayerCard = Message<"leaguelens.v1.PlayerCard"> & {
+  /**
+   * @generated from field: string player_id = 1;
+   */
+  playerId: string;
+
+  /**
+   * @generated from field: string player_name = 2;
+   */
+  playerName: string;
+
+  /**
+   * @generated from field: leaguelens.v1.PlayerKind player_kind = 3;
+   */
+  playerKind: PlayerKind;
+
+  /**
+   * Empty when unknown.
+   *
+   * @generated from field: string pro_team = 4;
+   */
+  proTeam: string;
+
+  /**
+   * QB, RB, WR, TE, K, or DEF. Empty when unknown.
+   *
+   * @generated from field: string position = 5;
+   */
+  position: string;
+
+  /**
+   * Current status.
+   *
+   * @generated from field: leaguelens.v1.InjuryStatus injury_status = 6;
+   */
+  injuryStatus: InjuryStatus;
+
+  /**
+   * Absent when no upcoming game is stored.
+   *
+   * @generated from field: leaguelens.v1.NextGame next_game = 7;
+   */
+  nextGame?: NextGame | undefined;
+
+  /**
+   * Team logo for D/ST. Empty when unknown.
+   *
+   * @generated from field: string headshot_url = 8;
+   */
+  headshotUrl: string;
+
+  /**
+   * Empty when unknown.
+   *
+   * @generated from field: string jersey = 9;
+   */
+  jersey: string;
+
+  /**
+   * Whole years from birth date.
+   *
+   * @generated from field: optional int32 age = 10;
+   */
+  age?: number | undefined;
+
+  /**
+   * @generated from field: optional int32 height_inches = 11;
+   */
+  heightInches?: number | undefined;
+
+  /**
+   * @generated from field: optional int32 weight_lbs = 12;
+   */
+  weightLbs?: number | undefined;
+
+  /**
+   * Empty when unknown.
+   *
+   * @generated from field: string college = 13;
+   */
+  college: string;
+
+  /**
+   * Absent when undrafted or unknown.
+   *
+   * @generated from field: leaguelens.v1.PlayerDraft draft = 14;
+   */
+  draft?: PlayerDraft | undefined;
+
+  /**
+   * Season-to-date fantasy rank at the player's position.
+   *
+   * @generated from field: optional int32 position_rank = 15;
+   */
+  positionRank?: number | undefined;
+
+  /**
+   * 0-100 across the source's fantasy leagues.
+   *
+   * @generated from field: optional double percent_rostered = 16;
+   */
+  percentRostered?: number | undefined;
+
+  /**
+   * 0-100 across the source's fantasy leagues.
+   *
+   * @generated from field: optional double percent_started = 17;
+   */
+  percentStarted?: number | undefined;
+
+  /**
+   * Absent when no blurb is available.
+   *
+   * @generated from field: leaguelens.v1.PlayerBlurb blurb = 18;
+   */
+  blurb?: PlayerBlurb | undefined;
+
+  /**
+   * Source display order; position-specific.
+   *
+   * @generated from field: repeated leaguelens.v1.PlayerStat season_stats = 19;
+   */
+  seasonStats: PlayerStat[];
+
+  /**
+   * @generated from field: google.protobuf.Timestamp profile_fetched_at = 20;
+   */
+  profileFetchedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.PlayerCard.
+ * Use `create(PlayerCardSchema)` to create a new message.
+ */
+export const PlayerCardSchema: GenMessage<PlayerCard> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 24);
+
+/**
+ * @generated from message leaguelens.v1.NextGame
+ */
+export type NextGame = Message<"leaguelens.v1.NextGame"> & {
+  /**
+   * NFL team abbreviation.
+   *
+   * @generated from field: string opponent = 1;
+   */
+  opponent: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp kickoff_at = 2;
+   */
+  kickoffAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.NextGame.
+ * Use `create(NextGameSchema)` to create a new message.
+ */
+export const NextGameSchema: GenMessage<NextGame> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 25);
+
+/**
+ * @generated from message leaguelens.v1.PlayerDraft
+ */
+export type PlayerDraft = Message<"leaguelens.v1.PlayerDraft"> & {
+  /**
+   * @generated from field: int32 year = 1;
+   */
+  year: number;
+
+  /**
+   * @generated from field: int32 round = 2;
+   */
+  round: number;
+
+  /**
+   * @generated from field: int32 pick = 3;
+   */
+  pick: number;
+};
+
+/**
+ * Describes the message leaguelens.v1.PlayerDraft.
+ * Use `create(PlayerDraftSchema)` to create a new message.
+ */
+export const PlayerDraftSchema: GenMessage<PlayerDraft> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 26);
+
+/**
+ * PlayerBlurb is the best available write-up, in order: this NFL week's
+ * outlook, the latest stored news, then the season outlook.
+ *
+ * @generated from message leaguelens.v1.PlayerBlurb
+ */
+export type PlayerBlurb = Message<"leaguelens.v1.PlayerBlurb"> & {
+  /**
+   * @generated from field: leaguelens.v1.PlayerBlurbKind kind = 1;
+   */
+  kind: PlayerBlurbKind;
+
+  /**
+   * News uses the item's summary, or its headline when it has none.
+   *
+   * @generated from field: string text = 2;
+   */
+  text: string;
+
+  /**
+   * Weekly outlook only.
+   *
+   * @generated from field: optional int32 week = 3;
+   */
+  week?: number | undefined;
+
+  /**
+   * News only.
+   *
+   * @generated from field: google.protobuf.Timestamp published_at = 4;
+   */
+  publishedAt?: Timestamp | undefined;
+
+  /**
+   * News only.
+   *
+   * @generated from field: string url = 5;
+   */
+  url: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.PlayerBlurb.
+ * Use `create(PlayerBlurbSchema)` to create a new message.
+ */
+export const PlayerBlurbSchema: GenMessage<PlayerBlurb> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 27);
+
+/**
+ * @generated from message leaguelens.v1.PlayerStat
+ */
+export type PlayerStat = Message<"leaguelens.v1.PlayerStat"> & {
+  /**
+   * Source's short label, e.g. "Rush Yards".
+   *
+   * @generated from field: string label = 1;
+   */
+  label: string;
+
+  /**
+   * @generated from field: double value = 2;
+   */
+  value: number;
+
+  /**
+   * League rank for the stat; absent when unranked.
+   *
+   * @generated from field: optional int32 rank = 3;
+   */
+  rank?: number | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.PlayerStat.
+ * Use `create(PlayerStatSchema)` to create a new message.
+ */
+export const PlayerStatSchema: GenMessage<PlayerStat> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_dashboard, 28);
+
+/**
  * @generated from enum leaguelens.v1.MatchupStatus
  */
 export enum MatchupStatus {
@@ -839,6 +1148,63 @@ export enum GameState {
  */
 export const GameStateSchema: GenEnum<GameState> = /*@__PURE__*/
   enumDesc(file_leaguelens_v1_dashboard, 1);
+
+/**
+ * @generated from enum leaguelens.v1.PlayerKind
+ */
+export enum PlayerKind {
+  /**
+   * @generated from enum value: PLAYER_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PLAYER_KIND_PERSON = 1;
+   */
+  PERSON = 1,
+
+  /**
+   * @generated from enum value: PLAYER_KIND_TEAM_DEFENSE = 2;
+   */
+  TEAM_DEFENSE = 2,
+}
+
+/**
+ * Describes the enum leaguelens.v1.PlayerKind.
+ */
+export const PlayerKindSchema: GenEnum<PlayerKind> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_dashboard, 2);
+
+/**
+ * @generated from enum leaguelens.v1.PlayerBlurbKind
+ */
+export enum PlayerBlurbKind {
+  /**
+   * @generated from enum value: PLAYER_BLURB_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PLAYER_BLURB_KIND_WEEKLY_OUTLOOK = 1;
+   */
+  WEEKLY_OUTLOOK = 1,
+
+  /**
+   * @generated from enum value: PLAYER_BLURB_KIND_NEWS = 2;
+   */
+  NEWS = 2,
+
+  /**
+   * @generated from enum value: PLAYER_BLURB_KIND_SEASON_OUTLOOK = 3;
+   */
+  SEASON_OUTLOOK = 3,
+}
+
+/**
+ * Describes the enum leaguelens.v1.PlayerBlurbKind.
+ */
+export const PlayerBlurbKindSchema: GenEnum<PlayerBlurbKind> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_dashboard, 3);
 
 /**
  * DashboardService reads imported data and records alert dismissals for the
@@ -935,6 +1301,18 @@ export const DashboardService: GenService<{
     methodKind: "unary";
     input: typeof GetMatchupDetailRequestSchema;
     output: typeof GetMatchupDetailResponseSchema;
+  },
+  /**
+   * GetPlayerCard is the one read that may contact a profile source: it serves
+   * the cached profile, refetching it once 12 hours old. NOT_FOUND for an
+   * unknown player_id.
+   *
+   * @generated from rpc leaguelens.v1.DashboardService.GetPlayerCard
+   */
+  getPlayerCard: {
+    methodKind: "unary";
+    input: typeof GetPlayerCardRequestSchema;
+    output: typeof GetPlayerCardResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_leaguelens_v1_dashboard, 0);

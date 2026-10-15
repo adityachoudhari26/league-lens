@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/playerprofile"
 )
 
@@ -46,6 +47,7 @@ func TestProfileBuildsDefenseFromFantasyRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := playerprofile.Profile{
+		Position:        fantasy.PositionDEF,
 		HeadshotURL:     "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png",
 		PercentRostered: ptr(71.88),
 		PercentStarted:  ptr(57.27),
@@ -161,6 +163,7 @@ func espnPlayer(espnID string) playerprofile.Player {
 func wantBijanProfile() playerprofile.Profile {
 	birthDate := time.Date(2002, 1, 30, 0, 0, 0, 0, time.UTC)
 	return playerprofile.Profile{
+		Position:        fantasy.PositionRB,
 		HeadshotURL:     "https://a.espncdn.com/i/headshots/nfl/players/full/4430807.png",
 		Jersey:          "7",
 		BirthDate:       &birthDate,

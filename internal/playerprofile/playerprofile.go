@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
 // ErrUnknownPlayer reports that a source has no profile for the player, for
@@ -22,6 +24,7 @@ type Player struct {
 // Profile is a player's descriptive and fantasy context at fetch time. Empty
 // strings, nil pointers, and empty slices mean the source didn't report it.
 type Profile struct {
+	Position        fantasy.Position // The player's primary fantasy position.
 	HeadshotURL     string
 	Jersey          string
 	BirthDate       *time.Time

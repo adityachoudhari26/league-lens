@@ -14,6 +14,7 @@ type Querier interface {
 	AddNFLGame(ctx context.Context, arg AddNFLGameParams) error
 	AddPlayerExternalID(ctx context.Context, arg AddPlayerExternalIDParams) (PlayerExternalID, error)
 	AddPlayerNews(ctx context.Context, arg AddPlayerNewsParams) error
+	AddPlayerProfileStat(ctx context.Context, arg AddPlayerProfileStatParams) error
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
 	AttachLeague(ctx context.Context, arg AttachLeagueParams) error
 	ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeamsParams) error
@@ -28,6 +29,7 @@ type Querier interface {
 	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
 	DeleteMatchupLineup(ctx context.Context, arg DeleteMatchupLineupParams) error
 	DeleteNFLSeason(ctx context.Context, season int32) error
+	DeletePlayerProfileStats(ctx context.Context, playerID pgtype.UUID) error
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
 	DeleteSourceNews(ctx context.Context, source string) error
 	DeleteStaleMatchupLineupTeams(ctx context.Context, matchupID pgtype.UUID) error
@@ -39,6 +41,7 @@ type Querier interface {
 	FindProviderConnection(ctx context.Context, arg FindProviderConnectionParams) (Connection, error)
 	GetConnectionForUser(ctx context.Context, arg GetConnectionForUserParams) (Connection, error)
 	GetLatestObservedSnapshot(ctx context.Context, arg GetLatestObservedSnapshotParams) (TeamSnapshot, error)
+	GetPlayerProfile(ctx context.Context, playerID pgtype.UUID) (PlayerProfile, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
 	InsertMatchupLineupEntry(ctx context.Context, arg InsertMatchupLineupEntryParams) error
@@ -50,6 +53,7 @@ type Querier interface {
 	// Players on the owner's selected teams' latest succeeded observed snapshot, with every known external ID.
 	ListNewsPlayers(ctx context.Context, lower string) ([]ListNewsPlayersRow, error)
 	ListPlayerExternalIDs(ctx context.Context, playerID pgtype.UUID) ([]PlayerExternalID, error)
+	ListPlayerProfileStats(ctx context.Context, playerID pgtype.UUID) ([]PlayerProfileStat, error)
 	ListRecentPlayerNews(ctx context.Context, arg ListRecentPlayerNewsParams) ([]PlayerNews, error)
 	ListSnapshotRosterForUser(ctx context.Context, arg ListSnapshotRosterForUserParams) ([]ListSnapshotRosterForUserRow, error)
 	ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsForUserParams) ([]TeamSnapshot, error)
@@ -83,6 +87,7 @@ type Querier interface {
 	UpdateMappedPlayerName(ctx context.Context, arg UpdateMappedPlayerNameParams) error
 	UpsertLeagueSeason(ctx context.Context, arg UpsertLeagueSeasonParams) (LeagueSeason, error)
 	UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (Matchup, error)
+	UpsertPlayerProfile(ctx context.Context, arg UpsertPlayerProfileParams) error
 	UpsertTeam(ctx context.Context, arg UpsertTeamParams) (Team, error)
 	UpsertTeamSnapshot(ctx context.Context, arg UpsertTeamSnapshotParams) (TeamSnapshot, error)
 }
