@@ -11,6 +11,61 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const insertWinChanceSample = `-- name: InsertWinChanceSample :exec
+INSERT INTO win_chance_samples (matchup_id, observed_at, team_a_win_chance, score_a, score_b, projected_a, projected_b)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+ON CONFLICT (matchup_id, observed_at) DO NOTHING
+`
+
+type InsertWinChanceSampleParams struct {
+	MatchupID      pgtype.UUID
+	ObservedAt     pgtype.Timestamptz
+	TeamAWinChance pgtype.Numeric
+	ScoreA         pgtype.Numeric
+	ScoreB         pgtype.Numeric
+	ProjectedA     pgtype.Numeric
+	ProjectedB     pgtype.Numeric
+}
+
+func (q *Queries) InsertWinChanceSample(ctx context.Context, arg InsertWinChanceSampleParams) error {
+	_, err := q.db.Exec(ctx, insertWinChanceSample,
+		arg.MatchupID,
+		arg.ObservedAt,
+		arg.TeamAWinChance,
+		arg.ScoreA,
+		arg.ScoreB,
+		arg.ProjectedA,
+		arg.ProjectedB,
+	)
+	return err
+}
+
+const latestWinChanceSample = `-- name: LatestWinChanceSample :one
+SELECT team_a_win_chance, score_a, score_b, projected_a, projected_b
+FROM win_chance_samples WHERE matchup_id = $1 ORDER BY observed_at DESC LIMIT 1
+`
+
+type LatestWinChanceSampleRow struct {
+	TeamAWinChance pgtype.Numeric
+	ScoreA         pgtype.Numeric
+	ScoreB         pgtype.Numeric
+	ProjectedA     pgtype.Numeric
+	ProjectedB     pgtype.Numeric
+}
+
+func (q *Queries) LatestWinChanceSample(ctx context.Context, matchupID pgtype.UUID) (LatestWinChanceSampleRow, error) {
+	row := q.db.QueryRow(ctx, latestWinChanceSample, matchupID)
+	var i LatestWinChanceSampleRow
+	err := row.Scan(
+		&i.TeamAWinChance,
+		&i.ScoreA,
+		&i.ScoreB,
+		&i.ProjectedA,
+		&i.ProjectedB,
+	)
+	return i, err
+}
+
 const listLiveMatchupCandidates = `-- name: ListLiveMatchupCandidates :many
 SELECT m.id AS matchup_id, m.league_season_id, m.period, m.external_matchup_id,
  owner_team.external_team_id AS owner_team_id, l.settings_json,
@@ -86,6 +141,46 @@ func (q *Queries) ListLiveMatchupCandidates(ctx context.Context, arg ListLiveMat
 			&i.TeamBExternalID,
 			&i.StarterProTeams,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLiveMatchupStarters = `-- name: ListLiveMatchupStarters :many
+SELECT ml.team_id, ml.projected_points, coalesce(e.pro_team,'')::text AS pro_team
+FROM matchup_lineups ml
+LEFT JOIN LATERAL (
+ SELECT ts.id FROM team_snapshots ts
+ JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
+ WHERE ts.team_id=ml.team_id AND ts.origin='observed'
+ ORDER BY ts.period DESC,ts.observed_at DESC,ts.id DESC LIMIT 1
+) s ON true
+LEFT JOIN roster_entries e ON e.snapshot_id=s.id AND e.player_id=ml.player_id
+WHERE ml.matchup_id = $1 AND ml.starter
+`
+
+type ListLiveMatchupStartersRow struct {
+	TeamID          pgtype.UUID
+	ProjectedPoints pgtype.Numeric
+	ProTeam         string
+}
+
+// Both sides' starters with projections and NFL team from each team's latest observed snapshot (” when unknown).
+func (q *Queries) ListLiveMatchupStarters(ctx context.Context, matchupID pgtype.UUID) ([]ListLiveMatchupStartersRow, error) {
+	rows, err := q.db.Query(ctx, listLiveMatchupStarters, matchupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLiveMatchupStartersRow{}
+	for rows.Next() {
+		var i ListLiveMatchupStartersRow
+		if err := rows.Scan(&i.TeamID, &i.ProjectedPoints, &i.ProTeam); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

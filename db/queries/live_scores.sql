@@ -41,3 +41,25 @@ touchdowns = coalesce(@touchdowns, ml.touchdowns), field_goals = coalesce(@field
 FROM player_external_ids x
 WHERE ml.matchup_id = @matchup_id AND ml.team_id = @team_id AND ml.player_id = x.player_id
 AND x.provider = @provider AND x.external_id = @external_player_id;
+
+-- name: ListLiveMatchupStarters :many
+-- Both sides' starters with projections and NFL team from each team's latest observed snapshot ('' when unknown).
+SELECT ml.team_id, ml.projected_points, coalesce(e.pro_team,'')::text AS pro_team
+FROM matchup_lineups ml
+LEFT JOIN LATERAL (
+ SELECT ts.id FROM team_snapshots ts
+ JOIN sync_runs r ON r.id=ts.sync_run_id AND r.status='succeeded'
+ WHERE ts.team_id=ml.team_id AND ts.origin='observed'
+ ORDER BY ts.period DESC,ts.observed_at DESC,ts.id DESC LIMIT 1
+) s ON true
+LEFT JOIN roster_entries e ON e.snapshot_id=s.id AND e.player_id=ml.player_id
+WHERE ml.matchup_id = @matchup_id AND ml.starter;
+
+-- name: LatestWinChanceSample :one
+SELECT team_a_win_chance, score_a, score_b, projected_a, projected_b
+FROM win_chance_samples WHERE matchup_id = @matchup_id ORDER BY observed_at DESC LIMIT 1;
+
+-- name: InsertWinChanceSample :exec
+INSERT INTO win_chance_samples (matchup_id, observed_at, team_a_win_chance, score_a, score_b, projected_a, projected_b)
+VALUES (@matchup_id, @observed_at, @team_a_win_chance, @score_a, @score_b, @projected_a, @projected_b)
+ON CONFLICT (matchup_id, observed_at) DO NOTHING;

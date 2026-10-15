@@ -202,3 +202,13 @@ type UserTeam struct {
 	LeagueSeasonID pgtype.UUID
 	TeamID         pgtype.UUID
 }
+
+type WinChanceSample struct {
+	MatchupID      pgtype.UUID
+	ObservedAt     pgtype.Timestamptz
+	TeamAWinChance pgtype.Numeric
+	ScoreA         pgtype.Numeric
+	ScoreB         pgtype.Numeric
+	ProjectedA     pgtype.Numeric
+	ProjectedB     pgtype.Numeric
+}
