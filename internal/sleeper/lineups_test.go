@@ -11,11 +11,12 @@ import (
 )
 
 // lineupFixtureData loads two weeks: week 1 is history (player 40 was dropped
-// since) and week 2 is the observed week, where player 20 is on reserve.
+// since) and week 2 is the observed week, where player 20 is on reserve. Only
+// week 1 has projections, as if week 2's request failed.
 func lineupFixtureData(t *testing.T) fantasy.LeagueData {
 	t.Helper()
 	raw := Data{Period: 2, ObservedAt: time.Now().UTC(), State: State{SeasonType: "regular"}}
-	for name, target := range map[string]any{"league.json": &raw.League, "rosters.json": &raw.Rosters, "lineup_weeks.json": &raw.Weeks} {
+	for name, target := range map[string]any{"league.json": &raw.League, "rosters.json": &raw.Rosters, "lineup_weeks.json": &raw.Weeks, "lineup_projections.json": &raw.Projections} {
 		body, err := os.ReadFile("testdata/" + name)
 		if err != nil {
 			t.Fatal(err)
@@ -86,6 +87,30 @@ func TestLineupEntriesCarrySlotsStartersAndPoints(t *testing.T) {
 	}
 }
 
+// The fixture league scores only receptions (1 point), so projections must
+// come from the stat lines rather than the generic pts_* totals.
+func TestLineupProjectionsUseLeagueScoring(t *testing.T) {
+	data := lineupFixtureData(t)
+	history := findLineup(t, data, 1, "1")
+	for id, want := range map[string]float64{"10": 4.5, "40": 6, "20": 0} {
+		got := history[id].ProjectedPoints
+		if got == nil || *got != want {
+			t.Fatalf("week 1 player %s projection = %v, want %v", id, got, want)
+		}
+	}
+	if points := history["10"].Points; points == nil || *points != 12.5 {
+		t.Fatalf("projection changed actual points: %v", points)
+	}
+	if defense := findLineup(t, data, 1, "2")["DET"]; defense.ProjectedPoints != nil {
+		t.Fatalf("unprojected player = %v, want nil", *defense.ProjectedPoints)
+	}
+	for id, entry := range findLineup(t, data, 2, "1") {
+		if entry.ProjectedPoints != nil {
+			t.Fatalf("week 2 player %s projection = %v without week 2 projections", id, *entry.ProjectedPoints)
+		}
+	}
+}
+
 func TestLineupStartersSumToTeamScore(t *testing.T) {
 	data := lineupFixtureData(t)
 	scores := map[fantasy.MatchupPeriod]map[string]float64{}
@@ -140,7 +165,7 @@ func TestLineupsSkipUnavailableRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lineups, err := normalizeLineups(rows, matchups, []string{"QB"}, nil)
+	lineups, err := normalizeLineups(rows, matchups, []string{"QB"}, nil, nil, nil)
 	if err != nil || len(lineups) != 1 || lineups[0].TeamID != "2" {
 		t.Fatalf("lineups = %+v, %v; want only team 2", lineups, err)
 	}

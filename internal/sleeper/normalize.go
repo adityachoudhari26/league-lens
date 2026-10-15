@@ -56,6 +56,7 @@ func normalizeData(raw Data) (fantasy.LeagueData, error) {
 		data.Rosters = append(data.Rosters, snapshot)
 	}
 	currentRosters := rostersByID(raw.Rosters)
+	scoring := scoringValues(raw.League.Scoring)
 	for week := 1; week <= raw.Period; week++ {
 		rows := raw.Weeks[week]
 		if len(rows) == 0 {
@@ -86,7 +87,7 @@ func normalizeData(raw Data) (fantasy.LeagueData, error) {
 		if historical {
 			designations = nil
 		}
-		lineups, err := normalizeLineups(rows, matchups, raw.League.Positions, designations)
+		lineups, err := normalizeLineups(rows, matchups, raw.League.Positions, designations, projectionsByPlayer(raw.Projections[week]), scoring)
 		if err != nil {
 			return data, err
 		}
