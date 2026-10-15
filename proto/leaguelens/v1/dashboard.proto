@@ -157,6 +157,9 @@ message MatchupLineup {
   // by BENCH, TAXI, IR, then others. Ties: points (highest first), then name, then player ID.
   repeated LineupPlayer starters = 6;
   repeated LineupPlayer bench = 7;
+  // Starters' actual points once their game kicks off, projected points before
+  // (missing counts as zero). Absent when no starter has a projection.
+  optional double projected_score = 8;
 }
 message LineupPlayer {
   string player_id = 1;
@@ -167,6 +170,7 @@ message LineupPlayer {
   string pro_team = 6; // Empty when unknown.
   GameState game_state = 7;
   google.protobuf.Timestamp kickoff_at = 8; // Absent unless a game is scheduled.
+  optional double projected_points = 9; // Provider's latest projection; never a stand-in for points.
 }
 // GameState is derived from nfl_games kickoffs. Live and final are not
 // distinguished; both are KICKED_OFF.

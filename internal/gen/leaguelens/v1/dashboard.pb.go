@@ -1423,10 +1423,13 @@ type MatchupLineup struct {
 	StartersLeftToPlay int32                  `protobuf:"varint,5,opt,name=starters_left_to_play,json=startersLeftToPlay,proto3" json:"starters_left_to_play,omitempty"` // Starters whose game has not kicked off.
 	// Starters by slot (QB, RB, WR, TE, FLEX, SUPERFLEX, DEF, K, then others); bench
 	// by BENCH, TAXI, IR, then others. Ties: points (highest first), then name, then player ID.
-	Starters      []*LineupPlayer `protobuf:"bytes,6,rep,name=starters,proto3" json:"starters,omitempty"`
-	Bench         []*LineupPlayer `protobuf:"bytes,7,rep,name=bench,proto3" json:"bench,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Starters []*LineupPlayer `protobuf:"bytes,6,rep,name=starters,proto3" json:"starters,omitempty"`
+	Bench    []*LineupPlayer `protobuf:"bytes,7,rep,name=bench,proto3" json:"bench,omitempty"`
+	// Starters' actual points once their game kicks off, projected points before
+	// (missing counts as zero). Absent when no starter has a projection.
+	ProjectedScore *float64 `protobuf:"fixed64,8,opt,name=projected_score,json=projectedScore,proto3,oneof" json:"projected_score,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MatchupLineup) Reset() {
@@ -1508,18 +1511,26 @@ func (x *MatchupLineup) GetBench() []*LineupPlayer {
 	return nil
 }
 
+func (x *MatchupLineup) GetProjectedScore() float64 {
+	if x != nil && x.ProjectedScore != nil {
+		return *x.ProjectedScore
+	}
+	return 0
+}
+
 type LineupPlayer struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	PlayerName    string                 `protobuf:"bytes,2,opt,name=player_name,json=playerName,proto3" json:"player_name,omitempty"`
-	Slot          string                 `protobuf:"bytes,3,opt,name=slot,proto3" json:"slot,omitempty"`
-	Points        *float64               `protobuf:"fixed64,4,opt,name=points,proto3,oneof" json:"points,omitempty"`                                                          // Absent means not reported, distinct from zero.
-	InjuryStatus  InjuryStatus           `protobuf:"varint,5,opt,name=injury_status,json=injuryStatus,proto3,enum=leaguelens.v1.InjuryStatus" json:"injury_status,omitempty"` // Current status, not as of this round.
-	ProTeam       string                 `protobuf:"bytes,6,opt,name=pro_team,json=proTeam,proto3" json:"pro_team,omitempty"`                                                 // Empty when unknown.
-	GameState     GameState              `protobuf:"varint,7,opt,name=game_state,json=gameState,proto3,enum=leaguelens.v1.GameState" json:"game_state,omitempty"`
-	KickoffAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=kickoff_at,json=kickoffAt,proto3" json:"kickoff_at,omitempty"` // Absent unless a game is scheduled.
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId        string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	PlayerName      string                 `protobuf:"bytes,2,opt,name=player_name,json=playerName,proto3" json:"player_name,omitempty"`
+	Slot            string                 `protobuf:"bytes,3,opt,name=slot,proto3" json:"slot,omitempty"`
+	Points          *float64               `protobuf:"fixed64,4,opt,name=points,proto3,oneof" json:"points,omitempty"`                                                          // Absent means not reported, distinct from zero.
+	InjuryStatus    InjuryStatus           `protobuf:"varint,5,opt,name=injury_status,json=injuryStatus,proto3,enum=leaguelens.v1.InjuryStatus" json:"injury_status,omitempty"` // Current status, not as of this round.
+	ProTeam         string                 `protobuf:"bytes,6,opt,name=pro_team,json=proTeam,proto3" json:"pro_team,omitempty"`                                                 // Empty when unknown.
+	GameState       GameState              `protobuf:"varint,7,opt,name=game_state,json=gameState,proto3,enum=leaguelens.v1.GameState" json:"game_state,omitempty"`
+	KickoffAt       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=kickoff_at,json=kickoffAt,proto3" json:"kickoff_at,omitempty"`                           // Absent unless a game is scheduled.
+	ProjectedPoints *float64               `protobuf:"fixed64,9,opt,name=projected_points,json=projectedPoints,proto3,oneof" json:"projected_points,omitempty"` // Provider's latest projection; never a stand-in for points.
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *LineupPlayer) Reset() {
@@ -1606,6 +1617,13 @@ func (x *LineupPlayer) GetKickoffAt() *timestamppb.Timestamp {
 		return x.KickoffAt
 	}
 	return nil
+}
+
+func (x *LineupPlayer) GetProjectedPoints() float64 {
+	if x != nil && x.ProjectedPoints != nil {
+		return *x.ProjectedPoints
+	}
+	return 0
 }
 
 var File_leaguelens_v1_dashboard_proto protoreflect.FileDescriptor
@@ -1718,7 +1736,7 @@ const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"\x04team\x18\x05 \x01(\v2\x1c.leaguelens.v1.MatchupLineupR\x04team\x128\n" +
 	"\bopponent\x18\x06 \x01(\v2\x1c.leaguelens.v1.MatchupLineupR\bopponent\x129\n" +
 	"\n" +
-	"fetched_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tfetchedAt\"\xbc\x02\n" +
+	"fetched_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tfetchedAt\"\xfe\x02\n" +
 	"\rMatchupLineup\x12\x17\n" +
 	"\ateam_id\x18\x01 \x01(\tR\x06teamId\x12\x1b\n" +
 	"\tteam_name\x18\x02 \x01(\tR\bteamName\x121\n" +
@@ -1726,8 +1744,10 @@ const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"\x05score\x18\x04 \x01(\x01H\x00R\x05score\x88\x01\x01\x121\n" +
 	"\x15starters_left_to_play\x18\x05 \x01(\x05R\x12startersLeftToPlay\x127\n" +
 	"\bstarters\x18\x06 \x03(\v2\x1b.leaguelens.v1.LineupPlayerR\bstarters\x121\n" +
-	"\x05bench\x18\a \x03(\v2\x1b.leaguelens.v1.LineupPlayerR\x05benchB\b\n" +
-	"\x06_score\"\xd9\x02\n" +
+	"\x05bench\x18\a \x03(\v2\x1b.leaguelens.v1.LineupPlayerR\x05bench\x12,\n" +
+	"\x0fprojected_score\x18\b \x01(\x01H\x01R\x0eprojectedScore\x88\x01\x01B\b\n" +
+	"\x06_scoreB\x12\n" +
+	"\x10_projected_score\"\x9e\x03\n" +
 	"\fLineupPlayer\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x1f\n" +
 	"\vplayer_name\x18\x02 \x01(\tR\n" +
@@ -1739,8 +1759,10 @@ const file_leaguelens_v1_dashboard_proto_rawDesc = "" +
 	"\n" +
 	"game_state\x18\a \x01(\x0e2\x18.leaguelens.v1.GameStateR\tgameState\x129\n" +
 	"\n" +
-	"kickoff_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tkickoffAtB\t\n" +
-	"\a_points*\xa3\x01\n" +
+	"kickoff_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tkickoffAt\x12.\n" +
+	"\x10projected_points\x18\t \x01(\x01H\x01R\x0fprojectedPoints\x88\x01\x01B\t\n" +
+	"\a_pointsB\x13\n" +
+	"\x11_projected_points*\xa3\x01\n" +
 	"\rMatchupStatus\x12\x1e\n" +
 	"\x1aMATCHUP_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18MATCHUP_STATUS_SCHEDULED\x10\x01\x12\x1e\n" +
