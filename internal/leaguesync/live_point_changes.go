@@ -2,8 +2,10 @@ package leaguesync
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
@@ -37,6 +39,7 @@ func loadLiveLineupObservations(
 }
 
 // saveLiveLineupEntry updates a provider entry, records eligible starter changes, and refreshes its baseline.
+// Duplicate entries in a tick are safe because change inserts ignore primary-key conflicts.
 func (r *Runner) saveLiveLineupEntry(
 	ctx context.Context,
 	queries *store.Queries,
@@ -50,31 +53,27 @@ func (r *Runner) saveLiveLineupEntry(
 		return false, err
 	}
 	touchdowns, fieldGoals := liveCounts(entry.Scoring)
-	updatedRows, err := queries.UpdateLiveLineupEntry(ctx, store.UpdateLiveLineupEntryParams{
+	after, err := queries.UpdateLiveLineupEntry(ctx, store.UpdateLiveLineupEntryParams{
 		Points: points, Touchdowns: touchdowns, FieldGoals: fieldGoals,
 		MatchupID: matchupID, TeamID: teamID, Provider: provider, ExternalPlayerID: entry.PlayerID,
 	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
-	if len(updatedRows) == 0 {
-		return false, nil
-	}
 
 	observedAt := r.now()
-	for _, after := range updatedRows {
-		key := liveLineupObservationKey{teamID: teamID, playerID: after.PlayerID}
-		baseline, hasBaseline := observations[key]
-		if err := recordLineupPointChange(
-			ctx, queries, matchupID, teamID, baseline, hasBaseline, after, observedAt,
-		); err != nil {
-			return false, err
-		}
-		observation, err := saveLiveLineupObservation(ctx, queries, matchupID, teamID, after, observedAt)
-		if err != nil {
-			return false, err
-		}
-		observations[key] = observation
+	key := liveLineupObservationKey{teamID: teamID, playerID: after.PlayerID}
+	baseline, hasBaseline := observations[key]
+	if err := recordLineupPointChange(
+		ctx, queries, matchupID, teamID, baseline, hasBaseline, after, observedAt,
+	); err != nil {
+		return false, err
+	}
+	if err := saveLiveLineupObservation(ctx, queries, matchupID, teamID, after, observedAt); err != nil {
+		return false, err
 	}
 	return true, nil
 }
@@ -109,21 +108,12 @@ func saveLiveLineupObservation(
 	matchupID, teamID pgtype.UUID,
 	after store.UpdateLiveLineupEntryRow,
 	observedAt time.Time,
-) (store.ListLiveLineupObservationsRow, error) {
-	observation := store.ListLiveLineupObservationsRow{
-		TeamID: teamID, PlayerID: after.PlayerID, Points: after.Points,
-		Touchdowns: after.Touchdowns, FieldGoals: after.FieldGoals,
-		ObservedAt: pgtype.Timestamptz{Time: observedAt, Valid: true},
-	}
-	err := queries.UpsertLiveLineupObservation(ctx, store.UpsertLiveLineupObservationParams{
+) error {
+	return queries.UpsertLiveLineupObservation(ctx, store.UpsertLiveLineupObservationParams{
 		MatchupID: matchupID, TeamID: teamID, PlayerID: after.PlayerID,
 		Points: after.Points, Touchdowns: after.Touchdowns, FieldGoals: after.FieldGoals,
-		ObservedAt: observation.ObservedAt,
+		ObservedAt: pgtype.Timestamptz{Time: observedAt, Valid: true},
 	})
-	if err != nil {
-		return store.ListLiveLineupObservationsRow{}, err
-	}
-	return observation, nil
 }
 
 // lineupValuesChanged detects four-decimal point changes and changes between known scoring counts.

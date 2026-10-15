@@ -425,6 +425,10 @@ type savedLineupPointChange struct {
 	observedAt                        time.Time
 }
 
+func int4Is(value pgtype.Int4, want int32) bool {
+	return value.Valid && value.Int32 == want
+}
+
 func readLineupPointChanges(t *testing.T, pool *pgxpool.Pool) []savedLineupPointChange {
 	t.Helper()
 	rows, err := pool.Query(context.Background(), `
@@ -698,8 +702,8 @@ func TestLiveScoreLoopPersistsPointChangesFromLiveObservations(t *testing.T) {
 		t.Fatalf("first tick saved %d observations, want 3", observationCount)
 	}
 	firstObservation := readLiveLineupObservation(t, pool, "p")
-	if firstObservation.points != "17.0000" || !firstObservation.touchdowns.Valid ||
-		firstObservation.touchdowns.Int32 != 0 || !firstObservation.fieldGoals.Valid || firstObservation.fieldGoals.Int32 != 0 {
+	if firstObservation.points != "17.0000" || !int4Is(firstObservation.touchdowns, 0) ||
+		!int4Is(firstObservation.fieldGoals, 0) {
 		t.Fatalf("first live observation = %+v, want 17 points and known 0/0 counts", firstObservation)
 	}
 
@@ -712,10 +716,10 @@ func TestLiveScoreLoopPersistsPointChangesFromLiveObservations(t *testing.T) {
 	}
 	firstChange := changes[0]
 	if firstChange.playerID != "p" || firstChange.pointsBefore != "17.0000" || firstChange.pointsAfter != "23.8000" ||
-		!firstChange.touchdownsBefore.Valid || firstChange.touchdownsBefore.Int32 != 0 ||
-		!firstChange.touchdownsAfter.Valid || firstChange.touchdownsAfter.Int32 != 1 ||
-		!firstChange.fieldGoalsBefore.Valid || firstChange.fieldGoalsBefore.Int32 != 0 ||
-		!firstChange.fieldGoalsAfter.Valid || firstChange.fieldGoalsAfter.Int32 != 0 ||
+		!int4Is(firstChange.touchdownsBefore, 0) ||
+		!int4Is(firstChange.touchdownsAfter, 1) ||
+		!int4Is(firstChange.fieldGoalsBefore, 0) ||
+		!int4Is(firstChange.fieldGoalsAfter, 0) ||
 		!firstChange.observedAt.Equal(secondFetchedAt) {
 		t.Fatalf("second-tick point change = %+v, want p 17.0000→23.8000 and TD 0→1", firstChange)
 	}

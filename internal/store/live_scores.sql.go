@@ -273,7 +273,7 @@ func (q *Queries) ListLiveMatchupStarters(ctx context.Context, matchupID pgtype.
 	return items, nil
 }
 
-const updateLiveLineupEntry = `-- name: UpdateLiveLineupEntry :many
+const updateLiveLineupEntry = `-- name: UpdateLiveLineupEntry :one
 UPDATE matchup_lineups ml SET points = $1,
 touchdowns = coalesce($2, ml.touchdowns), field_goals = coalesce($3, ml.field_goals)
 FROM player_external_ids x
@@ -301,8 +301,8 @@ type UpdateLiveLineupEntryRow struct {
 }
 
 // Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
-func (q *Queries) UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) ([]UpdateLiveLineupEntryRow, error) {
-	rows, err := q.db.Query(ctx, updateLiveLineupEntry,
+func (q *Queries) UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (UpdateLiveLineupEntryRow, error) {
+	row := q.db.QueryRow(ctx, updateLiveLineupEntry,
 		arg.Points,
 		arg.Touchdowns,
 		arg.FieldGoals,
@@ -311,28 +311,15 @@ func (q *Queries) UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineu
 		arg.Provider,
 		arg.ExternalPlayerID,
 	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []UpdateLiveLineupEntryRow{}
-	for rows.Next() {
-		var i UpdateLiveLineupEntryRow
-		if err := rows.Scan(
-			&i.PlayerID,
-			&i.Starter,
-			&i.Points,
-			&i.Touchdowns,
-			&i.FieldGoals,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+	var i UpdateLiveLineupEntryRow
+	err := row.Scan(
+		&i.PlayerID,
+		&i.Starter,
+		&i.Points,
+		&i.Touchdowns,
+		&i.FieldGoals,
+	)
+	return i, err
 }
 
 const updateLiveMatchupScores = `-- name: UpdateLiveMatchupScores :exec

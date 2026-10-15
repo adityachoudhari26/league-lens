@@ -34,7 +34,7 @@ ORDER BY l.provider,l.name;
 -- Status stays the full sync's job; live reads only refresh scores.
 UPDATE matchups SET score_a = @score_a, score_b = @score_b, fetched_at = @fetched_at WHERE id = @matchup_id;
 
--- name: UpdateLiveLineupEntry :many
+-- name: UpdateLiveLineupEntry :one
 -- Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
 UPDATE matchup_lineups ml SET points = @points,
 touchdowns = coalesce(@touchdowns, ml.touchdowns), field_goals = coalesce(@field_goals, ml.field_goals)
