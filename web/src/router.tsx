@@ -24,22 +24,48 @@ const rootRoute = createRootRoute({
     </div>
   ),
 })
-const pages = navigation.map((item) =>
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: item.path,
-    component: () =>
-      item.path === "/" ? (
-        <OverviewPage />
-      ) : item.path === "/matchups" ? (
-        <MatchupsPage item={item} />
-      ) : (
-        <WorkspacePage item={item} />
-      ),
-  }),
-)
+
+const matchupsItem = navigation.find((item) => item.path === "/matchups")!
+
+// Parses ?league=<id>&week=<n>: league is kept only when non-empty, week only
+// when a positive integer (numeric strings accepted).
+function validateMatchupsSearch(search: Record<string, unknown>): {
+  league?: string
+  week?: number
+} {
+  const league =
+    typeof search.league === "string" && search.league !== ""
+      ? search.league
+      : undefined
+  const raw = search.week
+  const week =
+    typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN
+  return {
+    league,
+    week: Number.isInteger(week) && week > 0 ? week : undefined,
+  }
+}
+
+const matchupsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: matchupsItem.path,
+  component: () => <MatchupsPage item={matchupsItem} />,
+  validateSearch: validateMatchupsSearch,
+})
+
+const pages = navigation
+  .filter((item) => item.path !== matchupsItem.path)
+  .map((item) =>
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: item.path,
+      component: () =>
+        item.path === "/" ? <OverviewPage /> : <WorkspacePage item={item} />,
+    }),
+  )
+
 export const router = createRouter({
-  routeTree: rootRoute.addChildren(pages),
+  routeTree: rootRoute.addChildren([...pages, matchupsRoute]),
   scrollRestoration: true,
 })
 
