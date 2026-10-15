@@ -1,0 +1,476 @@
+{
+  "season": {
+    "year": 2026,
+    "type": 2
+  },
+  "week": {
+    "number": 5
+  },
+  "events": [
+    {
+      "id": "401872980",
+      "date": "2026-10-09T00:15Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "6"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "27"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872981",
+      "date": "2026-10-11T13:30Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "30"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "21"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872990",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "9"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "3"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872984",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "10"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "34"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872982",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "15"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872986",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "13"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872987",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "18"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "16"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872983",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "20"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "5"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872985",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "23"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "11"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872988",
+      "date": "2026-10-11T17:00Z",
+      "status": {
+        "clock": 0.0,
+        "period": 5,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "28"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872989",
+      "date": "2026-10-11T20:05Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "24"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "7"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872991",
+      "date": "2026-10-11T20:25Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "22"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "8"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872992",
+      "date": "2026-10-11T20:25Z",
+      "status": {
+        "clock": 0.0,
+        "period": 4,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "26"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "25"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872993",
+      "date": "2026-10-12T00:20Z",
+      "status": {
+        "clock": 0.0,
+        "period": 5,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "1"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "33"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872994",
+      "date": "2026-10-13T00:15Z",
+      "status": {
+        "clock": 0.0,
+        "period": 5,
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "2"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
