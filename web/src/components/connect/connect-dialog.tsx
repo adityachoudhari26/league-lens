@@ -43,53 +43,55 @@ export function ConnectDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <ProviderStep
-          hidden={flow.step !== "provider"}
-          onChoose={flow.chooseProvider}
-        />
-        <EspnStep
-          hidden={flow.step !== "credentials" || flow.provider !== "espn"}
-          initialCredentials={initialESPN}
-          error={flow.error}
-          pending={flow.espnPending}
-          formResetVersion={flow.formResetVersion}
-          espnClearVersion={flow.espnClearVersion}
-          onBack={() => flow.goToStep("provider")}
-          onSubmit={flow.submitESPN}
-        />
-        <SleeperStep
-          hidden={flow.step !== "credentials" || flow.provider !== "sleeper"}
-          error={flow.error}
-          pending={flow.sleeperPending}
-          formResetVersion={flow.formResetVersion}
-          onBack={() => flow.goToStep("provider")}
-          onSubmit={flow.submitSleeper}
-        />
-        <LeagueChoiceStep
-          hidden={flow.step !== "leagues"}
-          leagues={flow.leagues}
-          selected={flow.selected}
-          selectedCount={flow.selectedCount}
-          allAlreadyImported={flow.allAlreadyImported}
-          error={flow.error}
-          pending={flow.importPending}
-          onBack={() => flow.goToStep("credentials")}
-          onToggle={flow.toggleLeague}
-          onImport={() => void flow.importSelectedLeagues()}
-          onDone={() => {
-            flow.reset()
-            onOpenChange(false)
-          }}
-        />
-        <ImportResultsStep
-          hidden={flow.step !== "results"}
-          results={flow.results}
-          leagues={flow.leagues}
-          onDone={() => {
-            flow.reset()
-            onOpenChange(false)
-          }}
-        />
+        {flow.step === "provider" && (
+          <ProviderStep onChoose={flow.chooseProvider} />
+        )}
+        {flow.step === "credentials" && flow.provider === "espn" && (
+          <EspnStep
+            initialCredentials={flow.espnPrefill}
+            error={flow.error}
+            pending={flow.espnPending}
+            onBack={() => flow.goToStep("provider")}
+            onSubmit={flow.submitESPN}
+          />
+        )}
+        {flow.step === "credentials" && flow.provider === "sleeper" && (
+          <SleeperStep
+            username={flow.username}
+            onUsernameChange={flow.setUsername}
+            error={flow.error}
+            pending={flow.sleeperPending}
+            onBack={() => flow.goToStep("provider")}
+            onSubmit={flow.submitSleeper}
+          />
+        )}
+        {flow.step === "leagues" && (
+          <LeagueChoiceStep
+            leagues={flow.leagues}
+            selected={flow.selected}
+            selectedCount={flow.selectedCount}
+            allAlreadyImported={flow.allAlreadyImported}
+            error={flow.error}
+            pending={flow.importPending}
+            onBack={() => flow.goToStep("credentials")}
+            onToggle={flow.toggleLeague}
+            onImport={() => void flow.importSelectedLeagues()}
+            onDone={() => {
+              flow.reset()
+              onOpenChange(false)
+            }}
+          />
+        )}
+        {flow.step === "results" && (
+          <ImportResultsStep
+            results={flow.results}
+            leagues={flow.leagues}
+            onDone={() => {
+              flow.reset()
+              onOpenChange(false)
+            }}
+          />
+        )}
         {flow.error &&
           flow.step !== "credentials" &&
           flow.step !== "leagues" && <InlineError>{flow.error}</InlineError>}

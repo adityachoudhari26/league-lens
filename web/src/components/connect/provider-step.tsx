@@ -2,14 +2,12 @@ import { Button } from "@/components/ui/button"
 import type { Provider } from "./types"
 
 export function ProviderStep({
-  hidden,
   onChoose,
 }: {
-  hidden: boolean
   onChoose: (provider: Provider) => void
 }) {
   return (
-    <div hidden={hidden} className={hidden ? "hidden" : "grid gap-3"}>
+    <div className="grid gap-3">
       <ProviderButton provider="espn" onClick={() => onChoose("espn")} />
       <ProviderButton provider="sleeper" onClick={() => onChoose("sleeper")} />
     </div>

@@ -7,7 +7,6 @@ import { InlineError } from "./inline-error"
 import { leagueKey } from "./types"
 
 export function LeagueChoiceStep({
-  hidden,
   leagues,
   selected,
   selectedCount,
@@ -19,7 +18,6 @@ export function LeagueChoiceStep({
   onImport,
   onDone,
 }: {
-  hidden: boolean
   leagues: DiscoveredLeague[]
   selected: Set<string>
   selectedCount: number
@@ -32,7 +30,7 @@ export function LeagueChoiceStep({
   onDone: () => void
 }) {
   return (
-    <div hidden={hidden} className={hidden ? "hidden" : "grid gap-4"}>
+    <div className="grid gap-4">
       <BackButton onClick={onBack}>Back to credentials</BackButton>
       {leagues.length ? (
         <div className="grid gap-2">

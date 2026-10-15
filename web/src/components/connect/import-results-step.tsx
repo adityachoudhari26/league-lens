@@ -7,18 +7,16 @@ import { Button } from "@/components/ui/button"
 import { importErrorMessage } from "@/lib/api/connections"
 
 export function ImportResultsStep({
-  hidden,
   results,
   leagues,
   onDone,
 }: {
-  hidden: boolean
   results: ImportResult[]
   leagues: DiscoveredLeague[]
   onDone: () => void
 }) {
   return (
-    <div hidden={hidden} className={hidden ? "hidden" : "grid gap-4"}>
+    <div className="grid gap-4">
       <div className="grid gap-2">
         {results.map((result) => {
           const league = leagues.find(

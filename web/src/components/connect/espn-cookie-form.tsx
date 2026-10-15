@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import type { FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,40 +11,20 @@ export function EspnCookieOption({
   initialCredentials,
   error,
   pending,
-  formResetVersion,
-  clearVersion,
   onSubmit,
 }: {
   initialCredentials?: ESPNCredentials
   error: string
   pending: boolean
-  formResetVersion: number
-  clearVersion: number
-  onSubmit: (credentials: ESPNCredentials) => Promise<boolean>
+  onSubmit: (credentials: ESPNCredentials) => Promise<void>
 }) {
   const [s2, setS2] = useState(initialCredentials?.s2 ?? "")
   const [swid, setSwid] = useState(initialCredentials?.swid ?? "")
   const developerToolsShortcut = isMac ? "⌥⌘I" : "F12"
-  const previousResetVersions = useRef({ formResetVersion, clearVersion })
 
-  useEffect(() => {
-    if (
-      previousResetVersions.current.formResetVersion === formResetVersion &&
-      previousResetVersions.current.clearVersion === clearVersion
-    ) {
-      return
-    }
-    previousResetVersions.current = { formResetVersion, clearVersion }
-    setS2("")
-    setSwid("")
-  }, [formResetVersion, clearVersion])
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (await onSubmit({ s2, swid })) {
-      setS2("")
-      setSwid("")
-    }
+    void onSubmit({ s2, swid })
   }
 
   return (

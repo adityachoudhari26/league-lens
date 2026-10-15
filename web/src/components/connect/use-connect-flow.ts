@@ -32,8 +32,8 @@ export function useConnectFlow({
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [results, setResults] = useState<ImportResult[]>([])
   const [error, setError] = useState("")
-  const [formResetVersion, setFormResetVersion] = useState(0)
-  const [espnClearVersion, setEspnClearVersion] = useState(0)
+  const [username, setUsername] = useState("")
+  const [espnPrefill, setEspnPrefill] = useState(initialESPN)
   const initialSubmitStarted = useRef(false)
   const {
     mutateAsync: connectESPN,
@@ -51,7 +51,8 @@ export function useConnectFlow({
     setSelected(new Set())
     setResults([])
     setError("")
-    setFormResetVersion((version) => version + 1)
+    setUsername("")
+    setEspnPrefill(undefined)
     resetESPN()
     sleeperMutation.reset()
     importMutation.reset()
@@ -75,11 +76,9 @@ export function useConnectFlow({
       try {
         const response = await connectESPN(credentials)
         showDiscoveredLeagues(response.connectionId, response.leagues)
-        setEspnClearVersion((version) => version + 1)
-        return true
+        setEspnPrefill(undefined)
       } catch (cause) {
         setError(connectErrorMessage(cause))
-        return false
       } finally {
         resetESPN()
       }
@@ -183,7 +182,8 @@ export function useConnectFlow({
     espnPending,
     sleeperPending: sleeperMutation.isPending,
     importPending: importMutation.isPending,
-    formResetVersion,
-    espnClearVersion,
+    username,
+    setUsername,
+    espnPrefill,
   }
 }
