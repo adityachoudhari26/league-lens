@@ -163,11 +163,17 @@ func anchorResiduals(
 		gameIndex := starterGames[starterIndex]
 		if !in.To.IsZero() {
 			anchorAt = in.To
-			if credited[starterIndex] && gameIndex >= 0 &&
-				gameEndedWithinWindow(games[gameIndex], in.From, in.To) {
-				anchorAt = games[gameIndex].lastAt
+			if gameIndex >= 0 {
+				game := games[gameIndex]
+				switch {
+				case gameEndedWithinWindow(game, in.From, in.To):
+					anchorAt = game.lastAt
+				case game.lastPlay.Kind == fantasy.NFLPlayEndOfGame &&
+					!game.lastAt.After(in.From):
+					anchorAt = in.From
+				}
 			}
-		} else if credited[starterIndex] && gameIndex >= 0 && !games[gameIndex].lastAt.IsZero() {
+		} else if gameIndex >= 0 && !games[gameIndex].lastAt.IsZero() {
 			anchorAt = games[gameIndex].lastAt
 		}
 		bucket := replayBucket(anchorAt, in.From)

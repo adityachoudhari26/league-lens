@@ -280,8 +280,9 @@ func TestBuildWindowWithoutGamesAnchorsResidualAtTo(t *testing.T) {
 	}
 }
 
-func TestBuildAnchorsDefenseResidualInSampleOnly(t *testing.T) {
+func TestBuildAnchorsUncreditedDefenseAtMatchedGameEnd(t *testing.T) {
 	gameEnd := time.Date(2026, time.October, 9, 18, 0, 0, 0, time.UTC)
+	laterGameEnd := gameEnd.Add(90 * time.Minute)
 	timeline := Build(Input{
 		Starters: []Starter{{Key: "dst", ProTeam: "KC", FinalPoints: 7}},
 		Games: []Game{{
@@ -289,6 +290,12 @@ func TestBuildAnchorsDefenseResidualInSampleOnly(t *testing.T) {
 			Plays: []fantasy.NFLPlay{
 				{At: gameEnd.Add(-time.Hour), Period: 1, Kind: fantasy.NFLPlayOther},
 				{At: gameEnd, Period: 4, Kind: fantasy.NFLPlayEndOfGame},
+			},
+		}, {
+			HomeTeam: "SF",
+			Plays: []fantasy.NFLPlay{
+				{At: gameEnd.Add(time.Hour), Period: 1, Kind: fantasy.NFLPlayOther},
+				{At: laterGameEnd, Period: 4, Kind: fantasy.NFLPlayEndOfGame},
 			},
 		}},
 	})
@@ -298,6 +305,86 @@ func TestBuildAnchorsDefenseResidualInSampleOnly(t *testing.T) {
 	final := sampleAt(t, timeline, gameEnd.Truncate(time.Minute))
 	if final.ScoreA != 7 {
 		t.Errorf("D/ST end sample = %+v, want score 7", final)
+	}
+	for _, sample := range timeline.Samples {
+		if sample.At.Equal(laterGameEnd.Truncate(time.Minute)) {
+			t.Errorf("D/ST residual was delayed to the later game: %+v", sample)
+		}
+	}
+}
+
+func TestBuildWindowAnchorsUncreditedResidualAtGameEnd(t *testing.T) {
+	from := time.Date(2026, time.October, 9, 13, 0, 0, 0, time.UTC)
+	gameEnd := from.Add(5 * time.Minute)
+	to := from.Add(10 * time.Minute)
+	timeline := Build(Input{
+		From: from,
+		To:   to,
+		Starters: []Starter{{
+			Key: "dst", ProTeam: "KC", FinalPoints: 7,
+		}},
+		Games: []Game{{
+			HomeTeam: "KC",
+			Plays: []fantasy.NFLPlay{
+				{At: from.Add(time.Minute), Period: 1, Kind: fantasy.NFLPlayOther},
+				{At: gameEnd, Period: 4, Kind: fantasy.NFLPlayEndOfGame},
+			},
+		}},
+	})
+	if len(timeline.Changes) != 0 {
+		t.Fatalf("uncredited window residual changes = %+v, want none", timeline.Changes)
+	}
+	if sample := sampleAt(t, timeline, gameEnd); sample.ScoreA != 7 {
+		t.Errorf("game-end residual sample = %+v, want score 7", sample)
+	}
+}
+
+func TestBuildWindowWithoutEndOfGameAnchorsResidualAtTo(t *testing.T) {
+	from := time.Date(2026, time.October, 9, 13, 0, 0, 0, time.UTC)
+	to := from.Add(5*time.Minute + 30*time.Second)
+	timeline := Build(Input{
+		From:     from,
+		To:       to,
+		Starters: []Starter{{Key: "rb", AthleteID: "rb", ProTeam: "KC", FinalPoints: 7}},
+		Games: []Game{{
+			HomeTeam: "KC",
+			Plays: []fantasy.NFLPlay{{
+				At: from.Add(time.Minute), Kind: fantasy.NFLPlayOther,
+				Participants: []fantasy.NFLPlayParticipant{{AthleteID: "rb", Role: "rusher"}},
+			}},
+		}},
+	})
+	if len(timeline.Changes) != 0 {
+		t.Fatalf("uncredited running-game residual changes = %+v, want none", timeline.Changes)
+	}
+	if sample := sampleAt(t, timeline, minuteBucket(to)); sample.ScoreA != 7 {
+		t.Errorf("To residual sample = %+v, want score 7", sample)
+	}
+}
+
+func TestBuildWindowAnchorsEndedGameAtFirstBucketAfterFrom(t *testing.T) {
+	from := time.Date(2026, time.October, 9, 13, 10, 0, 0, time.UTC)
+	gameEnd := from.Add(-5 * time.Minute)
+	timeline := Build(Input{
+		From: from,
+		To:   from.Add(5 * time.Minute),
+		Starters: []Starter{{
+			Key: "dst", ProTeam: "KC", FinalPoints: 7,
+		}},
+		Games: []Game{{
+			HomeTeam: "KC",
+			Plays: []fantasy.NFLPlay{
+				{At: gameEnd.Add(-time.Minute), Period: 1, Kind: fantasy.NFLPlayOther},
+				{At: gameEnd, Period: 4, Kind: fantasy.NFLPlayEndOfGame},
+			},
+		}},
+	})
+	if len(timeline.Changes) != 0 {
+		t.Fatalf("ended-game residual changes = %+v, want none", timeline.Changes)
+	}
+	firstBucket := minuteBucket(from).Add(time.Minute)
+	if sample := sampleAt(t, timeline, firstBucket); sample.ScoreA != 7 {
+		t.Errorf("post-From residual sample = %+v, want score 7", sample)
 	}
 }
 
