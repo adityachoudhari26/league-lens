@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/adityachoudhari26/league-lens/db"
+	"github.com/adityachoudhari26/league-lens/internal/assistant"
 	"github.com/adityachoudhari26/league-lens/internal/config"
 	"github.com/adityachoudhari26/league-lens/internal/connections"
 	"github.com/adityachoudhari26/league-lens/internal/dashboard"
@@ -72,6 +73,7 @@ func run() error {
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,
 		Imports: syncRunner,
 	}
+	assistantService := &assistant.Service{DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
 		Handler: httpserver.RequireLocalHost(httpserver.NewHandler(
@@ -79,6 +81,7 @@ func run() error {
 			dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now()), syncRunner, leaguesync.ProviderSources{}),
 			leaguesync.NewHandler(syncRunner),
 			connectionService,
+			assistantService,
 			web.Dist(),
 		)),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,

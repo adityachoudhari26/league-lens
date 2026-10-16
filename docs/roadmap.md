@@ -68,7 +68,13 @@ remain stable even though the API and frontend work happened before owner setup.
   - [ ] Upcoming-week lineup checks and bench projection warnings.
   - [ ] Verify league-rule handling and disclose missing coverage; paid feeds remain optional.
 
-- [ ] **11. Add optional AI.** Deferred. Review the provider interface and context first, then add bring-your-own credentials, usage controls, sourced briefings, and roster-aware questions. The core dashboard must work without AI.
+- [ ] **11. Add the AI assistant.**
+  - [x] PR1 — BYOK key settings and the provider seam for Anthropic and OpenAI-compatible APIs.
+  - [ ] PR2 — Chat bubble and streaming chat.
+  - [ ] PR3 — Read-only tools and tool loop.
+  - [ ] PR4 — In-chat action confirmation and execution.
+  - [ ] PR5 — Free-agent advice.
+  - [ ] PR6 — Trade advice.
 
 - [ ] **12. Package and verify self-hosting.**
   - [x] Local Postgres Compose service and documented development commands.
@@ -105,9 +111,9 @@ is available from Home and Settings. ESPN credentials are encrypted per
 connection for sync; `ESPN_S2` and `ESPN_SWID` are only the CLI import fallback.
 Scheduled sync without an open browser (River) is also pending. News and
 upcoming bye checks show unavailable coverage; Roster, Matchups, and Standings
-pages remain placeholders. Authentication and AI are not implemented. The
-local Docker image is built on the machine and is not published; HTTPS and public
-deployment are not supported.
+pages remain placeholders. Authentication and assistant chat are not
+implemented. The local Docker image is built on the machine and is not
+published; HTTPS and public deployment are not supported.
 
 Local credentials and settings belong in ignored environment files, which are
 excluded from Docker build contexts. Never commit them or include real
