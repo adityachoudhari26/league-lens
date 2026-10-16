@@ -38,7 +38,7 @@ Dockerfile            Multi-stage local app image
 
 ## Development tools
 
-Use `just` to list the command menu. Install it with `brew install just` on macOS or follow [the official installation guide](https://just.systems/man/en/packages.html). Then run the setup sequence below. `just tools` installs Air v1.65.3 under the ignored project `bin/` directory, without changing your global Air installation.
+Use `just` to list the command menu. The `app` group contains user-facing install, run, and update commands; the `dev` group contains source-development commands. Install `just` with `brew install just` on macOS or follow [the official installation guide](https://just.systems/man/en/packages.html). Then run the setup sequence below. `just tools` installs Air v1.65.3 under the ignored project `bin/` directory, without changing your global Air installation.
 
 `just dev-api` uses Air to rebuild and restart Go after source or embedded SQL changes. It stops the old server on a compile error and sends an interrupt for graceful shutdown. SQL edits trigger a rebuild only; migrations are always explicit. Development commands do not run generation; use `just gen-db` explicitly when changing database queries. Use `just serve` for a plain run. Use `just dev` to run the frontend and API together, or `just dev-web` for the frontend alone; see the frontend shell section below.
 
