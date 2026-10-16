@@ -1,0 +1,208 @@
+{
+  "season": {
+    "year": 2026
+  },
+  "week": {
+    "number": 6
+  },
+  "events": [
+    {
+      "id": "401872995",
+      "date": "2026-10-16T00:15Z",
+      "name": "Seattle Seahawks at Denver Broncos",
+      "status": {
+        "clock": 0,
+        "displayClock": "0:00",
+        "period": 5,
+        "type": {
+          "id": "3",
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "description": "Final",
+          "detail": "Final/OT",
+          "shortDetail": "Final/OT",
+          "altDetail": "OT"
+        }
+      },
+      "weather": null,
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "7",
+                "abbreviation": null
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "26",
+                "abbreviation": null
+              }
+            }
+          ],
+          "odds": null
+        }
+      ]
+    },
+    {
+      "id": "401872996",
+      "date": "2026-10-18T13:30Z",
+      "name": "Houston Texans at Jacksonville Jaguars",
+      "status": {
+        "clock": 0,
+        "displayClock": "0:00",
+        "period": 0,
+        "type": {
+          "id": "1",
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false,
+          "description": "Scheduled",
+          "detail": "Sun, October 18th at 9:30 AM EDT",
+          "shortDetail": "10/18 - 9:30 AM EDT"
+        }
+      },
+      "weather": null,
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "30",
+                "abbreviation": null
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "34",
+                "abbreviation": null
+              }
+            }
+          ],
+          "odds": [
+            {
+              "provider": {
+                "name": "Draft Kings"
+              },
+              "details": "JAX -2.5",
+              "overUnder": 42.5,
+              "spread": -2.5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872999",
+      "date": "2026-10-18T17:00Z",
+      "name": "Chicago Bears at Atlanta Falcons",
+      "status": {
+        "clock": 0,
+        "displayClock": "0:00",
+        "period": 0,
+        "type": {
+          "id": "1",
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false,
+          "description": "Scheduled",
+          "detail": "Sun, October 18th at 1:00 PM EDT",
+          "shortDetail": "10/18 - 1:00 PM EDT"
+        }
+      },
+      "weather": {
+        "displayValue": "Sunny",
+        "temperature": 60
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "1",
+                "abbreviation": null
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "3",
+                "abbreviation": null
+              }
+            }
+          ],
+          "odds": [
+            {
+              "provider": {
+                "name": "Draft Kings"
+              },
+              "details": "CHI -1.5",
+              "overUnder": 51.5,
+              "spread": 1.5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873008",
+      "date": "2026-10-20T00:15Z",
+      "name": "Washington Commanders at San Francisco 49ers",
+      "status": {
+        "clock": 0,
+        "displayClock": "0:00",
+        "period": 0,
+        "type": {
+          "id": "1",
+          "name": "STATUS_SCHEDULED",
+          "state": "pre",
+          "completed": false,
+          "description": "Scheduled",
+          "detail": "Mon, October 19th at 8:15 PM EDT",
+          "shortDetail": "10/19 - 8:15 PM EDT"
+        }
+      },
+      "weather": {
+        "displayValue": "Intermittent clouds",
+        "temperature": 67
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "25",
+                "abbreviation": null
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "28",
+                "abbreviation": null
+              }
+            }
+          ],
+          "odds": [
+            {
+              "provider": {
+                "name": "Draft Kings"
+              },
+              "details": "SF -7.5",
+              "overUnder": 51.5,
+              "spread": -7.5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

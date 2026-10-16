@@ -56,6 +56,9 @@ type Service struct {
 	ProviderSources interface {
 		SourceFor(leaguesync.Target) (fantasy.Provider, error)
 	}
+	GameContext interface {
+		NFLGameContext(ctx context.Context, week int) (fantasy.NFLWeekGameContext, error)
+	}
 }
 
 // GetAssistantSettings returns the owner's safe-to-display settings, never the key.
