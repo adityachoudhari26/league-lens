@@ -105,7 +105,7 @@ function AssistantPanelHeader({
         <div>
           <h2 className="text-sm leading-5 font-semibold">Playbook</h2>
           <p className="text-xs text-muted-foreground">
-            Your fantasy assistant
+            Plays for your leagues
           </p>
         </div>
       </div>
@@ -203,8 +203,8 @@ function AssistantSuggestions({
         <span className="playbook-gradient grid size-12 place-items-center rounded-full text-white">
           <RugbyBall aria-hidden="true" className="size-6" />
         </span>
-        <p className="text-base font-semibold">Hi, I&apos;m Playbook</p>
-        <p className="text-sm text-muted-foreground">What can I help with?</p>
+        <p className="text-base font-semibold">Pick a play</p>
+        <p className="text-sm text-muted-foreground">Or call your own below.</p>
       </div>
       <div className="flex flex-col items-stretch gap-2">
         {suggestions.map((suggestion) => (

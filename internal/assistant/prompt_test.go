@@ -15,7 +15,7 @@ func TestBuildSystemPromptDateAndPageContext(t *testing.T) {
 		Path: "/matchups", LeagueSeasonId: "league-1", TeamId: "team-2", Week: &week,
 	}, false)
 	for _, expected := range []string{
-		"You are Playbook, the League Lens assistant built into a fantasy football dashboard. The user owns teams in one or more ESPN and Sleeper leagues.",
+		"You are the League Lens assistant, built into a fantasy football dashboard. The user owns teams in one or more ESPN and Sleeper leagues.",
 		"Today is Sunday, October 18, 2026. The user is looking at Matchups (/matchups), league league-1, team team-2, week 7.",
 		"- Answer from League Lens data returned by your tools. Never invent scores, " +
 			"projections, injuries, win chances, or news. If the data doesn't have it, say so.",

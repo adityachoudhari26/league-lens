@@ -52,7 +52,7 @@ export function AssistantComposer({
           event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 120)}px`
         }}
         onKeyDown={handleKeyDown}
-        placeholder="Ask Playbook…"
+        placeholder="Call a play…"
         className="max-h-[7.5rem] min-h-9 min-w-0 flex-1 resize-none overflow-y-auto rounded-lg border border-input bg-background px-3 py-2 text-sm leading-5 shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 disabled:opacity-60"
       />
       {isStreaming ? (
