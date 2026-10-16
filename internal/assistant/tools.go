@@ -99,6 +99,24 @@ func newAssistantTool(
 	}
 }
 
+func readTool[In any, Out proto.Message](
+	name, description, schema string,
+	label func(json.RawMessage) string,
+	call func(context.Context, In) (Out, error),
+) assistantTool {
+	return newAssistantTool(name, description, schema, label, func(ctx context.Context, raw json.RawMessage) (string, error) {
+		input, err := decodeToolInput[In](raw)
+		if err != nil {
+			return "", err
+		}
+		response, err := call(ctx, input)
+		if err != nil {
+			return "", err
+		}
+		return marshalToolResponse(response)
+	})
+}
+
 func decodeToolInput[T any](raw json.RawMessage) (T, error) {
 	var input T
 	if !json.Valid(raw) {

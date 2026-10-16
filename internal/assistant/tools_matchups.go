@@ -13,7 +13,7 @@ import (
 
 func matchupTools(reader assistantDashboard) []assistantTool {
 	return []assistantTool{
-		newAssistantTool(
+		readTool[teamRosterInput](
 			"get_team_roster",
 			"Returns a team's latest roster or its roster for a scoring week. team_id comes from get_league.",
 			`{"type":"object","properties":{
@@ -21,21 +21,13 @@ func matchupTools(reader assistantDashboard) []assistantTool {
 				"week":{"type":"integer","description":"Optional scoring week"}
 			},"required":["team_id"],"additionalProperties":false}`,
 			fixedToolLabel("Reading a roster"),
-			func(ctx context.Context, raw json.RawMessage) (string, error) {
-				input, err := decodeToolInput[teamRosterInput](raw)
-				if err != nil {
-					return "", err
-				}
-				response, err := reader.GetTeamRoster(ctx, &v1.GetTeamRosterRequest{
+			func(ctx context.Context, input teamRosterInput) (*v1.GetTeamRosterResponse, error) {
+				return reader.GetTeamRoster(ctx, &v1.GetTeamRosterRequest{
 					TeamId: input.TeamID, ScoringPeriod: input.Week,
 				})
-				if err != nil {
-					return "", err
-				}
-				return marshalToolResponse(response)
 			},
 		),
-		newAssistantTool(
+		readTool[leagueWeekInput](
 			"list_matchups",
 			"Lists matchups for a league round. league_season_id comes from list_leagues; "+
 				"week is the provider's matchup period. When omitted, the latest available period is used.",
@@ -44,28 +36,21 @@ func matchupTools(reader assistantDashboard) []assistantTool {
 				"week":{"type":"integer","description":"Optional matchup period"}
 			},"required":["league_season_id"],"additionalProperties":false}`,
 			fixedToolLabel("Reading matchups"),
-			func(ctx context.Context, raw json.RawMessage) (string, error) {
-				input, err := decodeToolInput[leagueWeekInput](raw)
-				if err != nil {
-					return "", err
-				}
+			func(ctx context.Context, input leagueWeekInput) (*v1.ListMatchupsResponse, error) {
 				period := input.Week
 				if period == nil {
-					period, err = latestMatchupPeriod(ctx, reader, input.LeagueSeasonID)
+					latest, err := latestMatchupPeriod(ctx, reader, input.LeagueSeasonID)
 					if err != nil {
-						return "", err
+						return nil, err
 					}
+					period = latest
 				}
-				response, err := reader.ListMatchups(ctx, &v1.ListMatchupsRequest{
+				return reader.ListMatchups(ctx, &v1.ListMatchupsRequest{
 					LeagueSeasonId: input.LeagueSeasonID, MatchupPeriod: *period,
 				})
-				if err != nil {
-					return "", err
-				}
-				return marshalToolResponse(response)
 			},
 		),
-		newAssistantTool(
+		readTool[leagueWeekInput](
 			"get_my_matchup",
 			"Returns the selected owner's team and opponent for a league round. league_season_id comes from list_leagues; week is the provider's matchup period.",
 			`{"type":"object","properties":{
@@ -73,39 +58,27 @@ func matchupTools(reader assistantDashboard) []assistantTool {
 				"week":{"type":"integer","description":"Optional matchup period"}
 			},"required":["league_season_id"],"additionalProperties":false}`,
 			matchupToolLabel,
-			func(ctx context.Context, raw json.RawMessage) (string, error) {
-				input, err := decodeToolInput[leagueWeekInput](raw)
-				if err != nil {
-					return "", err
-				}
-				response, err := reader.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{
+			func(ctx context.Context, input leagueWeekInput) (*v1.GetMatchupDetailResponse, error) {
+				return reader.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{
 					LeagueSeasonId: input.LeagueSeasonID, MatchupPeriod: input.Week,
 				})
-				if err != nil {
-					return "", err
-				}
-				return marshalToolResponse(response)
 			},
 		),
-		newAssistantTool(
+		readTool[matchupIDInput](
 			"get_win_chance",
 			"Returns the selected owner's win-chance samples and key moments for a matchup. matchup_id comes from get_my_matchup.",
 			`{"type":"object","properties":{
 				"matchup_id":{"type":"string","description":"ID returned by get_my_matchup"}
 			},"required":["matchup_id"],"additionalProperties":false}`,
 			fixedToolLabel("Checking win chance"),
-			func(ctx context.Context, raw json.RawMessage) (string, error) {
-				input, err := decodeToolInput[matchupIDInput](raw)
-				if err != nil {
-					return "", err
-				}
+			func(ctx context.Context, input matchupIDInput) (*v1.GetMatchupWinChanceResponse, error) {
 				response, err := reader.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{
 					MatchupId: input.MatchupID,
 				})
 				if err != nil {
-					return "", err
+					return nil, err
 				}
-				return marshalToolResponse(trimWinChanceResponse(response))
+				return trimWinChanceResponse(response), nil
 			},
 		),
 	}
