@@ -98,9 +98,10 @@ persists full leagues, encountered players, and available current-season history
 atomically. DynastyProcess mappings are cached; unmapped players retain provider
 identities. Earlier stored seasons are preserved.
 
-The overview reads saved database observations. Opening it syncs leagues whose
-data is older than 15 minutes in the background, and **Refresh** syncs every
-attached league through the shared importer. In-app ESPN and Sleeper connection
+The overview reads saved database observations. Stale leagues are checked in
+the background when it opens, returns to view, and every five minutes while
+visible; **Refresh** syncs every attached league through the shared importer.
+In-app ESPN and Sleeper connection
 is available from Home and Settings. ESPN credentials are encrypted per
 connection for sync; `ESPN_S2` and `ESPN_SWID` are only the CLI import fallback.
 Scheduled sync without an open browser (River) is also pending. News and
