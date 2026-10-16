@@ -125,6 +125,49 @@ func (q *Queries) HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSucces
 	return exists, err
 }
 
+const listSettledWeeks = `-- name: ListSettledWeeks :many
+SELECT w.week::int AS week
+FROM (
+ SELECT DISTINCT jsonb_array_elements_text(m.scoring_periods_json)::int AS week
+ FROM matchups m
+ WHERE m.league_season_id = $1 AND m.scoring_periods_json IS NOT NULL
+) w
+WHERE NOT EXISTS (
+ SELECT 1 FROM matchups m
+ WHERE m.league_season_id = $1
+ AND m.scoring_periods_json @> jsonb_build_array(w.week)
+ AND m.status <> 'final'
+)
+AND (
+ SELECT count(DISTINCT ts.team_id) FROM team_snapshots ts
+ JOIN sync_runs r ON r.id = ts.sync_run_id AND r.status = 'succeeded'
+ WHERE ts.league_season_id = $1 AND ts.period = w.week AND ts.origin = 'provider_history'
+) = (SELECT count(*) FROM teams t WHERE t.league_season_id = $1)
+ORDER BY w.week
+`
+
+// Scoring weeks a sync may skip re-reading: every matchup covering the week is
+// final, and every team has provider history for it from a successful run.
+func (q *Queries) ListSettledWeeks(ctx context.Context, leagueSeasonID pgtype.UUID) ([]int32, error) {
+	rows, err := q.db.Query(ctx, listSettledWeeks, leagueSeasonID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int32{}
+	for rows.Next() {
+		var week int32
+		if err := rows.Scan(&week); err != nil {
+			return nil, err
+		}
+		items = append(items, week)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockImportWrites = `-- name: LockImportWrites :exec
 SELECT pg_advisory_xact_lock(724361902)
 `

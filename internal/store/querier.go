@@ -77,6 +77,9 @@ type Querier interface {
 	ListPlayerExternalIDs(ctx context.Context, playerID pgtype.UUID) ([]PlayerExternalID, error)
 	ListPlayerProfileStats(ctx context.Context, playerID pgtype.UUID) ([]PlayerProfileStat, error)
 	ListRecentPlayerNews(ctx context.Context, arg ListRecentPlayerNewsParams) ([]PlayerNews, error)
+	// Scoring weeks a sync may skip re-reading: every matchup covering the week is
+	// final, and every team has provider history for it from a successful run.
+	ListSettledWeeks(ctx context.Context, leagueSeasonID pgtype.UUID) ([]int32, error)
 	ListSnapshotRosterForUser(ctx context.Context, arg ListSnapshotRosterForUserParams) ([]ListSnapshotRosterForUserRow, error)
 	ListSnapshotsForUser(ctx context.Context, arg ListSnapshotsForUserParams) ([]TeamSnapshot, error)
 	ListSyncRunsForUser(ctx context.Context, arg ListSyncRunsForUserParams) ([]SyncRun, error)

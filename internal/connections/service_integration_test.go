@@ -47,7 +47,7 @@ func (p connectionTestProvider) DescribeLeague(context.Context, string) (fantasy
 	return p.league, p.describeErr
 }
 
-func (p connectionTestProvider) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData, error) {
+func (p connectionTestProvider) FetchLeague(context.Context, fantasy.League, fantasy.FetchRequest) (fantasy.LeagueData, error) {
 	return p.data, p.fetchErr
 }
 

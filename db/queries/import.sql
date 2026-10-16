@@ -29,3 +29,25 @@ AND external_matchup_id <> ALL(@external_matchup_ids::text[]);
 
 -- name: UpdateMappedPlayerName :exec
 UPDATE players SET display_name=$2,updated_at=now() WHERE id=$1 AND display_name<>$2;
+
+-- name: ListSettledWeeks :many
+-- Scoring weeks a sync may skip re-reading: every matchup covering the week is
+-- final, and every team has provider history for it from a successful run.
+SELECT w.week::int AS week
+FROM (
+ SELECT DISTINCT jsonb_array_elements_text(m.scoring_periods_json)::int AS week
+ FROM matchups m
+ WHERE m.league_season_id = @league_season_id AND m.scoring_periods_json IS NOT NULL
+) w
+WHERE NOT EXISTS (
+ SELECT 1 FROM matchups m
+ WHERE m.league_season_id = @league_season_id
+ AND m.scoring_periods_json @> jsonb_build_array(w.week)
+ AND m.status <> 'final'
+)
+AND (
+ SELECT count(DISTINCT ts.team_id) FROM team_snapshots ts
+ JOIN sync_runs r ON r.id = ts.sync_run_id AND r.status = 'succeeded'
+ WHERE ts.league_season_id = @league_season_id AND ts.period = w.week AND ts.origin = 'provider_history'
+) = (SELECT count(*) FROM teams t WHERE t.league_season_id = @league_season_id)
+ORDER BY w.week;

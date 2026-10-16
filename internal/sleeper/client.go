@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
 type User struct {
@@ -169,7 +171,7 @@ func (c *Client) Header(ctx context.Context, username, leagueID string) (Header,
 	return h, nil
 }
 
-func (c *Client) Fetch(ctx context.Context, header Header) (Data, error) {
+func (c *Client) Fetch(ctx context.Context, header Header, request fantasy.FetchRequest) (Data, error) {
 	data := Data{Header: header, Weeks: map[int][]Matchup{}, ObservedAt: time.Now().UTC()}
 	base := "/league/" + url.PathEscape(header.League.ID)
 	if err := c.get(ctx, "/state/nfl", &data.State); err != nil {
@@ -191,13 +193,13 @@ func (c *Client) Fetch(ctx context.Context, header Header) (Data, error) {
 		return data, err
 	}
 	if data.State.SeasonType != "pre" {
-		weeks, err := c.fetchMatchupWeeks(ctx, base, period, rosterIDs)
+		weeks, err := c.fetchMatchupWeeks(ctx, base, period, rosterIDs, request)
 		// Retain fetched weeks in partial results, matching the existing error contract.
 		data.Weeks = weeks
 		if err != nil {
 			return data, err
 		}
-		data.Projections = c.fetchProjections(ctx, header.League.Season, period)
+		data.Projections = c.fetchProjections(ctx, header.League.Season, period, request)
 	}
 	return data, nil
 }
@@ -206,13 +208,16 @@ func (c *Client) Fetch(ctx context.Context, header Header) (Data, error) {
 // which keeps each response near 2 MB instead of 6 MB.
 var projectionPositions = []string{"QB", "RB", "WR", "TE", "K", "DEF"}
 
-// fetchProjections reads the league season's projections for every synced
-// week. The endpoint is undocumented, so a failed week is logged and skipped
-// rather than failing the import.
-func (c *Client) fetchProjections(ctx context.Context, season string, period int) map[int][]Projection {
+// fetchProjections reads the league season's projections for every week the
+// request doesn't settle. The endpoint is undocumented, so a failed week is
+// logged and skipped rather than failing the import.
+func (c *Client) fetchProjections(ctx context.Context, season string, period int, request fantasy.FetchRequest) map[int][]Projection {
 	query := url.Values{"season_type": {"regular"}, "position[]": projectionPositions}.Encode()
 	projections := map[int][]Projection{}
 	for week := 1; week <= period; week++ {
+		if request.SkipsWeek(fantasy.ScoringPeriod(week), fantasy.ScoringPeriod(period)) {
+			continue
+		}
 		path := "/" + url.PathEscape(season) + "/" + strconv.Itoa(week)
 		var rows []Projection
 		if err := c.getURL(ctx, c.ProjectionsURL+path+"?"+query, "/projections/nfl"+path, &rows); err != nil {
@@ -224,10 +229,20 @@ func (c *Client) fetchProjections(ctx context.Context, season string, period int
 	return projections
 }
 
-// Fetch each week once, sequentially: bounded to 18 small requests per import.
-func (c *Client) fetchMatchupWeeks(ctx context.Context, base string, period int, rosterIDs map[int]bool) (map[int][]Matchup, error) {
+// fetchMatchupWeeks reads each week once, sequentially, except weeks the
+// request settles: at most 18 small requests per import.
+func (c *Client) fetchMatchupWeeks(
+	ctx context.Context,
+	base string,
+	period int,
+	rosterIDs map[int]bool,
+	request fantasy.FetchRequest,
+) (map[int][]Matchup, error) {
 	weeks := map[int][]Matchup{}
 	for week := 1; week <= period; week++ {
+		if request.SkipsWeek(fantasy.ScoringPeriod(week), fantasy.ScoringPeriod(period)) {
+			continue
+		}
 		var matchups []Matchup
 		if err := c.get(ctx, base+"/matchups/"+strconv.Itoa(week), &matchups); err != nil {
 			return weeks, err

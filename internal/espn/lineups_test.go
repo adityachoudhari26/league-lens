@@ -57,7 +57,7 @@ func fetchFixtureLeague(t *testing.T, client *Client) fantasy.LeagueData {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := client.FetchLeague(context.Background(), league)
+	data, err := client.FetchLeague(context.Background(), league, fantasy.FetchRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}

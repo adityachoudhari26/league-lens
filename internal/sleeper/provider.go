@@ -39,7 +39,7 @@ func (c *Client) DescribeLeague(ctx context.Context, id string) (fantasy.League,
 	return normalizeLeague(league)
 }
 
-func (c *Client) FetchLeague(ctx context.Context, league fantasy.League) (fantasy.LeagueData, error) {
+func (c *Client) FetchLeague(ctx context.Context, league fantasy.League, request fantasy.FetchRequest) (fantasy.LeagueData, error) {
 	raw, err := c.readLeague(ctx, league.Ref.ExternalID)
 	if err != nil {
 		return fantasy.LeagueData{}, err
@@ -51,7 +51,7 @@ func (c *Client) FetchLeague(ctx context.Context, league fantasy.League) (fantas
 	if described.Ref != league.Ref {
 		return fantasy.LeagueData{}, fmt.Errorf("league identity changed during import")
 	}
-	data, err := c.Fetch(ctx, Header{League: raw})
+	data, err := c.Fetch(ctx, Header{League: raw}, request)
 	if err != nil {
 		return fantasy.LeagueData{}, err
 	}
