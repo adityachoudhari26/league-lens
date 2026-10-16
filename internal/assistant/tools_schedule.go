@@ -117,9 +117,9 @@ func scheduleTools(service *Service) []assistantTool {
 }
 
 // scheduleInputError is a validation message the model sees verbatim; toolErrorMessage
-// passes tradeValidationError messages through.
+// passes toolValidationError messages through.
 func scheduleInputError(format string, args ...any) error {
-	return tradeValidationError{message: fmt.Sprintf(format, args...)}
+	return toolValidationError{message: fmt.Sprintf(format, args...)}
 }
 
 // parseScheduleInput checks everything that doesn't need the database: a league or
@@ -407,7 +407,7 @@ func positiveWeek(week int32) *int32 {
 }
 
 func scheduleLoadError(err error) error {
-	if asTradeValidationError(err) || connect.CodeOf(err) == connect.CodeNotFound {
+	if asToolValidationError(err) || connect.CodeOf(err) == connect.CodeNotFound {
 		return err
 	}
 	return internalError("schedule data could not be loaded")

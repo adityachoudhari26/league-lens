@@ -188,7 +188,7 @@ func truncateToolResult(content string) string {
 }
 
 func toolErrorMessage(err error) string {
-	var tradeError tradeValidationError
+	var tradeError toolValidationError
 	if errors.As(err, &tradeError) {
 		return tradeError.Error()
 	}
