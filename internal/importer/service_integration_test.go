@@ -48,9 +48,10 @@ func fixture(t *testing.T) fantasy.LeagueData {
 }
 
 type fixtureSource struct {
-	data      fantasy.LeagueData
-	err       error
-	describes int
+	data        fantasy.LeagueData
+	err         error
+	describes   int
+	lastRequest fantasy.FetchRequest
 }
 
 func (f *fixtureSource) DescribeLeague(context.Context, string) (fantasy.League, error) {
@@ -58,8 +59,47 @@ func (f *fixtureSource) DescribeLeague(context.Context, string) (fantasy.League,
 	return f.data.League, nil
 }
 
-func (f *fixtureSource) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData, error) {
-	return f.data, f.err
+// FetchLeague records the request and, like a real provider, drops the skipped
+// weeks' roster history, matchups, lineups, and complete-period marks.
+func (f *fixtureSource) FetchLeague(_ context.Context, _ fantasy.League, request fantasy.FetchRequest) (fantasy.LeagueData, error) {
+	f.lastRequest = request
+	if f.err != nil {
+		return fantasy.LeagueData{}, f.err
+	}
+	skip := map[fantasy.ScoringPeriod]bool{}
+	for _, week := range request.SkipWeeks {
+		skip[week] = true
+	}
+	data := f.data
+	data.Rosters = nil
+	for _, roster := range f.data.Rosters {
+		if roster.Origin != fantasy.SnapshotHistory || !skip[roster.ScoringPeriod] {
+			data.Rosters = append(data.Rosters, roster)
+		}
+	}
+	data.Matchups = nil
+	for _, matchup := range f.data.Matchups {
+		covered := false
+		for _, week := range matchup.ScoringPeriods {
+			covered = covered || skip[week]
+		}
+		if !covered {
+			data.Matchups = append(data.Matchups, matchup)
+		}
+	}
+	data.Lineups = nil
+	for _, lineup := range f.data.Lineups {
+		if !skip[fantasy.ScoringPeriod(lineup.Period)] {
+			data.Lineups = append(data.Lineups, lineup)
+		}
+	}
+	data.CompleteMatchupPeriods = nil
+	for _, period := range f.data.CompleteMatchupPeriods {
+		if !skip[fantasy.ScoringPeriod(period)] {
+			data.CompleteMatchupPeriods = append(data.CompleteMatchupPeriods, period)
+		}
+	}
+	return data, nil
 }
 
 // openTestDatabase migrates a fresh schema in TEST_DATABASE_URL and returns a
@@ -421,7 +461,7 @@ type blockedSource struct {
 	release chan struct{}
 }
 
-func (b *blockedSource) FetchLeague(ctx context.Context, h fantasy.League) (fantasy.LeagueData, error) {
+func (b *blockedSource) FetchLeague(ctx context.Context, h fantasy.League, _ fantasy.FetchRequest) (fantasy.LeagueData, error) {
 	close(b.entered)
 	select {
 	case <-b.release:
@@ -541,4 +581,111 @@ func readLineupRows(t *testing.T, sqlDB *sql.DB) map[string]string {
 		t.Fatal(err)
 	}
 	return got
+}
+
+// settledWeeksFixture is a league at week 4: weeks 1-3 fully final with
+// provider history for both teams, week 4 current with a matchup still open
+// (and history snapshots, so only its non-final matchup keeps it unsettled).
+func settledWeeksFixture(t *testing.T) fantasy.LeagueData {
+	t.Helper()
+	now := time.Now().UTC()
+	league := fantasy.League{Ref: fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "settled-league", Season: 2026}, Name: "Settled League", TeamCount: 2}
+	data := fantasy.LeagueData{League: league, FetchedAt: now, Teams: []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}}, CompleteMatchupPeriods: []fantasy.MatchupPeriod{1, 2, 3, 4}}
+	for _, id := range []string{"10", "30"} {
+		data.Players = append(data.Players, fantasy.Player{ExternalID: id, Name: "Fixture " + id, Kind: fantasy.PlayerPerson})
+	}
+	for week := 1; week <= 4; week++ {
+		score := float64(week)
+		status := fantasy.MatchupFinal
+		if week == 4 {
+			status = fantasy.MatchupInProgress
+		}
+		data.Matchups = append(data.Matchups, fantasy.Matchup{
+			ExternalID: fmt.Sprintf("m%d", week), Period: fantasy.MatchupPeriod(week), ScoringPeriods: []fantasy.ScoringPeriod{fantasy.ScoringPeriod(week)},
+			TeamA: fantasy.MatchupSide{TeamID: "1", Score: &score}, TeamB: &fantasy.MatchupSide{TeamID: "2", Score: &score}, Status: status,
+		})
+		for _, team := range []string{"1", "2"} {
+			player := "10"
+			if team == "2" {
+				player = "30"
+			}
+			origin := fantasy.SnapshotHistory
+			if week == 4 {
+				data.Rosters = append(data.Rosters, fantasy.RosterSnapshot{TeamID: team, ScoringPeriod: fantasy.ScoringPeriod(week), Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{PlayerID: player, Slot: fantasy.SlotQB}}})
+			}
+			data.Rosters = append(data.Rosters, fantasy.RosterSnapshot{TeamID: team, ScoringPeriod: fantasy.ScoringPeriod(week), Origin: origin, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{PlayerID: player, Slot: fantasy.SlotQB}}})
+		}
+		points, projected := float64(week), float64(week)+0.5
+		for _, side := range []struct{ team, player string }{{"1", "10"}, {"2", "30"}} {
+			data.Lineups = append(data.Lineups, fantasy.MatchupLineup{
+				Period: fantasy.MatchupPeriod(week), MatchupID: fmt.Sprintf("m%d", week), TeamID: side.team,
+				Entries: []fantasy.LineupEntry{{PlayerID: side.player, Slot: fantasy.SlotQB, Starter: true, Points: &points, ProjectedPoints: &projected}},
+			})
+		}
+	}
+	return data
+}
+
+// An incremental sync re-reads only the newest settled week (stat corrections)
+// and the current week; earlier settled weeks keep their stored rows, and a
+// week with an open matchup is never settled. FullHistory is the rebuild path.
+func TestFinishSkipsSettledWeeks(t *testing.T) {
+	ctx := context.Background()
+	sqlDB, db := openTestDatabase(t)
+	src := &fixtureSource{data: settledWeeksFixture(t)}
+	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{}}
+	req := Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}}
+
+	if _, err := s.Import(ctx, req); err != nil {
+		t.Fatal(err)
+	}
+	if len(src.lastRequest.SkipWeeks) != 0 {
+		t.Fatalf("first import SkipWeeks = %v, want none", src.lastRequest.SkipWeeks)
+	}
+	dump := func(query string) string {
+		t.Helper()
+		var digest string
+		if err := sqlDB.QueryRow(`SELECT md5(coalesce(string_agg(r::text, '' ORDER BY r::text), '')) FROM (` + query + `) r`).Scan(&digest); err != nil {
+			t.Fatal(err)
+		}
+		return digest
+	}
+	settledRows := func() string {
+		return dump(`SELECT * FROM matchups WHERE period IN (1,2)`) +
+			dump(`SELECT l.* FROM matchup_lineups l JOIN matchups m ON m.id = l.matchup_id WHERE m.period IN (1,2)`) +
+			dump(`SELECT * FROM team_snapshots WHERE period IN (1,2)`) +
+			dump(`SELECT e.* FROM roster_entries e JOIN team_snapshots ts ON ts.id = e.snapshot_id WHERE ts.period IN (1,2)`)
+	}
+	before := settledRows()
+
+	if _, err := s.Import(ctx, req); err != nil {
+		t.Fatal(err)
+	}
+	if len(src.lastRequest.SkipWeeks) != 2 || src.lastRequest.SkipWeeks[0] != 1 || src.lastRequest.SkipWeeks[1] != 2 {
+		t.Fatalf("second import SkipWeeks = %v, want [1 2]", src.lastRequest.SkipWeeks)
+	}
+	if after := settledRows(); after != before {
+		t.Fatal("skipped weeks' stored rows changed")
+	}
+
+	// Without week 1's provider history, week 1 is no longer settled and is
+	// re-read; week 3 stays the correction window.
+	if _, err := sqlDB.Exec(`DELETE FROM team_snapshots WHERE period = 1 AND origin = 'provider_history'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Import(ctx, req); err != nil {
+		t.Fatal(err)
+	}
+	if len(src.lastRequest.SkipWeeks) != 1 || src.lastRequest.SkipWeeks[0] != 2 {
+		t.Fatalf("third import SkipWeeks = %v, want [2]", src.lastRequest.SkipWeeks)
+	}
+
+	full := req
+	full.FullHistory = true
+	if _, err := s.Import(ctx, full); err != nil {
+		t.Fatal(err)
+	}
+	if len(src.lastRequest.SkipWeeks) != 0 {
+		t.Fatalf("full-history import SkipWeeks = %v, want none", src.lastRequest.SkipWeeks)
+	}
 }

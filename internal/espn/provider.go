@@ -13,14 +13,15 @@ import (
 var _ fantasy.Provider = (*Client)(nil)
 
 func (c *Client) DescribeLeague(ctx context.Context, id string) (fantasy.League, error) {
-	raw, err := c.readLeague(ctx, id, 0)
+	// normalizeLeague needs only settings and teams, so a describe stays light.
+	raw, err := c.readLeagueWithViews(ctx, id, 0, []string{"mSettings", "mTeam"}, nil)
 	if err != nil {
 		return fantasy.League{}, err
 	}
 	return normalizeLeague(raw)
 }
 
-func (c *Client) FetchLeague(ctx context.Context, league fantasy.League) (fantasy.LeagueData, error) {
+func (c *Client) FetchLeague(ctx context.Context, league fantasy.League, request fantasy.FetchRequest) (fantasy.LeagueData, error) {
 	raw, err := c.readLeague(ctx, league.Ref.ExternalID, 0)
 	if err != nil {
 		return fantasy.LeagueData{}, err
@@ -49,15 +50,31 @@ func (c *Client) FetchLeague(ctx context.Context, league fantasy.League) (fantas
 	if err = appendLineups(&data, players, raw); err != nil {
 		return fantasy.LeagueData{}, err
 	}
-	if err = c.appendHistory(ctx, &data, players, raw); err != nil {
+	if err = c.appendHistory(ctx, &data, players, raw, request); err != nil {
 		return fantasy.LeagueData{}, err
 	}
 	data.Players = sortedPlayers(players)
 	return data, nil
 }
 
-func (c *Client) appendHistory(ctx context.Context, data *fantasy.LeagueData, players map[string]fantasy.Player, raw leagueResponse) error {
+// appendHistory reads each past week once, except weeks the request marks as
+// already settled. Matchups are not part of this loop: they come from the
+// season schedule in the current-week response.
+func (c *Client) appendHistory(
+	ctx context.Context,
+	data *fantasy.LeagueData,
+	players map[string]fantasy.Player,
+	raw leagueResponse,
+	request fantasy.FetchRequest,
+) error {
+	skip := map[int]bool{}
+	for _, week := range request.SkipWeeks {
+		skip[int(week)] = true
+	}
 	for week := 1; week < raw.Week; week++ {
+		if skip[week] {
+			continue
+		}
 		history, fetchErr := c.readLeague(ctx, data.League.Ref.ExternalID, week)
 		if fetchErr != nil {
 			return fetchErr

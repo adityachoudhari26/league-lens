@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -30,6 +31,8 @@ type Request struct {
 	// League optionally carries a description fetched moments ago by the caller.
 	// When its Ref matches Selection.League, Begin uses it instead of describing again.
 	League fantasy.League
+	// FullHistory reads every week; the CLI import uses it as the rebuild path.
+	FullHistory bool
 }
 type Result struct {
 	Teams, Players, MatchupPeriods int
@@ -56,8 +59,9 @@ func timestamp(value time.Time) pgtype.Timestamptz {
 // Started is an import whose league is attached and whose sync run is open
 // (status running). Finish completes it with the same provider Source.
 type Started struct {
-	header fantasy.League
-	target importTarget
+	header      fantasy.League
+	target      importTarget
+	fullHistory bool
 }
 
 // LeagueSeasonID is the attached league's ID, the key sync status uses.
@@ -85,7 +89,7 @@ func (s *Service) Begin(ctx context.Context, request Request) (Started, error) {
 	if err != nil {
 		return Started{}, err
 	}
-	return Started{header: header, target: target}, nil
+	return Started{header: header, target: target, fullHistory: request.FullHistory}, nil
 }
 
 // Finish does the slow part: fetches the full league, validates it, and saves
@@ -94,7 +98,7 @@ func (s *Service) Begin(ctx context.Context, request Request) (Started, error) {
 func (s *Service) Finish(ctx context.Context, started Started) (Result, error) {
 	target := started.target
 	result := Result{SyncID: target.run.ID}
-	data, err := s.Source.FetchLeague(ctx, started.header)
+	data, err := s.Source.FetchLeague(ctx, started.header, fantasy.FetchRequest{SkipWeeks: s.weeksToSkip(ctx, started)})
 	if err != nil {
 		return result, s.recordFailure(target.run.ID, err, "provider_fetch_failed")
 	}
@@ -106,6 +110,30 @@ func (s *Service) Finish(ctx context.Context, started Started) (Result, error) {
 		return result, s.recordFailure(target.run.ID, err, "import_write_failed")
 	}
 	return result, nil
+}
+
+// weeksToSkip lists the settled weeks Finish may skip re-reading. A week is
+// settled when every matchup covering it is final AND every team has a
+// provider_history snapshot for it. The newest settled week is always re-read
+// as the stat-correction window, and the current week is never listed. A read
+// failure falls back to a full read rather than failing the import.
+func (s *Service) weeksToSkip(ctx context.Context, started Started) []fantasy.ScoringPeriod {
+	if started.fullHistory {
+		return nil
+	}
+	settled, err := s.DB.Queries().ListSettledWeeks(ctx, started.target.league.ID)
+	if err != nil {
+		slog.Warn("settled-week check failed; reading full history", "league_season_id", started.target.league.ID, "error", err)
+		return nil
+	}
+	if len(settled) <= 1 {
+		return nil
+	}
+	skip := make([]fantasy.ScoringPeriod, 0, len(settled)-1)
+	for _, week := range settled[:len(settled)-1] {
+		skip = append(skip, fantasy.ScoringPeriod(week))
+	}
+	return skip
 }
 
 // Import runs Begin then Finish in one call.

@@ -69,7 +69,7 @@ func run(args []string, out, errOut io.Writer) error {
 	}
 	service := importer.Service{DB: db, Source: prepared.Provider, Catalog: catalog, CatalogVersion: version}
 	result, err := service.Import(ctx, importer.Request{
-		OwnerEmail: options.ownerEmail, ExternalAccountID: prepared.AccountID, Selection: prepared.Selection, League: prepared.League,
+		OwnerEmail: options.ownerEmail, ExternalAccountID: prepared.AccountID, Selection: prepared.Selection, League: prepared.League, FullHistory: true,
 	})
 	if err != nil {
 		return fmt.Errorf("import failed: %w", err)

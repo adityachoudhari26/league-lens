@@ -42,7 +42,7 @@ func (s *fakeSource) DescribeLeague(context.Context, string) (fantasy.League, er
 	return s.data.League, nil
 }
 
-func (s *fakeSource) FetchLeague(ctx context.Context, _ fantasy.League) (fantasy.LeagueData, error) {
+func (s *fakeSource) FetchLeague(ctx context.Context, _ fantasy.League, _ fantasy.FetchRequest) (fantasy.LeagueData, error) {
 	s.fetches.Add(1)
 	if s.release != nil {
 		select {

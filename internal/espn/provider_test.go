@@ -61,7 +61,7 @@ func TestFetchNormalizedLeague(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := c.FetchLeague(context.Background(), league)
+	data, err := c.FetchLeague(context.Background(), league, fantasy.FetchRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,13 +97,67 @@ func TestFetchNormalizedLeague(t *testing.T) {
 	}
 }
 
+// A sync that already holds weeks 1-2 as settled must not re-read them: the
+// only per-week request is the correction window (week 3), while matchups still
+// come from the season schedule in the current-week response.
+func TestSkipsSettledWeeks(t *testing.T) {
+	var requested []string
+	c := fixtureClient(t, func(v map[string]any, r *http.Request) {
+		if week := r.URL.Query().Get("scoringPeriodId"); week != "" {
+			requested = append(requested, week)
+			return
+		}
+		v["scoringPeriodId"] = 4
+		v["status"].(map[string]any)["latestScoringPeriod"] = 4
+	})
+	league, err := c.DescribeLeague(context.Background(), "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := c.FetchLeague(context.Background(), league, fantasy.FetchRequest{SkipWeeks: []fantasy.ScoringPeriod{1, 2}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(requested) != 1 || requested[0] != "3" {
+		t.Fatalf("per-week requests = %v, want only week 3", requested)
+	}
+	history := map[fantasy.ScoringPeriod]bool{}
+	observed := 0
+	for _, r := range data.Rosters {
+		if r.Origin == fantasy.SnapshotHistory {
+			history[r.ScoringPeriod] = true
+		} else {
+			observed++
+		}
+	}
+	if len(history) != 1 || !history[3] || observed != 2 {
+		t.Fatalf("roster history = %v observed %d, want week 3 only", history, observed)
+	}
+	if len(data.Matchups) != 2 {
+		t.Fatalf("matchups = %d, want the full season schedule", len(data.Matchups))
+	}
+}
+
+// DescribeLeague is the light describe used before every sync: settings and
+// teams only, not the five views a full fetch needs.
+func TestDescribeLeagueRequestsMinimalViews(t *testing.T) {
+	var views []string
+	c := fixtureClient(t, func(_ map[string]any, r *http.Request) { views = r.URL.Query()["view"] })
+	if _, err := c.DescribeLeague(context.Background(), "123"); err != nil {
+		t.Fatal(err)
+	}
+	if len(views) != 2 || views[0] != "mSettings" || views[1] != "mTeam" {
+		t.Fatalf("describe views = %v, want [mSettings mTeam]", views)
+	}
+}
+
 func TestRejectsWrongHistoricalWeek(t *testing.T) {
 	c := fixtureClient(t, func(v map[string]any, r *http.Request) { v["scoringPeriodId"] = 3 })
 	league, err := c.DescribeLeague(context.Background(), "123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = c.FetchLeague(context.Background(), league); err == nil {
+	if _, err = c.FetchLeague(context.Background(), league, fantasy.FetchRequest{}); err == nil {
 		t.Fatal("accepted current roster as history")
 	}
 }
@@ -115,7 +169,7 @@ func TestUnavailableRosterIsNotEmptySnapshot(t *testing.T) {
 		}
 	})
 	league, _ := c.DescribeLeague(context.Background(), "123")
-	data, err := c.FetchLeague(context.Background(), league)
+	data, err := c.FetchLeague(context.Background(), league, fantasy.FetchRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +213,7 @@ func TestHTTPFailuresDoNotLeakSecrets(t *testing.T) {
 func TestPartialScheduleCannotDeleteStoredPairings(t *testing.T) {
 	c := fixtureClient(t, func(v map[string]any, r *http.Request) { v["schedule"].([]any)[0].(map[string]any)["away"] = nil })
 	league, _ := c.DescribeLeague(context.Background(), "123")
-	data, err := c.FetchLeague(context.Background(), league)
+	data, err := c.FetchLeague(context.Background(), league, fantasy.FetchRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +232,7 @@ func TestUnknownSlotAndEmptyRoster(t *testing.T) {
 		teams[1].(map[string]any)["roster"].(map[string]any)["entries"] = []any{}
 	})
 	league, _ := c.DescribeLeague(context.Background(), "123")
-	data, err := c.FetchLeague(context.Background(), league)
+	data, err := c.FetchLeague(context.Background(), league, fantasy.FetchRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +260,7 @@ func TestDecidedCurrentPeriodIsFinal(t *testing.T) {
 		v["schedule"].([]any)[1].(map[string]any)["winner"] = "TIE"
 	})
 	league, _ := c.DescribeLeague(context.Background(), "123")
-	data, err := c.FetchLeague(context.Background(), league)
+	data, err := c.FetchLeague(context.Background(), league, fantasy.FetchRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,11 +14,25 @@ type Provider interface {
 	// rosters and history. It does not authenticate the application's user.
 	DescribeLeague(ctx context.Context, leagueID string) (League, error)
 
-	// FetchLeague returns one coherent import payload for the described league.
-	// Required-data failures return an error; they must not become empty data.
-	// Optional, unavailable history is omitted, never synthesized. A non-nil
-	// error means the importer must not persist the returned payload.
-	FetchLeague(ctx context.Context, league League) (LeagueData, error)
+	// FetchLeague returns one coherent import payload for the described league,
+	// narrowed by request. Required-data failures return an error; they must not
+	// become empty data. Optional, unavailable history is omitted, never
+	// synthesized. A non-nil error means the importer must not persist the
+	// returned payload.
+	FetchLeague(ctx context.Context, league League, request FetchRequest) (LeagueData, error)
+}
+
+// FetchRequest narrows a FetchLeague read. The zero value reads full history.
+type FetchRequest struct {
+	// SkipWeeks are past scoring weeks the app already holds as final. The
+	// provider must not make a per-week read for them, and LeagueData leaves out
+	// their roster history snapshots and lineups (omitted means keep saved).
+	// Matchups the provider gets without a per-week read (ESPN's season
+	// schedule in the current-week response) may still be included; a provider
+	// that reads matchups per week (Sleeper) leaves those weeks' matchups and
+	// projections out too, and does not list them in CompleteMatchupPeriods.
+	// The current scoring week is never skipped, even if listed.
+	SkipWeeks []ScoringPeriod
 }
 
 type ProviderID string
