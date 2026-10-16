@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
-import { Sparkles } from "lucide-react"
+import { RugbyBall } from "lucide-react"
 import { useAssistantSettings } from "@/lib/api/assistant"
 import { useAssistantChat } from "./assistant-chat"
 import { useAssistantPageContext } from "./assistant-context"
@@ -45,7 +45,7 @@ export function AssistantWidget() {
         className="playbook-ring fixed right-4 bottom-4 z-50 grid size-14 place-items-center rounded-full border-[3px] text-teal-700 shadow-lg transition-transform outline-none hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 dark:text-teal-300"
         onClick={() => setOpen((current) => !current)}
       >
-        <Sparkles aria-hidden="true" className="size-6" />
+        <RugbyBall aria-hidden="true" className="size-6" />
       </button>
       {open ? (
         <AssistantPanel

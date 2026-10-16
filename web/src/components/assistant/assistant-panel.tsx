@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { MessageCirclePlus, Sparkles, X } from "lucide-react"
+import { MessageCirclePlus, RugbyBall, X } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import type { AssistantTurn } from "./assistant-turns"
@@ -100,7 +100,7 @@ function AssistantPanelHeader({
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
       <div className="flex items-center gap-2.5">
         <span className="playbook-gradient grid size-8 place-items-center rounded-full text-white">
-          <Sparkles aria-hidden="true" className="size-4" />
+          <RugbyBall aria-hidden="true" className="size-4" />
         </span>
         <div>
           <h2 className="text-sm leading-5 font-semibold">Playbook</h2>
@@ -199,7 +199,7 @@ function AssistantSuggestions({
     <div className="my-auto flex flex-col gap-4">
       <div className="flex flex-col items-center gap-2 text-center">
         <span className="playbook-gradient grid size-12 place-items-center rounded-full text-white">
-          <Sparkles aria-hidden="true" className="size-6" />
+          <RugbyBall aria-hidden="true" className="size-6" />
         </span>
         <p className="text-base font-semibold">Ask about your leagues</p>
         <p className="text-sm text-muted-foreground">
