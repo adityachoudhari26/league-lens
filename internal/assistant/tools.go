@@ -89,6 +89,11 @@ func runAssistantTool(ctx context.Context, tools []assistantTool, call llm.ToolC
 		if tool.definition.Name != call.Name {
 			continue
 		}
+		if tool.run == nil {
+			return llm.ToolResult{
+				CallID: call.ID, Content: "couldn't prepare the requested action", IsError: true,
+			}
+		}
 		content, err := tool.run(ctx, call.Input)
 		if err != nil {
 			return llm.ToolResult{CallID: call.ID, Content: toolErrorMessage(err), IsError: true}

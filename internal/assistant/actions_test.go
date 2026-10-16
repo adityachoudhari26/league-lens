@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect/v2"
 
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
+	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
 
 type fakeAssistantSync struct {
@@ -99,6 +100,15 @@ func TestActionToolsValidateProposals(t *testing.T) {
 		repeatActionSummary("é", maxActionSummaryRunes+5)+`"}`))
 	if err != nil || len([]rune(proposal.GetSummary())) != maxActionSummaryRunes {
 		t.Fatalf("bounded restore summary = %v, error = %v", proposal, err)
+	}
+}
+
+func TestRunAssistantToolWithoutRunnerReturnsActionFallback(t *testing.T) {
+	result := runAssistantTool(context.Background(), []assistantTool{{
+		definition: llm.Tool{Name: "action"},
+	}}, llm.ToolCall{ID: "call", Name: "action"})
+	if !result.IsError || result.Content != "couldn't prepare the requested action" {
+		t.Fatalf("action tool result = %+v", result)
 	}
 }
 
