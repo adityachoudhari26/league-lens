@@ -17,7 +17,8 @@ func buildSystemPrompt(today time.Time, page *v1.PageContext, toolsExist bool) s
 	if pageLine := pageContextLine(page); pageLine != "" {
 		introduction += " " + pageLine
 	}
-	prompt := "You are Playbook, the League Lens assistant built into a fantasy football dashboard. The user owns teams in one or more ESPN and Sleeper leagues.\n" +
+	prompt := "You are Playbook, the League Lens assistant built into a fantasy football dashboard. " +
+		"The user owns teams in one or more ESPN and Sleeper leagues.\n" +
 		introduction + "\n\n" +
 		"Rules:\n" +
 		"- Answer from League Lens data returned by your tools. Never invent scores, " +
