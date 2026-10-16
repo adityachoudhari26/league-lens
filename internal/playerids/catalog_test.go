@@ -9,11 +9,15 @@ import (
 )
 
 func TestMappingFallback(t *testing.T) {
-	c, err := Parse(strings.NewReader("name,position,sleeper_id,espn_id,gsis_id,mfl_id\nExample,QB,10,100,00-1,200\nAmbiguous,RB,20,101,,\nOther,RB,20,102,,\n"))
+	const csv = `name,position,sleeper_id,team,espn_id,gsis_id,mfl_id
+Example,QB,10,KC,100,00-1,200
+Ambiguous,RB,20,NYJ,101,,
+Other,RB,20,SF,102,,`
+	c, err := Parse(strings.NewReader(csv))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c["10"].IDs["espn"] != "100" || c["10"].Name != "Example" {
+	if c["10"].IDs["espn"] != "100" || c["10"].Name != "Example" || c["10"].Team != "KC" {
 		t.Fatal("mapping missing")
 	}
 	if _, ok := c["20"]; ok {

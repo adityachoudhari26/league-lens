@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
@@ -189,6 +190,65 @@ func TestAssistantToolSchemaAndResultLimits(t *testing.T) {
 	content = truncateToolResult(strings.Repeat("é", maxToolResultBytes))
 	if !json.Valid([]byte(fmt.Sprintf("%q", content))) || len(content) > maxToolResultBytes {
 		t.Fatalf("truncated unicode content is invalid: %d bytes", len(content))
+	}
+}
+
+func TestFreeAgentToolSchemaLabelAndInputValidation(t *testing.T) {
+	tool := freeAgentTools(&fakeAssistantDashboard{}, &Service{})[0]
+	if tool.definition.Name != "get_free_agents" ||
+		toolLabel([]assistantTool{tool}, "get_free_agents", json.RawMessage(`{}`)) != "Checking free agents" {
+		t.Fatalf("free-agent tool = %+v", tool)
+	}
+	var schema map[string]any
+	if err := json.Unmarshal(tool.definition.InputSchema, &schema); err != nil {
+		t.Fatal(err)
+	}
+	properties := schema["properties"].(map[string]any)
+	if schema["required"].([]any)[0] != "league_season_id" ||
+		properties["position"].(map[string]any)["type"] != "string" ||
+		properties["limit"].(map[string]any)["default"] != float64(15) {
+		t.Fatalf("free-agent schema = %+v", schema)
+	}
+	for _, input := range []string{
+		`{"league_season_id":"id","position":"QB","limit":26}`,
+		`{"league_season_id":"id","position":"FLEX"}`,
+		`{"position":"QB"}`,
+	} {
+		result := runAssistantTool(context.Background(), []assistantTool{tool}, llm.ToolCall{
+			ID: "invalid", Name: "get_free_agents", Input: json.RawMessage(input),
+		})
+		if !result.IsError || result.Content != "invalid tool input" {
+			t.Fatalf("input %s result = %+v", input, result)
+		}
+	}
+}
+
+func TestFreeAgentProviderErrorsDoNotExposeDetails(t *testing.T) {
+	tests := []struct {
+		provider fantasy.ProviderID
+		want     string
+	}{
+		{provider: fantasy.ProviderESPN, want: "couldn't load free agents from ESPN"},
+		{provider: fantasy.ProviderSleeper, want: "couldn't load free agents from Sleeper"},
+	}
+	for _, test := range tests {
+		got := toolErrorMessage(errFreeAgentError(test.provider))
+		if got != test.want {
+			t.Errorf("%s error = %q, want %q", test.provider, got, test.want)
+		}
+	}
+}
+
+func TestFreeAgentTargetErrorKeepsSafeModelMessage(t *testing.T) {
+	err := connect.NewError(
+		connect.CodeInternal,
+		"free-agent league could not be loaded",
+	).WithCause(errFreeAgentTargetUnavailable)
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("error code = %v, want %v", connect.CodeOf(err), connect.CodeInternal)
+	}
+	if got := toolErrorMessage(err); got != "couldn't load free agents from Sleeper" {
+		t.Fatalf("error message = %q", got)
 	}
 }
 

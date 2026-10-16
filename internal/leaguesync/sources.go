@@ -24,8 +24,9 @@ type SourceFactory interface {
 // ProviderSources builds live ESPN and Sleeper clients, preferring saved
 // encrypted ESPN cookies and falling back to the server environment.
 type ProviderSources struct {
-	ESPN espn.Credentials
-	Box  *secrets.Box
+	ESPN              espn.Credentials
+	Box               *secrets.Box
+	PlayerCatalogPath string
 }
 
 type encryptedESPNCredentials struct {
@@ -43,6 +44,7 @@ func (p ProviderSources) SourceFor(target Target) (fantasy.Provider, error) {
 	case fantasy.ProviderSleeper:
 		client := sleeper.NewClient(nil)
 		client.AvailabilityTeamIDs = target.Selection.SelectedTeamIDs
+		client.CatalogPath = p.PlayerCatalogPath
 		return client, nil
 	case fantasy.ProviderESPN:
 		return p.espnSource(target)

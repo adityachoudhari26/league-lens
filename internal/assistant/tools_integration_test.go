@@ -13,6 +13,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
 
@@ -28,6 +29,26 @@ func (s assistantLeagueSource) FetchLeague(
 	fantasy.FetchRequest,
 ) (fantasy.LeagueData, error) {
 	return s.data, nil
+}
+
+type assistantFreeAgentSource struct {
+	assistantLeagueSource
+	query fantasy.FreeAgentQuery
+}
+
+func (s *assistantFreeAgentSource) ListFreeAgents(_ context.Context, _ fantasy.League, query fantasy.FreeAgentQuery) ([]fantasy.FreeAgent, error) {
+	s.query = query
+	points := 12.5
+	return []fantasy.FreeAgent{{
+		ExternalPlayerID: "free-agent-1", Name: "Available Player", Position: "RB",
+		Status: "available", ProjectedPoints: &points,
+	}}, nil
+}
+
+type assistantFreeAgentSourceFactory struct{ source fantasy.Provider }
+
+func (f assistantFreeAgentSourceFactory) SourceFor(leaguesync.Target) (fantasy.Provider, error) {
+	return f.source, nil
 }
 
 func TestReadToolsUseSeededDashboard(t *testing.T) {
@@ -82,6 +103,21 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 		t.Fatalf("list_leagues: %s", listed.Content)
 	}
 	leagueID := findJSONField(t, listed.Content, "id")
+	freeAgentSource := &assistantFreeAgentSource{assistantLeagueSource: assistantLeagueSource{data: data}}
+	freeAgentService := &Service{
+		DB: db, OwnerEmail: "tools@example.test", Dashboard: dashboardService,
+		ProviderSources: assistantFreeAgentSourceFactory{source: freeAgentSource},
+	}
+	freeAgents := runAssistantTool(ctx, freeAgentService.chatTools(), llm.ToolCall{
+		ID: "agents", Name: "get_free_agents",
+		Input: json.RawMessage(`{"league_season_id":"` + leagueID + `","position":"RB","limit":4}`),
+	})
+	if freeAgents.IsError || !strings.Contains(freeAgents.Content, `"source":"Sleeper projections minus rostered players"`) ||
+		!strings.Contains(freeAgents.Content, `"week":1`) ||
+		strings.Contains(freeAgents.Content, `"season_points"`) ||
+		freeAgentSource.query.Week != 1 || freeAgentSource.query.Position != "RB" || freeAgentSource.query.Limit != 4 {
+		t.Fatalf("get_free_agents result=%+v query=%+v", freeAgents, freeAgentSource.query)
+	}
 	matchup := runAssistantTool(ctx, tools, llm.ToolCall{
 		ID: "matchup", Name: "get_my_matchup",
 		Input: json.RawMessage(`{"league_season_id":"` + leagueID + `"}`),

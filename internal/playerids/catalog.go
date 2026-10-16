@@ -13,6 +13,7 @@ const URL = "https://raw.githubusercontent.com/dynastyprocess/data/master/files/
 type Entry struct {
 	Name     string
 	Position string
+	Team     string
 	IDs      map[string]string
 }
 type Catalog map[string]Entry
@@ -45,7 +46,10 @@ func (columns csvColumns) value(row []string, name string) string {
 }
 
 func (columns csvColumns) entry(row []string, sleeperID string) Entry {
-	entry := Entry{Name: columns.value(row, "name"), Position: columns.value(row, "position"), IDs: map[string]string{"sleeper": sleeperID}}
+	entry := Entry{
+		Name: columns.value(row, "name"), Position: columns.value(row, "position"),
+		Team: columns.value(row, "team"), IDs: map[string]string{"sleeper": sleeperID},
+	}
 	for _, provider := range []string{"espn", "gsis", "mfl"} {
 		if externalID := columns.value(row, provider+"_id"); externalID != "" {
 			entry.IDs[provider] = externalID

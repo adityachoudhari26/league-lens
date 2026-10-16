@@ -58,6 +58,14 @@ func buildAssistantTools(reader assistantDashboard) []assistantTool {
 	return append(tools, buildActionTools(reader)...)
 }
 
+func (s *Service) chatTools() []assistantTool {
+	tools := buildReadOnlyTools(s.Dashboard)
+	if s.ProviderSources != nil {
+		tools = append(tools, freeAgentTools(s.Dashboard, s)...)
+	}
+	return append(tools, buildActionTools(s.Dashboard)...)
+}
+
 func toolDefinitions(tools []assistantTool) []llm.Tool {
 	definitions := make([]llm.Tool, len(tools))
 	for index, tool := range tools {
@@ -174,6 +182,15 @@ func truncateToolResult(content string) string {
 func toolErrorMessage(err error) string {
 	if errors.Is(err, errInvalidToolInput) || connect.CodeOf(err) == connect.CodeInvalidArgument {
 		return "invalid tool input"
+	}
+	if errors.Is(err, errFreeAgentTargetUnavailable) {
+		return "couldn't load free agents from Sleeper"
+	}
+	if errors.Is(err, errFreeAgentsESPN) {
+		return "couldn't load free agents from ESPN"
+	}
+	if errors.Is(err, errFreeAgentsSleeper) {
+		return "couldn't load free agents from Sleeper"
 	}
 	if connect.CodeOf(err) == connect.CodeNotFound {
 		return "requested data not found"

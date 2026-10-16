@@ -7,6 +7,31 @@ import (
 	"slices"
 )
 
+// FreeAgent is a provider's available player with optional point and ownership data.
+type FreeAgent struct {
+	ExternalPlayerID string   `json:"external_player_id"`
+	Name             string   `json:"name"`
+	Position         string   `json:"position"`
+	NFLTeam          string   `json:"nfl_team"`
+	InjuryStatus     string   `json:"injury_status"`
+	Status           string   `json:"status"`
+	ProjectedPoints  *float64 `json:"projected_points,omitempty"`
+	SeasonPoints     *float64 `json:"season_points,omitempty"`
+	PercentRostered  *float64 `json:"percent_rostered,omitempty"`
+}
+
+// FreeAgentQuery selects the scoring week, position, and result count.
+type FreeAgentQuery struct {
+	Week     int
+	Position string
+	Limit    int
+}
+
+// FreeAgentLister returns provider-specific available players for a league.
+type FreeAgentLister interface {
+	ListFreeAgents(ctx context.Context, league League, query FreeAgentQuery) ([]FreeAgent, error)
+}
+
 // Provider translates a provider's API into fantasy concepts. Credentials,
 // HTTP clients, and provider-specific season selection belong to its constructor.
 // Implementations must honor cancellation and must not include credentials or

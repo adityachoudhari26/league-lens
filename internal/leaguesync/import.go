@@ -16,7 +16,7 @@ import (
 type ImportJob struct {
 	// Target is the league row the import attached, rebuilt the same way the
 	// Runner builds sync targets: ID is Started.LeagueSeasonID().String()
-	// (the same string targetFromRow produces), and Selection carries the
+	// (the same string TargetFromRow produces), and Selection carries the
 	// league ref and teams the request picked.
 	Target  Target
 	Source  fantasy.Provider
