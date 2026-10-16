@@ -144,20 +144,7 @@ func (s *Service) freeAgentTarget(ctx context.Context, leagueSeasonID string) (l
 		}
 		for _, row := range rows {
 			if row.LeagueSeasonID == id {
-				target = leaguesync.Target{
-					ID:                   row.LeagueSeasonID.String(),
-					ConnectionID:         row.ConnectionID,
-					EncryptedCredentials: row.EncryptedCredentials,
-					Name:                 row.Name,
-					ExternalAccountID:    row.ExternalUserID.String,
-					Selection: fantasy.ConnectionSelection{
-						League: fantasy.LeagueRef{
-							Provider: fantasy.ProviderID(row.Provider), ExternalID: row.ExternalLeagueID,
-							Season: int(row.Season),
-						},
-						SelectedTeamIDs: row.SelectedTeamIds,
-					},
-				}
+				target = leaguesync.TargetFromRow(row)
 				return nil
 			}
 		}

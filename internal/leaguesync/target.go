@@ -24,7 +24,8 @@ type Target struct {
 	LastSuccessfulSyncAt time.Time
 }
 
-func targetFromRow(row store.ListSyncTargetsRow) Target {
+// TargetFromRow reconstructs a sync target from its persisted row.
+func TargetFromRow(row store.ListSyncTargetsRow) Target {
 	league := fantasy.LeagueRef{
 		Provider:   fantasy.ProviderID(row.Provider),
 		ExternalID: row.ExternalLeagueID,

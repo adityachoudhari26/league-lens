@@ -130,7 +130,7 @@ func (r *Runner) listTargetsWithOwner(ctx context.Context) (pgtype.UUID, []Targe
 	}
 	targets := make([]Target, 0, len(rows))
 	for _, row := range rows {
-		targets = append(targets, targetFromRow(row))
+		targets = append(targets, TargetFromRow(row))
 	}
 	return owner.ID, targets, nil
 }
