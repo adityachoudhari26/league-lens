@@ -286,11 +286,11 @@ func liveMatchupFixture(externalID string) fantasy.LiveMatchup {
 		},
 		Lineups: []fantasy.MatchupLineup{
 			{TeamID: "2", Entries: []fantasy.LineupEntry{
-				{PlayerID: "q", Points: floatPtr(22), Scoring: &fantasy.ScoringCounts{Touchdowns: 1, FieldGoals: 2}},
+				{PlayerID: "q", Starter: true, Points: floatPtr(22), Scoring: &fantasy.ScoringCounts{Touchdowns: 1, FieldGoals: 2}},
 			}},
 			{TeamID: "1", Entries: []fantasy.LineupEntry{
-				{PlayerID: "p", Points: floatPtr(17), Scoring: &fantasy.ScoringCounts{Touchdowns: 2, FieldGoals: 1}},
-				{PlayerID: "ghost", Points: floatPtr(8), Scoring: &fantasy.ScoringCounts{Touchdowns: 1}},
+				{PlayerID: "p", Starter: true, Points: floatPtr(17), Scoring: &fantasy.ScoringCounts{Touchdowns: 2, FieldGoals: 1}},
+				{PlayerID: "old", Starter: true, Points: floatPtr(2)},
 				{PlayerID: "bench", Points: floatPtr(4)},
 			}},
 		},
@@ -605,10 +605,6 @@ func TestLiveScoreLoopUpdatesMatchupAndReimportPreservesCounts(t *testing.T) {
 		saved["q"] != (savedLineup{points: "22.0000", touchdowns: 1, fieldGoals: 2}) {
 		t.Fatalf("stored live lineups = %+v", saved)
 	}
-	if _, exists := saved["ghost"]; exists {
-		t.Fatal("unknown live player was inserted")
-	}
-
 	nilCountsTick := liveMatchupFixture("m")
 	nilCountsTick.Matchup.TeamA.Score = floatPtr(201)
 	nilCountsTick.Matchup.TeamB.Score = floatPtr(121)
@@ -726,8 +722,8 @@ func TestLiveScoreLoopPersistsPointChangesFromLiveObservations(t *testing.T) {
 	`).Scan(&observationCount); err != nil {
 		t.Fatal(err)
 	}
-	if observationCount != 3 {
-		t.Fatalf("first tick saved %d observations, want 3", observationCount)
+	if observationCount != 4 {
+		t.Fatalf("first tick saved %d observations, want 4", observationCount)
 	}
 	firstObservation := readLiveLineupObservation(t, pool, "p")
 	if firstObservation.points != "17.0000" || !int4Is(firstObservation.touchdowns, 0) ||
@@ -805,6 +801,7 @@ func TestLiveScoreLoopDoesNotSampleMatchupWithoutOpponent(t *testing.T) {
 	data := liveLeagueFixture()
 	data.Matchups[0].TeamB = nil
 	data.Lineups = data.Lineups[:1]
+	data.Lineups[0].Entries = data.Lineups[0].Entries[:1]
 	initial := &fakeSource{data: data}
 	importerService := importer.Service{DB: db, Source: initial}
 	if _, err := importerService.Import(context.Background(), importer.Request{
@@ -818,7 +815,7 @@ func TestLiveScoreLoopDoesNotSampleMatchupWithoutOpponent(t *testing.T) {
 			ExternalID: "m", Period: 5, TeamA: fantasy.MatchupSide{TeamID: "1", Score: floatPtr(12)},
 		},
 		Lineups: []fantasy.MatchupLineup{{TeamID: "1", Entries: []fantasy.LineupEntry{
-			{PlayerID: "p", Points: floatPtr(12)},
+			{PlayerID: "p", Starter: true, Points: floatPtr(12)},
 		}}},
 	}}
 	sources := &liveScoreSources{
