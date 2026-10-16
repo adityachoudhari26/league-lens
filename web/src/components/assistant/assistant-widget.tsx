@@ -42,10 +42,10 @@ export function AssistantWidget() {
         title="Playbook"
         aria-expanded={open}
         aria-controls="assistant-panel"
-        className="playbook-ring fixed right-4 bottom-4 z-50 grid size-14 place-items-center rounded-full border-[3px] text-teal-700 shadow-lg transition-transform outline-none hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 dark:text-teal-300"
+        className="playbook-gradient fixed right-4 bottom-4 z-50 grid size-12 place-items-center rounded-full border-2 border-background text-white shadow-lg transition-transform outline-none hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50"
         onClick={() => setOpen((current) => !current)}
       >
-        <RugbyBall aria-hidden="true" className="size-6" />
+        <RugbyBall aria-hidden="true" className="size-5" />
       </button>
       {open ? (
         <AssistantPanel
