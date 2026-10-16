@@ -25,7 +25,7 @@ FROM connection_leagues cl
 JOIN connections c ON c.id=cl.connection_id
 JOIN league_seasons l ON l.id=cl.league_season_id
 WHERE cl.user_id=$1 AND cl.detached_at IS NULL AND c.status<>'disabled'
-AND l.season=(
+AND l.season=COALESCE((
  SELECT max(ls.season) FROM user_teams selected
  JOIN connections active ON active.id=selected.connection_id AND active.status<>'disabled'
  JOIN connection_leagues attached ON attached.connection_id=selected.connection_id
@@ -33,7 +33,12 @@ AND l.season=(
   AND attached.user_id=selected.user_id AND attached.detached_at IS NULL
  JOIN league_seasons ls ON ls.id=selected.league_season_id
  WHERE selected.user_id=$1
-)
+),(
+ SELECT max(ls.season) FROM connection_leagues attached
+ JOIN connections active ON active.id=attached.connection_id AND active.status<>'disabled'
+ JOIN league_seasons ls ON ls.id=attached.league_season_id
+ WHERE attached.user_id=$1 AND attached.detached_at IS NULL
+))
 ORDER BY l.provider,l.name,cl.connection_id
 `
 
@@ -52,6 +57,7 @@ type ListSyncTargetsRow struct {
 
 // Sync targets are the owner's attached leagues in the season the overview shows.
 // Selected teams come from earlier imports.
+// Before any team is saved (first import), fall back to the newest attached season.
 func (q *Queries) ListSyncTargets(ctx context.Context, userID pgtype.UUID) ([]ListSyncTargetsRow, error) {
 	rows, err := q.db.Query(ctx, listSyncTargets, userID)
 	if err != nil {

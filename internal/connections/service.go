@@ -19,7 +19,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
-	"github.com/adityachoudhari26/league-lens/internal/playerids"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 	"github.com/adityachoudhari26/league-lens/internal/store"
@@ -27,9 +27,12 @@ import (
 
 type DiscoverESPNFunc func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error)
 type DiscoverSleeperFunc func(context.Context, string, int) (string, []fantasy.DiscoveredLeague, error)
-type NewSourceFunc func(context.Context, ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error)
+type NewSourceFunc func(context.Context, ImportSpec) (PreparedSource, error)
 
-const importNewsTimeout = 5 * time.Second
+// ImportStarter finishes begun imports in the background.
+type ImportStarter interface {
+	StartImports([]leaguesync.ImportJob)
+}
 
 // Service manages the configured owner's provider connections and league imports.
 type Service struct {
@@ -40,10 +43,8 @@ type Service struct {
 	DiscoverESPN    DiscoverESPNFunc
 	DiscoverSleeper DiscoverSleeperFunc
 	NewSource       NewSourceFunc
-	// RefreshNFLSchedule runs a best-effort NFL schedule refresh after imports; nil skips it.
-	RefreshNFLSchedule func(context.Context, int)
-	// RefreshPlayerNews runs a best-effort news refresh after imports; nil skips it.
-	RefreshPlayerNews func(context.Context)
+	// Imports finishes begun imports in the background; nil drops the jobs, for tests that only check the quick phase.
+	Imports ImportStarter
 }
 
 func (s *Service) withDefaults() Service {
@@ -268,43 +269,20 @@ func (s *Service) ImportLeagues(ctx context.Context, request *v1.ImportLeaguesRe
 	}
 	service := s.withDefaults()
 	credentials, credentialErr := service.connectionCredentials(connection)
-	catalog, catalogVersion := s.loadCatalog(ctx)
-	importerService := &importer.Service{DB: s.DB, Catalog: catalog, CatalogVersion: catalogVersion}
+	importerService := &importer.Service{DB: s.DB}
 	response := &v1.ImportLeaguesResponse{Results: make([]*v1.ImportResult, 0, len(request.GetPicks()))}
+	var jobs []leaguesync.ImportJob
 	for _, pick := range request.GetPicks() {
-		response.Results = append(response.Results, service.importPick(ctx, importerService, connection, credentials, credentialErr, pick))
-	}
-	service.refreshAfterImport(ctx, response.Results)
-	return response, nil
-}
-
-// refreshAfterImport refreshes the schedule and player news after any successful import.
-func (s Service) refreshAfterImport(ctx context.Context, results []*v1.ImportResult) {
-	for _, result := range results {
-		if result.GetSucceeded() {
-			if s.RefreshNFLSchedule != nil {
-				s.RefreshNFLSchedule(ctx, fantasy.CurrentSeason(time.Now()))
-			}
-			if s.RefreshPlayerNews != nil {
-				refreshCtx, cancel := context.WithTimeout(ctx, importNewsTimeout)
-				defer cancel()
-				s.RefreshPlayerNews(refreshCtx)
-			}
-			return
+		result, job := service.importPick(ctx, importerService, connection, credentials, credentialErr, pick)
+		response.Results = append(response.Results, result)
+		if job != nil {
+			jobs = append(jobs, *job)
 		}
 	}
-}
-
-func (s *Service) loadCatalog(ctx context.Context) (playerids.Catalog, string) {
-	if s.CatalogPath == "" {
-		return nil, ""
+	if len(jobs) > 0 && service.Imports != nil {
+		service.Imports.StartImports(jobs)
 	}
-	catalog, version, err := playerids.Load(ctx, s.CatalogPath)
-	if err != nil {
-		slog.Warn("player mapping unavailable; retaining provider identities")
-		return nil, ""
-	}
-	return catalog, version
+	return response, nil
 }
 
 func (s *Service) connectionCredentials(connection store.Connection) (espn.Credentials, error) {
@@ -326,7 +304,8 @@ func (s *Service) connectionCredentials(connection store.Connection) (espn.Crede
 }
 
 // importPick maps one selection to a stable per-pick error code and marks ESPN
-// connections for reconnect when stored credentials are rejected.
+// connections for reconnect when stored credentials are rejected. On success it
+// returns the begun import as a job for the background importer.
 func (s Service) importPick(
 	ctx context.Context,
 	imports *importer.Service,
@@ -334,23 +313,23 @@ func (s Service) importPick(
 	credentials espn.Credentials,
 	credentialErr error,
 	pick *v1.ImportPick,
-) *v1.ImportResult {
+) (*v1.ImportResult, *leaguesync.ImportJob) {
 	result := &v1.ImportResult{ExternalLeagueId: pick.GetExternalLeagueId(), TeamId: pick.GetTeamId()}
 	if pick.GetExternalLeagueId() == "" {
 		result.ErrorCode = "invalid_selection"
-		return result
+		return result, nil
 	}
 	if credentialErr != nil {
 		s.markNeedsReconnect(connection)
 		result.ErrorCode = "needs_reconnect"
-		return result
+		return result, nil
 	}
 	teamID, err := strconv.Atoi(pick.GetTeamId())
 	if err != nil || teamID <= 0 {
 		result.ErrorCode = "invalid_selection"
-		return result
+		return result, nil
 	}
-	source, accountID, selection, err := s.NewSource(ctx, ImportSpec{
+	prepared, err := s.NewSource(ctx, ImportSpec{
 		Provider: connection.Provider, LeagueID: pick.GetExternalLeagueId(), Season: fantasy.CurrentSeason(time.Now()),
 		TeamID: teamID, Username: connection.ExternalUserID.String, ESPN: credentials,
 	})
@@ -358,24 +337,24 @@ func (s Service) importPick(
 		if errors.Is(err, espn.ErrUnauthorized) {
 			s.markNeedsReconnect(connection)
 			result.ErrorCode = "needs_reconnect"
-			return result
+			return result, nil
 		}
 		result.ErrorCode = "provider_fetch_failed"
-		return result
+		return result, nil
 	}
-	if accountID != connection.ExternalUserID.String {
+	if prepared.AccountID != connection.ExternalUserID.String {
 		result.ErrorCode = "account_mismatch"
-		return result
+		return result, nil
 	}
-	imports.Source = source
-	_, err = imports.Import(ctx, importer.Request{
-		OwnerEmail: s.OwnerEmail, ExternalAccountID: accountID, Selection: selection,
+	imports.Source = prepared.Provider
+	started, err := imports.Begin(ctx, importer.Request{
+		OwnerEmail: s.OwnerEmail, ExternalAccountID: prepared.AccountID, Selection: prepared.Selection, League: prepared.League,
 	})
 	if err != nil {
 		if errors.Is(err, espn.ErrUnauthorized) {
 			s.markNeedsReconnect(connection)
 			result.ErrorCode = "needs_reconnect"
-			return result
+			return result, nil
 		}
 		var recorded *importer.RecordedSyncError
 		if errors.As(err, &recorded) && recorded.Code != "" {
@@ -383,16 +362,17 @@ func (s Service) importPick(
 		} else {
 			result.ErrorCode = "import_failed"
 		}
-		return result
+		return result, nil
 	}
-	result.Succeeded = true
-	season := int32(selection.League.Season)
-	if leagueID, findErr := s.DB.Queries().FindAttachedLeagueIDForConnection(ctx, store.FindAttachedLeagueIDForConnectionParams{
-		ConnectionID: connection.ID, UserID: connection.UserID, ExternalLeagueID: pick.GetExternalLeagueId(), Season: season,
-	}); findErr == nil {
-		result.LeagueId = leagueID.String()
+	result.Started = true
+	result.LeagueId = started.LeagueSeasonID().String()
+	return result, &leaguesync.ImportJob{
+		Target: leaguesync.Target{
+			ID: result.LeagueId, ConnectionID: connection.ID,
+			ExternalAccountID: prepared.AccountID, Selection: prepared.Selection,
+		},
+		Source: prepared.Provider, Started: started,
 	}
-	return result
 }
 
 func (s Service) markNeedsReconnect(connection store.Connection) {

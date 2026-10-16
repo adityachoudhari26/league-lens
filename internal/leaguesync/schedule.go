@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -25,6 +26,13 @@ func (r *Runner) refreshSchedules(targets []Target) {
 		seen[season] = true
 		r.RefreshNFLSchedule(r.ctx, season)
 	}
+}
+
+// refreshScheduleAndNews runs a best-effort schedule refresh for the current
+// season followed by a player news refresh on the Runner's context.
+func (r *Runner) refreshScheduleAndNews() {
+	r.RefreshNFLSchedule(r.ctx, fantasy.CurrentSeason(r.now()))
+	r.RefreshPlayerNews(r.ctx)
 }
 
 // RefreshNFLSchedule loads kickoff and bye data during syncs and after league

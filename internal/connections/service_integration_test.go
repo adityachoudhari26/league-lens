@@ -22,10 +22,19 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
+	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
+
+type fakeImportStarter struct {
+	jobs []leaguesync.ImportJob
+}
+
+func (f *fakeImportStarter) StartImports(jobs []leaguesync.ImportJob) {
+	f.jobs = append(f.jobs, jobs...)
+}
 
 type connectionTestProvider struct {
 	league      fantasy.League
@@ -122,22 +131,19 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	}
 	credentials := espn.Credentials{S2: s2, SWID: swid}
 	accountID := espn.NewClient(nil, credentials, season).AccountID()
-	scheduleRefreshCalls := 0
-	var scheduleRefreshSeason int
-	newsRefreshCalls := 0
+	starter := &fakeImportStarter{}
 	service := &Service{
 		DB: db, Box: box, OwnerEmail: "connect@example.test",
-		RefreshNFLSchedule: func(_ context.Context, season int) {
-			scheduleRefreshCalls++
-			scheduleRefreshSeason = season
-		},
-		RefreshPlayerNews: func(context.Context) { newsRefreshCalls++ },
+		Imports: starter,
 		DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
 			return []fantasy.DiscoveredLeague{{Ref: ref, Name: league.Name, TeamID: "1", TeamName: "Home"}}, nil
 		},
-		NewSource: func(_ context.Context, spec ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error) {
+		NewSource: func(_ context.Context, spec ImportSpec) (PreparedSource, error) {
 			selection := fantasy.ConnectionSelection{League: ref, SelectedTeamIDs: []string{fmt.Sprint(spec.TeamID)}}
-			return connectionTestProvider{league: league, data: data}, accountID, selection, nil
+			return PreparedSource{
+				Provider: connectionTestProvider{league: league, data: data}, AccountID: accountID,
+				Selection: selection, League: league,
+			}, nil
 		},
 	}
 
@@ -172,15 +178,19 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 		ConnectionId: connected.ConnectionId,
 		Picks:        []*v1.ImportPick{{ExternalLeagueId: ref.ExternalID, TeamId: "1"}},
 	})
-	if err != nil || len(imported.Results) != 1 || !imported.Results[0].Succeeded {
+	if err != nil || len(imported.Results) != 1 || !imported.Results[0].Started {
 		t.Fatalf("import result: %+v, %v", imported, err)
 	}
-	if newsRefreshCalls != 1 {
-		t.Fatalf("news refresh calls after successful import = %d, want 1", newsRefreshCalls)
+	if imported.Results[0].LeagueId == "" {
+		t.Fatal("started import returned no league ID")
 	}
-	if scheduleRefreshCalls != 1 || scheduleRefreshSeason != fantasy.CurrentSeason(time.Now()) {
-		t.Fatalf("schedule refresh calls = %d for season %d, want 1 for season %d",
-			scheduleRefreshCalls, scheduleRefreshSeason, fantasy.CurrentSeason(time.Now()))
+	if len(starter.jobs) != 1 || starter.jobs[0].Target.ID != imported.Results[0].LeagueId {
+		t.Fatalf("recorded import jobs = %+v", starter.jobs)
+	}
+	// Finish the begun import so the saved-data checks below still hold.
+	job := starter.jobs[0]
+	if _, err = (&importer.Service{DB: db, Source: job.Source}).Finish(ctx, job.Started); err != nil {
+		t.Fatal(err)
 	}
 	rows, err := db.Queries().ListSyncTargets(ctx, owner.ID)
 	if err != nil || len(rows) != 1 {
@@ -293,6 +303,148 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	}
 }
 
+func TestImportLeaguesMixedPicksStartsOnlyValidJobs(t *testing.T) {
+	ctx := context.Background()
+	db := openConnectionTestDatabase(t)
+	box, err := secrets.NewBox(bytes.Repeat([]byte{7}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	season := fantasy.CurrentSeason(time.Now())
+	ref := fantasy.LeagueRef{Provider: fantasy.ProviderESPN, ExternalID: "league-123", Season: season}
+	league := fantasy.League{Ref: ref, Name: "Synthetic League", TeamCount: 2}
+	now := time.Now().UTC()
+	data := fantasy.LeagueData{
+		League: league, FetchedAt: now,
+		Teams: []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}},
+	}
+	credentials := espn.Credentials{S2: "synthetic-s2", SWID: "{synthetic-swid}"}
+	accountID := espn.NewClient(nil, credentials, season).AccountID()
+	starter := &fakeImportStarter{}
+	service := &Service{
+		DB: db, Box: box, OwnerEmail: "mixed@example.test",
+		Imports: starter,
+		DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
+			return []fantasy.DiscoveredLeague{{Ref: ref, TeamID: "1"}}, nil
+		},
+		NewSource: func(_ context.Context, spec ImportSpec) (PreparedSource, error) {
+			selection := fantasy.ConnectionSelection{League: ref, SelectedTeamIDs: []string{fmt.Sprint(spec.TeamID)}}
+			if spec.LeagueID == "other-league" {
+				return PreparedSource{Provider: connectionTestProvider{league: league, data: data}, AccountID: "different-account", Selection: selection, League: league}, nil
+			}
+			return PreparedSource{
+				Provider: connectionTestProvider{league: league, data: data}, AccountID: accountID,
+				Selection: selection, League: league,
+			}, nil
+		},
+	}
+	connected, err := service.ConnectESPN(ctx, &v1.ConnectESPNRequest{S2: credentials.S2, Swid: credentials.SWID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	imported, err := service.ImportLeagues(ctx, &v1.ImportLeaguesRequest{
+		ConnectionId: connected.ConnectionId,
+		Picks: []*v1.ImportPick{
+			{ExternalLeagueId: "", TeamId: "1"},
+			{ExternalLeagueId: ref.ExternalID, TeamId: "abc"},
+			{ExternalLeagueId: "other-league", TeamId: "1"},
+			{ExternalLeagueId: ref.ExternalID, TeamId: "1"},
+		},
+	})
+	if err != nil || len(imported.GetResults()) != 4 {
+		t.Fatalf("import results = %+v, %v", imported, err)
+	}
+	wantCodes := []string{"invalid_selection", "invalid_selection", "account_mismatch", ""}
+	for index, want := range wantCodes {
+		if got := imported.Results[index].ErrorCode; got != want {
+			t.Fatalf("result %d error code = %q, want %q", index, got, want)
+		}
+	}
+	valid := imported.Results[3]
+	if !valid.Started || valid.LeagueId == "" {
+		t.Fatalf("valid pick result = %+v, want started with a league ID", valid)
+	}
+	for index, result := range imported.Results[:3] {
+		if result.Started || result.LeagueId != "" {
+			t.Fatalf("failed pick %d result = %+v, want not started", index, result)
+		}
+	}
+	if len(starter.jobs) != 1 || starter.jobs[0].Target.ID != valid.LeagueId {
+		t.Fatalf("recorded import jobs = %+v, want exactly the valid pick's job", starter.jobs)
+	}
+}
+
+// Stored credentials that can no longer be decrypted fail every pick the same
+// way an expired-cookie import does: needs_reconnect, marked connection, no job.
+func TestImportLeaguesUndecryptableCredentialsNeedsReconnect(t *testing.T) {
+	ctx := context.Background()
+	db := openConnectionTestDatabase(t)
+	storeBox, err := secrets.NewBox(bytes.Repeat([]byte{8}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	season := fantasy.CurrentSeason(time.Now())
+	ref := fantasy.LeagueRef{Provider: fantasy.ProviderESPN, ExternalID: "locked-league", Season: season}
+	storeService := &Service{
+		DB: db, Box: storeBox, OwnerEmail: "locked@example.test",
+		DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
+			return []fantasy.DiscoveredLeague{{Ref: ref, TeamID: "1"}}, nil
+		},
+	}
+	credentials := espn.Credentials{S2: "synthetic-s2", SWID: "{synthetic-swid}"}
+	connected, err := storeService.ConnectESPN(ctx, &v1.ConnectESPNRequest{S2: credentials.S2, Swid: credentials.SWID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherBox, err := secrets.NewBox(bytes.Repeat([]byte{9}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	starter := &fakeImportStarter{}
+	service := &Service{
+		DB: db, Box: otherBox, OwnerEmail: storeService.OwnerEmail,
+		Imports: starter,
+		NewSource: func(context.Context, ImportSpec) (PreparedSource, error) {
+			t.Fatal("NewSource ran for undecryptable credentials")
+			return PreparedSource{}, nil
+		},
+	}
+	imported, err := service.ImportLeagues(ctx, &v1.ImportLeaguesRequest{
+		ConnectionId: connected.ConnectionId,
+		Picks: []*v1.ImportPick{
+			{ExternalLeagueId: ref.ExternalID, TeamId: "1"},
+			{ExternalLeagueId: ref.ExternalID, TeamId: "2"},
+		},
+	})
+	if err != nil || len(imported.GetResults()) != 2 {
+		t.Fatalf("import results = %+v, %v", imported, err)
+	}
+	for index, result := range imported.Results {
+		if result.Started || result.ErrorCode != "needs_reconnect" {
+			t.Fatalf("pick %d result = %+v, want needs_reconnect", index, result)
+		}
+	}
+	if len(starter.jobs) != 0 {
+		t.Fatalf("recorded import jobs = %d, want 0", len(starter.jobs))
+	}
+	connectionID, ok := parseUUID(connected.ConnectionId)
+	if !ok {
+		t.Fatal("connection ID was invalid")
+	}
+	owner, err := db.Queries().GetUserByEmail(ctx, service.OwnerEmail)
+	if err != nil {
+		t.Fatal(err)
+	}
+	connection, err := db.Queries().GetConnectionForUser(ctx, store.GetConnectionForUserParams{
+		ID: connectionID, UserID: owner.ID,
+	})
+	if err != nil || connection.Status != "needs_reconnect" {
+		t.Fatalf("connection status = %q, %v", connection.Status, err)
+	}
+}
+
 func TestConnectESPNWithoutFootballLeaguesDoesNotCreateConnection(t *testing.T) {
 	ctx := context.Background()
 	db := openConnectionTestDatabase(t)
@@ -337,21 +489,23 @@ func TestImportUnauthorizedMarksConnectionForReconnect(t *testing.T) {
 			league := fantasy.League{Ref: ref, Name: "Synthetic League", TeamCount: 2}
 			credentials := espn.Credentials{S2: "synthetic-s2", SWID: "{synthetic-swid}"}
 			accountID := espn.NewClient(nil, credentials, season).AccountID()
-			scheduleRefreshCalls := 0
-			newsRefreshCalls := 0
+			starter := &fakeImportStarter{}
 			service := &Service{
 				DB: db, Box: box, OwnerEmail: "unauthorized@example.test",
-				RefreshNFLSchedule: func(context.Context, int) { scheduleRefreshCalls++ },
-				RefreshPlayerNews:  func(context.Context) { newsRefreshCalls++ },
+				Imports: starter,
 				DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
 					return []fantasy.DiscoveredLeague{{Ref: ref, TeamID: "1"}}, nil
 				},
-				NewSource: func(_ context.Context, spec ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error) {
+				NewSource: func(_ context.Context, spec ImportSpec) (PreparedSource, error) {
 					selection := fantasy.ConnectionSelection{League: ref, SelectedTeamIDs: []string{fmt.Sprint(spec.TeamID)}}
 					if failSource {
-						return nil, "", selection, espn.ErrUnauthorized
+						return PreparedSource{}, espn.ErrUnauthorized
 					}
-					return connectionTestProvider{league: league, describeErr: espn.ErrUnauthorized}, accountID, selection, nil
+					// League left unset so Begin describes the league again and hits the unauthorized provider.
+					return PreparedSource{
+						Provider: connectionTestProvider{league: league, describeErr: espn.ErrUnauthorized}, AccountID: accountID,
+						Selection: selection,
+					}, nil
 				},
 			}
 			connected, err := service.ConnectESPN(ctx, &v1.ConnectESPNRequest{S2: credentials.S2, Swid: credentials.SWID})
@@ -365,11 +519,8 @@ func TestImportUnauthorizedMarksConnectionForReconnect(t *testing.T) {
 			if err != nil || len(imported.GetResults()) != 1 || imported.Results[0].ErrorCode != "needs_reconnect" {
 				t.Fatalf("import result = %v, %v", imported, err)
 			}
-			if newsRefreshCalls != 0 {
-				t.Fatalf("news refresh calls after failed import = %d, want 0", newsRefreshCalls)
-			}
-			if scheduleRefreshCalls != 0 {
-				t.Fatalf("schedule refresh calls after failed import = %d, want 0", scheduleRefreshCalls)
+			if len(starter.jobs) != 0 {
+				t.Fatalf("recorded import jobs after failed import = %d, want 0", len(starter.jobs))
 			}
 			connectionID, ok := parseUUID(connected.ConnectionId)
 			if !ok {
