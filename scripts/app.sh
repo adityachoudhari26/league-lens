@@ -109,6 +109,23 @@ running_app_image_id() {
   docker inspect -f '{{.Image}}' "$app_container"
 }
 
+built_app_platform_image_id() {
+  local platform
+  platform=$(docker image inspect -f '{{.Os}}/{{.Architecture}}' "$APP_IMAGE")
+  docker image inspect --platform "$platform" -f '{{.Id}}' "$APP_IMAGE"
+}
+
+running_app_platform_image_id() {
+  local app_container image_id
+  app_container=$(docker compose ps -q app)
+  [[ -n "$app_container" ]] || return 0
+  image_id=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.image"}}' "$app_container")
+  if [[ -z "$image_id" || "$image_id" == "<no value>" ]]; then
+    image_id=$(docker inspect -f '{{.Image}}' "$app_container")
+  fi
+  printf '%s\n' "$image_id"
+}
+
 print_app_urls() {
   app_urls
   printf 'League Lens is running at %s (Safari: %s)\n' "$APP_URL" "$SAFARI_URL"
@@ -304,6 +321,7 @@ update_app() {
   require_docker
 
   local branch old_revision new_revision running_image_id built_image_id
+  local running_platform_image_id built_platform_image_id
   branch=$(git branch --show-current 2>/dev/null || true)
   if [[ "$branch" != main ]]; then
     branch=${branch:-"detached HEAD"}
@@ -342,6 +360,12 @@ update_app() {
 
   if [[ -n "$running_image_id" ]]; then
     if [[ "$running_image_id" == "$built_image_id" ]]; then
+      printf '%s\n' "Already up to date."
+      return 0
+    fi
+    if built_platform_image_id=$(built_app_platform_image_id) &&
+      running_platform_image_id=$(running_app_platform_image_id) &&
+      [[ "$running_platform_image_id" == "$built_platform_image_id" ]]; then
       printf '%s\n' "Already up to date."
       return 0
     fi
