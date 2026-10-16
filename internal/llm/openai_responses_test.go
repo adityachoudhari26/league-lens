@@ -42,62 +42,7 @@ func TestNewRoutesOpenAIResponsesOnlyForOpenAIHost(t *testing.T) {
 
 func TestOpenAIResponsesRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/responses" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		if r.Header.Get("Authorization") != "Bearer sk-test" ||
-			r.Header.Get("content-type") != "application/json" {
-			t.Errorf("unexpected headers: %v", r.Header)
-		}
-		var body map[string]any
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Error(err)
-		}
-		if body["model"] != "gpt-6.1-sol" || body["instructions"] != "Be brief" ||
-			body["max_output_tokens"] != float64(200) || body["stream"] != true || body["store"] != false {
-			t.Errorf("request body = %#v", body)
-		}
-		if _, exists := body["max_tokens"]; exists {
-			t.Error("Responses request included max_tokens")
-		}
-		input, ok := body["input"].([]any)
-		if !ok || len(input) != 4 {
-			t.Fatalf("input = %#v", body["input"])
-		}
-		user := input[0].(map[string]any)
-		if user["role"] != "user" || user["content"] != "Find my league" {
-			t.Errorf("user input = %#v", user)
-		}
-		assistant := input[1].(map[string]any)
-		if assistant["role"] != "assistant" || assistant["content"] != "I'll look that up." {
-			t.Errorf("assistant input = %#v", assistant)
-		}
-		call := input[2].(map[string]any)
-		if call["type"] != "function_call" || call["call_id"] != "call_1" ||
-			call["name"] != "list_leagues" || call["arguments"] != `{"league":"A"}` {
-			t.Errorf("function call input = %#v", call)
-		}
-		result := input[3].(map[string]any)
-		if result["type"] != "function_call_output" || result["call_id"] != "call_1" ||
-			result["output"] != "Found the league" {
-			t.Errorf("function output input = %#v", result)
-		}
-		tools, ok := body["tools"].([]any)
-		if !ok || len(tools) != 1 {
-			t.Fatalf("tools = %#v", body["tools"])
-		}
-		tool := tools[0].(map[string]any)
-		if tool["type"] != "function" || tool["name"] != "list_leagues" ||
-			tool["description"] != "List leagues" {
-			t.Errorf("tool = %#v", tool)
-		}
-		if _, exists := tool["function"]; exists {
-			t.Errorf("tool uses chat-completions nesting: %#v", tool)
-		}
-		parameters, ok := tool["parameters"].(map[string]any)
-		if !ok || parameters["type"] != "object" {
-			t.Errorf("tool parameters = %#v", tool["parameters"])
-		}
+		assertOpenAIResponsesRequest(t, r)
 		w.Header().Set("Content-Type", "text/event-stream")
 		_, _ = w.Write(fixture(t, "openai_responses_text.sse"))
 	}))
@@ -123,6 +68,76 @@ func TestOpenAIResponsesRequest(t *testing.T) {
 	}, nil)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func assertOpenAIResponsesRequest(t *testing.T, r *http.Request) {
+	t.Helper()
+	if r.URL.Path != "/v1/responses" {
+		t.Errorf("path = %q", r.URL.Path)
+	}
+	if r.Header.Get("Authorization") != "Bearer sk-test" ||
+		r.Header.Get("content-type") != "application/json" {
+		t.Errorf("unexpected headers: %v", r.Header)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		t.Error(err)
+	}
+	if body["model"] != "gpt-6.1-sol" || body["instructions"] != "Be brief" ||
+		body["max_output_tokens"] != float64(200) || body["stream"] != true || body["store"] != false {
+		t.Errorf("request body = %#v", body)
+	}
+	if _, exists := body["max_tokens"]; exists {
+		t.Error("Responses request included max_tokens")
+	}
+	assertOpenAIResponsesInput(t, body["input"])
+	assertOpenAIResponsesTools(t, body["tools"])
+}
+
+func assertOpenAIResponsesInput(t *testing.T, value any) {
+	t.Helper()
+	input, ok := value.([]any)
+	if !ok || len(input) != 4 {
+		t.Fatalf("input = %#v", value)
+	}
+	user := input[0].(map[string]any)
+	if user["role"] != "user" || user["content"] != "Find my league" {
+		t.Errorf("user input = %#v", user)
+	}
+	assistant := input[1].(map[string]any)
+	if assistant["role"] != "assistant" || assistant["content"] != "I'll look that up." {
+		t.Errorf("assistant input = %#v", assistant)
+	}
+	call := input[2].(map[string]any)
+	if call["type"] != "function_call" || call["call_id"] != "call_1" ||
+		call["name"] != "list_leagues" || call["arguments"] != `{"league":"A"}` {
+		t.Errorf("function call input = %#v", call)
+	}
+	result := input[3].(map[string]any)
+	if result["type"] != "function_call_output" || result["call_id"] != "call_1" ||
+		result["output"] != "Found the league" {
+		t.Errorf("function output input = %#v", result)
+	}
+}
+
+func assertOpenAIResponsesTools(t *testing.T, value any) {
+	t.Helper()
+	tools, ok := value.([]any)
+	if !ok || len(tools) != 1 {
+		t.Fatalf("tools = %#v", value)
+	}
+	tool := tools[0].(map[string]any)
+	if tool["type"] != "function" || tool["name"] != "list_leagues" ||
+		tool["description"] != "List leagues" {
+		t.Errorf("tool = %#v", tool)
+	}
+	if _, exists := tool["function"]; exists {
+		t.Errorf("tool uses chat-completions nesting: %#v", tool)
+	}
+	parameters, ok := tool["parameters"].(map[string]any)
+	if !ok || parameters["type"] != "object" {
+		t.Errorf("tool parameters = %#v", tool["parameters"])
 	}
 }
 
