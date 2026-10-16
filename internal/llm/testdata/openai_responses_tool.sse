@@ -1,0 +1,5 @@
+event: response.output_item.done
+data: {"type":"response.output_item.done","item":{"id":"fc_089e90929818d4c3016ad24e61d43887d0b2732807ed2a5be2","type":"function_call","status":"completed","arguments":"{}","call_id":"call_es8qC6AtWI9CEi11tJEGb0Or","name":"list_leagues"},"output_index":0,"sequence_number":5}
+
+event: response.completed
+data: {"type":"response.completed","response":{"status":"completed"}}
