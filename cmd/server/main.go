@@ -25,6 +25,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
+	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 	"github.com/adityachoudhari26/league-lens/web"
 )
 
@@ -79,6 +80,7 @@ func run() error {
 	assistantService := &assistant.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail,
 		Dashboard: dashboardService, Sync: syncHandler, ProviderSources: sources,
+		Trending: sleeper.NewClient(&http.Client{Timeout: 10 * time.Second}), CatalogPath: catalogPath,
 	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
