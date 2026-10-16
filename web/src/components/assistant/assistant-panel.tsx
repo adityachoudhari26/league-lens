@@ -198,10 +198,14 @@ function AssistantSuggestions({
   onSuggestion: (value: string) => void
 }) {
   return (
-    <div className="my-auto flex flex-col gap-3">
-      <p className="text-center text-sm text-muted-foreground">
-        What can I help with?
-      </p>
+    <div className="my-auto flex flex-col gap-4">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <span className="playbook-gradient grid size-12 place-items-center rounded-full text-white">
+          <RugbyBall aria-hidden="true" className="size-6" />
+        </span>
+        <p className="text-base font-semibold">Hi, I&apos;m Playbook</p>
+        <p className="text-sm text-muted-foreground">What can I help with?</p>
+      </div>
       <div className="flex flex-col items-stretch gap-2">
         {suggestions.map((suggestion) => (
           <Button
@@ -209,7 +213,7 @@ function AssistantSuggestions({
             type="button"
             variant="outline"
             size="sm"
-            className="h-auto justify-start gap-2.5 whitespace-normal py-2 text-left"
+            className="h-auto justify-start gap-2.5 whitespace-normal py-2 text-left transition-colors hover:border-teal-500/50 hover:bg-teal-500/5"
             onClick={() => onSuggestion(suggestion)}
           >
             <span
@@ -231,7 +235,7 @@ function AssistantMessage({ turn }: { turn: AssistantTurn }) {
   if (turn.role === "user") {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[85%] rounded-2xl bg-muted px-3 py-2 text-sm leading-5">
+        <p className="max-w-[85%] playbook-gradient rounded-2xl px-3 py-2 text-sm leading-5 text-white">
           {turn.text}
         </p>
       </div>

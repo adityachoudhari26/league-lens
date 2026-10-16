@@ -35,7 +35,7 @@ export function AssistantWidget() {
   const notSetUp =
     chat.requiresSetup || (settings.isSuccess && !settings.data?.settings)
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} className="[&_button:not(:disabled)]:cursor-pointer">
       <button
         type="button"
         aria-label="Open Playbook"
