@@ -52,7 +52,9 @@ type nflGameContextWeather struct {
 	Temperature  *float64 `json:"temperature"`
 }
 
-// FetchNFLGameContext reads ESPN's public scoreboard for one regular-season week.
+// FetchNFLGameContext reads lines and forecasts from ESPN's public scoreboard.
+// Week 0 means ESPN's current week; 1–18 is a regular-season week of the current season.
+// It needs no league cookies and sends none.
 func FetchNFLGameContext(ctx context.Context, client *http.Client, week int) (fantasy.NFLWeekGameContext, error) {
 	endpoint, err := nflGameContextURL(week)
 	if err != nil {
@@ -79,6 +81,8 @@ func nflGameContextURL(week int) (string, error) {
 	return nflScoreboardURL + "?" + query.Encode(), nil
 }
 
+// parseNFLGameContext parses ESPN's scoreboard. A missing season year or week is an error;
+// games with an unknown state, date or team are skipped rather than guessed.
 func parseNFLGameContext(body []byte) (fantasy.NFLWeekGameContext, error) {
 	var raw nflGameContextScoreboard
 	if err := json.Unmarshal(body, &raw); err != nil {
@@ -91,17 +95,17 @@ func parseNFLGameContext(body []byte) (fantasy.NFLWeekGameContext, error) {
 		return fantasy.NFLWeekGameContext{}, fmt.Errorf("ESPN NFL scoreboard is missing the week number")
 	}
 
-	context := fantasy.NFLWeekGameContext{
+	gameContext := fantasy.NFLWeekGameContext{
 		Season: *raw.Season.Year,
 		Week:   fantasy.ScoringPeriod(*raw.Week.Number),
 	}
 	for _, event := range raw.Events {
 		game, ok := parseNFLGameContextEvent(event)
 		if ok {
-			context.Games = append(context.Games, game)
+			gameContext.Games = append(gameContext.Games, game)
 		}
 	}
-	return context, nil
+	return gameContext, nil
 }
 
 func parseNFLGameContextEvent(event nflGameContextEvent) (fantasy.NFLGameContext, bool) {
@@ -125,6 +129,8 @@ func parseNFLGameContextEvent(event nflGameContextEvent) (fantasy.NFLGameContext
 	}, true
 }
 
+// parseNFLGameOdds keeps ESPN's first odds entry. The line is ESPN's display string
+// (e.g. "JAX -2.5"); the numeric spread is ignored because its sign doesn't follow the favorite.
 func parseNFLGameOdds(odds []nflGameContextOdds) *fantasy.NFLGameOdds {
 	if len(odds) == 0 {
 		return nil
