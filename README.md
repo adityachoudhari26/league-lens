@@ -78,6 +78,7 @@ account, subscription, or paid data feed is required.
 **App**
 
 - Light, Dark, and System themes, and a sidebar that collapses on small screens.
+- Optional AI assistant chat with a bring-your-own provider key.
 - One command to install with Docker. Data is stored in Postgres on your
   machine.
 

@@ -58,7 +58,7 @@ func NewHandler(
 		}
 		connecthttp.Mount(connectMux, server, connecthttp.WithReadMaxBytes(64<<10))
 	}
-	mux.Handle("/api/", http.StripPrefix("/api", connectMux))
+	mux.Handle("/api/", chatWriteDeadlineMiddleware(http.StripPrefix("/api", connectMux)))
 	if static != nil {
 		mux.Handle("/", staticHandler(static))
 	}

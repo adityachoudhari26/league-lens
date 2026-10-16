@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/assistant.proto.
  */
 export const file_leaguelens_v1_assistant: GenFile = /*@__PURE__*/
-  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSqDAQoRQXNzaXN0YW50UHJvdmlkZXISIgoeQVNTSVNUQU5UX1BST1ZJREVSX1VOU1BFQ0lGSUVEEAASIAocQVNTSVNUQU5UX1BST1ZJREVSX0FOVEhST1BJQxABEigKJEFTU0lTVEFOVF9QUk9WSURFUl9PUEVOQUlfQ09NUEFUSUJMRRACMt8DChBBc3Npc3RhbnRTZXJ2aWNlEm8KFEdldEFzc2lzdGFudFNldHRpbmdzEioubGVhZ3VlbGVucy52MS5HZXRBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaKy5sZWFndWVsZW5zLnYxLkdldEFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2USbAoTTGlzdEFzc2lzdGFudE1vZGVscxIpLmxlYWd1ZWxlbnMudjEuTGlzdEFzc2lzdGFudE1vZGVsc1JlcXVlc3QaKi5sZWFndWVsZW5zLnYxLkxpc3RBc3Npc3RhbnRNb2RlbHNSZXNwb25zZRJyChVTYXZlQXNzaXN0YW50U2V0dGluZ3MSKy5sZWFndWVsZW5zLnYxLlNhdmVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaLC5sZWFndWVsZW5zLnYxLlNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEngKF0RlbGV0ZUFzc2lzdGFudFNldHRpbmdzEi0ubGVhZ3VlbGVucy52MS5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaLi5sZWFndWVsZW5zLnYxLkRlbGV0ZUFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2VCUlpQZ2l0aHViLmNvbS9hZGl0eWFjaG91ZGhhcmkyNi9sZWFndWUtbGVucy9pbnRlcm5hbC9nZW4vbGVhZ3VlbGVucy92MTtsZWFndWVsZW5zdjFiBnByb3RvMw");
+  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSJCCgtDaGF0TWVzc2FnZRIlCgRyb2xlGAEgASgOMhcubGVhZ3VlbGVucy52MS5DaGF0Um9sZRIMCgR0ZXh0GAIgASgJImIKC1BhZ2VDb250ZXh0EgwKBHBhdGgYASABKAkSGAoQbGVhZ3VlX3NlYXNvbl9pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEhEKBHdlZWsYBCABKAVIAIgBAUIHCgVfd2VlayJlCgtDaGF0UmVxdWVzdBIsCghtZXNzYWdlcxgBIAMoCzIaLmxlYWd1ZWxlbnMudjEuQ2hhdE1lc3NhZ2USKAoEcGFnZRgCIAEoCzIaLmxlYWd1ZWxlbnMudjEuUGFnZUNvbnRleHQibgoMQ2hhdFJlc3BvbnNlEigKBHRleHQYASABKAsyGC5sZWFndWVsZW5zLnYxLlRleHREZWx0YUgAEisKBHRvb2wYAiABKAsyGy5sZWFndWVsZW5zLnYxLlRvb2xBY3Rpdml0eUgAQgcKBWV2ZW50IhkKCVRleHREZWx0YRIMCgR0ZXh0GAEgASgJIh0KDFRvb2xBY3Rpdml0eRINCgVsYWJlbBgBIAEoCSqDAQoRQXNzaXN0YW50UHJvdmlkZXISIgoeQVNTSVNUQU5UX1BST1ZJREVSX1VOU1BFQ0lGSUVEEAASIAocQVNTSVNUQU5UX1BST1ZJREVSX0FOVEhST1BJQxABEigKJEFTU0lTVEFOVF9QUk9WSURFUl9PUEVOQUlfQ09NUEFUSUJMRRACKlIKCENoYXRSb2xlEhkKFUNIQVRfUk9MRV9VTlNQRUNJRklFRBAAEhIKDkNIQVRfUk9MRV9VU0VSEAESFwoTQ0hBVF9ST0xFX0FTU0lTVEFOVBACMqIEChBBc3Npc3RhbnRTZXJ2aWNlEm8KFEdldEFzc2lzdGFudFNldHRpbmdzEioubGVhZ3VlbGVucy52MS5HZXRBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaKy5sZWFndWVsZW5zLnYxLkdldEFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2USbAoTTGlzdEFzc2lzdGFudE1vZGVscxIpLmxlYWd1ZWxlbnMudjEuTGlzdEFzc2lzdGFudE1vZGVsc1JlcXVlc3QaKi5sZWFndWVsZW5zLnYxLkxpc3RBc3Npc3RhbnRNb2RlbHNSZXNwb25zZRJyChVTYXZlQXNzaXN0YW50U2V0dGluZ3MSKy5sZWFndWVsZW5zLnYxLlNhdmVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaLC5sZWFndWVsZW5zLnYxLlNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEngKF0RlbGV0ZUFzc2lzdGFudFNldHRpbmdzEi0ubGVhZ3VlbGVucy52MS5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaLi5sZWFndWVsZW5zLnYxLkRlbGV0ZUFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2USQQoEQ2hhdBIaLmxlYWd1ZWxlbnMudjEuQ2hhdFJlcXVlc3QaGy5sZWFndWVsZW5zLnYxLkNoYXRSZXNwb25zZTABQlJaUGdpdGh1Yi5jb20vYWRpdHlhY2hvdWRoYXJpMjYvbGVhZ3VlLWxlbnMvaW50ZXJuYWwvZ2VuL2xlYWd1ZWxlbnMvdjE7bGVhZ3VlbGVuc3YxYgZwcm90bzM");
 
 /**
  * @generated from message leaguelens.v1.AssistantSettings
@@ -194,6 +194,145 @@ export const DeleteAssistantSettingsResponseSchema: GenMessage<DeleteAssistantSe
   messageDesc(file_leaguelens_v1_assistant, 8);
 
 /**
+ * @generated from message leaguelens.v1.ChatMessage
+ */
+export type ChatMessage = Message<"leaguelens.v1.ChatMessage"> & {
+  /**
+   * @generated from field: leaguelens.v1.ChatRole role = 1;
+   */
+  role: ChatRole;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.ChatMessage.
+ * Use `create(ChatMessageSchema)` to create a new message.
+ */
+export const ChatMessageSchema: GenMessage<ChatMessage> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 9);
+
+/**
+ * @generated from message leaguelens.v1.PageContext
+ */
+export type PageContext = Message<"leaguelens.v1.PageContext"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: string league_season_id = 2;
+   */
+  leagueSeasonId: string;
+
+  /**
+   * @generated from field: string team_id = 3;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: optional int32 week = 4;
+   */
+  week?: number | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.PageContext.
+ * Use `create(PageContextSchema)` to create a new message.
+ */
+export const PageContextSchema: GenMessage<PageContext> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 10);
+
+/**
+ * @generated from message leaguelens.v1.ChatRequest
+ */
+export type ChatRequest = Message<"leaguelens.v1.ChatRequest"> & {
+  /**
+   * @generated from field: repeated leaguelens.v1.ChatMessage messages = 1;
+   */
+  messages: ChatMessage[];
+
+  /**
+   * @generated from field: leaguelens.v1.PageContext page = 2;
+   */
+  page?: PageContext | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.ChatRequest.
+ * Use `create(ChatRequestSchema)` to create a new message.
+ */
+export const ChatRequestSchema: GenMessage<ChatRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 11);
+
+/**
+ * @generated from message leaguelens.v1.ChatResponse
+ */
+export type ChatResponse = Message<"leaguelens.v1.ChatResponse"> & {
+  /**
+   * @generated from oneof leaguelens.v1.ChatResponse.event
+   */
+  event: {
+    /**
+     * @generated from field: leaguelens.v1.TextDelta text = 1;
+     */
+    value: TextDelta;
+    case: "text";
+  } | {
+    /**
+     * @generated from field: leaguelens.v1.ToolActivity tool = 2;
+     */
+    value: ToolActivity;
+    case: "tool";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message leaguelens.v1.ChatResponse.
+ * Use `create(ChatResponseSchema)` to create a new message.
+ */
+export const ChatResponseSchema: GenMessage<ChatResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 12);
+
+/**
+ * @generated from message leaguelens.v1.TextDelta
+ */
+export type TextDelta = Message<"leaguelens.v1.TextDelta"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.TextDelta.
+ * Use `create(TextDeltaSchema)` to create a new message.
+ */
+export const TextDeltaSchema: GenMessage<TextDelta> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 13);
+
+/**
+ * @generated from message leaguelens.v1.ToolActivity
+ */
+export type ToolActivity = Message<"leaguelens.v1.ToolActivity"> & {
+  /**
+   * @generated from field: string label = 1;
+   */
+  label: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.ToolActivity.
+ * Use `create(ToolActivitySchema)` to create a new message.
+ */
+export const ToolActivitySchema: GenMessage<ToolActivity> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 14);
+
+/**
  * @generated from enum leaguelens.v1.AssistantProvider
  */
 export enum AssistantProvider {
@@ -218,6 +357,32 @@ export enum AssistantProvider {
  */
 export const AssistantProviderSchema: GenEnum<AssistantProvider> = /*@__PURE__*/
   enumDesc(file_leaguelens_v1_assistant, 0);
+
+/**
+ * @generated from enum leaguelens.v1.ChatRole
+ */
+export enum ChatRole {
+  /**
+   * @generated from enum value: CHAT_ROLE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CHAT_ROLE_USER = 1;
+   */
+  USER = 1,
+
+  /**
+   * @generated from enum value: CHAT_ROLE_ASSISTANT = 2;
+   */
+  ASSISTANT = 2,
+}
+
+/**
+ * Describes the enum leaguelens.v1.ChatRole.
+ */
+export const ChatRoleSchema: GenEnum<ChatRole> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_assistant, 1);
 
 /**
  * @generated from service leaguelens.v1.AssistantService
@@ -254,6 +419,14 @@ export const AssistantService: GenService<{
     methodKind: "unary";
     input: typeof DeleteAssistantSettingsRequestSchema;
     output: typeof DeleteAssistantSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc leaguelens.v1.AssistantService.Chat
+   */
+  chat: {
+    methodKind: "server_streaming";
+    input: typeof ChatRequestSchema;
+    output: typeof ChatResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_leaguelens_v1_assistant, 0);

@@ -320,7 +320,7 @@ func mapProviderError(err error) error {
 	if errors.Is(err, llm.ErrUnavailable) {
 		return connect.NewError(connect.CodeUnavailable, "provider is unavailable")
 	}
-	return connect.NewError(connect.CodeUnavailable, "provider model listing failed")
+	return connect.NewError(connect.CodeUnavailable, "provider request failed")
 }
 
 func invalidArgument(message string) error {
