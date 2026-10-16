@@ -120,11 +120,30 @@ inside it, so it must be open whenever you use the app.
 ### 2. Open a terminal
 
 - **macOS:** press ⌘Space, type `Terminal`, and press Return.
+- **Linux:** open the Terminal app from your apps menu.
 - **Windows:** open the Start menu, type `PowerShell`, and press Enter.
 
 Paste each command below into the terminal and press Enter (Return on macOS).
 
-### 3. Download League Lens
+### 3. Install just (Mac and Linux)
+
+- **macOS with Homebrew:** paste `brew install just`.
+- **Linux:** install `just` with your package manager, or use its official
+  installer below.
+- **macOS without Homebrew, or Linux using the official installer:** this
+  installs `just` in `/usr/local/bin`, a standard place for commands:
+
+  ```sh
+  curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin
+  ```
+
+  Your computer may ask for your password to install it. To check that it
+  worked, run `just --version`; it prints a version number.
+
+Windows does not use these `just` commands yet. Continue to
+[Windows, or without just](#windows-or-without-just) below instead.
+
+### 4. Download League Lens
 
 ```sh
 git clone https://github.com/adityachoudhari26/league-lens.git
@@ -133,31 +152,40 @@ cd league-lens
 
 On macOS, if a window asks to install developer tools, click **Install**, wait
 for it to finish, and run the commands again. No Git? Download the ZIP from the
-green **Code** button on GitHub, unzip it, and `cd` into the unzipped folder.
+green **Code** button on GitHub, unzip it, and open a terminal in the unzipped
+folder.
 
-### 4. Start it
+### 5. Install and open League Lens (Mac and Linux)
+
+```sh
+just install
+```
+
+This builds League Lens on your computer. The first run takes a few minutes;
+then it opens the app in your browser. It is safe to run `just install` again.
+The app keeps running in the background after you close the terminal, and starts
+again when Docker is open.
+
+#### Windows, or without just
+
+From the `league-lens` folder, run:
 
 ```sh
 docker compose up -d
 ```
 
-The first run builds the app on your computer and takes a few minutes. When the
-command finishes, League Lens keeps running in the background, even after you
-close the terminal. It starts again on its own whenever Docker is open.
-
-### 5. Open it
-
-Go to **http://league-lens.localhost** in Chrome, Edge, or Firefox. In Safari,
-use **http://localhost**. Then [connect your leagues](#connecting-leagues).
+The first run builds the app and takes a few minutes. When it finishes, open
+**http://league-lens.localhost** in Chrome, Edge, or Firefox. In Safari, use
+**http://localhost**. Then [connect your leagues](#connecting-leagues).
 
 ### If something goes wrong
 
-- **`command not found: docker` or `Cannot connect to the Docker daemon`:**
-  Docker isn't running. Open Docker Desktop (or OrbStack), wait until it says
-  it's running, and run the command again.
-- **`port is already allocated` or `address already in use`:** another app is
-  using port 80. In the `league-lens` folder, create a file named `.env` with
-  this line (on macOS or Linux, run `echo LEAGUE_LENS_PORT=8080 >> .env`):
+- **Docker isn't installed or running:** open Docker Desktop (or OrbStack), wait
+  until it says it's running, and run the command again.
+- **Port 80 is busy:** `just install` automatically tries port 8080 instead.
+  When using the Windows instructions above (or running Docker commands
+  yourself), create a file named `.env` in the `league-lens` folder with this
+  line:
 
   ```sh
   LEAGUE_LENS_PORT=8080
@@ -165,6 +193,44 @@ use **http://localhost**. Then [connect your leagues](#connecting-leagues).
 
   Then run `docker compose up -d` again and open
   `http://league-lens.localhost:8080` (Safari: `http://localhost:8080`).
+
+## Everyday commands
+
+Run these in a terminal from the `league-lens` folder. These `just` commands
+work on macOS and Linux.
+
+| Task | Command | What it does |
+| --- | --- | --- |
+| Install | `just install` | Build, start, and open League Lens. Safe to repeat. |
+| Start | `just start` | Start League Lens. |
+| Stop | `just stop` | Stop it without deleting your leagues or data. |
+| Restart | `just restart` | Restart League Lens. |
+| Open | `just open` | Open League Lens in your browser. |
+| Status | `just status` | See whether it is running and which version is installed. |
+| Logs | `just logs` | Follow recent app activity to help diagnose a problem. |
+| Update | `just update` | Download the latest version and restart if it was running. |
+| Database shell | `just db-shell` | Open the database prompt; add `-c 'select 1'` to run a query. |
+
+### Updating
+
+On macOS or Linux, run:
+
+```sh
+just update
+```
+
+On Windows, or if you are not using `just`, update from the `league-lens`
+folder with:
+
+```sh
+git pull
+docker compose up -d --build
+```
+
+### Removing League Lens
+
+To delete League Lens and **all saved data**, run `docker compose down -v` from
+the `league-lens` folder.
 
 ## Connecting leagues
 
@@ -251,17 +317,6 @@ ESPN:
    ```
 
 The season is required because ESPN reuses league IDs across years.
-
-## Updating, stopping, and removing
-
-Run these in a terminal from the `league-lens` folder.
-
-| Task | Command |
-| --- | --- |
-| Update to the latest version | `git pull && docker compose up -d --build` |
-| Stop the app (keeps data) | `docker compose stop` |
-| Start it again | `docker compose up -d` |
-| Delete the app **and all saved data** | `docker compose down -v` |
 
 ## Configuration
 
