@@ -62,9 +62,26 @@ func assertWashingtonMappedToWAS(t *testing.T, game fantasy.NFLGameContext) {
 	}
 }
 
-func TestParseNFLGameContextRequiresWeekNumber(t *testing.T) {
-	if _, err := parseNFLGameContext([]byte(`{"season":{"year":2026},"week":{},"events":[]}`)); err == nil {
-		t.Fatal("missing week number accepted")
+func TestParseNFLGameContextRequiresSeasonAndWeek(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "missing week",
+			body: `{"season":{"year":2026},"week":{},"events":[]}`,
+		},
+		{
+			name: "missing season year",
+			body: `{"season":{},"week":{"number":6},"events":[]}`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := parseNFLGameContext([]byte(test.body)); err == nil {
+				t.Fatal("missing season or week accepted")
+			}
+		})
 	}
 }
 

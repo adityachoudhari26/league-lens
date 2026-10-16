@@ -67,6 +67,7 @@ func FetchNFLGameContext(ctx context.Context, client *http.Client, week int) (fa
 	return parseNFLGameContext(body)
 }
 
+// nflGameContextURL returns the bare current-week URL for week 0 and seasontype=2&week=N (no dates) for weeks 1–18.
 func nflGameContextURL(week int) (string, error) {
 	if week == 0 {
 		return nflScoreboardURL, nil
@@ -148,12 +149,15 @@ func parseNFLGameWeather(weather *nflGameContextWeather) *fantasy.NFLGameWeather
 	if weather == nil || (weather.DisplayValue == "" && weather.Temperature == nil) {
 		return nil
 	}
-	var temperature *int
-	if weather.Temperature != nil {
-		rounded := int(math.Round(*weather.Temperature))
-		temperature = &rounded
-	}
 	return &fantasy.NFLGameWeather{
-		Condition: weather.DisplayValue, TemperatureF: temperature,
+		Condition: weather.DisplayValue, TemperatureF: roundedTemperatureF(weather.Temperature),
 	}
+}
+
+func roundedTemperatureF(temperature *float64) *int {
+	if temperature == nil {
+		return nil
+	}
+	rounded := int(math.Round(*temperature))
+	return &rounded
 }

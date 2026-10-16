@@ -16,6 +16,11 @@ var (
 	gameContextTeamPattern    = regexp.MustCompile(`^[A-Za-z]{2,3}$`)
 )
 
+const (
+	maxGameContextWeek  = 18
+	maxGameContextTeams = 8
+)
+
 const getGameContextDescription = "Spread, over/under and weather for NFL games in a week. Use it for start/sit calls: " +
 	"a high total or bad weather can tip a close decision. Omit week for the current week; " +
 	"pass teams (NFL abbreviations) to get only their games."
@@ -90,11 +95,7 @@ func runGameContextTool(source GameContextSource) func(context.Context, json.Raw
 		if err != nil {
 			return "", err
 		}
-		result := gameContextResult{
-			Season: gameContext.Season,
-			Week:   int(gameContext.Week),
-			Games:  gameContextGames(gameContext.Games, teams),
-		}
+		result := gameContextResultFrom(gameContext, teams)
 		encoded, err := json.Marshal(result)
 		if err != nil {
 			return "", errGameContextUnavailable
@@ -103,6 +104,18 @@ func runGameContextTool(source GameContextSource) func(context.Context, json.Raw
 	}
 }
 
+func gameContextResultFrom(
+	gameContext fantasy.NFLWeekGameContext,
+	teams map[string]struct{},
+) gameContextResult {
+	return gameContextResult{
+		Season: gameContext.Season,
+		Week:   int(gameContext.Week),
+		Games:  gameContextGames(gameContext.Games, teams),
+	}
+}
+
+// loadGameContext applies a 10-second timeout and maps source errors to errGameContextUnavailable.
 func loadGameContext(
 	ctx context.Context,
 	source GameContextSource,
@@ -119,28 +132,43 @@ func loadGameContext(
 
 // validateGameContextInput treats week 0 as current, nil teams as no filter, and returns teams as an uppercase set.
 func validateGameContextInput(input gameContextInput) (int, map[string]struct{}, error) {
-	week := 0
-	if input.Week != nil {
-		week = *input.Week
-		if week < 1 || week > 18 {
-			return 0, nil, errInvalidToolInput
-		}
+	week, err := validateGameContextWeek(input.Week)
+	if err != nil {
+		return 0, nil, err
 	}
-	if input.Teams == nil {
-		return week, nil, nil
-	}
-	if len(input.Teams) < 1 || len(input.Teams) > 8 {
-		return 0, nil, errInvalidToolInput
-	}
-	teams := make(map[string]struct{}, len(input.Teams))
-	for _, team := range input.Teams {
-		team = strings.TrimSpace(team)
-		if !gameContextTeamPattern.MatchString(team) {
-			return 0, nil, errInvalidToolInput
-		}
-		teams[strings.ToUpper(team)] = struct{}{}
+	teams, err := normalizeGameContextTeams(input.Teams)
+	if err != nil {
+		return 0, nil, err
 	}
 	return week, teams, nil
+}
+
+func validateGameContextWeek(week *int) (int, error) {
+	if week == nil {
+		return 0, nil
+	}
+	if *week < 1 || *week > maxGameContextWeek {
+		return 0, errInvalidToolInput
+	}
+	return *week, nil
+}
+
+func normalizeGameContextTeams(teams []string) (map[string]struct{}, error) {
+	if teams == nil {
+		return nil, nil
+	}
+	if len(teams) < 1 || len(teams) > maxGameContextTeams {
+		return nil, errInvalidToolInput
+	}
+	normalized := make(map[string]struct{}, len(teams))
+	for _, team := range teams {
+		team = strings.TrimSpace(team)
+		if !gameContextTeamPattern.MatchString(team) {
+			return nil, errInvalidToolInput
+		}
+		normalized[strings.ToUpper(team)] = struct{}{}
+	}
+	return normalized, nil
 }
 
 func gameContextGames(games []fantasy.NFLGameContext, teams map[string]struct{}) []gameContextGame {
@@ -187,6 +215,7 @@ func gameContextGameFrom(game fantasy.NFLGameContext) gameContextGame {
 	return result
 }
 
+// gameStatusLabel maps fantasy states to tool strings, including "postponed".
 func gameStatusLabel(state fantasy.NFLGameState) string {
 	switch state {
 	case fantasy.NFLGameScheduled:

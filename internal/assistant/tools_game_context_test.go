@@ -115,10 +115,31 @@ func TestGameContextToolRegistrationAndLabel(t *testing.T) {
 	}
 }
 
+func TestGameStatusLabel(t *testing.T) {
+	tests := []struct {
+		name  string
+		state fantasy.NFLGameState
+		want  string
+	}{
+		{name: "scheduled", state: fantasy.NFLGameScheduled, want: "scheduled"},
+		{name: "live", state: fantasy.NFLGameLive, want: "in_progress"},
+		{name: "final", state: fantasy.NFLGameFinal, want: "final"},
+		{name: "postponed", state: fantasy.NFLGamePostponed, want: "postponed"},
+		{name: "unknown", state: fantasy.NFLGameState("unknown"), want: ""},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := gameStatusLabel(test.state); got != test.want {
+				t.Errorf("gameStatusLabel(%q) = %q, want %q", test.state, got, test.want)
+			}
+		})
+	}
+}
+
 func testGameContextSource() *stubGameContextSource {
-	overUnderA := 42.5
-	overUnderB := 51.5
-	temperature := 58
+	jaxOverUnder := 42.5
+	atlOverUnder := 51.5
+	jaxTemperature := 58
 	return &stubGameContextSource{result: fantasy.NFLWeekGameContext{
 		Season: 2026,
 		Week:   6,
@@ -128,15 +149,15 @@ func testGameContextSource() *stubGameContextSource {
 				KickoffAt: time.Date(2026, time.October, 18, 13, 30, 0, 0, time.UTC),
 				State:     fantasy.NFLGameScheduled,
 				Odds: &fantasy.NFLGameOdds{
-					Line: "JAX -2.5", OverUnder: &overUnderA, Source: "Draft Kings",
+					Line: "JAX -2.5", OverUnder: &jaxOverUnder, Source: "Draft Kings",
 				},
-				Weather: &fantasy.NFLGameWeather{Condition: "Rain", TemperatureF: &temperature},
+				Weather: &fantasy.NFLGameWeather{Condition: "Rain", TemperatureF: &jaxTemperature},
 			},
 			{
 				HomeTeam: "ATL", AwayTeam: "CHI",
 				KickoffAt: time.Date(2026, time.October, 18, 17, 0, 0, 0, time.UTC),
 				State:     fantasy.NFLGameLive,
-				Odds:      &fantasy.NFLGameOdds{Line: "CHI -1.5", OverUnder: &overUnderB, Source: "Draft Kings"},
+				Odds:      &fantasy.NFLGameOdds{Line: "CHI -1.5", OverUnder: &atlOverUnder, Source: "Draft Kings"},
 			},
 			{
 				HomeTeam: "SF", AwayTeam: "WAS",
