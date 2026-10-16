@@ -52,40 +52,10 @@ func (s *Service) chat(
 	if err != nil {
 		return err
 	}
-	requestToComplete := llm.Request{
-		Model: model, System: buildSystemPrompt(time.Now(), request.GetPage(), false),
-		Messages: messages, MaxTokens: chatCompletionMaxTokens,
+	loop := chatLoop{
+		cancel: cancel, provider: provider, model: model, send: send, tools: s.readOnlyTools(),
 	}
-	return streamChatCompletion(chatCtx, cancel, provider, requestToComplete, send)
-}
-
-// streamChatCompletion sends provider deltas and maps completion errors.
-func streamChatCompletion(
-	ctx context.Context,
-	cancel context.CancelFunc,
-	provider llm.Provider,
-	request llm.Request,
-	send chatEventSender,
-) error {
-	var sendErr error
-	_, completionErr := provider.Complete(ctx, request, func(delta string) {
-		if sendErr != nil || delta == "" {
-			return
-		}
-		sendErr = send(&v1.ChatResponse{
-			Event: &v1.ChatResponse_Text{Text: &v1.TextDelta{Text: delta}},
-		})
-		if sendErr != nil {
-			cancel()
-		}
-	})
-	if sendErr != nil {
-		return sendErr
-	}
-	if completionErr != nil {
-		return mapProviderError(completionErr)
-	}
-	return nil
+	return loop.run(chatCtx, request.GetPage(), messages)
 }
 
 func (s *Service) providerForChat(ctx context.Context) (llm.Provider, string, error) {

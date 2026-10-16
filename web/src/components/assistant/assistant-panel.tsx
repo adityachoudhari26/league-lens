@@ -229,9 +229,6 @@ function AssistantSuggestions({
 }
 
 function AssistantMessage({ turn }: { turn: AssistantTurn }) {
-  if (turn.kind === "tool") {
-    return <p className="text-xs text-muted-foreground">{turn.text}</p>
-  }
   if (turn.role === "user") {
     return (
       <div className="flex justify-end">
@@ -242,8 +239,20 @@ function AssistantMessage({ turn }: { turn: AssistantTurn }) {
     )
   }
   return (
-    <p className="max-w-full text-sm leading-6 whitespace-pre-wrap">
-      {turn.text}
-    </p>
+    <div className="flex flex-col gap-2">
+      {turn.toolActivities?.map((activity, index) => (
+        <p
+          key={`${activity}-${index}`}
+          className="text-xs text-muted-foreground"
+        >
+          {activity}
+        </p>
+      ))}
+      {turn.text ? (
+        <p className="max-w-full text-sm leading-6 whitespace-pre-wrap">
+          {turn.text}
+        </p>
+      ) : null}
+    </div>
   )
 }

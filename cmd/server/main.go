@@ -73,12 +73,15 @@ func run() error {
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,
 		Imports: syncRunner,
 	}
-	assistantService := &assistant.Service{DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail}
+	dashboardService := dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now()), syncRunner, leaguesync.ProviderSources{})
+	assistantService := &assistant.Service{
+		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, Dashboard: dashboardService,
+	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
 		Handler: httpserver.RequireLocalHost(httpserver.NewHandler(
 			data.Ping,
-			dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now()), syncRunner, leaguesync.ProviderSources{}),
+			dashboardService,
 			leaguesync.NewHandler(syncRunner),
 			connectionService,
 			assistantService,
