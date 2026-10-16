@@ -48,6 +48,11 @@ const noTone = "text-red-700/80 dark:text-[#f09591]"
 const toneOf = (p: number) => (p >= 50 ? yesTone : noTone)
 // Green when the change helped you: your player gained or theirs dropped.
 const momentTone = (m: Moment) => (m.mine === m.delta >= 0 ? yesTone : noTone)
+// The graph uses softer light-mode colors than the text.
+const yesGraph = "text-[#64a394] dark:text-[#86d9b3]"
+const noGraph = "text-[#cf8e88] dark:text-[#f09591]"
+const momentGraphTone = (m: Moment) =>
+  m.mine === m.delta >= 0 ? yesGraph : noGraph
 const swingTone = (swing: number) =>
   swing > 0 ? yesTone : swing < 0 ? noTone : "text-muted-foreground"
 const signed = (n: number, digits = 0) =>
@@ -281,7 +286,7 @@ function WinChanceChart({
                 x2={edge * 100}
                 y1="0"
                 y2="100"
-                className="stroke-border"
+                className="stroke-border/70 dark:stroke-border"
                 strokeWidth="1"
                 vectorEffect="non-scaling-stroke"
               />
@@ -299,18 +304,18 @@ function WinChanceChart({
             <path
               d={area}
               clipPath={`url(#${id}above)`}
-              className="fill-teal-600/10 dark:fill-[#86d9b3]/10"
+              className="fill-[#64a394]/8 dark:fill-[#86d9b3]/10"
             />
             <path
               d={area}
               clipPath={`url(#${id}below)`}
-              className="fill-red-600/10 dark:fill-[#f09591]/10"
+              className="fill-[#cf8e88]/8 dark:fill-[#f09591]/10"
             />
             <path
               d={path}
               clipPath={`url(#${id}above)`}
               fill="none"
-              className="stroke-teal-700/80 dark:stroke-[#86d9b3]"
+              className="stroke-[#64a394] dark:stroke-[#86d9b3]"
               strokeWidth="2"
               vectorEffect="non-scaling-stroke"
               strokeLinejoin="round"
@@ -319,7 +324,7 @@ function WinChanceChart({
               d={path}
               clipPath={`url(#${id}below)`}
               fill="none"
-              className="stroke-red-700/80 dark:stroke-[#f09591]"
+              className="stroke-[#cf8e88] dark:stroke-[#f09591]"
               strokeWidth="2"
               vectorEffect="non-scaling-stroke"
               strokeLinejoin="round"
@@ -330,7 +335,7 @@ function WinChanceChart({
                 x2={point.x * 100}
                 y1="0"
                 y2="100"
-                className="stroke-foreground/30"
+                className="stroke-foreground/20 dark:stroke-foreground/30"
                 strokeWidth="1"
                 vectorEffect="non-scaling-stroke"
               />
@@ -340,7 +345,7 @@ function WinChanceChart({
             m.kind === "play" && focusedMoment !== m ? null : (
               <span
                 key={i}
-                className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-current ring-current/30 transition-[width,height] ${momentTone(m)} ${focusedMoment === m ? "size-3.5 ring-4" : "size-2.5"}`}
+                className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-current ring-current/25 transition-[width,height] dark:border-[1.5px] dark:border-card ${momentGraphTone(m)} ${focusedMoment === m ? "size-3 ring-[3px]" : "size-2"}`}
                 style={{ left: `${m.x * 100}%`, top: `${100 - m.after}%` }}
               />
             ),
@@ -380,14 +385,14 @@ function WinChanceChart({
 function FloatingMomentCard({ moment: m }: { moment: Moment }) {
   const right = m.x < 0.5
   const left = right
-    ? `clamp(0px, calc(${m.x * 100}% + 1rem), calc(100% - 14rem))`
-    : `clamp(0px, calc(${m.x * 100}% - 15rem), calc(100% - 14rem))`
+    ? `clamp(0px, calc(${m.x * 100}% + 1rem), calc(100% - 13rem))`
+    : `clamp(0px, calc(${m.x * 100}% - 14rem), calc(100% - 13rem))`
   return (
     <div
-      className="pointer-events-none absolute z-10 hidden w-56 animate-in duration-100 fade-in-0 zoom-in-95 @sm:block"
+      className="pointer-events-none absolute z-10 hidden w-52 animate-in duration-100 fade-in-0 zoom-in-95 @sm:block"
       style={{
         left,
-        top: `clamp(-0.5rem, calc(${100 - m.after}% - 3.25rem), calc(100% - 6rem))`,
+        top: `clamp(-0.5rem, calc(${100 - m.after}% - 1.75rem), calc(100% - 3.5rem))`,
       }}
     >
       <MomentCard moment={m} />
@@ -413,31 +418,25 @@ function MomentCard({ moment: m }: { moment: Moment }) {
   return (
     <div
       style={color ? ({ "--team": color } as CSSProperties) : undefined}
-      className="overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 shadow-black/15 ring-foreground/15 [--team-accent:var(--team)] dark:bg-[#30343c] dark:shadow-black/60 dark:ring-white/15"
+      className="overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-xl ring-1 shadow-black/15 ring-foreground/15 [--team-accent:var(--team)] dark:bg-[#30343c] dark:shadow-black/60 dark:ring-white/15"
     >
-      {color && <div className="h-1 bg-(--team-accent)" />}
+      {color && <div className="h-0.5 bg-(--team-accent)" />}
       <div
-        className={`flex items-center gap-3 p-3 ${color ? "bg-linear-to-br from-(--team-accent)/22 via-(--team-accent)/8 to-transparent dark:from-(--team-accent)/16 dark:via-(--team-accent)/11 dark:to-(--team-accent)/6" : ""}`}
+        className={`flex items-center gap-2.5 px-2.5 py-2 ${color ? "bg-linear-to-br from-(--team-accent)/22 via-(--team-accent)/8 to-transparent dark:from-(--team-accent)/16 dark:via-(--team-accent)/11 dark:to-(--team-accent)/6" : ""}`}
       >
         <Avatar name={m.player} url={card.data?.headshotUrl} tinted={!!color} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{m.player}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {m.mine ? "Yours" : "Opponent"} · {m.time}
+        <div className="min-w-0 flex-1 text-[11px] text-muted-foreground tabular-nums">
+          <p className="flex items-center text-sm font-semibold text-popover-foreground">
+            <span className="truncate">{m.player}</span>
+            <KindBadge kind={m.kind} />
+          </p>
+          <p className="truncate">
+            {signed(m.delta, 1)} pts ·{" "}
+            <span className={swingTone(swing)}>
+              {m.before}→{m.after}% ({signed(swing)})
+            </span>
           </p>
         </div>
-      </div>
-      <div className="flex items-baseline justify-between gap-2 border-t px-3 py-2 tabular-nums">
-        <span
-          className={`text-sm font-semibold whitespace-nowrap ${momentTone(m)}`}
-        >
-          {signed(m.delta, 1)} pts
-          <KindBadge kind={m.kind} />
-        </span>
-        <span className="text-xs whitespace-nowrap text-muted-foreground">
-          {m.before}% → {m.after}%{" "}
-          <span className={swingTone(swing)}>({signed(swing)})</span>
-        </span>
       </div>
     </div>
   )
@@ -459,7 +458,7 @@ function Avatar({
   if (!url || failed)
     return (
       <div
-        className={`flex size-10 shrink-0 items-center justify-center rounded-full bg-background text-xs font-semibold text-muted-foreground ${ring}`}
+        className={`flex size-8 shrink-0 items-center justify-center rounded-full bg-background text-xs font-semibold text-muted-foreground ${ring}`}
       >
         {initials(name)}
       </div>
@@ -469,7 +468,7 @@ function Avatar({
       src={url}
       alt=""
       onError={() => setFailed(true)}
-      className={`size-10 shrink-0 rounded-full bg-background object-cover object-top ${ring}`}
+      className={`size-8 shrink-0 rounded-full bg-background object-cover object-top ${ring}`}
     />
   )
 }
