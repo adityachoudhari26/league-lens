@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"strings"
 
@@ -33,6 +34,13 @@ type evaluateTradeInput struct {
 	LeagueSeasonID string   `json:"league_season_id"`
 	GivePlayerIDs  []string `json:"give_player_ids"`
 	GetPlayerIDs   []string `json:"get_player_ids"`
+}
+
+type tradeIDs struct {
+	league pgtype.UUID
+	give   []pgtype.UUID
+	get    []pgtype.UUID
+	all    []pgtype.UUID
 }
 
 type tradeToolResult struct {
@@ -97,22 +105,9 @@ func tradeTools(service *Service) []assistantTool {
 
 // evaluateTrade validates a proposed exchange against the owner's latest roster snapshots.
 func (s *Service) evaluateTrade(ctx context.Context, input evaluateTradeInput) (tradeToolResult, error) {
-	leagueID, err := parseTradeUUID(input.LeagueSeasonID)
-	if err != nil || len(input.GivePlayerIDs) < 1 || len(input.GivePlayerIDs) > 4 ||
-		len(input.GetPlayerIDs) < 1 || len(input.GetPlayerIDs) > 4 {
-		return tradeToolResult{}, errInvalidToolInput
-	}
-	giveIDs, err := parseTradePlayerIDs(input.GivePlayerIDs)
+	ids, err := parseTradeInput(input)
 	if err != nil {
 		return tradeToolResult{}, err
-	}
-	getIDs, err := parseTradePlayerIDs(input.GetPlayerIDs)
-	if err != nil {
-		return tradeToolResult{}, err
-	}
-	allIDs := append(append([]pgtype.UUID{}, giveIDs...), getIDs...)
-	if duplicateUUID(allIDs) {
-		return tradeToolResult{}, errInvalidToolInput
 	}
 
 	var result tradeToolResult
@@ -122,7 +117,7 @@ func (s *Service) evaluateTrade(ctx context.Context, input evaluateTradeInput) (
 			return err
 		}
 		team, err := q.AssistantTradeOwnerTeam(ctx, store.AssistantTradeOwnerTeamParams{
-			UserID: owner.ID, LeagueSeasonID: leagueID,
+			UserID: owner.ID, LeagueSeasonID: ids.league,
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
 			return connect.NewError(connect.CodeNotFound, "league not found")
@@ -130,144 +125,210 @@ func (s *Service) evaluateTrade(ctx context.Context, input evaluateTradeInput) (
 		if err != nil {
 			return err
 		}
-		result, err = loadTradeResult(ctx, q, leagueID, team.TeamID, giveIDs, getIDs, allIDs)
+		result, err = loadTradeResult(ctx, q, ids, team.TeamID)
 		return err
 	})
 	if err != nil {
-		if asTradeValidationError(err) {
-			return tradeToolResult{}, err
-		}
-		if connect.CodeOf(err) != connect.CodeNotFound {
-			return tradeToolResult{}, internalError("trade data could not be loaded")
-		}
-		return tradeToolResult{}, err
+		return tradeToolResult{}, tradeLoadError(err)
 	}
 	return result, nil
+}
+
+func parseTradeInput(input evaluateTradeInput) (tradeIDs, error) {
+	leagueID, err := parseTradeUUID(input.LeagueSeasonID)
+	if err != nil || len(input.GivePlayerIDs) < 1 || len(input.GivePlayerIDs) > 4 ||
+		len(input.GetPlayerIDs) < 1 || len(input.GetPlayerIDs) > 4 {
+		return tradeIDs{}, errInvalidToolInput
+	}
+	giveIDs, err := parseTradePlayerIDs(input.GivePlayerIDs)
+	if err != nil {
+		return tradeIDs{}, err
+	}
+	getIDs, err := parseTradePlayerIDs(input.GetPlayerIDs)
+	if err != nil {
+		return tradeIDs{}, err
+	}
+	allIDs := append(append([]pgtype.UUID{}, giveIDs...), getIDs...)
+	if duplicateUUID(allIDs) {
+		return tradeIDs{}, errInvalidToolInput
+	}
+	return tradeIDs{league: leagueID, give: giveIDs, get: getIDs, all: allIDs}, nil
+}
+
+func tradeLoadError(err error) error {
+	if asTradeValidationError(err) || connect.CodeOf(err) == connect.CodeNotFound {
+		return err
+	}
+	return internalError("trade data could not be loaded")
 }
 
 func loadTradeResult(
 	ctx context.Context,
 	q *store.Queries,
-	leagueID, ownerTeamID pgtype.UUID,
-	giveIDs, getIDs, allIDs []pgtype.UUID,
+	ids tradeIDs,
+	ownerTeamID pgtype.UUID,
 ) (tradeToolResult, error) {
 	rows, err := q.AssistantTradeCurrentPlayers(ctx, store.AssistantTradeCurrentPlayersParams{
-		LeagueSeasonID: leagueID, PlayerIds: allIDs,
+		LeagueSeasonID: ids.league, PlayerIds: ids.all,
 	})
 	if err != nil {
 		return tradeToolResult{}, err
 	}
-	players := make(map[string]tradePlayer, len(rows))
-	for _, row := range rows {
-		player := tradePlayer{
-			PlayerID: row.PlayerID, Name: row.PlayerName, TeamName: row.TeamName,
-			NFLTeam: row.ProTeam, InjuryStatus: row.InjuryStatus,
-		}
-		if row.TeamID.Valid {
-			player.teamID = row.TeamID.String()
-		}
-		var positions []string
-		if err := json.Unmarshal(row.EligiblePositionsJson, &positions); err != nil {
-			return tradeToolResult{}, err
-		}
-		player.EligiblePositions = positions
-		player.primaryPosition = "UNKNOWN"
-		if len(positions) > 0 && strings.TrimSpace(positions[0]) != "" {
-			player.primaryPosition = strings.ToUpper(positions[0])
-		}
-		if row.ByeWeek > 0 {
-			player.ByeWeek = &row.ByeWeek
-		}
-		player.ProjectedPoints = numericFloat(row.ProjectedPoints)
-		players[player.PlayerID] = player
-	}
-	givePlayers, err := findTradePlayers(giveIDs, players, ownerTeamID, true)
+	players, err := tradePlayersByID(rows)
 	if err != nil {
 		return tradeToolResult{}, err
 	}
-	getPlayers, err := findTradePlayers(getIDs, players, ownerTeamID, false)
+	if err := addTradeRecentPoints(ctx, q, ids, players); err != nil {
+		return tradeToolResult{}, err
+	}
+
+	givePlayers, err := findTradePlayers(ids.give, players, ownerTeamID, true)
 	if err != nil {
 		return tradeToolResult{}, err
 	}
-	opponentTeamID := getPlayers[0].teamID
-	for _, player := range getPlayers[1:] {
-		if player.teamID != opponentTeamID {
-			return tradeToolResult{}, tradeValidationError{message: "get players must all come from the same other team"}
-		}
+	getPlayers, err := findTradePlayers(ids.get, players, ownerTeamID, false)
+	if err != nil {
+		return tradeToolResult{}, err
 	}
-	opponentID, err := parseTradeUUID(opponentTeamID)
+	opponentID, err := tradeOpponent(getPlayers)
 	if err != nil {
 		return tradeToolResult{}, err
 	}
 
-	points, err := q.AssistantTradeRecentPoints(ctx, store.AssistantTradeRecentPointsParams{
-		LeagueSeasonID: leagueID, PlayerIds: allIDs,
+	counts, err := ownerRosterCounts(ctx, q, ids.league, ownerTeamID, givePlayers, getPlayers)
+	if err != nil {
+		return tradeToolResult{}, err
+	}
+	coverage, err := q.AssistantTradeLineupCoverage(ctx, store.AssistantTradeLineupCoverageParams{
+		LeagueSeasonID: ids.league, TeamIds: []pgtype.UUID{ownerTeamID, opponentID},
 	})
 	if err != nil {
 		return tradeToolResult{}, err
 	}
-	pointsByPlayer := make(map[string][]tradePoints, len(allIDs))
-	for _, row := range points {
+	return tradeToolResult{
+		Players:           tradeResultPlayers(givePlayers, getPlayers),
+		OwnerRosterCounts: counts,
+		Basis:             tradePointsBasis,
+		Limitation:        tradeLimitation(coverage),
+	}, nil
+}
+
+func tradePlayersByID(rows []store.AssistantTradeCurrentPlayersRow) (map[string]tradePlayer, error) {
+	players := make(map[string]tradePlayer, len(rows))
+	for _, row := range rows {
+		player, err := tradePlayerFromRow(row)
+		if err != nil {
+			return nil, err
+		}
+		players[player.PlayerID] = player
+	}
+	return players, nil
+}
+
+func tradePlayerFromRow(row store.AssistantTradeCurrentPlayersRow) (tradePlayer, error) {
+	player := tradePlayer{
+		PlayerID: row.PlayerID, Name: row.PlayerName, TeamName: row.TeamName,
+		NFLTeam: row.ProTeam, InjuryStatus: row.InjuryStatus,
+	}
+	if row.TeamID.Valid {
+		player.teamID = row.TeamID.String()
+	}
+	if err := json.Unmarshal(row.EligiblePositionsJson, &player.EligiblePositions); err != nil {
+		return tradePlayer{}, err
+	}
+	player.primaryPosition = "UNKNOWN"
+	if len(player.EligiblePositions) > 0 && strings.TrimSpace(player.EligiblePositions[0]) != "" {
+		player.primaryPosition = strings.ToUpper(player.EligiblePositions[0])
+	}
+	if row.ByeWeek > 0 {
+		player.ByeWeek = &row.ByeWeek
+	}
+	player.ProjectedPoints = numericFloat(row.ProjectedPoints)
+	return player, nil
+}
+
+func addTradeRecentPoints(
+	ctx context.Context,
+	q *store.Queries,
+	ids tradeIDs,
+	players map[string]tradePlayer,
+) error {
+	rows, err := q.AssistantTradeRecentPoints(ctx, store.AssistantTradeRecentPointsParams{
+		LeagueSeasonID: ids.league, PlayerIds: ids.all,
+	})
+	if err != nil {
+		return err
+	}
+	pointsByPlayer := make(map[string][]tradePoints, len(ids.all))
+	for _, row := range rows {
 		pointsByPlayer[row.PlayerID] = append(pointsByPlayer[row.PlayerID], tradePoints{
 			Week: row.Period, Points: numericFloat(row.Points),
 		})
 	}
-	for id, player := range players {
-		player.RecentPoints = pointsByPlayer[id]
+	for playerID, player := range players {
+		player.RecentPoints = pointsByPlayer[playerID]
 		player.AveragePoints = averageTradePoints(player.RecentPoints)
-		players[id] = player
+		players[playerID] = player
 	}
-	for i := range givePlayers {
-		givePlayers[i] = players[givePlayers[i].PlayerID]
-	}
-	for i := range getPlayers {
-		getPlayers[i] = players[getPlayers[i].PlayerID]
-	}
+	return nil
+}
 
-	countRows, err := q.AssistantTradeOwnerRosterCounts(ctx, store.AssistantTradeOwnerRosterCountsParams{
-		LeagueSeasonID: leagueID, TeamID: ownerTeamID,
-	})
-	if err != nil {
-		return tradeToolResult{}, err
-	}
-	before := make(map[string]int, len(countRows))
-	for _, row := range countRows {
-		before[row.PrimaryPosition] = int(row.PlayerCount)
-	}
-	after := copyRosterCounts(before)
-	for _, player := range givePlayers {
-		after[player.primaryPosition]--
-	}
-	for _, player := range getPlayers {
-		after[player.primaryPosition]++
-	}
-
-	coverage, err := q.AssistantTradeLineupCoverage(ctx, store.AssistantTradeLineupCoverageParams{
-		LeagueSeasonID: leagueID, TeamIds: []pgtype.UUID{ownerTeamID, opponentID},
-	})
-	if err != nil {
-		return tradeToolResult{}, err
-	}
-	result := tradeToolResult{
-		Players:           make([]tradePlayer, 0, len(givePlayers)+len(getPlayers)),
-		OwnerRosterCounts: rosterCounts{Before: before, After: after},
-		Basis:             tradePointsBasis,
-	}
-	for _, player := range givePlayers {
-		player.Side = "give"
-		result.Players = append(result.Players, player)
-	}
-	for _, player := range getPlayers {
-		player.Side = "get"
-		result.Players = append(result.Players, player)
-	}
-	for _, row := range coverage {
-		if !row.HasLineup {
-			result.Limitation = tradeLineupLimitation
-			break
+func tradeOpponent(getPlayers []tradePlayer) (pgtype.UUID, error) {
+	teamID := getPlayers[0].teamID
+	for _, player := range getPlayers[1:] {
+		if player.teamID != teamID {
+			return pgtype.UUID{}, tradeValidationError{message: "get players must all come from the same other team"}
 		}
 	}
-	return result, nil
+	return parseTradeUUID(teamID)
+}
+
+func ownerRosterCounts(
+	ctx context.Context,
+	q *store.Queries,
+	league, ownerTeam pgtype.UUID,
+	give, get []tradePlayer,
+) (rosterCounts, error) {
+	rows, err := q.AssistantTradeOwnerRosterCounts(ctx, store.AssistantTradeOwnerRosterCountsParams{
+		LeagueSeasonID: league, TeamID: ownerTeam,
+	})
+	if err != nil {
+		return rosterCounts{}, err
+	}
+	before := make(map[string]int, len(rows))
+	for _, row := range rows {
+		before[row.PrimaryPosition] = int(row.PlayerCount)
+	}
+	after := maps.Clone(before)
+	for _, player := range give {
+		after[player.primaryPosition]--
+	}
+	for _, player := range get {
+		after[player.primaryPosition]++
+	}
+	return rosterCounts{Before: before, After: after}, nil
+}
+
+func tradeLimitation(coverage []store.AssistantTradeLineupCoverageRow) string {
+	for _, row := range coverage {
+		if !row.HasLineup {
+			return tradeLineupLimitation
+		}
+	}
+	return ""
+}
+
+func tradeResultPlayers(give, get []tradePlayer) []tradePlayer {
+	players := make([]tradePlayer, 0, len(give)+len(get))
+	for _, player := range give {
+		player.Side = "give"
+		players = append(players, player)
+	}
+	for _, player := range get {
+		player.Side = "get"
+		players = append(players, player)
+	}
+	return players
 }
 
 func findTradePlayers(ids []pgtype.UUID, players map[string]tradePlayer, ownerTeamID pgtype.UUID, giving bool) ([]tradePlayer, error) {
@@ -296,9 +357,6 @@ func parseTradePlayerIDs(values []string) ([]pgtype.UUID, error) {
 			return nil, errInvalidToolInput
 		}
 		ids = append(ids, id)
-	}
-	if duplicateUUID(ids) {
-		return nil, errInvalidToolInput
 	}
 	return ids, nil
 }
@@ -346,14 +404,6 @@ func averageTradePoints(points []tradePoints) *float64 {
 	}
 	average := math.Round(total/float64(count)*100) / 100
 	return &average
-}
-
-func copyRosterCounts(counts map[string]int) map[string]int {
-	copied := make(map[string]int, len(counts))
-	for position, count := range counts {
-		copied[position] = count
-	}
-	return copied
 }
 
 func asTradeValidationError(err error) bool {
