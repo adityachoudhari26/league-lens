@@ -53,7 +53,7 @@ func (s *Service) chat(
 		return err
 	}
 	loop := chatLoop{
-		cancel: cancel, provider: provider, model: model, send: send, tools: buildAssistantTools(s.Dashboard),
+		cancel: cancel, provider: provider, model: model, send: send, tools: buildAssistantTools(s.Dashboard, s),
 	}
 	return loop.run(chatCtx, request.GetPage(), messages)
 }
