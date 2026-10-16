@@ -53,12 +53,17 @@ func buildReadOnlyTools(reader assistantDashboard) []assistantTool {
 	return tools
 }
 
-func buildAssistantTools(reader assistantDashboard, service ...*Service) []assistantTool {
+func buildAssistantTools(reader assistantDashboard) []assistantTool {
 	tools := buildReadOnlyTools(reader)
-	if len(service) > 0 && service[0] != nil && service[0].ProviderSources != nil {
-		tools = append(tools, freeAgentTools(reader, service[0])...)
-	}
 	return append(tools, buildActionTools(reader)...)
+}
+
+func (s *Service) chatTools() []assistantTool {
+	tools := buildReadOnlyTools(s.Dashboard)
+	if s.ProviderSources != nil {
+		tools = append(tools, freeAgentTools(s.Dashboard, s)...)
+	}
+	return append(tools, buildActionTools(s.Dashboard)...)
 }
 
 func toolDefinitions(tools []assistantTool) []llm.Tool {

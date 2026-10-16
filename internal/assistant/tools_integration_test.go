@@ -105,10 +105,10 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 	leagueID := findJSONField(t, listed.Content, "id")
 	freeAgentSource := &assistantFreeAgentSource{assistantLeagueSource: assistantLeagueSource{data: data}}
 	freeAgentService := &Service{
-		DB: db, OwnerEmail: "tools@example.test",
+		DB: db, OwnerEmail: "tools@example.test", Dashboard: dashboardService,
 		ProviderSources: assistantFreeAgentSourceFactory{source: freeAgentSource},
 	}
-	freeAgents := runAssistantTool(ctx, buildAssistantTools(dashboardService, freeAgentService), llm.ToolCall{
+	freeAgents := runAssistantTool(ctx, freeAgentService.chatTools(), llm.ToolCall{
 		ID: "agents", Name: "get_free_agents",
 		Input: json.RawMessage(`{"league_season_id":"` + leagueID + `","position":"RB","limit":4}`),
 	})
