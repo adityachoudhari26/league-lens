@@ -319,7 +319,7 @@ func mapTransactionItems(
 	return items
 }
 
-// mapTransactionItem assigns team and player actions using provider-neutral moves.
+// mapTransactionItem resolves players and delegates team assignment.
 func mapTransactionItem(
 	provider fantasy.ProviderID,
 	transaction fantasy.Transaction,
@@ -332,7 +332,6 @@ func mapTransactionItem(
 		Players: make([]transactionToolPlayer, 0, len(transaction.Moves)),
 		FAABBid: transaction.FAABBid,
 	}
-	seenTeams := make(map[string]bool)
 	for _, move := range transaction.Moves {
 		player, found := mapTransactionPlayer(
 			provider, transaction.Type, move, references.playerNames, references.teamNames, catalog,
@@ -340,20 +339,34 @@ func mapTransactionItem(
 		if found {
 			item.Players = append(item.Players, player)
 		}
-		if transaction.Type == fantasy.TransactionTrade {
-			item.Teams = appendTransactionTeam(item.Teams, seenTeams, references.teamNames, move.FromTeamID)
-			item.Teams = appendTransactionTeam(item.Teams, seenTeams, references.teamNames, move.ToTeamID)
-		} else {
-			teamID := move.ToTeamID
-			if teamID == "" {
-				teamID = move.FromTeamID
-			}
-			if item.Team == "" {
-				item.Team = references.teamNames[teamID]
-			}
-		}
 	}
+	assignTransactionTeams(&item, transaction, references.teamNames)
 	return item
+}
+
+// assignTransactionTeams maps transaction moves to their owning team labels.
+func assignTransactionTeams(
+	item *transactionToolItem,
+	transaction fantasy.Transaction,
+	teamNames map[string]string,
+) {
+	if transaction.Type != fantasy.TransactionTrade {
+		if len(transaction.Moves) == 0 {
+			return
+		}
+		move := transaction.Moves[0]
+		teamID := move.ToTeamID
+		if teamID == "" {
+			teamID = move.FromTeamID
+		}
+		item.Team = teamNames[teamID]
+		return
+	}
+	seenTeams := make(map[string]bool)
+	for _, move := range transaction.Moves {
+		item.Teams = appendTransactionTeam(item.Teams, seenTeams, teamNames, move.FromTeamID)
+		item.Teams = appendTransactionTeam(item.Teams, seenTeams, teamNames, move.ToTeamID)
+	}
 }
 
 // mapTransactionPlayer resolves saved, catalog, then defense-fallback names.
