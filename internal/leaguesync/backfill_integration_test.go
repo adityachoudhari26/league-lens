@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/store"
@@ -20,6 +22,7 @@ type backfillSources struct {
 	plays      []fantasy.NFLPlay
 	scoreCalls int
 	playCalls  int
+	playIDs    []string
 }
 
 func (s *backfillSources) NFLWeekScoreboard(context.Context, int, int) (fantasy.NFLScoreboard, error) {
@@ -27,8 +30,9 @@ func (s *backfillSources) NFLWeekScoreboard(context.Context, int, int) (fantasy.
 	return s.board, nil
 }
 
-func (s *backfillSources) NFLGamePlays(context.Context, string) ([]fantasy.NFLPlay, error) {
+func (s *backfillSources) NFLGamePlays(_ context.Context, gameID string) ([]fantasy.NFLPlay, error) {
 	s.playCalls++
+	s.playIDs = append(s.playIDs, gameID)
 	return s.plays, nil
 }
 
@@ -297,5 +301,271 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 	}
 	if runner.RequestWinChanceBackfill(ineligibleMatchupID) {
 		t.Fatal("second ineligible backfill request should be throttled")
+	}
+}
+
+func newInProgressBackfillFixture(
+	t *testing.T,
+) (*database.DB, *pgxpool.Pool, *backfillSources, *fakeSource, pgtype.UUID, time.Time) {
+	t.Helper()
+	db, pool := openDatabaseWithTestPool(t, true)
+	now := time.Now().UTC().Truncate(time.Minute)
+	data := fantasy.LeagueData{
+		League: fantasy.League{
+			Ref:  fantasy.LeagueRef{Provider: fantasy.ProviderESPN, ExternalID: "in-progress-backfill", Season: 2026},
+			Name: "In-progress backfill fixture", TeamCount: 2,
+			Settings: fantasy.LeagueSettings{ScoringRules: []fantasy.ScoringRule{
+				{Stat: fantasy.StatRushingYards, Points: 1, PerUnits: 10},
+				{Stat: fantasy.StatRushingTouchdowns, Points: 6, PerUnits: 1},
+			}},
+		},
+		FetchedAt: now,
+		Teams:     []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}},
+		Players: []fantasy.Player{
+			{ExternalID: "101", Name: "Finished Game Starter", Kind: fantasy.PlayerPerson},
+			{ExternalID: "202", Name: "Scheduled Game Starter", Kind: fantasy.PlayerPerson},
+		},
+		Rosters: []fantasy.RosterSnapshot{
+			{TeamID: "1", ScoringPeriod: 6, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now,
+				Entries: []fantasy.RosterEntry{{PlayerID: "101", Slot: fantasy.SlotRB, ProTeam: "KC"}}},
+			{TeamID: "2", ScoringPeriod: 6, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now,
+				Entries: []fantasy.RosterEntry{{PlayerID: "202", Slot: fantasy.SlotWR, ProTeam: "BUF"}}},
+		},
+		Matchups: []fantasy.Matchup{{
+			ExternalID: "week-6", Period: 6, ScoringPeriods: []fantasy.ScoringPeriod{6},
+			Status: fantasy.MatchupInProgress,
+			TeamA:  fantasy.MatchupSide{TeamID: "1", Score: floatPtr(7)},
+			TeamB:  &fantasy.MatchupSide{TeamID: "2", Score: floatPtr(0)},
+		}},
+		CompleteMatchupPeriods: []fantasy.MatchupPeriod{6},
+		Lineups: []fantasy.MatchupLineup{
+			{Period: 6, MatchupID: "week-6", TeamID: "1", Entries: []fantasy.LineupEntry{
+				{PlayerID: "101", Slot: fantasy.SlotRB, Starter: true, Points: floatPtr(7)},
+			}},
+			{Period: 6, MatchupID: "week-6", TeamID: "2", Entries: []fantasy.LineupEntry{
+				{PlayerID: "202", Slot: fantasy.SlotWR, Starter: true, Points: floatPtr(0), ProjectedPoints: floatPtr(14)},
+			}},
+		},
+	}
+	provider := &fakeSource{data: data}
+	if _, err := (&importer.Service{DB: db, Source: provider}).Import(context.Background(), importer.Request{
+		OwnerEmail: owner, ExternalAccountID: "account",
+		Selection: fantasy.ConnectionSelection{League: data.League.Ref, SelectedTeamIDs: []string{"1"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	sources := &backfillSources{
+		fakeSources: fakeSources{fantasy.ProviderESPN: provider},
+		board: fantasy.NFLScoreboard{
+			Season: 2026, SeasonType: 2, Week: 6,
+			Games: []fantasy.NFLGameStatus{
+				{ID: "finished", HomeTeam: "KC", AwayTeam: "CIN", State: fantasy.NFLGameFinal},
+				{ID: "scheduled", HomeTeam: "BUF", AwayTeam: "MIA", State: fantasy.NFLGameScheduled},
+			},
+		},
+		plays: []fantasy.NFLPlay{
+			{At: now.Add(12 * time.Minute), Period: 1, Kind: fantasy.NFLPlayRushingTouchdown, Yards: 10,
+				Participants: []fantasy.NFLPlayParticipant{{AthleteID: "101", Role: "rusher"}, {AthleteID: "101", Role: "scorer"}}},
+			{At: now.Add(time.Hour), Period: 4, Kind: fantasy.NFLPlayEndOfGame},
+		},
+	}
+	var matchupID pgtype.UUID
+	if err := pool.QueryRow(context.Background(), `
+		SELECT m.id FROM matchups m
+		JOIN league_seasons l ON l.id=m.league_season_id
+		WHERE l.external_league_id='in-progress-backfill' AND m.external_matchup_id='week-6'
+	`).Scan(&matchupID); err != nil {
+		t.Fatal(err)
+	}
+	return db, pool, sources, provider, matchupID, now
+}
+
+func TestInProgressWinChanceBackfillUsesFinishedAndScheduledGames(t *testing.T) {
+	db, pool, sources, _, matchupID, now := newInProgressBackfillFixture(t)
+	runner := New(db, owner, sources, "")
+	runner.now = func() time.Time { return now.Add(2 * time.Hour) }
+	defer runner.Close()
+
+	samples, changes, err := runner.backfillMatchup(context.Background(), matchupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if samples < 2 || changes != 1 {
+		t.Fatalf("in-progress backfill wrote %d samples and %d changes, want at least 2 and one", samples, changes)
+	}
+	if sources.playCalls != 1 || len(sources.playIDs) != 1 || sources.playIDs[0] != "finished" {
+		t.Fatalf("fetched game plays %v, want only finished game", sources.playIDs)
+	}
+	var savedSamples int
+	var firstScoreA, firstScoreB string
+	var lastScoreA, lastScoreB, lastProjectedB string
+	var lastWinChance float64
+	if err := pool.QueryRow(context.Background(), `
+		SELECT count(*),
+			(SELECT score_a::text FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at LIMIT 1),
+			(SELECT score_b::text FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at LIMIT 1),
+			(SELECT score_a::text FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1),
+			(SELECT score_b::text FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1),
+			(SELECT projected_b::text FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1),
+			(SELECT team_a_win_chance FROM win_chance_samples WHERE matchup_id=$1 ORDER BY observed_at DESC LIMIT 1)
+		FROM win_chance_samples WHERE matchup_id=$1
+	`, matchupID).Scan(&savedSamples, &firstScoreA, &firstScoreB, &lastScoreA, &lastScoreB, &lastProjectedB, &lastWinChance); err != nil {
+		t.Fatal(err)
+	}
+	if savedSamples != samples || firstScoreA != "0.0000" || firstScoreB != "0.0000" {
+		t.Fatalf("saved %d samples; first scores %s-%s, want pregame 0-0", savedSamples, firstScoreA, firstScoreB)
+	}
+	if lastScoreA != "7.0000" || lastScoreB != "0.0000" ||
+		lastProjectedB <= lastScoreB || lastWinChance <= 0 || lastWinChance >= 1 {
+		t.Fatalf("last sample = %s-%s, projected B %s, win chance %.4f; want 7-0, remaining B projection, and undecided chance",
+			lastScoreA, lastScoreB, lastProjectedB, lastWinChance)
+	}
+	var pointChanges int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT count(*) FROM lineup_point_changes c
+		JOIN player_external_ids x ON x.player_id=c.player_id AND x.provider='espn'
+		WHERE c.matchup_id=$1 AND x.external_id='101'
+	`, matchupID).Scan(&pointChanges); err != nil {
+		t.Fatal(err)
+	}
+	if pointChanges != 1 {
+		t.Fatalf("finished starter point-change rows = %d, want 1", pointChanges)
+	}
+}
+
+func TestInProgressWinChanceBackfillSkipsAllScheduledGames(t *testing.T) {
+	db, _, sources, _, matchupID, _ := newInProgressBackfillFixture(t)
+	sources.board.Games = []fantasy.NFLGameStatus{
+		{ID: "scheduled-1", HomeTeam: "KC", AwayTeam: "CIN", State: fantasy.NFLGameScheduled},
+		{ID: "scheduled-2", HomeTeam: "BUF", AwayTeam: "MIA", State: fantasy.NFLGameScheduled},
+	}
+	runner := New(db, owner, sources, "")
+	defer runner.Close()
+
+	samples, changes, err := runner.backfillMatchup(context.Background(), matchupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if samples != 0 || changes != 0 || sources.scoreCalls != 1 || sources.playCalls != 0 {
+		t.Fatalf("all-scheduled backfill = %d samples/%d changes, %d scoreboard/%d play calls; want 0/0, 1/0",
+			samples, changes, sources.scoreCalls, sources.playCalls)
+	}
+}
+
+func TestInProgressWinChanceBackfillSkipsExistingHistory(t *testing.T) {
+	db, _, sources, _, matchupID, now := newInProgressBackfillFixture(t)
+	half, err := fourDecimalNumeric(0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zero, err := fourDecimalNumeric(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Queries().InsertWinChanceSample(context.Background(), store.InsertWinChanceSampleParams{
+		MatchupID: matchupID, ObservedAt: pgtype.Timestamptz{Time: now, Valid: true},
+		TeamAWinChance: half, ScoreA: zero, ScoreB: zero, ProjectedA: zero, ProjectedB: zero,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	runner := New(db, owner, sources, "")
+	defer runner.Close()
+
+	samples, changes, err := runner.backfillMatchup(context.Background(), matchupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if samples != 0 || changes != 0 || sources.scoreCalls != 0 || sources.playCalls != 0 {
+		t.Fatalf("existing-history backfill = %d/%d with %d scoreboard/%d play calls; want untouched",
+			samples, changes, sources.scoreCalls, sources.playCalls)
+	}
+}
+
+type inProgressLiveBackfillSources struct {
+	*backfillSources
+	liveBoard fantasy.NFLScoreboard
+}
+
+func (s *inProgressLiveBackfillSources) NFLScoreboard(context.Context) (fantasy.NFLScoreboard, error) {
+	return s.liveBoard, nil
+}
+
+func TestInProgressBackfillThenLiveTickDoesNotDuplicatePointChange(t *testing.T) {
+	db, pool, backfill, provider, matchupID, now := newInProgressBackfillFixture(t)
+	liveProvider := &fakeLiveProvider{fakeSource: provider}
+	backfill.fakeSources[fantasy.ProviderESPN] = liveProvider
+	liveSources := &inProgressLiveBackfillSources{
+		backfillSources: backfill,
+		liveBoard: fantasy.NFLScoreboard{
+			Season: 2026, SeasonType: 2, Week: 6,
+			Games: []fantasy.NFLGameStatus{{
+				ID: "finished", HomeTeam: "KC", AwayTeam: "CIN",
+				State: fantasy.NFLGameLive, Period: 4, Clock: time.Minute,
+			}},
+		},
+	}
+	liveProvider.live = fantasy.LiveMatchup{
+		Matchup: fantasy.Matchup{
+			ExternalID: "week-6", Period: 6,
+			TeamA: fantasy.MatchupSide{TeamID: "1", Score: floatPtr(7)},
+			TeamB: &fantasy.MatchupSide{TeamID: "2", Score: floatPtr(0)},
+		},
+		Lineups: []fantasy.MatchupLineup{
+			{TeamID: "1", Entries: []fantasy.LineupEntry{{PlayerID: "101", Starter: true, Points: floatPtr(7)}}},
+			{TeamID: "2", Entries: []fantasy.LineupEntry{{PlayerID: "202", Starter: true, Points: floatPtr(0)}}},
+		},
+	}
+	runner := New(db, owner, liveSources, "")
+	runner.now = func() time.Time { return now.Add(2 * time.Hour) }
+	defer runner.Close()
+
+	backfilled, _, err := runner.backfillMatchup(context.Background(), matchupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var changesBefore, samplesBefore int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT (SELECT count(*) FROM lineup_point_changes WHERE matchup_id=$1),
+			(SELECT count(*) FROM win_chance_samples WHERE matchup_id=$1)
+	`, matchupID).Scan(&changesBefore, &samplesBefore); err != nil {
+		t.Fatal(err)
+	}
+	if changesBefore != 1 || samplesBefore != backfilled {
+		t.Fatalf("backfill saved %d changes/%d samples, want one change and %d samples",
+			changesBefore, samplesBefore, backfilled)
+	}
+
+	runner.runLiveScoreTick(context.Background(), map[string]time.Time{})
+	var changesAfter, samplesAfter int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT (SELECT count(*) FROM lineup_point_changes WHERE matchup_id=$1),
+			(SELECT count(*) FROM win_chance_samples WHERE matchup_id=$1)
+	`, matchupID).Scan(&changesAfter, &samplesAfter); err != nil {
+		t.Fatal(err)
+	}
+	if changesAfter != changesBefore {
+		var rows []string
+		result, err := pool.Query(context.Background(), `
+			SELECT x.external_id || ':' || points_before::text || '→' || points_after::text
+			FROM lineup_point_changes c
+			JOIN player_external_ids x ON x.player_id=c.player_id AND x.provider='espn'
+			WHERE c.matchup_id=$1 ORDER BY c.observed_at
+		`, matchupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for result.Next() {
+			var row string
+			if err := result.Scan(&row); err != nil {
+				result.Close()
+				t.Fatal(err)
+			}
+			rows = append(rows, row)
+		}
+		result.Close()
+		t.Fatalf("live tick created duplicate point-change rows: %v", rows)
+	}
+	if samplesAfter <= samplesBefore {
+		t.Fatalf("live tick added no win-chance sample: before=%d after=%d", samplesBefore, samplesAfter)
 	}
 }

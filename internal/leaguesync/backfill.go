@@ -18,7 +18,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
-// RequestWinChanceBackfill starts a finished matchup replay unless one is running or recently failed.
+// RequestWinChanceBackfill starts a matchup replay unless one is running or recently failed.
 func (r *Runner) RequestWinChanceBackfill(matchupID pgtype.UUID) bool {
 	if !matchupID.Valid || r.ctx == nil {
 		return false
@@ -85,15 +85,16 @@ func (r *Runner) runWinChanceBackfill(matchupID pgtype.UUID, key string) {
 		"matchup_id", key, "samples", samples, "changes", changes)
 }
 
-// backfillMatchup fetches and persists one eligible final matchup's reconstructed history.
+// backfillMatchup fetches and persists reconstructed history for an eligible matchup.
 func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (int, int, error) {
 	matchup, err := r.db.Queries().BackfillMatchup(ctx, matchupID)
 	if err != nil {
 		return 0, 0, err
 	}
-	if matchup.Status != string(fantasy.MatchupFinal) || matchup.IsBye {
+	if matchup.IsBye {
 		return 0, 0, nil
 	}
+	isFinal := matchup.Status == string(fantasy.MatchupFinal)
 
 	week, ok, err := backfillWeek(matchup.ScoringPeriodsJson)
 	if err != nil {
@@ -110,6 +111,9 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	hasHistory, err := r.db.Queries().MatchupHasWinChanceHistory(ctx, matchupID)
 	if err != nil {
 		return 0, 0, err
+	}
+	if !isFinal && hasHistory.Valid && hasHistory.Bool {
+		return 0, 0, nil
 	}
 	tailReplay := hasHistory.Valid && hasHistory.Bool
 	var from time.Time
@@ -163,7 +167,10 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	if err != nil {
 		return 0, 0, err
 	}
-	games, err := r.fetchBackfillGames(ctx, scoreboard.Games)
+	if !isFinal && !hasStartedBackfillGame(scoreboard.Games) {
+		return 0, 0, nil
+	}
+	games, err := r.fetchBackfillGames(ctx, scoreboard.Games, !isFinal)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -174,6 +181,8 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 			to = from.Add(time.Minute)
 		}
 		input.From, input.To = from, to
+	} else if !isFinal {
+		input.To = r.now()
 	}
 	timeline := replay.Build(input)
 	if len(timeline.Samples) == 0 && len(timeline.Changes) == 0 {
@@ -325,9 +334,14 @@ func backfillStarterKey(teamID, playerID pgtype.UUID) string {
 func (r *Runner) fetchBackfillGames(
 	ctx context.Context,
 	scoreboardGames []fantasy.NFLGameStatus,
+	skipScheduled bool,
 ) ([]replay.Game, error) {
 	games := make([]replay.Game, 0)
 	for _, game := range scoreboardGames {
+		if skipScheduled && game.State == fantasy.NFLGameScheduled {
+			games = append(games, replay.Game{HomeTeam: game.HomeTeam, AwayTeam: game.AwayTeam})
+			continue
+		}
 		plays, err := r.sources.NFLGamePlays(ctx, game.ID)
 		if err != nil {
 			return nil, err
@@ -337,6 +351,15 @@ func (r *Runner) fetchBackfillGames(
 		})
 	}
 	return games, nil
+}
+
+func hasStartedBackfillGame(games []fantasy.NFLGameStatus) bool {
+	for _, game := range games {
+		if game.State != fantasy.NFLGameScheduled {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Runner) saveBackfillTimeline(
