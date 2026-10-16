@@ -61,6 +61,7 @@ type statResponse struct {
 	SourceID        int                `json:"statSourceId"`
 	SplitTypeID     int                `json:"statSplitTypeId"`
 	ScoringPeriodID int                `json:"scoringPeriodId"`
+	SeasonID        int                `json:"seasonId"`
 	AppliedTotal    *float64           `json:"appliedTotal"` // League-scored total for this stat line.
 	Stats           map[string]float64 `json:"stats"`
 }

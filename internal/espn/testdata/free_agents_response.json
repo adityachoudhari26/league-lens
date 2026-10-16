@@ -1,0 +1,38 @@
+{
+  "players": [
+    {
+      "id": 4035538,
+      "status": "WAIVERS",
+      "onTeamId": 0,
+      "player": {
+        "id": 4035538,
+        "fullName": "David Montgomery",
+        "defaultPositionId": 2,
+        "proTeamId": 34,
+        "injuryStatus": "OUT",
+        "ownership": {"percentOwned": 85.07},
+        "stats": [
+          {"statSourceId": 0, "statSplitTypeId": 0, "scoringPeriodId": 0, "seasonId": 2026, "appliedTotal": 45.5},
+          {"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 6, "seasonId": 2026, "appliedTotal": 0.0}
+        ]
+      }
+    },
+    {
+      "id": 4683062,
+      "status": "FREEAGENT",
+      "onTeamId": 0,
+      "player": {
+        "id": 4683062,
+        "fullName": "Xavier Worthy",
+        "defaultPositionId": 3,
+        "proTeamId": 12,
+        "injuryStatus": "ACTIVE",
+        "ownership": {"percentOwned": 70.83},
+        "stats": [
+          {"statSourceId": 0, "statSplitTypeId": 0, "scoringPeriodId": 0, "seasonId": 2026, "appliedTotal": 33.3},
+          {"statSourceId": 1, "statSplitTypeId": 1, "scoringPeriodId": 6, "seasonId": 2026, "appliedTotal": 11.04450452}
+        ]
+      }
+    }
+  ]
+}

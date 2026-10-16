@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/playerids"
 )
 
 type User struct {
@@ -58,6 +59,15 @@ type Matchup struct {
 type Projection struct {
 	PlayerID string             `json:"player_id"`
 	Stats    map[string]float64 `json:"stats"`
+	Player   *projectionPlayer  `json:"player"`
+}
+type projectionPlayer struct {
+	Name         string `json:"full_name"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	Position     string `json:"position"`
+	Team         string `json:"team"`
+	InjuryStatus string `json:"injury_status"`
 }
 type State struct {
 	Season     string `json:"season"`
@@ -90,6 +100,8 @@ type Client struct {
 	// AvailabilityTeamIDs lists roster IDs whose observed players get injury
 	// status and NFL team through per-player lookups. Empty disables lookups.
 	AvailabilityTeamIDs []string
+	PlayerCatalog       playerids.Catalog
+	CatalogPath         string
 }
 
 func NewClient(h *http.Client) *Client {
