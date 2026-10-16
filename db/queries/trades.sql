@@ -7,6 +7,11 @@ JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
 JOIN league_seasons ls ON ls.id=ut.league_season_id
 WHERE ut.user_id = @user_id AND ut.league_season_id = @league_season_id;
 
+-- name: AssistantTradePlayerExternalIDs :many
+SELECT player_id::text AS player_id, external_id
+FROM player_external_ids
+WHERE provider = @provider AND player_id = ANY(@player_ids::uuid[]);
+
 -- name: AssistantTradeCurrentPlayers :many
 WITH current_roster AS (
  SELECT DISTINCT ON (e.player_id)

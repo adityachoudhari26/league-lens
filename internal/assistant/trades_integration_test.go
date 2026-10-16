@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -18,6 +19,24 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
+
+type tradeROSProjectionSource struct {
+	assistantLeagueSource
+	query       fantasy.RestOfSeasonQuery
+	league      fantasy.League
+	projections map[string]fantasy.RestOfSeasonProjection
+	err         error
+}
+
+func (s *tradeROSProjectionSource) ProjectRestOfSeason(
+	_ context.Context,
+	league fantasy.League,
+	query fantasy.RestOfSeasonQuery,
+) (map[string]fantasy.RestOfSeasonProjection, error) {
+	s.league = league
+	s.query = query
+	return s.projections, s.err
+}
 
 func TestEvaluateTradeUsesOwnerScopedRosterAndSyncedMatchups(t *testing.T) {
 	ctx := context.Background()
@@ -58,7 +77,16 @@ func TestEvaluateTradeUsesOwnerScopedRosterAndSyncedMatchups(t *testing.T) {
 			otherTeamID = team.GetId()
 		}
 	}
-	tradeService := &Service{DB: db, OwnerEmail: "trade@example.test", Dashboard: reader}
+	restOfSeasonSource := &tradeROSProjectionSource{
+		assistantLeagueSource: assistantLeagueSource{data: data},
+		projections: map[string]fantasy.RestOfSeasonProjection{
+			"give-qb": {Points: 88.8, Weeks: 8},
+		},
+	}
+	tradeService := &Service{
+		DB: db, OwnerEmail: "trade@example.test", Dashboard: reader,
+		ProviderSources: assistantFreeAgentSourceFactory{source: restOfSeasonSource},
+	}
 	tools := tradeService.chatTools()
 	ownRoster := runAssistantTool(ctx, tools, llm.ToolCall{
 		ID: "own-roster", Name: "get_team_roster",
@@ -87,13 +115,23 @@ func TestEvaluateTradeUsesOwnerScopedRosterAndSyncedMatchups(t *testing.T) {
 	if err := json.Unmarshal([]byte(evaluated.Content), &result); err != nil {
 		t.Fatal(err)
 	}
+	receivedExternalIDs := append([]string(nil), restOfSeasonSource.query.ExternalPlayerIDs...)
+	slices.Sort(receivedExternalIDs)
+	if restOfSeasonSource.query.Week != 5 || restOfSeasonSource.league.Ref != ref ||
+		!slices.Equal(receivedExternalIDs, []string{"give-qb", "target-wr"}) {
+		t.Fatalf("REST projection query = %+v league=%+v", restOfSeasonSource.query, restOfSeasonSource.league)
+	}
 	if result.Basis != tradePointsBasis || result.Limitation != tradeLineupLimitation {
 		t.Fatalf("trade basis or coverage limitation: %+v", result)
 	}
 	if len(result.Players) != 2 || result.Players[0].Name != "Give QB" ||
-		result.Players[1].Name != "Target WR" {
+		result.Players[1].Name != "Target WR" ||
+		result.Players[0].RestOfSeasonPoints == nil || *result.Players[0].RestOfSeasonPoints != 88.8 ||
+		result.Players[0].RestOfSeasonWeeks == nil || *result.Players[0].RestOfSeasonWeeks != 8 ||
+		result.Players[1].RestOfSeasonPoints != nil || result.Players[1].RestOfSeasonWeeks != nil {
 		t.Fatalf("players: %+v", result.Players)
 	}
+	assertTradeROSOutputFields(t, evaluated.Content, true)
 	if result.Players[0].AveragePoints == nil || *result.Players[0].AveragePoints < 26.66 ||
 		*result.Players[0].AveragePoints > 26.68 || len(result.Players[0].RecentPoints) != 4 ||
 		result.Players[0].RecentPoints[2].Points != nil {
@@ -120,6 +158,39 @@ func TestEvaluateTradeUsesOwnerScopedRosterAndSyncedMatchups(t *testing.T) {
 	})
 	if !rejected.IsError || rejected.Content != "Target WR is not on your team to give" {
 		t.Fatalf("invalid owner player result: %+v", rejected)
+	}
+	restOfSeasonSource.err = fmt.Errorf("projection service unavailable")
+	projectionFailure := runAssistantTool(ctx, tools, llm.ToolCall{
+		ID: "trade-projection-failure", Name: "evaluate_trade",
+		Input: json.RawMessage(fmt.Sprintf(
+			`{"league_season_id":%q,"give_player_ids":[%q],"get_player_ids":[%q]}`,
+			leagueID, giveID, getID,
+		)),
+	})
+	if projectionFailure.IsError {
+		t.Fatalf("projection error changed trade result: %s", projectionFailure.Content)
+	}
+	assertTradeROSOutputFields(t, projectionFailure.Content, false)
+}
+
+func assertTradeROSOutputFields(t *testing.T, content string, hasProjection bool) {
+	t.Helper()
+	var output struct {
+		Players []map[string]json.RawMessage `json:"players"`
+	}
+	if err := json.Unmarshal([]byte(content), &output); err != nil {
+		t.Fatal(err)
+	}
+	if len(output.Players) != 2 {
+		t.Fatalf("trade player output = %+v", output.Players)
+	}
+	_, pointsPresent := output.Players[0]["rest_of_season_points"]
+	_, weeksPresent := output.Players[0]["rest_of_season_weeks"]
+	_, unknownPointsPresent := output.Players[1]["rest_of_season_points"]
+	_, unknownWeeksPresent := output.Players[1]["rest_of_season_weeks"]
+	if pointsPresent != hasProjection || weeksPresent != hasProjection ||
+		unknownPointsPresent || unknownWeeksPresent {
+		t.Fatalf("trade REST output fields = %+v", output.Players)
 	}
 }
 

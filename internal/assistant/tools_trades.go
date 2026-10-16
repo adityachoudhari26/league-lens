@@ -51,19 +51,21 @@ type tradeToolResult struct {
 }
 
 type tradePlayer struct {
-	PlayerID          string        `json:"player_id"`
-	Side              string        `json:"side"`
-	Name              string        `json:"name"`
-	TeamName          string        `json:"team_name"`
-	EligiblePositions []string      `json:"eligible_positions"`
-	NFLTeam           string        `json:"nfl_team,omitempty"`
-	InjuryStatus      string        `json:"injury_status,omitempty"`
-	ByeWeek           *int32        `json:"bye_week,omitempty"`
-	RecentPoints      []tradePoints `json:"recent_points"`
-	AveragePoints     *float64      `json:"average_recent_points,omitempty"`
-	ProjectedPoints   *float64      `json:"projected_points,omitempty"`
-	primaryPosition   string
-	teamID            string
+	PlayerID           string        `json:"player_id"`
+	Side               string        `json:"side"`
+	Name               string        `json:"name"`
+	TeamName           string        `json:"team_name"`
+	EligiblePositions  []string      `json:"eligible_positions"`
+	NFLTeam            string        `json:"nfl_team,omitempty"`
+	InjuryStatus       string        `json:"injury_status,omitempty"`
+	ByeWeek            *int32        `json:"bye_week,omitempty"`
+	RecentPoints       []tradePoints `json:"recent_points"`
+	AveragePoints      *float64      `json:"average_recent_points,omitempty"`
+	ProjectedPoints    *float64      `json:"projected_points,omitempty"`
+	RestOfSeasonPoints *float64      `json:"rest_of_season_points,omitempty"`
+	RestOfSeasonWeeks  *int          `json:"rest_of_season_weeks,omitempty"`
+	primaryPosition    string
+	teamID             string
 }
 
 type tradePoints struct {
@@ -85,7 +87,9 @@ func (e tradeValidationError) Error() string { return e.message }
 func tradeTools(service *Service) []assistantTool {
 	return []assistantTool{newAssistantTool(
 		"evaluate_trade",
-		"Returns current roster context, recent league-scored points, projections, and owner position counts for a proposed trade. It does not judge the trade.",
+		"Returns current roster context, recent league-scored points, projections, and owner position counts for a proposed trade. It does not judge the trade. "+
+			"Each player may include rest_of_season_points, league-scored projected points "+
+			"from the next unplayed week through week 17, and rest_of_season_weeks, the number of projected games it covers.",
 		evaluateTradeSchema,
 		fixedToolLabel("Evaluating trade"),
 		func(ctx context.Context, raw json.RawMessage) (string, error) {
@@ -131,6 +135,7 @@ func (s *Service) evaluateTrade(ctx context.Context, input evaluateTradeInput) (
 	if err != nil {
 		return tradeToolResult{}, tradeLoadError(err)
 	}
+	s.addTradeRestOfSeason(ctx, input.LeagueSeasonID, &result)
 	return result, nil
 }
 

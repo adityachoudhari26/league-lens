@@ -42,23 +42,14 @@ type freeAgentPlayer struct {
 
 // ListFreeAgents reads the league's ESPN player pool and current-week scoring.
 func (c *Client) ListFreeAgents(ctx context.Context, league fantasy.League, query fantasy.FreeAgentQuery) ([]fantasy.FreeAgent, error) {
-	leagueID, parseErr := strconv.ParseUint(league.Ref.ExternalID, 10, 64)
-	if league.Ref.Provider != fantasy.ProviderESPN || parseErr != nil || leagueID == 0 ||
-		league.Ref.Season < 1900 || league.Ref.Season > 2200 ||
-		query.Week < 1 || query.Week > 18 {
-		return nil, fmt.Errorf("valid ESPN league and week required")
-	}
-	if c.credentials.S2 == "" || c.credentials.SWID == "" {
-		return nil, fmt.Errorf("ESPN credentials required")
-	}
-	if league.Ref.Season != c.season {
-		return nil, fmt.Errorf("ESPN season mismatch")
+	if err := c.validatePlayerPoolQuery(league, query.Week); err != nil {
+		return nil, err
 	}
 	filter, err := freeAgentFilterForQuery(query)
 	if err != nil {
 		return nil, err
 	}
-	players, err := c.readFreeAgentPool(ctx, league.Ref.ExternalID, filter)
+	players, err := c.readPlayerPool(ctx, league.Ref.ExternalID, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +63,22 @@ func (c *Client) ListFreeAgents(ctx context.Context, league fantasy.League, quer
 	return fantasy.SortFreeAgents(agents, query.Limit), nil
 }
 
+func (c *Client) validatePlayerPoolQuery(league fantasy.League, week int) error {
+	leagueID, parseErr := strconv.ParseUint(league.Ref.ExternalID, 10, 64)
+	if league.Ref.Provider != fantasy.ProviderESPN || parseErr != nil || leagueID == 0 ||
+		league.Ref.Season < 1900 || league.Ref.Season > 2200 ||
+		week < 1 || week > 18 {
+		return fmt.Errorf("valid ESPN league and week required")
+	}
+	if c.credentials.S2 == "" || c.credentials.SWID == "" {
+		return fmt.Errorf("ESPN credentials required")
+	}
+	if league.Ref.Season != c.season {
+		return fmt.Errorf("ESPN season mismatch")
+	}
+	return nil
+}
+
 func freeAgentFilterForQuery(query fantasy.FreeAgentQuery) (freeAgentFilter, error) {
 	filter := freeAgentFilter{Players: map[string]any{
 		"filterStatus": map[string]any{"value": []string{"FREEAGENT", "WAIVERS"}},
@@ -82,6 +89,9 @@ func freeAgentFilterForQuery(query fantasy.FreeAgentQuery) (freeAgentFilter, err
 		},
 		// Live-probed: this returns weekly projections; map by the requested scoring period below.
 		"filterStatsForSplitTypeIds": map[string]any{"value": []int{0, 1}},
+		"filterStatsForCurrentSeasonScoringPeriodId": map[string]any{
+			"value": freeAgentScoringPeriods(query.Week),
+		},
 	}}
 	if query.Position != "" {
 		slot, ok := espnFreeAgentSlot(query.Position)
@@ -91,6 +101,14 @@ func freeAgentFilterForQuery(query fantasy.FreeAgentQuery) (freeAgentFilter, err
 		filter.Players["filterSlotIds"] = map[string]any{"value": []int{slot}}
 	}
 	return filter, nil
+}
+
+func freeAgentScoringPeriods(week int) []int {
+	periods := []int{0, week}
+	for period := week + 1; period <= fantasy.RestOfSeasonFinalWeek; period++ {
+		periods = append(periods, period)
+	}
+	return periods
 }
 
 func freeAgentFromEntry(entry freeAgentEntry, season, week int) (fantasy.FreeAgent, bool) {
@@ -107,6 +125,7 @@ func freeAgentFromEntry(entry freeAgentEntry, season, week int) (fantasy.FreeAge
 		Status:           strings.ToLower(status),
 		PercentRostered:  player.Ownership.PercentOwned,
 	}
+	agent.RestOfSeasonPoints, agent.RestOfSeasonWeeks = restOfSeasonFromStats(player.Stats, season, week)
 	for _, stat := range player.Stats {
 		if stat.SourceID == 0 && stat.SplitTypeID == 0 &&
 			stat.SeasonID == season && stat.AppliedTotal != nil {
@@ -120,7 +139,7 @@ func freeAgentFromEntry(entry freeAgentEntry, season, week int) (fantasy.FreeAge
 	return agent, true
 }
 
-func (c *Client) readFreeAgentPool(ctx context.Context, leagueID string, filter freeAgentFilter) ([]freeAgentEntry, error) {
+func (c *Client) readPlayerPool(ctx context.Context, leagueID string, filter freeAgentFilter) ([]freeAgentEntry, error) {
 	encodedFilter, err := json.Marshal(filter)
 	if err != nil {
 		return nil, fmt.Errorf("cannot encode ESPN player filter")
