@@ -13,6 +13,7 @@ import (
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/llm"
+	"github.com/adityachoudhari26/league-lens/internal/playerids"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
@@ -53,6 +54,10 @@ type Service struct {
 	NewProvider     NewProvider
 	Dashboard       assistantDashboard
 	Sync            assistantSync
+	Trending        TrendingSource
+	PlayerCatalog   playerids.Catalog
+	CatalogPath     string
+	trending        trendingCache
 	ProviderSources interface {
 		SourceFor(leaguesync.Target) (fantasy.Provider, error)
 	}
