@@ -49,6 +49,7 @@ type Service struct {
 	Box         *secrets.Box
 	OwnerEmail  string
 	NewProvider NewProvider
+	Dashboard   assistantDashboard
 }
 
 // GetAssistantSettings returns the owner's safe-to-display settings, never the key.
