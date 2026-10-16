@@ -315,7 +315,7 @@ update_app() {
   fi
 
   old_revision=$(git rev-parse HEAD)
-  if ! git pull --ff-only; then
+  if ! git pull --ff-only >/dev/null 2>&1; then
     printf '%s\n' "League Lens couldn't update cleanly. Check your connection and try again." >&2
     return 1
   fi
