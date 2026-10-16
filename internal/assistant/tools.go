@@ -64,6 +64,9 @@ func (s *Service) chatTools() []assistantTool {
 		tools = append(tools, freeAgentTools(s.Dashboard, s)...)
 	}
 	tools = append(tools, tradeTools(s)...)
+	if s.GameContext != nil {
+		tools = append(tools, gameContextTools(s.GameContext)...)
+	}
 	return append(tools, buildActionTools(s.Dashboard)...)
 }
 
