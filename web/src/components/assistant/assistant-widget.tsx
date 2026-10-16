@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { RugbyBall } from "lucide-react"
 import { useAssistantSettings } from "@/lib/api/assistant"
@@ -14,12 +14,28 @@ export function AssistantWidget() {
   const settings = useAssistantSettings()
   const chat = useAssistantChat(page)
   const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    function handlePointerDown(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("pointerdown", handlePointerDown)
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [open])
   if (pathname === "/connect") return null
 
   const notSetUp =
     chat.requiresSetup || (settings.isSuccess && !settings.data?.settings)
   return (
-    <>
+    <div ref={rootRef}>
       <button
         type="button"
         aria-label="Open Playbook"
@@ -48,6 +64,6 @@ export function AssistantWidget() {
           onClose={() => setOpen(false)}
         />
       ) : null}
-    </>
+    </div>
   )
 }
