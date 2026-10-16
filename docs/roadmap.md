@@ -70,7 +70,7 @@ remain stable even though the API and frontend work happened before owner setup.
 
 - [ ] **11. Add the AI assistant.**
   - [x] PR1 — BYOK key settings and the provider seam for Anthropic and OpenAI-compatible APIs.
-  - [ ] PR2 — Chat bubble and streaming chat.
+  - [x] PR2 — Chat bubble and streaming chat.
   - [ ] PR3 — Read-only tools and tool loop.
   - [ ] PR4 — In-chat action confirmation and execution.
   - [ ] PR5 — Free-agent advice.

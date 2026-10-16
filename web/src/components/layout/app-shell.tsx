@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react"
 import { Outlet, useRouterState } from "@tanstack/react-router"
+import { AssistantWidget } from "@/components/assistant/assistant-widget"
 import {
   SidebarInset,
   SidebarProvider,
@@ -56,6 +57,7 @@ export function AppShell() {
           </div>
         </main>
       </SidebarInset>
+      <AssistantWidget />
     </SidebarProvider>
   )
 }
