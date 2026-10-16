@@ -231,7 +231,13 @@ func (c *Client) fetchProjections(ctx context.Context, season string, period int
 
 // fetchMatchupWeeks reads each week once, sequentially, except weeks the
 // request settles: at most 18 small requests per import.
-func (c *Client) fetchMatchupWeeks(ctx context.Context, base string, period int, rosterIDs map[int]bool, request fantasy.FetchRequest) (map[int][]Matchup, error) {
+func (c *Client) fetchMatchupWeeks(
+	ctx context.Context,
+	base string,
+	period int,
+	rosterIDs map[int]bool,
+	request fantasy.FetchRequest,
+) (map[int][]Matchup, error) {
 	weeks := map[int][]Matchup{}
 	for week := 1; week <= period; week++ {
 		if request.SkipsWeek(fantasy.ScoringPeriod(week), fantasy.ScoringPeriod(period)) {
