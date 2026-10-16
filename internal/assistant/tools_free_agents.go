@@ -43,6 +43,7 @@ type freeAgentToolResult struct {
 	Source     string              `json:"source"`
 	Week       int                 `json:"week"`
 	FreeAgents []fantasy.FreeAgent `json:"free_agents"`
+	provider   fantasy.ProviderID
 }
 
 func freeAgentTools(reader assistantDashboard, service *Service) []assistantTool {
@@ -53,34 +54,45 @@ func freeAgentTools(reader assistantDashboard, service *Service) []assistantTool
 		fixedToolLabel("Checking free agents"),
 		func(ctx context.Context, raw json.RawMessage) (string, error) {
 			input, err := decodeToolInput[freeAgentToolInput](raw)
-			if err != nil || input.LeagueSeasonID == "" {
+			if err != nil {
 				return "", errInvalidToolInput
 			}
-			limit := 15
-			if input.Limit != nil {
-				limit = *input.Limit
-			}
-			if limit < 1 || limit > 25 {
-				return "", errInvalidToolInput
-			}
-			switch input.Position {
-			case "", "QB", "RB", "WR", "TE", "K", "DST":
-			default:
-				return "", errInvalidToolInput
+			input, limit, err := validateFreeAgentInput(input)
+			if err != nil {
+				return "", err
 			}
 			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 			defer cancel()
-			result, provider, err := service.listFreeAgents(ctx, reader, input.LeagueSeasonID, input.Position, limit)
+			result, err := service.listFreeAgents(ctx, reader, input.LeagueSeasonID, input.Position, limit)
 			if err != nil {
-				return "", providerFreeAgentError(provider, err)
+				return "", err
 			}
 			encoded, err := json.Marshal(result)
 			if err != nil {
-				return "", errFreeAgentError(provider)
+				return "", errFreeAgentError(result.provider)
 			}
 			return string(encoded), nil
 		},
 	)}
+}
+
+func validateFreeAgentInput(input freeAgentToolInput) (freeAgentToolInput, int, error) {
+	if input.LeagueSeasonID == "" {
+		return input, 0, errInvalidToolInput
+	}
+	limit := 15
+	if input.Limit != nil {
+		limit = *input.Limit
+	}
+	if limit < 1 || limit > 25 {
+		return input, 0, errInvalidToolInput
+	}
+	switch input.Position {
+	case "", "QB", "RB", "WR", "TE", "K", "DST":
+	default:
+		return input, 0, errInvalidToolInput
+	}
+	return input, limit, nil
 }
 
 func (s *Service) listFreeAgents(
@@ -88,43 +100,59 @@ func (s *Service) listFreeAgents(
 	reader assistantDashboard,
 	leagueSeasonID, position string,
 	limit int,
-) (freeAgentToolResult, fantasy.ProviderID, error) {
+) (freeAgentToolResult, error) {
 	target, err := s.freeAgentTarget(ctx, leagueSeasonID)
 	if err != nil {
-		return freeAgentToolResult{}, "", err
+		return freeAgentToolResult{}, err
 	}
 	providerID := target.Selection.League.Provider
 	leaguePage, err := reader.GetLeague(ctx, &v1.GetLeagueRequest{LeagueSeasonId: leagueSeasonID})
 	if err != nil {
-		return freeAgentToolResult{}, providerID, errFreeAgentError(providerID)
+		return freeAgentToolResult{}, errFreeAgentError(providerID)
 	}
 	week, err := latestSelectedScoringWeek(ctx, reader, leaguePage)
 	if err != nil {
-		return freeAgentToolResult{}, providerID, errFreeAgentError(providerID)
+		return freeAgentToolResult{}, errFreeAgentError(providerID)
 	}
-	source, err := s.ProviderSources.SourceFor(target)
+	lister, league, err := s.freeAgentSource(ctx, target)
 	if err != nil {
-		return freeAgentToolResult{}, providerID, errFreeAgentError(providerID)
-	}
-	lister, ok := source.(fantasy.FreeAgentLister)
-	if !ok {
-		return freeAgentToolResult{}, providerID, errFreeAgentError(providerID)
-	}
-	league, err := source.DescribeLeague(ctx, target.Selection.League.ExternalID)
-	if err != nil {
-		return freeAgentToolResult{}, providerID, errFreeAgentError(providerID)
+		return freeAgentToolResult{}, errFreeAgentError(providerID)
 	}
 	agents, err := lister.ListFreeAgents(ctx, league, fantasy.FreeAgentQuery{
 		Week: week, Position: position, Limit: limit,
 	})
 	if err != nil {
-		return freeAgentToolResult{}, providerID, errFreeAgentError(providerID)
+		return freeAgentToolResult{}, errFreeAgentError(providerID)
 	}
-	sourceName := "ESPN player pool"
-	if providerID == fantasy.ProviderSleeper {
-		sourceName = "Sleeper projections minus rostered players"
+	return freeAgentToolResult{
+		Source: freeAgentSourceName(providerID), Week: week, FreeAgents: agents, provider: providerID,
+	}, nil
+}
+
+func (s *Service) freeAgentSource(
+	ctx context.Context,
+	target leaguesync.Target,
+) (fantasy.FreeAgentLister, fantasy.League, error) {
+	source, err := s.ProviderSources.SourceFor(target)
+	if err != nil {
+		return nil, fantasy.League{}, err
 	}
-	return freeAgentToolResult{Source: sourceName, Week: week, FreeAgents: agents}, providerID, nil
+	lister, ok := source.(fantasy.FreeAgentLister)
+	if !ok {
+		return nil, fantasy.League{}, errors.New("provider does not list free agents")
+	}
+	league, err := source.DescribeLeague(ctx, target.Selection.League.ExternalID)
+	if err != nil {
+		return nil, fantasy.League{}, err
+	}
+	return lister, league, nil
+}
+
+func freeAgentSourceName(provider fantasy.ProviderID) string {
+	if provider == fantasy.ProviderSleeper {
+		return "Sleeper projections minus rostered players"
+	}
+	return "ESPN player pool"
 }
 
 func (s *Service) freeAgentTarget(ctx context.Context, leagueSeasonID string) (leaguesync.Target, error) {
@@ -176,13 +204,6 @@ func latestSelectedScoringWeek(ctx context.Context, reader assistantDashboard, l
 		}
 	}
 	return 0, fmt.Errorf("selected team has no observed scoring week")
-}
-
-func providerFreeAgentError(provider fantasy.ProviderID, err error) error {
-	if err != nil && (connect.CodeOf(err) == connect.CodeInvalidArgument || connect.CodeOf(err) == connect.CodeNotFound) {
-		return err
-	}
-	return errFreeAgentError(provider)
 }
 
 func errFreeAgentError(provider fantasy.ProviderID) error {
