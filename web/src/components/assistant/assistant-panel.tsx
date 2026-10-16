@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { MessageCirclePlus, X } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import type { AssistantTurn } from "./assistant-chat"
+import type { AssistantTurn } from "./assistant-turns"
 import { AssistantComposer } from "./assistant-composer"
 
 const suggestions = [
