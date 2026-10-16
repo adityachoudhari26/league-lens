@@ -208,7 +208,7 @@ work on macOS and Linux.
 | Open | `just open` | Open League Lens in your browser. |
 | Status | `just status` | See whether it is running and which version is installed. |
 | Logs | `just logs` | Follow recent app activity to help diagnose a problem. |
-| Update | `just update` | Download the latest version and restart if it was running. |
+| Update | `just update` | Download updates; rebuild if the code is newer than the running app. |
 | Database shell | `just db-shell` | Open the database prompt; add `-c 'select 1'` to run a query. |
 
 ### Updating

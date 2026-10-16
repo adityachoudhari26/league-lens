@@ -95,6 +95,10 @@ is_app_running() {
   return 1
 }
 
+app_container_id() {
+  docker compose ps -q app
+}
+
 print_app_urls() {
   app_urls
   printf 'League Lens is running at %s (Safari: %s)\n' "$APP_URL" "$SAFARI_URL"
@@ -280,7 +284,7 @@ tracked_changes() {
   git status --short --untracked-files=no
 }
 
-# Update only a clean main checkout, then rebuild and restart if it was running.
+# Update only a clean main checkout, letting Compose refresh the app when needed.
 update_app() {
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     printf '%s\n' "This copy was downloaded as a ZIP, so it can't update itself. Download the new ZIP from GitHub, or reinstall with git (see README)." >&2
@@ -289,7 +293,7 @@ update_app() {
 
   require_docker
 
-  local branch old_revision new_revision was_running
+  local branch old_revision new_revision before after
   branch=$(git branch --show-current 2>/dev/null || true)
   if [[ "$branch" != main ]]; then
     branch=${branch:-"detached HEAD"}
@@ -312,28 +316,33 @@ update_app() {
   fi
   new_revision=$(git rev-parse HEAD)
 
-  if [[ "$old_revision" == "$new_revision" ]]; then
-    printf '%s\n' "Already up to date."
-    return 0
-  fi
-
-  printf '%s\n' "What's new:"
-  git log --no-merges --format='  - %s' "$old_revision..$new_revision"
-
-  if is_app_running; then
-    was_running=yes
-  else
-    was_running=no
+  if [[ "$old_revision" != "$new_revision" ]]; then
+    printf '%s\n' "What's new:"
+    git log --no-merges --format='  - %s' "$old_revision..$new_revision"
   fi
 
   docker compose build app
-  if [[ "$was_running" == yes ]]; then
+
+  if is_app_running; then
+    before=$(app_container_id)
     docker compose up -d
+    after=$(app_container_id)
+    if [[ "$before" == "$after" ]]; then
+      printf '%s\n' "Already up to date."
+      return 0
+    fi
+
+    if [[ "$old_revision" == "$new_revision" ]]; then
+      printf '%s\n' "Your code was newer than the running app, so it was rebuilt."
+    fi
+
     wait_until_ready
     app_urls
     printf 'Updated and restarted. League Lens is running at %s\n' "$APP_URL"
-  else
+  elif [[ "$old_revision" != "$new_revision" ]]; then
     printf '%s\n' "Updated. Run \`just start\` to start League Lens."
+  else
+    printf '%s\n' "Already up to date. Run \`just start\` to start League Lens."
   fi
 }
 
