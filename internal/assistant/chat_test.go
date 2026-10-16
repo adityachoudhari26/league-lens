@@ -154,6 +154,26 @@ func TestChatTrimsMessageTextAndAllowsNonAlternatingRoles(t *testing.T) {
 	}
 }
 
+func TestChatSkipsEmptyAssistantProposalPlaceholder(t *testing.T) {
+	messages, err := validatedChatMessages([]*v1.ChatMessage{
+		{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "refresh my leagues"},
+		{Role: v1.ChatRole_CHAT_ROLE_ASSISTANT},
+		{Role: v1.ChatRole_CHAT_ROLE_ASSISTANT, Text: "Started a refresh of 1 league."},
+		{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "dismiss an alert"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(messages) != 3 {
+		t.Fatalf("validated messages = %+v, want empty assistant proposal placeholder omitted", messages)
+	}
+	if messages[0].Text != "refresh my leagues" ||
+		messages[1].Text != "Started a refresh of 1 league." ||
+		messages[2].Text != "dismiss an alert" {
+		t.Fatalf("validated messages = %+v", messages)
+	}
+}
+
 func TestChatSendFailureStopsProvider(t *testing.T) {
 	provider := &chatTestProvider{deltas: []string{"first", "second"}}
 	sendErr := errors.New("client disconnected")

@@ -3,6 +3,7 @@ import { MessageCirclePlus, RugbyBall, X } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import type { AssistantTurn } from "./assistant-turns"
+import { AssistantActionProposal } from "./assistant-action-proposal"
 import { AssistantComposer } from "./assistant-composer"
 
 const suggestions = [
@@ -19,12 +20,16 @@ type AssistantPanelProps = {
   hasSettingsError: boolean
   isNotSetUp: boolean
   isStreaming: boolean
+  hasPendingAction: boolean
+  isActionPending: boolean
   onDraftChange: (value: string) => void
   onSend: () => void
   onSuggestion: (value: string) => void
   onStop: () => void
   onNewChat: () => void
   onClose: () => void
+  onConfirmAction: (index: number) => void
+  onCancelAction: (index: number) => void
 }
 
 export function AssistantPanel({
@@ -35,12 +40,16 @@ export function AssistantPanel({
   hasSettingsError,
   isNotSetUp,
   isStreaming,
+  hasPendingAction,
+  isActionPending,
   onDraftChange,
   onSend,
   onSuggestion,
   onStop,
   onNewChat,
   onClose,
+  onConfirmAction,
+  onCancelAction,
 }: AssistantPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -67,6 +76,8 @@ export function AssistantPanel({
           hasSettingsError={hasSettingsError}
           isNotSetUp={isNotSetUp}
           onSuggestion={onSuggestion}
+          onConfirmAction={onConfirmAction}
+          onCancelAction={onCancelAction}
         />
         {error && !isNotSetUp ? (
           <p className="text-sm leading-5 text-destructive" role="alert">
@@ -78,7 +89,7 @@ export function AssistantPanel({
       {canChat ? (
         <AssistantComposer
           draft={draft}
-          disabled={!canChat}
+          disabled={!canChat || hasPendingAction || isActionPending}
           isStreaming={isStreaming}
           onChange={onDraftChange}
           onSend={onSend}
@@ -139,6 +150,8 @@ function AssistantPanelBody({
   hasSettingsError,
   isNotSetUp,
   onSuggestion,
+  onConfirmAction,
+  onCancelAction,
 }: Pick<
   AssistantPanelProps,
   | "messages"
@@ -146,6 +159,8 @@ function AssistantPanelBody({
   | "hasSettingsError"
   | "isNotSetUp"
   | "onSuggestion"
+  | "onConfirmAction"
+  | "onCancelAction"
 >) {
   if (isLoadingSettings) {
     return (
@@ -169,7 +184,13 @@ function AssistantPanelBody({
     return <AssistantSuggestions onSuggestion={onSuggestion} />
   }
   return messages.map((turn, index) => (
-    <AssistantMessage key={`${turn.kind}-${index}`} turn={turn} />
+    <AssistantMessage
+      key={`${turn.kind}-${index}`}
+      turn={turn}
+      index={index}
+      onConfirmAction={onConfirmAction}
+      onCancelAction={onCancelAction}
+    />
   ))
 }
 
@@ -228,7 +249,17 @@ function AssistantSuggestions({
   )
 }
 
-function AssistantMessage({ turn }: { turn: AssistantTurn }) {
+function AssistantMessage({
+  turn,
+  index,
+  onConfirmAction,
+  onCancelAction,
+}: {
+  turn: AssistantTurn
+  index: number
+  onConfirmAction: (index: number) => void
+  onCancelAction: (index: number) => void
+}) {
   if (turn.role === "user") {
     return (
       <div className="flex justify-end">
@@ -252,6 +283,15 @@ function AssistantMessage({ turn }: { turn: AssistantTurn }) {
         <p className="max-w-full text-sm leading-6 whitespace-pre-wrap">
           {turn.text}
         </p>
+      ) : null}
+      {turn.actionProposal ? (
+        <AssistantActionProposal
+          proposal={turn.actionProposal}
+          disabled={Boolean(turn.actionChoice)}
+          pending={Boolean(turn.actionPending)}
+          onConfirm={() => onConfirmAction(index)}
+          onCancel={() => onCancelAction(index)}
+        />
       ) : null}
     </div>
   )
