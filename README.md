@@ -70,8 +70,9 @@ account, subscription, or paid data feed is required.
 
 **Sync**
 
-- Saved data shows immediately. Data older than 15 minutes refreshes in the
-  background when you open the dashboard. **Refresh** syncs every league now.
+- Saved data shows immediately. Stale data is checked in the background when
+  you open the dashboard, return to its tab, and every five minutes while visible.
+  **Refresh** syncs every league now.
 - A league that fails to sync keeps showing its last saved data.
 
 **App**

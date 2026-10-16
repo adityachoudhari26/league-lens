@@ -13,6 +13,8 @@ import {
 import { sync } from "./client"
 
 const syncPollIntervalMs = 2000
+const staleCheckIntervalMs = 5 * 60 * 1000
+const staleCheckMinGapMs = 60 * 1000
 
 export function syncingLeagues(leagues: LeagueSyncStatus[] = []) {
   return leagues.filter((league) => league.state === "syncing")
@@ -44,42 +46,52 @@ export function useStartSync() {
   })
 }
 
-/** Syncs leagues with stale saved data once when the page opens. */
-export function useStaleSyncOnOpen() {
-  const start = useStartSync()
-  useStaleSyncOnMount(start.mutate)
+/**
+ * Checks on page open, tab return, and every few minutes while visible. The
+ * server skips fresh leagues; the min gap avoids duplicate requests from
+ * focus and visibilitychange events or StrictMode's double mount.
+ */
+export function useStaleSyncChecks() {
+  const { mutate: startSync } = useStartSync()
+  const lastCheckAt = useRef(0)
+  useEffect(() => {
+    const checkIfVisible = () => {
+      if (document.visibilityState !== "visible") return
+      const now = Date.now()
+      if (now - lastCheckAt.current < staleCheckMinGapMs) return
+      lastCheckAt.current = now
+      startSync(true)
+    }
+    checkIfVisible()
+    document.addEventListener("visibilitychange", checkIfVisible)
+    window.addEventListener("focus", checkIfVisible)
+    const interval = window.setInterval(checkIfVisible, staleCheckIntervalMs)
+    return () => {
+      document.removeEventListener("visibilitychange", checkIfVisible)
+      window.removeEventListener("focus", checkIfVisible)
+      window.clearInterval(interval)
+    }
+  }, [startSync])
 }
 
 /**
- * Keeps provider data current: opening the page syncs stale leagues in the
- * background, refresh syncs every league, and the overview reloads when
- * syncing ends. Saved data stays visible throughout.
+ * Keeps provider data current with background stale checks and explicit
+ * refreshes. The overview reloads when syncing ends; saved data stays visible.
  */
 export function useLeagueSync() {
   const status = useQuery(syncStatusQuery)
-  const start = useStartSync()
-  useStaleSyncOnMount(start.mutate)
+  const refreshSync = useStartSync()
+  useStaleSyncChecks()
 
   const leagues = status.data?.leagues ?? []
   const leaguesSyncing = syncingLeagues(leagues).length > 0
   useReloadWhenSyncEnds(leaguesSyncing)
   return {
     leagues,
-    syncing: start.isPending || leaguesSyncing,
-    syncUnavailable: start.isError || status.isError,
-    refresh: () => {
-      start.mutate(false)
-    },
+    syncing: refreshSync.isPending || leaguesSyncing,
+    syncUnavailable: refreshSync.isError || status.isError,
+    refresh: () => refreshSync.mutate(false),
   }
-}
-
-function useStaleSyncOnMount(startSync: (onlyStale: boolean) => void) {
-  const started = useRef(false)
-  useEffect(() => {
-    if (started.current) return
-    started.current = true
-    startSync(true)
-  }, [startSync])
 }
 
 /** Reloads saved data when a sync finishes, without starting one. */

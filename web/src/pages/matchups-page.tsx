@@ -12,7 +12,7 @@ import { SectionMessage } from "@/components/overview/section"
 import { Button } from "@/components/ui/button"
 import { type League } from "@/gen/leaguelens/v1/leagues_pb"
 import { matchupQueries } from "@/lib/api/matchups"
-import { useReloadAfterSync, useStaleSyncOnOpen } from "@/lib/api/sync"
+import { useReloadAfterSync, useStaleSyncChecks } from "@/lib/api/sync"
 import { PageHeading } from "@/pages/workspace-page"
 
 const MATCHUP_DETAIL_LIVE_POLL_MS = 30_000
@@ -157,7 +157,7 @@ function MatchupsBody() {
 
 export function MatchupsPage({ item }: { item: NavigationItem }) {
   useReloadAfterSync()
-  useStaleSyncOnOpen()
+  useStaleSyncChecks()
   useEffect(() => {
     document.title = `${item.title} · League Lens`
   }, [item.title])
