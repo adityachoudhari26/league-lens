@@ -345,7 +345,7 @@ function WinChanceChart({
             m.kind === "play" && focusedMoment !== m ? null : (
               <span
                 key={i}
-                className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-current ring-current/25 transition-[width,height] dark:border-[1.5px] dark:border-card ${momentGraphTone(m)} ${focusedMoment === m ? "size-3 ring-[3px]" : "size-2"}`}
+                className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-current ring-current/25 transition-[width,height] dark:border-[1.5px] dark:border-card ${momentGraphTone(m)} ${focusedMoment === m ? "size-2.5 ring-[3px] dark:size-3" : "size-1.5 dark:size-2"}`}
                 style={{ left: `${m.x * 100}%`, top: `${100 - m.after}%` }}
               />
             ),
