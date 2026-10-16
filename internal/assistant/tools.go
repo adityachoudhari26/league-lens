@@ -64,6 +64,7 @@ func (s *Service) chatTools() []assistantTool {
 		tools = append(tools, freeAgentTools(s.Dashboard, s)...)
 	}
 	tools = append(tools, tradeTools(s)...)
+	tools = append(tools, scheduleTools(s)...)
 	return append(tools, buildActionTools(s.Dashboard)...)
 }
 

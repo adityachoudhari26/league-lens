@@ -16,6 +16,17 @@ type Querier interface {
 	AddPlayerNews(ctx context.Context, arg AddPlayerNewsParams) error
 	AddPlayerProfileStat(ctx context.Context, arg AddPlayerProfileStatParams) error
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
+	AssistantScheduleGames(ctx context.Context, arg AssistantScheduleGamesParams) ([]AssistantScheduleGamesRow, error)
+	AssistantScheduleLoaded(ctx context.Context, season int32) (bool, error)
+	// Players on the team's latest successful observed snapshot. Position comes from the
+	// provider's eligible positions, then a saved player card; Sleeper rosters have only the latter.
+	AssistantScheduleOwnerRoster(ctx context.Context, arg AssistantScheduleOwnerRosterParams) ([]AssistantScheduleOwnerRosterRow, error)
+	// The newest scoring week among the owner's attached teams in the season (0 when none synced),
+	// the same latest-observed-snapshot week the dashboard treats as current.
+	AssistantScheduleOwnerWeek(ctx context.Context, arg AssistantScheduleOwnerWeekParams) (int32, error)
+	// A team's bye is the first week from 1 to 18 that has games but none for that team.
+	// known is false for abbreviations with no game in the season.
+	AssistantScheduleTeamByes(ctx context.Context, arg AssistantScheduleTeamByesParams) ([]AssistantScheduleTeamByesRow, error)
 	AssistantTradeCurrentPlayers(ctx context.Context, arg AssistantTradeCurrentPlayersParams) ([]AssistantTradeCurrentPlayersRow, error)
 	AssistantTradeLineupCoverage(ctx context.Context, arg AssistantTradeLineupCoverageParams) ([]AssistantTradeLineupCoverageRow, error)
 	AssistantTradeOwnerRosterCounts(ctx context.Context, arg AssistantTradeOwnerRosterCountsParams) ([]AssistantTradeOwnerRosterCountsRow, error)

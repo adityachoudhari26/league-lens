@@ -1,0 +1,410 @@
+[
+ {
+  "week": 1,
+  "team": "BUF",
+  "opponent": "HOU",
+  "kickoff_at": "2026-09-13T17:00:00Z"
+ },
+ {
+  "week": 2,
+  "team": "BUF",
+  "opponent": "DET",
+  "kickoff_at": "2026-09-18T00:15:00Z"
+ },
+ {
+  "week": 3,
+  "team": "BUF",
+  "opponent": "LAC",
+  "kickoff_at": "2026-09-27T17:00:00Z"
+ },
+ {
+  "week": 4,
+  "team": "BUF",
+  "opponent": "NE",
+  "kickoff_at": "2026-10-04T17:00:00Z"
+ },
+ {
+  "week": 5,
+  "team": "BUF",
+  "opponent": "LAR",
+  "kickoff_at": "2026-10-13T00:15:00Z"
+ },
+ {
+  "week": 6,
+  "team": "BUF",
+  "opponent": "LV",
+  "kickoff_at": "2026-10-18T20:25:00Z"
+ },
+ {
+  "week": 8,
+  "team": "BUF",
+  "opponent": "BAL",
+  "kickoff_at": "2026-11-01T18:00:00Z"
+ },
+ {
+  "week": 9,
+  "team": "BUF",
+  "opponent": "MIN",
+  "kickoff_at": "2026-11-10T01:15:00Z"
+ },
+ {
+  "week": 10,
+  "team": "BUF",
+  "opponent": "NYJ",
+  "kickoff_at": "2026-11-15T18:00:00Z"
+ },
+ {
+  "week": 11,
+  "team": "BUF",
+  "opponent": "MIA",
+  "kickoff_at": "2026-11-22T18:00:00Z"
+ },
+ {
+  "week": 12,
+  "team": "BUF",
+  "opponent": "KC",
+  "kickoff_at": "2026-11-27T01:20:00Z"
+ },
+ {
+  "week": 13,
+  "team": "BUF",
+  "opponent": "NE",
+  "kickoff_at": "2026-12-06T21:25:00Z"
+ },
+ {
+  "week": 14,
+  "team": "BUF",
+  "opponent": "GB",
+  "kickoff_at": "2026-12-14T01:20:00Z"
+ },
+ {
+  "week": 15,
+  "team": "BUF",
+  "opponent": "CHI",
+  "kickoff_at": "2026-12-20T01:20:00Z"
+ },
+ {
+  "week": 16,
+  "team": "BUF",
+  "opponent": "DEN",
+  "kickoff_at": "2026-12-25T21:30:00Z"
+ },
+ {
+  "week": 17,
+  "team": "BUF",
+  "opponent": "MIA",
+  "kickoff_at": "2027-01-03T18:00:00Z"
+ },
+ {
+  "week": 18,
+  "team": "BUF",
+  "opponent": "NYJ",
+  "kickoff_at": "2027-01-10T08:01:00Z"
+ },
+ {
+  "week": 1,
+  "team": "DET",
+  "opponent": "NO",
+  "kickoff_at": "2026-09-13T17:00:00Z"
+ },
+ {
+  "week": 2,
+  "team": "DET",
+  "opponent": "BUF",
+  "kickoff_at": "2026-09-18T00:15:00Z"
+ },
+ {
+  "week": 3,
+  "team": "DET",
+  "opponent": "NYJ",
+  "kickoff_at": "2026-09-27T17:00:00Z"
+ },
+ {
+  "week": 4,
+  "team": "DET",
+  "opponent": "CAR",
+  "kickoff_at": "2026-10-05T00:20:00Z"
+ },
+ {
+  "week": 5,
+  "team": "DET",
+  "opponent": "ARI",
+  "kickoff_at": "2026-10-11T20:25:00Z"
+ },
+ {
+  "week": 7,
+  "team": "DET",
+  "opponent": "GB",
+  "kickoff_at": "2026-10-25T20:25:00Z"
+ },
+ {
+  "week": 8,
+  "team": "DET",
+  "opponent": "MIN",
+  "kickoff_at": "2026-11-01T18:00:00Z"
+ },
+ {
+  "week": 9,
+  "team": "DET",
+  "opponent": "MIA",
+  "kickoff_at": "2026-11-08T18:00:00Z"
+ },
+ {
+  "week": 10,
+  "team": "DET",
+  "opponent": "NE",
+  "kickoff_at": "2026-11-15T14:30:00Z"
+ },
+ {
+  "week": 11,
+  "team": "DET",
+  "opponent": "TB",
+  "kickoff_at": "2026-11-22T18:00:00Z"
+ },
+ {
+  "week": 12,
+  "team": "DET",
+  "opponent": "CHI",
+  "kickoff_at": "2026-11-26T18:00:00Z"
+ },
+ {
+  "week": 13,
+  "team": "DET",
+  "opponent": "ATL",
+  "kickoff_at": "2026-12-06T18:00:00Z"
+ },
+ {
+  "week": 14,
+  "team": "DET",
+  "opponent": "TEN",
+  "kickoff_at": "2026-12-13T18:00:00Z"
+ },
+ {
+  "week": 15,
+  "team": "DET",
+  "opponent": "MIN",
+  "kickoff_at": "2026-12-21T01:20:00Z"
+ },
+ {
+  "week": 16,
+  "team": "DET",
+  "opponent": "NYG",
+  "kickoff_at": "2026-12-29T01:15:00Z"
+ },
+ {
+  "week": 17,
+  "team": "DET",
+  "opponent": "CHI",
+  "kickoff_at": "2027-01-03T21:25:00Z"
+ },
+ {
+  "week": 18,
+  "team": "DET",
+  "opponent": "GB",
+  "kickoff_at": "2027-01-10T08:01:00Z"
+ },
+ {
+  "week": 1,
+  "team": "KC",
+  "opponent": "DEN",
+  "kickoff_at": "2026-09-15T00:15:00Z"
+ },
+ {
+  "week": 2,
+  "team": "KC",
+  "opponent": "IND",
+  "kickoff_at": "2026-09-21T00:20:00Z"
+ },
+ {
+  "week": 3,
+  "team": "KC",
+  "opponent": "MIA",
+  "kickoff_at": "2026-09-27T17:00:00Z"
+ },
+ {
+  "week": 4,
+  "team": "KC",
+  "opponent": "LV",
+  "kickoff_at": "2026-10-04T20:25:00Z"
+ },
+ {
+  "week": 6,
+  "team": "KC",
+  "opponent": "LAC",
+  "kickoff_at": "2026-10-18T20:25:00Z"
+ },
+ {
+  "week": 7,
+  "team": "KC",
+  "opponent": "SEA",
+  "kickoff_at": "2026-10-26T00:20:00Z"
+ },
+ {
+  "week": 8,
+  "team": "KC",
+  "opponent": "DEN",
+  "kickoff_at": "2026-11-01T21:25:00Z"
+ },
+ {
+  "week": 9,
+  "team": "KC",
+  "opponent": "NYJ",
+  "kickoff_at": "2026-11-08T18:00:00Z"
+ },
+ {
+  "week": 10,
+  "team": "KC",
+  "opponent": "ATL",
+  "kickoff_at": "2026-11-15T18:00:00Z"
+ },
+ {
+  "week": 11,
+  "team": "KC",
+  "opponent": "ARI",
+  "kickoff_at": "2026-11-22T18:00:00Z"
+ },
+ {
+  "week": 12,
+  "team": "KC",
+  "opponent": "BUF",
+  "kickoff_at": "2026-11-27T01:20:00Z"
+ },
+ {
+  "week": 13,
+  "team": "KC",
+  "opponent": "LAR",
+  "kickoff_at": "2026-12-04T01:15:00Z"
+ },
+ {
+  "week": 14,
+  "team": "KC",
+  "opponent": "CIN",
+  "kickoff_at": "2026-12-13T21:25:00Z"
+ },
+ {
+  "week": 15,
+  "team": "KC",
+  "opponent": "NE",
+  "kickoff_at": "2026-12-22T01:15:00Z"
+ },
+ {
+  "week": 16,
+  "team": "KC",
+  "opponent": "SF",
+  "kickoff_at": "2026-12-27T21:25:00Z"
+ },
+ {
+  "week": 17,
+  "team": "KC",
+  "opponent": "LAC",
+  "kickoff_at": "2027-01-03T08:01:00Z"
+ },
+ {
+  "week": 18,
+  "team": "KC",
+  "opponent": "LV",
+  "kickoff_at": "2027-01-10T08:01:00Z"
+ },
+ {
+  "week": 1,
+  "team": "SF",
+  "opponent": "LAR",
+  "kickoff_at": "2026-09-11T00:35:00Z"
+ },
+ {
+  "week": 2,
+  "team": "SF",
+  "opponent": "MIA",
+  "kickoff_at": "2026-09-20T20:25:00Z"
+ },
+ {
+  "week": 3,
+  "team": "SF",
+  "opponent": "ARI",
+  "kickoff_at": "2026-09-27T20:05:00Z"
+ },
+ {
+  "week": 4,
+  "team": "SF",
+  "opponent": "DEN",
+  "kickoff_at": "2026-10-04T20:25:00Z"
+ },
+ {
+  "week": 5,
+  "team": "SF",
+  "opponent": "SEA",
+  "kickoff_at": "2026-10-11T20:25:00Z"
+ },
+ {
+  "week": 6,
+  "team": "SF",
+  "opponent": "WAS",
+  "kickoff_at": "2026-10-20T00:15:00Z"
+ },
+ {
+  "week": 7,
+  "team": "SF",
+  "opponent": "ATL",
+  "kickoff_at": "2026-10-25T17:00:00Z"
+ },
+ {
+  "week": 9,
+  "team": "SF",
+  "opponent": "LV",
+  "kickoff_at": "2026-11-08T21:05:00Z"
+ },
+ {
+  "week": 10,
+  "team": "SF",
+  "opponent": "DAL",
+  "kickoff_at": "2026-11-15T21:25:00Z"
+ },
+ {
+  "week": 11,
+  "team": "SF",
+  "opponent": "MIN",
+  "kickoff_at": "2026-11-23T01:20:00Z"
+ },
+ {
+  "week": 12,
+  "team": "SF",
+  "opponent": "SEA",
+  "kickoff_at": "2026-11-29T21:25:00Z"
+ },
+ {
+  "week": 13,
+  "team": "SF",
+  "opponent": "NYG",
+  "kickoff_at": "2026-12-06T18:00:00Z"
+ },
+ {
+  "week": 14,
+  "team": "SF",
+  "opponent": "LAR",
+  "kickoff_at": "2026-12-13T21:25:00Z"
+ },
+ {
+  "week": 15,
+  "team": "SF",
+  "opponent": "LAC",
+  "kickoff_at": "2026-12-18T01:15:00Z"
+ },
+ {
+  "week": 16,
+  "team": "SF",
+  "opponent": "KC",
+  "kickoff_at": "2026-12-27T21:25:00Z"
+ },
+ {
+  "week": 17,
+  "team": "SF",
+  "opponent": "PHI",
+  "kickoff_at": "2027-01-04T01:20:00Z"
+ },
+ {
+  "week": 18,
+  "team": "SF",
+  "opponent": "ARI",
+  "kickoff_at": "2027-01-10T08:01:00Z"
+ }
+]
