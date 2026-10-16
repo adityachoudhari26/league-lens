@@ -60,4 +60,9 @@ func TestBuildSystemPromptIncludesFreeAgentAdvice(t *testing.T) {
 	if !strings.Contains(prompt, waiverAdvice) {
 		t.Fatalf("free-agent guidance missing from prompt:\n%s", prompt)
 	}
+	tradeAdvice := "- For trade questions, find candidate players with get_league and get_team_roster, then call evaluate_trade. " +
+		"Weigh recent points, projections, injuries, byes, and roster needs, and say what the numbers don't capture."
+	if !strings.Contains(prompt, tradeAdvice) {
+		t.Fatalf("trade guidance missing from prompt:\n%s", prompt)
+	}
 }

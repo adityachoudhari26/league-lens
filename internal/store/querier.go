@@ -16,6 +16,11 @@ type Querier interface {
 	AddPlayerNews(ctx context.Context, arg AddPlayerNewsParams) error
 	AddPlayerProfileStat(ctx context.Context, arg AddPlayerProfileStatParams) error
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
+	AssistantTradeCurrentPlayers(ctx context.Context, arg AssistantTradeCurrentPlayersParams) ([]AssistantTradeCurrentPlayersRow, error)
+	AssistantTradeLineupCoverage(ctx context.Context, arg AssistantTradeLineupCoverageParams) ([]AssistantTradeLineupCoverageRow, error)
+	AssistantTradeOwnerRosterCounts(ctx context.Context, arg AssistantTradeOwnerRosterCountsParams) ([]AssistantTradeOwnerRosterCountsRow, error)
+	AssistantTradeOwnerTeam(ctx context.Context, arg AssistantTradeOwnerTeamParams) (AssistantTradeOwnerTeamRow, error)
+	AssistantTradeRecentPoints(ctx context.Context, arg AssistantTradeRecentPointsParams) ([]AssistantTradeRecentPointsRow, error)
 	AttachLeague(ctx context.Context, arg AttachLeagueParams) error
 	BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (BackfillMatchupRow, error)
 	ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeamsParams) error

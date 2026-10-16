@@ -63,6 +63,7 @@ func (s *Service) chatTools() []assistantTool {
 	if s.ProviderSources != nil {
 		tools = append(tools, freeAgentTools(s.Dashboard, s)...)
 	}
+	tools = append(tools, tradeTools(s)...)
 	return append(tools, buildActionTools(s.Dashboard)...)
 }
 
@@ -180,6 +181,10 @@ func truncateToolResult(content string) string {
 }
 
 func toolErrorMessage(err error) string {
+	var tradeError tradeValidationError
+	if errors.As(err, &tradeError) {
+		return tradeError.Error()
+	}
 	if errors.Is(err, errInvalidToolInput) || connect.CodeOf(err) == connect.CodeInvalidArgument {
 		return "invalid tool input"
 	}
