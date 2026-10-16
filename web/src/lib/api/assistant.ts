@@ -55,21 +55,15 @@ export function useRunAssistantAction() {
     mutationFn: (action: AssistantAction) =>
       assistant.runAssistantAction({ action }),
     onSuccess: async (_response, action) => {
-      const invalidate = Object.values(overviewQueries)
-        .filter(
-          (query) =>
-            action.action.case === "syncLeagues" ||
-            query === overviewQueries.attention,
-        )
-        .map((query) =>
+      const queries =
+        action.action.case === "syncLeagues"
+          ? [...Object.values(overviewQueries), syncStatusQuery]
+          : [overviewQueries.attention]
+      await Promise.all(
+        queries.map((query) =>
           queryClient.invalidateQueries({ queryKey: query.queryKey }),
-        )
-      if (action.action.case === "syncLeagues") {
-        invalidate.push(
-          queryClient.invalidateQueries({ queryKey: syncStatusQuery.queryKey }),
-        )
-      }
-      await Promise.all(invalidate)
+        ),
+      )
     },
   })
 }

@@ -97,26 +97,13 @@ function appendAssistantProposal(
   ]
 }
 
-export function markActionChoice(
+export function updateTurn(
   messages: AssistantTurn[],
   index: number,
-  choice: "confirmed" | "cancelled",
-  pending: boolean,
+  patch: Partial<AssistantTurn>,
 ): AssistantTurn[] {
   return messages.map((turn, turnIndex) =>
-    turnIndex === index
-      ? { ...turn, actionChoice: choice, actionPending: pending }
-      : turn,
-  )
-}
-
-export function markActionPending(
-  messages: AssistantTurn[],
-  index: number,
-  pending: boolean,
-) {
-  return messages.map((turn, turnIndex) =>
-    turnIndex === index ? { ...turn, actionPending: pending } : turn,
+    turnIndex === index ? { ...turn, ...patch } : turn,
   )
 }
 

@@ -9,11 +9,10 @@ import {
   appendAssistantOutcome,
   applyChatResponse,
   chatErrorMessage,
-  markActionChoice,
-  markActionPending,
   toChatMessages,
   type AssistantTurn,
   type ChatProblem,
+  updateTurn,
 } from "./assistant-turns"
 import { useChatStream } from "./use-chat-stream"
 
@@ -23,7 +22,6 @@ export function useAssistantChat(page: PageContext) {
   const [messages, setMessages] = useState<AssistantTurn[]>([])
   const [draft, setDraft] = useState("")
   const [problem, setProblem] = useState<ChatProblem>()
-  const [isActionPending, setIsActionPending] = useState(false)
   const handledActions = useRef(new Set<number>())
 
   const clear = useCallback(() => {
@@ -68,9 +66,11 @@ export function useAssistantChat(page: PageContext) {
       if (!action || handledActions.current.has(index)) return
       handledActions.current.add(index)
       setMessages((current) =>
-        markActionChoice(current, index, "confirmed", true),
+        updateTurn(current, index, {
+          actionChoice: "confirmed",
+          actionPending: true,
+        }),
       )
-      setIsActionPending(true)
       try {
         const response = await runAction(action)
         setMessages((current) =>
@@ -81,8 +81,9 @@ export function useAssistantChat(page: PageContext) {
           appendAssistantOutcome(current, "Couldn't complete that action."),
         )
       } finally {
-        setIsActionPending(false)
-        setMessages((current) => markActionPending(current, index, false))
+        setMessages((current) =>
+          updateTurn(current, index, { actionPending: false }),
+        )
       }
     },
     [messages, runAction],
@@ -92,10 +93,12 @@ export function useAssistantChat(page: PageContext) {
     if (handledActions.current.has(index)) return
     handledActions.current.add(index)
     setMessages((current) => {
-      const decided = markActionChoice(current, index, "cancelled", false)
+      const decided = updateTurn(current, index, { actionChoice: "cancelled" })
       return appendAssistantOutcome(decided, "Cancelled.")
     })
   }, [])
+
+  const isActionPending = messages.some((turn) => turn.actionPending)
 
   return {
     messages,
