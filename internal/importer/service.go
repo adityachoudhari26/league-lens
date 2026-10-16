@@ -50,27 +50,45 @@ func timestamp(value time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: value, Valid: true}
 }
 
-func (s *Service) Import(ctx context.Context, request Request) (Result, error) {
+// Started is an import whose league is attached and whose sync run is open
+// (status running). Finish completes it with the same provider Source.
+type Started struct {
+	header fantasy.League
+	target importTarget
+}
+
+// Begin does the quick part of an import: checks the request, describes the
+// league, confirms it still matches the selection, then attaches it and opens
+// a sync run. No bulk provider reads happen here.
+func (s *Service) Begin(ctx context.Context, request Request) (Started, error) {
 	if strings.TrimSpace(request.OwnerEmail) == "" || request.ExternalAccountID == "" || request.Selection.League.ExternalID == "" {
-		return Result{}, fmt.Errorf("owner, external account, and league selection required")
+		return Started{}, fmt.Errorf("owner, external account, and league selection required")
 	}
 	header, err := s.Source.DescribeLeague(ctx, request.Selection.League.ExternalID)
 	if err != nil {
-		return Result{}, err
+		return Started{}, err
 	}
 	if header.Ref != request.Selection.League {
-		return Result{}, fmt.Errorf("league selection changed")
+		return Started{}, fmt.Errorf("league selection changed")
 	}
 	target, err := s.startImport(ctx, request, header)
 	if err != nil {
-		return Result{}, err
+		return Started{}, err
 	}
+	return Started{header: header, target: target}, nil
+}
+
+// Finish does the slow part: fetches the full league, validates it, and saves
+// it atomically. Each failure is recorded on the sync run as a RecordedSyncError
+// with a stable code (provider_fetch_failed, invalid_provider_data, import_write_failed).
+func (s *Service) Finish(ctx context.Context, started Started) (Result, error) {
+	target := started.target
 	result := Result{SyncID: target.run.ID}
-	data, err := s.Source.FetchLeague(ctx, header)
+	data, err := s.Source.FetchLeague(ctx, started.header)
 	if err != nil {
 		return result, s.recordFailure(target.run.ID, err, "provider_fetch_failed")
 	}
-	if err = validateData(data, header, request.Selection); err != nil {
+	if err = validateData(data, started.header, target.selection); err != nil {
 		return result, s.recordFailure(target.run.ID, err, "invalid_provider_data")
 	}
 	result, err = s.saveImport(ctx, target, data)
@@ -78,6 +96,15 @@ func (s *Service) Import(ctx context.Context, request Request) (Result, error) {
 		return result, s.recordFailure(target.run.ID, err, "import_write_failed")
 	}
 	return result, nil
+}
+
+// Import runs Begin then Finish in one call.
+func (s *Service) Import(ctx context.Context, request Request) (Result, error) {
+	started, err := s.Begin(ctx, request)
+	if err != nil {
+		return Result{}, err
+	}
+	return s.Finish(ctx, started)
 }
 
 // Establish the import target and durable run before bulk provider reads.

@@ -267,6 +267,78 @@ func TestImportRoundTrip(t *testing.T) {
 
 }
 
+func TestBeginLeavesSyncRunningUntilFinish(t *testing.T) {
+	ctx := context.Background()
+	sqlDB, db := openTestDatabase(t)
+	src := &fixtureSource{data: fixture(t)}
+	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{}}
+	req := Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}}
+
+	started, err := s.Begin(ctx, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var attached int
+	if err := sqlDB.QueryRow(`SELECT count(*) FROM connection_leagues WHERE detached_at IS NULL`).Scan(&attached); err != nil || attached != 1 {
+		t.Fatalf("attached leagues after Begin = %d, %v", attached, err)
+	}
+	var runID, status string
+	var completedAt sql.NullTime
+	err = sqlDB.QueryRow(`SELECT id, status, completed_at FROM sync_runs ORDER BY started_at DESC LIMIT 1`).Scan(&runID, &status, &completedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != "running" || completedAt.Valid {
+		t.Fatalf("sync run after Begin = status %s completed_at %v, want running with no completed_at", status, completedAt)
+	}
+
+	result, err := s.Finish(ctx, started)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.SyncID.String() != runID {
+		t.Fatalf("Finish SyncID = %s, want the Begin run %s", result.SyncID, runID)
+	}
+	if err = sqlDB.QueryRow(`SELECT status FROM sync_runs WHERE id=$1`, runID).Scan(&status); err != nil || status != "succeeded" {
+		t.Fatalf("sync run after Finish = %s, %v", status, err)
+	}
+	var teams int
+	if err = sqlDB.QueryRow(`SELECT count(*) FROM teams`).Scan(&teams); err != nil || teams != 2 {
+		t.Fatalf("teams after Finish = %d, %v", teams, err)
+	}
+}
+
+func TestFinishRecordsProviderFailureOnSyncRun(t *testing.T) {
+	ctx := context.Background()
+	sqlDB, db := openTestDatabase(t)
+	src := &fixtureSource{data: fixture(t)}
+	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{}}
+	req := Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}}
+
+	started, err := s.Begin(ctx, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src.err = errors.New("upstream down")
+	result, err := s.Finish(ctx, started)
+	var recorded *RecordedSyncError
+	if !errors.As(err, &recorded) || recorded.Code != "provider_fetch_failed" {
+		t.Fatalf("Finish error = %v, want RecordedSyncError provider_fetch_failed", err)
+	}
+	var status, errorCode string
+	var completedAt sql.NullTime
+	if err = sqlDB.QueryRow(`SELECT status, error_code, completed_at FROM sync_runs WHERE id=$1`, result.SyncID).Scan(&status, &errorCode, &completedAt); err != nil {
+		t.Fatal(err)
+	}
+	if status != "failed" || errorCode != "provider_fetch_failed" || !completedAt.Valid {
+		t.Fatalf("sync run after failed Finish = %s/%s completed %v", status, errorCode, completedAt)
+	}
+	var teams int
+	if err = sqlDB.QueryRow(`SELECT count(*) FROM teams`).Scan(&teams); err != nil || teams != 0 {
+		t.Fatalf("teams after failed Finish = %d, %v", teams, err)
+	}
+}
+
 type blockedSource struct {
 	fixtureSource
 	entered chan struct{}
