@@ -54,6 +54,25 @@ func (c *Client) ListFreeAgents(ctx context.Context, league fantasy.League, quer
 	if league.Ref.Season != c.season {
 		return nil, fmt.Errorf("ESPN season mismatch")
 	}
+	filter, err := freeAgentFilterForQuery(query)
+	if err != nil {
+		return nil, err
+	}
+	players, err := c.readFreeAgentPool(ctx, league.Ref.ExternalID, filter)
+	if err != nil {
+		return nil, err
+	}
+	agents := make([]fantasy.FreeAgent, 0, len(players))
+	for _, entry := range players {
+		agent, ok := freeAgentFromEntry(entry, league.Ref.Season, query.Week)
+		if ok {
+			agents = append(agents, agent)
+		}
+	}
+	return fantasy.SortFreeAgents(agents, query.Limit), nil
+}
+
+func freeAgentFilterForQuery(query fantasy.FreeAgentQuery) (freeAgentFilter, error) {
 	filter := freeAgentFilter{Players: map[string]any{
 		"filterStatus": map[string]any{"value": []string{"FREEAGENT", "WAIVERS"}},
 		"limit":        25,
@@ -67,42 +86,38 @@ func (c *Client) ListFreeAgents(ctx context.Context, league fantasy.League, quer
 	if query.Position != "" {
 		slot, ok := espnFreeAgentSlot(query.Position)
 		if !ok {
-			return nil, fmt.Errorf("unsupported ESPN fantasy position")
+			return freeAgentFilter{}, fmt.Errorf("unsupported ESPN fantasy position")
 		}
 		filter.Players["filterSlotIds"] = map[string]any{"value": []int{slot}}
 	}
-	players, err := c.readFreeAgentPool(ctx, league.Ref.ExternalID, filter)
-	if err != nil {
-		return nil, err
+	return filter, nil
+}
+
+func freeAgentFromEntry(entry freeAgentEntry, season, week int) (fantasy.FreeAgent, bool) {
+	player, status := entry.Player, entry.Status
+	if player.ID <= 0 || status != "FREEAGENT" && status != "WAIVERS" {
+		return fantasy.FreeAgent{}, false
 	}
-	agents := make([]fantasy.FreeAgent, 0, len(players))
-	for _, entry := range players {
-		player, status := entry.Player, entry.Status
-		if player.ID <= 0 || status != "FREEAGENT" && status != "WAIVERS" {
-			continue
-		}
-		agent := fantasy.FreeAgent{
-			ExternalPlayerID: strconv.Itoa(player.ID),
-			Name:             player.Name,
-			Position:         espnFreeAgentPosition(player.Position),
-			NFLTeam:          proTeamAbbreviation(player.ProTeam),
-			InjuryStatus:     player.InjuryStatus,
-			Status:           strings.ToLower(status),
-			PercentRostered:  player.Ownership.PercentOwned,
-		}
-		for _, stat := range player.Stats {
-			if stat.SourceID == 0 && stat.SplitTypeID == 0 &&
-				stat.SeasonID == league.Ref.Season && stat.AppliedTotal != nil {
-				agent.SeasonPoints = stat.AppliedTotal
-			}
-			if stat.SourceID == 1 && stat.SplitTypeID == 1 &&
-				stat.SeasonID == league.Ref.Season && stat.ScoringPeriodID == query.Week && stat.AppliedTotal != nil {
-				agent.ProjectedPoints = stat.AppliedTotal
-			}
-		}
-		agents = append(agents, agent)
+	agent := fantasy.FreeAgent{
+		ExternalPlayerID: strconv.Itoa(player.ID),
+		Name:             player.Name,
+		Position:         espnFreeAgentPosition(player.Position),
+		NFLTeam:          proTeamAbbreviation(player.ProTeam),
+		InjuryStatus:     player.InjuryStatus,
+		Status:           strings.ToLower(status),
+		PercentRostered:  player.Ownership.PercentOwned,
 	}
-	return fantasy.SortFreeAgents(agents, query.Limit), nil
+	for _, stat := range player.Stats {
+		if stat.SourceID == 0 && stat.SplitTypeID == 0 &&
+			stat.SeasonID == season && stat.AppliedTotal != nil {
+			agent.SeasonPoints = stat.AppliedTotal
+		}
+		if stat.SourceID == 1 && stat.SplitTypeID == 1 &&
+			stat.SeasonID == season && stat.ScoringPeriodID == week && stat.AppliedTotal != nil {
+			agent.ProjectedPoints = stat.AppliedTotal
+		}
+	}
+	return agent, true
 }
 
 func (c *Client) readFreeAgentPool(ctx context.Context, leagueID string, filter freeAgentFilter) ([]freeAgentEntry, error) {
