@@ -136,18 +136,23 @@ func collectOpenAIToolCalls(toolCalls map[int]*openAIToolCall) ([]ToolCall, erro
 	calls := make([]ToolCall, 0, len(toolCalls))
 	for _, index := range sortedOpenAIToolIndexes(toolCalls) {
 		call := toolCalls[index]
-		arguments := call.arguments.String()
-		if arguments == "" {
-			arguments = "{}"
+		toolCall, err := decodeOpenAIToolCall(call.id, call.name, call.arguments.String())
+		if err != nil {
+			return nil, err
 		}
-		if !json.Valid([]byte(arguments)) {
-			return nil, ErrUnavailable
-		}
-		calls = append(calls, ToolCall{
-			ID: call.id, Name: call.name, Input: json.RawMessage(arguments),
-		})
+		calls = append(calls, toolCall)
 	}
 	return calls, nil
+}
+
+func decodeOpenAIToolCall(id, name, arguments string) (ToolCall, error) {
+	if arguments == "" {
+		arguments = "{}"
+	}
+	if !json.Valid([]byte(arguments)) {
+		return ToolCall{}, ErrUnavailable
+	}
+	return ToolCall{ID: id, Name: name, Input: json.RawMessage(arguments)}, nil
 }
 
 type openAIToolCall struct {

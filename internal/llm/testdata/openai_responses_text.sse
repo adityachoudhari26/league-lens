@@ -1,0 +1,8 @@
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","content_index":0,"delta":"You","item_id":"msg_0ed78244d20745b9016ad24e639a3c87d09c3916ec24f92140","logprobs":[],"obfuscation":"0PcWm6XE7NN5Q","output_index":0,"sequence_number":4}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","content_index":0,"delta":"’re","item_id":"msg_0ed78244d20745b9016ad24e639a3c87d09c3916ec24f92140","logprobs":[],"obfuscation":"L8CdyhHsDPreh","output_index":0,"sequence_number":5}
+
+event: response.completed
+data: {"type":"response.completed","response":{"status":"completed"}}

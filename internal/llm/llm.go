@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 const (
@@ -98,10 +100,21 @@ func New(cfg Config, client *http.Client) (Provider, error) {
 		if err := ValidateBaseURL(cfg.BaseURL); err != nil {
 			return nil, err
 		}
+		if usesOpenAIResponses(cfg.BaseURL) {
+			return &openAIResponsesProvider{openAIProvider{
+				client: client, baseURL: cfg.BaseURL, apiKey: cfg.APIKey,
+			}}, nil
+		}
 		return &openAIProvider{client: client, baseURL: cfg.BaseURL, apiKey: cfg.APIKey}, nil
 	default:
 		return nil, errors.New("unsupported ai provider")
 	}
+}
+
+// usesOpenAIResponses selects Responses because OpenAI's newer models only support tools there; other compatible servers keep chat completions.
+func usesOpenAIResponses(baseURL string) bool {
+	parsed, err := url.Parse(baseURL)
+	return err == nil && strings.EqualFold(parsed.Hostname(), "api.openai.com")
 }
 
 // ValidateBaseURL checks an OpenAI-compatible HTTP(S) endpoint without credentials, query, fragment, or trailing slash.
