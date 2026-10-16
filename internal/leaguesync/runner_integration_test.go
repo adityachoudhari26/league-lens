@@ -59,6 +59,18 @@ func (f fakeSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error
 	return nil, errors.New("schedule unavailable in tests")
 }
 
+type scheduleSources struct {
+	fakeSources
+	games []fantasy.NFLGame
+	err   error
+	calls atomic.Int32
+}
+
+func (s *scheduleSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error) {
+	s.calls.Add(1)
+	return s.games, s.err
+}
+
 func (fakeSources) NFLScoreboard(context.Context) (fantasy.NFLScoreboard, error) {
 	return fantasy.NFLScoreboard{}, nil
 }
@@ -1163,6 +1175,115 @@ func TestFailedPlayerNewsRefreshKeepsSavedNewsAndLeagueSucceeds(t *testing.T) {
 	})
 	if err != nil || len(rows) != 1 || rows[0].SourceItemID != "saved-item" || rows[0].Headline != "Previously saved" {
 		t.Fatalf("saved news after failed refresh = %+v, %v", rows, err)
+	}
+}
+
+func TestRefreshNFLScheduleSavesGames(t *testing.T) {
+	db := openDatabase(t)
+	source := &scheduleSources{fakeSources: fakeSources{}, games: kcSFScheduleFixture()}
+	runner := New(db, owner, source, "")
+	t.Cleanup(runner.Close)
+
+	runner.RefreshNFLSchedule(context.Background(), 2026)
+
+	assertScheduleGames(t, weekGames(t, db, 2026, 6), kcSFScheduleFixture())
+	if calls := source.calls.Load(); calls != 1 {
+		t.Fatalf("schedule source calls = %d, want 1", calls)
+	}
+}
+
+func TestRefreshNFLScheduleSkipsFreshAndReplacesStale(t *testing.T) {
+	db := openDatabase(t)
+	source := &scheduleSources{fakeSources: fakeSources{}, games: kcSFScheduleFixture()}
+	runner := New(db, owner, source, "")
+	t.Cleanup(runner.Close)
+	base := time.Now()
+	runner.now = func() time.Time { return base }
+
+	runner.RefreshNFLSchedule(context.Background(), 2026)
+	freshGames := weekGames(t, db, 2026, 6)
+	runner.RefreshNFLSchedule(context.Background(), 2026)
+	afterFreshRefresh := weekGames(t, db, 2026, 6)
+	if len(afterFreshRefresh) != len(freshGames) {
+		t.Fatalf("schedule rows after fresh refresh = %d, want unchanged count %d", len(afterFreshRefresh), len(freshGames))
+	}
+	for team, before := range freshGames {
+		after, ok := afterFreshRefresh[team]
+		if !ok || before.Opponent != after.Opponent || !before.KickoffAt.Time.Equal(after.KickoffAt.Time) {
+			t.Fatalf("schedule row for %s changed after fresh refresh: before %+v, after %+v", team, before, after)
+		}
+	}
+	if calls := source.calls.Load(); calls != 1 {
+		t.Fatalf("source calls after fresh refresh = %d, want 1", calls)
+	}
+
+	replacement := []fantasy.NFLGame{
+		{Season: 2026, Week: 6, Team: "BUF", Opponent: "MIA", KickoffAt: time.Date(2026, time.October, 18, 17, 0, 0, 0, time.UTC)},
+		{Season: 2026, Week: 6, Team: "MIA", Opponent: "BUF", KickoffAt: time.Date(2026, time.October, 18, 17, 0, 0, 0, time.UTC)},
+	}
+	source.games = replacement
+	runner.now = func() time.Time { return base.Add(25 * time.Hour) }
+	runner.RefreshNFLSchedule(context.Background(), 2026)
+
+	assertScheduleGames(t, weekGames(t, db, 2026, 6), replacement)
+	if calls := source.calls.Load(); calls != 2 {
+		t.Fatalf("source calls after stale refresh = %d, want 2", calls)
+	}
+}
+
+func TestRefreshNFLScheduleFailureKeepsSavedGames(t *testing.T) {
+	db := openDatabase(t)
+	source := &scheduleSources{fakeSources: fakeSources{}, games: kcSFScheduleFixture()}
+	runner := New(db, owner, source, "")
+	t.Cleanup(runner.Close)
+	base := time.Now()
+	runner.now = func() time.Time { return base }
+
+	runner.RefreshNFLSchedule(context.Background(), 2026)
+	runner.now = func() time.Time { return base.Add(25 * time.Hour) }
+	source.err = errors.New("schedule unavailable")
+	runner.RefreshNFLSchedule(context.Background(), 2026)
+
+	assertScheduleGames(t, weekGames(t, db, 2026, 6), kcSFScheduleFixture())
+	if calls := source.calls.Load(); calls != 2 {
+		t.Fatalf("schedule source calls = %d, want 2", calls)
+	}
+}
+
+func kcSFScheduleFixture() []fantasy.NFLGame {
+	kickoff := time.Date(2026, time.October, 18, 20, 25, 0, 0, time.UTC)
+	return []fantasy.NFLGame{
+		{Season: 2026, Week: 6, Team: "KC", Opponent: "SF", KickoffAt: kickoff},
+		{Season: 2026, Week: 6, Team: "SF", Opponent: "KC", KickoffAt: kickoff},
+	}
+}
+
+func weekGames(t *testing.T, db *database.DB, season, week int) map[string]store.ListNFLGamesForWeekRow {
+	t.Helper()
+	rows, err := db.Queries().ListNFLGamesForWeek(context.Background(), store.ListNFLGamesForWeekParams{
+		Season: int32(season), Week: int32(week),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	games := make(map[string]store.ListNFLGamesForWeekRow, len(rows))
+	for _, row := range rows {
+		games[row.Team] = row
+	}
+	return games
+}
+
+func assertScheduleGames(t *testing.T, got map[string]store.ListNFLGamesForWeekRow, want []fantasy.NFLGame) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("schedule rows = %d, want %d: %+v", len(got), len(want), got)
+	}
+	for _, expected := range want {
+		actual, ok := got[expected.Team]
+		if !ok || actual.Opponent != expected.Opponent || !actual.KickoffAt.Time.Equal(expected.KickoffAt) {
+			t.Errorf("schedule row for %s = %+v, want opponent %s and kickoff %s",
+				expected.Team, actual, expected.Opponent, expected.KickoffAt)
+		}
 	}
 }
 
