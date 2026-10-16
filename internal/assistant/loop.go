@@ -20,7 +20,7 @@ type chatLoop struct {
 
 // run completes a chat with sequential, bounded read-only tool rounds.
 func (loop *chatLoop) run(ctx context.Context, page *v1.PageContext, messages []llm.Message) error {
-	system := buildSystemPrompt(time.Now(), page, true)
+	system := buildSystemPrompt(time.Now(), page)
 	toolRounds := 0
 	for {
 		availableTools := toolDefinitions(loop.tools)

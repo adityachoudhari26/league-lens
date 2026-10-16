@@ -8,11 +8,8 @@ import (
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 )
 
-const noToolsPromptRule = "- You don't have access to league data in this version. " +
-	"If asked about the user's leagues, say that league data isn't connected to the assistant yet."
-
 // buildSystemPrompt adds the current date, available page context, and tool limits.
-func buildSystemPrompt(today time.Time, page *v1.PageContext, toolsExist bool) string {
+func buildSystemPrompt(today time.Time, page *v1.PageContext) string {
 	introduction := "Today is " + today.Format("Monday, January 2, 2006") + "."
 	if pageLine := pageContextLine(page); pageLine != "" {
 		introduction += " " + pageLine
@@ -28,9 +25,6 @@ func buildSystemPrompt(today time.Time, page *v1.PageContext, toolsExist bool) s
 		"- Be brief: a few sentences or a short list. Plain text only: no headings, tables, or bold.\n" +
 		"- Start/sit, waiver, and trade suggestions are opinions. Give your pick and the one or two reasons behind it.\n" +
 		"- You can't make changes on ESPN or Sleeper."
-	if !toolsExist {
-		prompt += "\n" + noToolsPromptRule
-	}
 	return prompt
 }
 
