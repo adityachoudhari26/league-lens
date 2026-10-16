@@ -3,7 +3,6 @@ package assistant
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -233,7 +232,7 @@ func TestFreeAgentProviderErrorsDoNotExposeDetails(t *testing.T) {
 		{provider: fantasy.ProviderSleeper, want: "couldn't load free agents from Sleeper"},
 	}
 	for _, test := range tests {
-		got := toolErrorMessage(providerFreeAgentError(test.provider, errors.New("secret provider response")))
+		got := toolErrorMessage(errFreeAgentError(test.provider))
 		if got != test.want {
 			t.Errorf("%s error = %q, want %q", test.provider, got, test.want)
 		}
