@@ -94,7 +94,7 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	firstTick := pointChangeLiveFixture(17, 4, 0, 0)
 	firstTick.Lineups[1].Entries[0].Scoring = nil
 	liveProvider.live = firstTick
-	if _, _, err := runner.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], firstTick); err != nil {
+	if _, _, _, err := runner.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], firstTick); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := pool.Exec(ctx, `
@@ -107,7 +107,7 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	tickAt = endedAt
 	secondTick := pointChangeLiveFixture(23.8, 4, 1, 0)
 	liveProvider.live = secondTick
-	if _, _, err := runner.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], secondTick); err != nil {
+	if _, _, _, err := runner.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], secondTick); err != nil {
 		t.Fatal(err)
 	}
 
@@ -132,8 +132,8 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	`, matchupID, startedAt).Scan(&gapStarters); err != nil {
 		t.Fatal(err)
 	}
-	if gapStarters != 2 {
-		t.Fatalf("saved gap starters = %d, want both matchup starters", gapStarters)
+	if gapStarters != 3 {
+		t.Fatalf("saved gap starters = %d, want all three matchup starters", gapStarters)
 	}
 	var pointsBefore, pointsAfter string
 	var tdBefore, tdAfter, fgBefore, fgAfter *int32

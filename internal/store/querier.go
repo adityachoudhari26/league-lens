@@ -69,6 +69,7 @@ type Querier interface {
 	ListLiveMatchupCandidates(ctx context.Context, arg ListLiveMatchupCandidatesParams) ([]ListLiveMatchupCandidatesRow, error)
 	// Both sides' starters with projections and NFL team from each team's latest observed snapshot ('' when unknown).
 	ListLiveMatchupStarters(ctx context.Context, matchupID pgtype.UUID) ([]ListLiveMatchupStartersRow, error)
+	ListMatchupLineupPlayers(ctx context.Context, matchupID pgtype.UUID) ([]ListMatchupLineupPlayersRow, error)
 	ListMatchupsForUser(ctx context.Context, arg ListMatchupsForUserParams) ([]Matchup, error)
 	ListNFLGamesForWeek(ctx context.Context, arg ListNFLGamesForWeekParams) ([]ListNFLGamesForWeekRow, error)
 	// Players on the owner's selected teams' latest succeeded observed snapshot, with every known external ID.

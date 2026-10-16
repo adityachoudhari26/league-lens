@@ -19,6 +19,7 @@ const (
 	liveScoreboardTimeout = 15 * time.Second
 	liveLeagueTimeout     = 30 * time.Second
 	liveTeamWindow        = 15 * time.Minute
+	lineupResyncCooldown  = 10 * time.Minute
 )
 
 // RunLiveScores refreshes recently active matchups on each ticker event.
@@ -191,13 +192,36 @@ func (r *Runner) updateLiveCandidate(
 		return
 	}
 
-	updatedEntries, skippedEntries, err := r.saveLiveMatchup(ctx, scoreboard, target, candidate, live)
+	updatedEntries, skippedEntries, lineupChanged, err := r.saveLiveMatchup(ctx, scoreboard, target, candidate, live)
 	if err != nil {
 		r.logLiveScoreFailure(target, err)
 		return
 	}
+	if lineupChanged {
+		r.startLineupResync(target)
+	}
 	slog.Info("live matchup updated", "league", target.ID, "provider", target.Selection.League.Provider,
 		"updated_entries", updatedEntries, "skipped_entries", skippedEntries)
+}
+
+// startLineupResync launches one full sync after a changed live lineup, subject to a per-league cooldown.
+func (r *Runner) startLineupResync(target Target) {
+	now := r.now()
+	r.mu.Lock()
+	lastResync, hasResynced := r.lineupResyncAt[target.ID]
+	if r.running[target.ID] || (hasResynced && now.Sub(lastResync) < lineupResyncCooldown) {
+		r.mu.Unlock()
+		return
+	}
+	if r.lineupResyncAt == nil {
+		r.lineupResyncAt = make(map[string]time.Time)
+	}
+	r.running[target.ID] = true
+	r.lineupResyncAt[target.ID] = now
+	r.mu.Unlock()
+
+	slog.Info("live lineup changed; resyncing league", "league", target.ID)
+	r.launch([]Target{target})
 }
 
 // logLiveScoreFailure records a provider failure and marks reconnectable credentials.
@@ -216,8 +240,9 @@ func (r *Runner) saveLiveMatchup(
 	target Target,
 	candidate store.ListLiveMatchupCandidatesRow,
 	live fantasy.LiveMatchup,
-) (int, int, error) {
+) (int, int, bool, error) {
 	updatedEntries, skippedEntries := 0, 0
+	lineupChanged := false
 	tickAt := r.now()
 	err := r.db.InTx(ctx, func(queries *store.Queries) error {
 		if err := queries.LockImportWrites(ctx); err != nil {
@@ -232,6 +257,10 @@ func (r *Runner) saveLiveMatchup(
 			if _, found := teamIDs[lineup.TeamID]; !found {
 				return fmt.Errorf("live lineup team does not match stored matchup")
 			}
+		}
+		storedLineup, err := queries.ListMatchupLineupPlayers(ctx, candidate.MatchupID)
+		if err != nil {
+			return err
 		}
 
 		numericScoreA, err := liveScore(scoreA)
@@ -248,6 +277,8 @@ func (r *Runner) saveLiveMatchup(
 		}); err != nil {
 			return err
 		}
+		reportedTeams := make(map[pgtype.UUID]struct{}, len(live.Lineups))
+		livePlayers := make(map[liveMatchupLineupKey]struct{})
 
 		observations, err := loadLiveLineupObservations(ctx, queries, candidate.MatchupID)
 		if err != nil {
@@ -264,24 +295,45 @@ func (r *Runner) saveLiveMatchup(
 			}
 		}
 		for _, lineup := range live.Lineups {
+			teamID := teamIDs[lineup.TeamID]
+			reportedTeams[teamID] = struct{}{}
 			for _, entry := range lineup.Entries {
-				updated, err := r.saveLiveLineupEntry(
-					ctx, queries, candidate.MatchupID, teamIDs[lineup.TeamID],
+				row, matched, err := r.saveLiveLineupEntry(
+					ctx, queries, candidate.MatchupID, teamID,
 					string(target.Selection.League.Provider), entry, observations, tickAt, gapStartedAt,
 				)
 				if err != nil {
 					return err
 				}
-				if !updated {
+				if !matched {
+					lineupChanged = true
 					skippedEntries++
 				} else {
 					updatedEntries++
+					livePlayers[liveMatchupLineupKey{teamID: teamID, playerID: row.PlayerID}] = struct{}{}
+					if row.Starter != entry.Starter {
+						lineupChanged = true
+					}
 				}
+			}
+		}
+		for _, row := range storedLineup {
+			if _, reported := reportedTeams[row.TeamID]; !reported {
+				continue
+			}
+			if _, found := livePlayers[liveMatchupLineupKey{teamID: row.TeamID, playerID: row.PlayerID}]; !found {
+				lineupChanged = true
+				break
 			}
 		}
 		return r.saveWinChanceSample(ctx, queries, candidate, scoreboard, scoreA, scoreB)
 	})
-	return updatedEntries, skippedEntries, err
+	return updatedEntries, skippedEntries, lineupChanged, err
+}
+
+type liveMatchupLineupKey struct {
+	teamID   pgtype.UUID
+	playerID pgtype.UUID
 }
 
 // liveMatchupTeams maps provider team IDs to stored IDs and aligns scores to stored sides.

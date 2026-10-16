@@ -446,6 +446,36 @@ func (q *Queries) ListLiveMatchupStarters(ctx context.Context, matchupID pgtype.
 	return items, nil
 }
 
+const listMatchupLineupPlayers = `-- name: ListMatchupLineupPlayers :many
+SELECT ml.team_id, ml.player_id, ml.starter FROM matchup_lineups ml WHERE ml.matchup_id = $1
+`
+
+type ListMatchupLineupPlayersRow struct {
+	TeamID   pgtype.UUID
+	PlayerID pgtype.UUID
+	Starter  bool
+}
+
+func (q *Queries) ListMatchupLineupPlayers(ctx context.Context, matchupID pgtype.UUID) ([]ListMatchupLineupPlayersRow, error) {
+	rows, err := q.db.Query(ctx, listMatchupLineupPlayers, matchupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMatchupLineupPlayersRow{}
+	for rows.Next() {
+		var i ListMatchupLineupPlayersRow
+		if err := rows.Scan(&i.TeamID, &i.PlayerID, &i.Starter); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUnfilledWinChanceGaps = `-- name: ListUnfilledWinChanceGaps :many
 SELECT matchup_id, started_at
 FROM win_chance_gaps

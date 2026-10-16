@@ -40,9 +40,10 @@ type Runner struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	mu       sync.Mutex
-	running  map[string]bool
-	failures map[string]failure
+	mu             sync.Mutex
+	running        map[string]bool
+	failures       map[string]failure
+	lineupResyncAt map[string]time.Time
 
 	backfillRunning  map[string]bool
 	backfillFailures map[string]failure
@@ -67,6 +68,7 @@ func New(db *database.DB, ownerEmail string, sources SourceFactory, catalogPath 
 		cancel:           cancel,
 		running:          map[string]bool{},
 		failures:         map[string]failure{},
+		lineupResyncAt:   map[string]time.Time{},
 		backfillRunning:  map[string]bool{},
 		backfillFailures: map[string]failure{},
 	}

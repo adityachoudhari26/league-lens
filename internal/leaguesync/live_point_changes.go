@@ -49,10 +49,10 @@ func (r *Runner) saveLiveLineupEntry(
 	observations map[liveLineupObservationKey]store.ListLiveLineupObservationsRow,
 	observedAt time.Time,
 	gapStartedAt time.Time,
-) (bool, error) {
+) (store.UpdateLiveLineupEntryRow, bool, error) {
 	points, err := liveScore(entry.Points)
 	if err != nil {
-		return false, err
+		return store.UpdateLiveLineupEntryRow{}, false, err
 	}
 	touchdowns, fieldGoals := liveCounts(entry.Scoring)
 	after, err := queries.UpdateLiveLineupEntry(ctx, store.UpdateLiveLineupEntryParams{
@@ -60,10 +60,10 @@ func (r *Runner) saveLiveLineupEntry(
 		MatchupID: matchupID, TeamID: teamID, Provider: provider, ExternalPlayerID: entry.PlayerID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
+		return store.UpdateLiveLineupEntryRow{}, false, nil
 	}
 	if err != nil {
-		return false, err
+		return store.UpdateLiveLineupEntryRow{}, false, err
 	}
 
 	key := liveLineupObservationKey{teamID: teamID, playerID: after.PlayerID}
@@ -81,18 +81,18 @@ func (r *Runner) saveLiveLineupEntry(
 			ctx, queries, matchupID, teamID, gapStartedAt,
 			beforePoints, beforeTouchdowns, beforeFieldGoals, after,
 		); err != nil {
-			return false, err
+			return after, true, err
 		}
 	}
 	if err := recordLineupPointChange(
 		ctx, queries, matchupID, teamID, baseline, hasBaseline, after, observedAt,
 	); err != nil {
-		return false, err
+		return after, true, err
 	}
 	if err := saveLiveLineupObservation(ctx, queries, matchupID, teamID, after, observedAt); err != nil {
-		return false, err
+		return after, true, err
 	}
-	return true, nil
+	return after, true, nil
 }
 
 func staleLiveGapStart(
