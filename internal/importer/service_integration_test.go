@@ -10,6 +10,7 @@ import (
 	"maps"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -374,6 +375,43 @@ func TestBeginUsesSuppliedLeagueDescription(t *testing.T) {
 	}
 	if src.describes != 2 {
 		t.Fatalf("describe calls without League = %d, want 2", src.describes)
+	}
+}
+
+// A failed Begin writes nothing: no orphan running sync run and no attachment.
+func TestBeginFailureLeavesNoSyncRun(t *testing.T) {
+	ctx := context.Background()
+	sqlDB, db := openTestDatabase(t)
+	src := &fixtureSource{data: fixture(t)}
+	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{}}
+	selection := fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}
+	count := func(table string) int {
+		t.Helper()
+		var n int
+		if err := sqlDB.QueryRow("SELECT count(*) FROM " + table).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	badRequest := Request{OwnerEmail: "", ExternalAccountID: "owner", Selection: selection}
+	if _, err := s.Begin(ctx, badRequest); err == nil {
+		t.Fatal("Begin accepted an empty owner email")
+	}
+	if count("sync_runs") != 0 || count("connection_leagues") != 0 {
+		t.Fatal("rejected Begin left a sync run or attachment")
+	}
+
+	src.data.League.Ref = fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "other-league", Season: 2026}
+	_, err := s.Begin(ctx, Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: selection})
+	if err == nil || !strings.Contains(err.Error(), "league selection changed") {
+		t.Fatalf("Begin error = %v, want league selection changed", err)
+	}
+	if src.describes != 1 {
+		t.Fatalf("describe calls = %d, want 1", src.describes)
+	}
+	if count("sync_runs") != 0 || count("connection_leagues") != 0 {
+		t.Fatal("changed-selection Begin left a sync run or attachment")
 	}
 }
 

@@ -1465,6 +1465,113 @@ func TestStartImportsAbandonsDuplicateLeague(t *testing.T) {
 	}
 }
 
+func TestStartImportsMixedOutcomes(t *testing.T) {
+	db := openDatabase(t)
+	seedLeague(t, db, fantasy.ProviderSleeper)
+	seedLeague(t, db, fantasy.ProviderESPN)
+	releaseSleeper := make(chan struct{})
+	releaseESPN := make(chan struct{})
+	sleeperSource := &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home"), release: releaseSleeper}
+	espnSource := &fakeSource{data: leagueData(fantasy.ProviderESPN, "Home"), release: releaseESPN, fetchErr: errors.New("upstream down")}
+	sleeperStarted := beginRefresh(t, db, sleeperSource, sleeperSource.data.League.Ref)
+	espnStarted := beginRefresh(t, db, espnSource, espnSource.data.League.Ref)
+	newsDone := make(chan struct{})
+	sources := &importRefreshSources{
+		scheduleSources: scheduleSources{fakeSources: fakeSources{}, games: kcSFScheduleFixture()},
+		news:            fakeNewsSource{headline: "Import news", done: newsDone},
+	}
+	runner := New(db, owner, sources, "")
+
+	runner.StartImports([]ImportJob{
+		importJobFor(t, runner, sleeperSource, sleeperStarted),
+		importJobFor(t, runner, espnSource, espnStarted),
+	})
+	statuses, err := runner.Status(context.Background())
+	if err != nil || len(statuses) != 2 {
+		t.Fatalf("statuses during blocked fetches = %+v, %v", statuses, err)
+	}
+	for _, status := range statuses {
+		if status.State != StateSyncing {
+			t.Fatalf("state during blocked fetches = %s, want syncing", status.State)
+		}
+	}
+
+	close(releaseSleeper)
+	close(releaseESPN)
+	finished := waitUntilIdle(t, runner)
+	<-newsDone
+	waitForPlayerNews(t, db, "Import news")
+	runner.Close()
+
+	if got := finished[fantasy.ProviderSleeper].State; got != StateSucceeded {
+		t.Fatalf("sleeper state = %s, want %s", got, StateSucceeded)
+	}
+	espnStatus := finished[fantasy.ProviderESPN]
+	if espnStatus.State != StateFailed || espnStatus.ErrorCode != "provider_fetch_failed" {
+		t.Fatalf("espn status = %+v, want failed/provider_fetch_failed", espnStatus)
+	}
+	if calls := sources.calls.Load(); calls < 1 {
+		t.Fatalf("schedule source calls = %d, want the shared refresh to run once", calls)
+	}
+}
+
+// Close cancels the in-flight fetch, but its outcome is still recorded: the
+// begun import's sync run ends failed rather than left running, and the shared
+// refresh does not run because nothing succeeded.
+func TestCloseDuringImportRecordsFailedRun(t *testing.T) {
+	db, pool := openDatabaseWithTestPool(t, true)
+	seedLeague(t, db, fantasy.ProviderSleeper)
+	source := &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Home"), release: make(chan struct{})}
+	started := beginRefresh(t, db, source, source.data.League.Ref)
+	sources := &importRefreshSources{
+		scheduleSources: scheduleSources{fakeSources: fakeSources{}, games: kcSFScheduleFixture()},
+		news:            fakeNewsSource{headline: "Import news"},
+	}
+	runner := New(db, owner, sources, "")
+
+	runner.StartImports([]ImportJob{importJobFor(t, runner, source, started)})
+	deadline := time.Now().Add(5 * time.Second)
+	for source.fetches.Load() == 0 {
+		if time.Now().After(deadline) {
+			runner.Close()
+			t.Fatal("import fetch did not start")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	runner.Close()
+
+	var status, code string
+	var completedAt pgtype.Timestamptz
+	err := pool.QueryRow(context.Background(),
+		`SELECT status,error_code,completed_at FROM sync_runs ORDER BY started_at DESC LIMIT 1`).Scan(&status, &code, &completedAt)
+	if err != nil || status != "failed" || code == "" || !completedAt.Valid {
+		t.Fatalf("interrupted sync run = %s/%s completed %v, %v; want a recorded failure", status, code, completedAt, err)
+	}
+	if calls := sources.calls.Load(); calls != 0 {
+		t.Fatalf("schedule source calls after interrupted import = %d, want 0", calls)
+	}
+}
+
+// With saved teams present, the newest-season fallback stays unused: a league
+// attached by Begin alone in a newer season does not become a sync target.
+func TestListSyncTargetsKeepsSavedSeasonWhenTeamsExist(t *testing.T) {
+	db := openDatabase(t)
+	seedLeague(t, db, fantasy.ProviderSleeper)
+	source := &fakeSource{data: leagueData(fantasy.ProviderSleeper, "Next Season")}
+	source.data.League.Ref = fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "league-sleeper-next", Season: 2027}
+	beginRefresh(t, db, source, source.data.League.Ref)
+	runner := New(db, owner, fakeSources{}, "")
+	defer runner.Close()
+
+	statuses, err := runner.Status(context.Background())
+	if err != nil || len(statuses) != 1 {
+		t.Fatalf("statuses = %+v, %v; want only the saved season's league", statuses, err)
+	}
+	if statuses[0].Target.Selection.League.ExternalID != "league-sleeper" {
+		t.Fatalf("target league = %q, want the league with saved teams", statuses[0].Target.Selection.League.ExternalID)
+	}
+}
+
 // A league attached by Begin appears as a sync target before its first import
 // saves any teams: the target listing falls back to the newest attached season.
 func TestListSyncTargetsIncludesFirstImportBeforeSave(t *testing.T) {
