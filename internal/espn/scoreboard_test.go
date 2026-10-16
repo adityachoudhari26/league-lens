@@ -76,11 +76,53 @@ func TestParseNFLScoreboardLiveStatesAndSkippedGames(t *testing.T) {
 	if game := scoreboard.Games[0]; game.State != fantasy.NFLGameLive || game.Period != 3 || game.Clock != 462*time.Second {
 		t.Errorf("live game = %+v", game)
 	}
+	if game := scoreboard.Games[0]; game.Possession != "" || game.RedZone {
+		t.Errorf("live game with null situation = %+v", game)
+	}
 	if game := scoreboard.Games[1]; game.State != fantasy.NFLGameLive || game.Period != 2 || game.Clock != 0 {
 		t.Errorf("halftime game = %+v", game)
 	}
+	if game := scoreboard.Games[1]; game.Possession != "" || game.RedZone {
+		t.Errorf("halftime game with null situation = %+v", game)
+	}
 	if game := scoreboard.Games[2]; game.State != fantasy.NFLGamePostponed {
 		t.Errorf("postponed game = %+v", game)
+	}
+}
+
+func TestParseNFLScoreboardLiveSituation(t *testing.T) {
+	scoreboard := parseScoreboardFixture(t, "scoreboard_live_situation.json")
+	if len(scoreboard.Games) != 2 {
+		t.Fatalf("got %d games, want 2", len(scoreboard.Games))
+	}
+	liveGame := scoreboard.Games[0]
+	if liveGame.HomeTeam != "DEN" || liveGame.AwayTeam != "SEA" || liveGame.Possession != "DEN" || !liveGame.RedZone {
+		t.Errorf("live game = %+v, want DEN/SEA with DEN possession in the red zone", liveGame)
+	}
+	preGame := scoreboard.Games[1]
+	if preGame.State != fantasy.NFLGameScheduled || preGame.Possession != "" || preGame.RedZone {
+		t.Errorf("pregame = %+v, want no possession or red zone", preGame)
+	}
+}
+
+func TestParseNFLScoreboardUnknownPossessionDoesNotSkipGame(t *testing.T) {
+	for _, possessionID := range []string{"not-a-team", "999"} {
+		t.Run(possessionID, func(t *testing.T) {
+			body := []byte(`{
+				"season":{"year":2026,"type":2},
+				"week":{"number":6},
+				"events":[{"id":"unknown-possession","date":"2026-10-16T00:15Z","status":{"type":{"state":"in"}},
+					"competitions":[{"competitors":[{"homeAway":"home","team":{"id":"7"}},{"homeAway":"away","team":{"id":"26"}}],
+						"situation":{"possession":"` + possessionID + `","isRedZone":true}}]}]
+			}`)
+			scoreboard, err := parseNFLScoreboard(body)
+			if err != nil || len(scoreboard.Games) != 1 {
+				t.Fatalf("scoreboard = %+v, %v; want one valid live game", scoreboard, err)
+			}
+			if game := scoreboard.Games[0]; game.Possession != "" || game.RedZone {
+				t.Errorf("game with unknown possession = %+v", game)
+			}
+		})
 	}
 }
 

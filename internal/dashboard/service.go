@@ -4,12 +4,14 @@ package dashboard
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/playerprofile"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
@@ -28,12 +30,22 @@ type Service struct {
 	ownerEmail string
 	profiles   playerprofile.Source
 	backfill   WinChanceBackfill
+	scoreboard LiveScoreboard
+	now        func() time.Time
+
+	liveGamesMu        sync.Mutex
+	liveGamesCache     []fantasy.NFLGameStatus
+	liveGamesFetchedAt time.Time
+	liveGamesCached    bool
 }
 
-// New builds the dashboard service. Nil optional sources disable profile fetches
+// New builds the dashboard service. Nil optional sources disable their fetches
 // or finished-matchup backfills.
-func New(db Store, ownerEmail string, profiles playerprofile.Source, backfill WinChanceBackfill) *Service {
-	return &Service{db: db, ownerEmail: ownerEmail, profiles: profiles, backfill: backfill}
+func New(db Store, ownerEmail string, profiles playerprofile.Source, backfill WinChanceBackfill, scoreboard LiveScoreboard) *Service {
+	return &Service{
+		db: db, ownerEmail: ownerEmail, profiles: profiles, backfill: backfill,
+		scoreboard: scoreboard, now: time.Now,
+	}
 }
 
 // read resolves the configured local owner and runs scoped queries within one

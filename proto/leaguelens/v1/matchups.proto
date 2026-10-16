@@ -51,6 +51,18 @@ message GetMatchupWinChanceResponse {
   MatchupWinChance win_chance = 1;
   bool building = 2; // True while a finished matchup's history is being rebuilt; ask again shortly.
 }
+// GetLiveGamesRequest asks for the NFL games in progress right now.
+message GetLiveGamesRequest {}
+message GetLiveGamesResponse {
+  repeated LiveGame games = 1;
+}
+// LiveGame is one in-progress NFL game from the public scoreboard.
+message LiveGame {
+  string home_team = 1; // Roster abbreviations, e.g. "WAS".
+  string away_team = 2;
+  string possession_team = 3; // Empty when nobody has the ball (breaks, halftime, unknown).
+  bool red_zone = 4; // The possession team is inside the opponent's 20.
+}
 // MatchupDetail is oriented around the owner: team is always the
 // owner's side, opponent the other side.
 message MatchupDetail {

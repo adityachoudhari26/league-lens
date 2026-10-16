@@ -23,7 +23,7 @@ func (unavailableDB) InTx(context.Context, func(*store.Queries) error) error {
 }
 
 func TestInvalidRequestsFailBeforeDatabaseRead(t *testing.T) {
-	s := New(unavailableDB{}, "owner@localhost", nil, nil)
+	s := New(unavailableDB{}, "owner@localhost", nil, nil, nil)
 	calls := []func() error{
 		func() error {
 			_, e := s.GetLeague(context.Background(), &v1.GetLeagueRequest{LeagueSeasonId: "invalid"})
@@ -63,7 +63,7 @@ func TestInvalidRequestsFailBeforeDatabaseRead(t *testing.T) {
 }
 
 func TestDatabaseErrorsAreSanitized(t *testing.T) {
-	s := New(unavailableDB{}, "owner@localhost", nil, nil)
+	s := New(unavailableDB{}, "owner@localhost", nil, nil, nil)
 	_, err := s.ListLeagues(context.Background(), &v1.ListLeaguesRequest{})
 	if connect.CodeOf(err) != connect.CodeInternal || strings.Contains(err.Error(), "secret") {
 		t.Fatalf("unsafe error: %v", err)

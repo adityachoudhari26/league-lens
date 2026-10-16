@@ -77,7 +77,7 @@ func run() error {
 		Addr: cfg.HTTPAddr,
 		Handler: httpserver.RequireLocalHost(httpserver.NewHandler(
 			data.Ping,
-			dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now()), syncRunner),
+			dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now()), syncRunner, leaguesync.ProviderSources{}),
 			leaguesync.NewHandler(syncRunner),
 			connectionService,
 			web.Dist(),

@@ -2,6 +2,7 @@ import {
   GameState,
   MatchupStatus,
   type LineupPlayer,
+  type LiveGame,
   type MatchupDetail,
   type MatchupLineup,
 } from "@/gen/leaguelens/v1/matchups_pb"
@@ -26,6 +27,30 @@ export function roundStatus(matchup: MatchupDetail): RoundStatus {
   return starters.some((player) => player.gameState === GameState.KICKED_OFF)
     ? "In progress"
     : "Upcoming"
+}
+
+// A starter's unit on the field in a live game, and whether the drive is in
+// the red zone.
+export type FieldState = { unit: "offense" | "defense"; redZone: boolean }
+
+/**
+ * Whether a starter's unit is on the field right now: offense while their NFL
+ * team has the ball, a D/ST while the other team does. Undefined between
+ * plays with no possession (breaks, halftime) or when their game isn't live.
+ */
+export function fieldState(
+  player: LineupPlayer,
+  games: LiveGame[],
+): FieldState | undefined {
+  if (!player.proTeam || player.gameState !== GameState.KICKED_OFF) return
+  const game = games.find(
+    (g) => g.homeTeam === player.proTeam || g.awayTeam === player.proTeam,
+  )
+  if (!game?.possessionTeam) return
+  const hasBall = game.possessionTeam === player.proTeam
+  const teamDefense = player.slot === "DEF"
+  if (hasBall === teamDefense) return
+  return { unit: teamDefense ? "defense" : "offense", redZone: game.redZone }
 }
 
 /**

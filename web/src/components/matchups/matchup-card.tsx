@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query"
 import { scoreLabel } from "@/components/overview/format"
 import { Lineup } from "@/components/matchups/lineup"
 import { ScoreShareBar, StatusPill } from "@/components/matchups/matchup-header"
@@ -11,6 +12,7 @@ import {
 } from "@/components/matchups/rules"
 import { scoreToneClass } from "@/components/matchups/tones"
 import { MatchupWinChancePanels } from "@/components/matchups/win-chance"
+import { matchupQueries } from "@/lib/api/matchups"
 import {
   type MatchupDetail,
   type MatchupLineup,
@@ -55,6 +57,19 @@ function TeamScore({
   )
 }
 
+const LIVE_GAMES_POLL_MS = 15_000
+
+// Possession for the NFL games in progress, polled only while the round is.
+function useLiveGames(status: RoundStatus) {
+  const live = status === "In progress"
+  const query = useQuery({
+    ...matchupQueries.liveGames,
+    enabled: live,
+    refetchInterval: live ? LIVE_GAMES_POLL_MS : false,
+  })
+  return live ? query.data : undefined
+}
+
 export function MatchupCard({
   matchup,
   team,
@@ -66,6 +81,7 @@ export function MatchupCard({
   const hasOpponent = opponent !== undefined
   const status = roundStatus(matchup)
   const tone = ownerScoreTone(team, opponent, status)
+  const liveGames = useLiveGames(status)
   return (
     <div className="@container">
       <div
@@ -101,12 +117,13 @@ export function MatchupCard({
             <MatchupWinChancePanels key={matchup.id} matchup={matchup} />
           </aside>
         )}
-        <section className="rounded-xl border bg-card @4xl:col-start-1 @4xl:row-start-2">
+        <section className="overflow-hidden rounded-xl border bg-card @4xl:col-start-1 @4xl:row-start-2">
           <Lineup
             mine={team.starters}
             theirs={opponent?.starters ?? []}
             hasOpponent={hasOpponent}
             status={status}
+            liveGames={liveGames}
           />
           <details className="group border-t">
             <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-muted-foreground select-none hover:text-foreground">

@@ -132,7 +132,7 @@ func clientForBackfill(
 	backfill dashboard.WinChanceBackfill,
 ) leaguelensv1connect.DashboardServiceClient {
 	t.Helper()
-	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, nil, backfill), nil, nil, nil))
+	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, nil, backfill, nil), nil, nil, nil))
 	t.Cleanup(server.Close)
 	return leaguelensv1connect.NewDashboardServiceClient(connect.NewClient(connecthttp.NewTransport(server.Client(), server.URL+"/api", connecthttp.WithProtoJSON())))
 }
