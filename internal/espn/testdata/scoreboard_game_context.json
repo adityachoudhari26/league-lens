@@ -33,14 +33,14 @@
               "homeAway": "home",
               "team": {
                 "id": "7",
-                "abbreviation": null
+                "abbreviation": "DEN"
               }
             },
             {
               "homeAway": "away",
               "team": {
                 "id": "26",
-                "abbreviation": null
+                "abbreviation": "SEA"
               }
             }
           ],
@@ -74,14 +74,14 @@
               "homeAway": "home",
               "team": {
                 "id": "30",
-                "abbreviation": null
+                "abbreviation": "JAX"
               }
             },
             {
               "homeAway": "away",
               "team": {
                 "id": "34",
-                "abbreviation": null
+                "abbreviation": "HOU"
               }
             }
           ],
@@ -127,14 +127,14 @@
               "homeAway": "home",
               "team": {
                 "id": "1",
-                "abbreviation": null
+                "abbreviation": "ATL"
               }
             },
             {
               "homeAway": "away",
               "team": {
                 "id": "3",
-                "abbreviation": null
+                "abbreviation": "CHI"
               }
             }
           ],
@@ -180,14 +180,14 @@
               "homeAway": "home",
               "team": {
                 "id": "25",
-                "abbreviation": null
+                "abbreviation": "SF"
               }
             },
             {
               "homeAway": "away",
               "team": {
                 "id": "28",
-                "abbreviation": null
+                "abbreviation": "WSH"
               }
             }
           ],

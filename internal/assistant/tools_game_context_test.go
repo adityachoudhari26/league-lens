@@ -11,6 +11,16 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
 
+const (
+	jaxGameJSON = `{"away":"HOU","home":"JAX","kickoff":"2026-10-18T13:30:00Z","status":"scheduled",` +
+		`"line":"JAX -2.5","over_under":42.5,"line_source":"Draft Kings",` +
+		`"weather":{"condition":"Rain","temperature_f":58}}`
+	atlGameJSON = `{"away":"CHI","home":"ATL","kickoff":"2026-10-18T17:00:00Z","status":"in_progress",` +
+		`"line":"CHI -1.5","over_under":51.5,"line_source":"Draft Kings"}`
+	sfGameJSON  = `{"away":"WAS","home":"SF","kickoff":"2026-10-20T00:15:00Z","status":"scheduled"}`
+	denGameJSON = `{"away":"SEA","home":"DEN","kickoff":"2026-10-16T00:15:00Z","status":"final"}`
+)
+
 type stubGameContextSource struct {
 	result fantasy.NFLWeekGameContext
 	err    error
@@ -29,12 +39,7 @@ func TestGameContextToolFiltersAndSerializesGames(t *testing.T) {
 	filtered := runAssistantTool(context.Background(), tools, llm.ToolCall{
 		ID: "filtered", Name: "get_game_context", Input: json.RawMessage(`{"week":6,"teams":["jax","Atl"]}`),
 	})
-	wantFiltered := `{"season":2026,"week":6,"games":[` +
-		`{"away":"HOU","home":"JAX","kickoff":"2026-10-18T13:30:00Z","status":"scheduled",` +
-		`"line":"JAX -2.5","over_under":42.5,"line_source":"Draft Kings",` +
-		`"weather":{"condition":"Rain","temperature_f":58}},` +
-		`{"away":"CHI","home":"ATL","kickoff":"2026-10-18T17:00:00Z","status":"in_progress",` +
-		`"line":"CHI -1.5","over_under":51.5,"line_source":"Draft Kings"}]}`
+	wantFiltered := `{"season":2026,"week":6,"games":[` + jaxGameJSON + "," + atlGameJSON + `]}`
 	if filtered.IsError || filtered.Content != wantFiltered {
 		t.Fatalf("filtered result = %+v, want %s", filtered, wantFiltered)
 	}
@@ -43,13 +48,7 @@ func TestGameContextToolFiltersAndSerializesGames(t *testing.T) {
 		ID: "all", Name: "get_game_context", Input: json.RawMessage(`{}`),
 	})
 	wantAll := `{"season":2026,"week":6,"games":[` +
-		`{"away":"HOU","home":"JAX","kickoff":"2026-10-18T13:30:00Z","status":"scheduled",` +
-		`"line":"JAX -2.5","over_under":42.5,"line_source":"Draft Kings",` +
-		`"weather":{"condition":"Rain","temperature_f":58}},` +
-		`{"away":"CHI","home":"ATL","kickoff":"2026-10-18T17:00:00Z","status":"in_progress",` +
-		`"line":"CHI -1.5","over_under":51.5,"line_source":"Draft Kings"},` +
-		`{"away":"WAS","home":"SF","kickoff":"2026-10-20T00:15:00Z","status":"scheduled"},` +
-		`{"away":"SEA","home":"DEN","kickoff":"2026-10-16T00:15:00Z","status":"final"}]}`
+		jaxGameJSON + "," + atlGameJSON + "," + sfGameJSON + "," + denGameJSON + `]}`
 	if all.IsError || all.Content != wantAll {
 		t.Fatalf("all-games result = %+v, want %s", all, wantAll)
 	}

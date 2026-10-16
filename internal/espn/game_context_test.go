@@ -20,32 +20,45 @@ func TestParseNFLGameContextFixture(t *testing.T) {
 		t.Fatalf("season/week/games = %d/%d/%d", gameContext.Season, gameContext.Week, len(gameContext.Games))
 	}
 
-	jaguarsGame := gameContextByTeams(t, gameContext, "JAX", "HOU")
-	if !jaguarsGame.KickoffAt.Equal(time.Date(2026, time.October, 18, 13, 30, 0, 0, time.UTC)) {
-		t.Errorf("JAX/HOU kickoff = %s", jaguarsGame.KickoffAt)
-	}
-	if jaguarsGame.Odds == nil || jaguarsGame.Odds.Line != "JAX -2.5" ||
-		jaguarsGame.Odds.OverUnder == nil || *jaguarsGame.Odds.OverUnder != 42.5 ||
-		jaguarsGame.Odds.Source != "Draft Kings" || jaguarsGame.Weather != nil {
-		t.Errorf("JAX/HOU context = %+v", jaguarsGame)
-	}
+	assertJaguarsOddsWithoutWeather(t, gameContextByTeams(t, gameContext, "JAX", "HOU"))
+	assertBearsOddsAndWeather(t, gameContextByTeams(t, gameContext, "ATL", "CHI"))
+	assertFinalGameHasNoOddsOrWeather(t, gameContextByTeams(t, gameContext, "DEN", "SEA"))
+	assertWashingtonMappedToWAS(t, gameContextByTeams(t, gameContext, "SF", "WAS"))
+}
 
-	bearsGame := gameContextByTeams(t, gameContext, "ATL", "CHI")
-	if bearsGame.Odds == nil || bearsGame.Odds.Line != "CHI -1.5" ||
-		bearsGame.Odds.OverUnder == nil || *bearsGame.Odds.OverUnder != 51.5 ||
-		bearsGame.Weather == nil || bearsGame.Weather.Condition != "Sunny" ||
-		bearsGame.Weather.TemperatureF == nil || *bearsGame.Weather.TemperatureF != 60 {
-		t.Errorf("ATL/CHI context = %+v", bearsGame)
+func assertJaguarsOddsWithoutWeather(t *testing.T, game fantasy.NFLGameContext) {
+	t.Helper()
+	if !game.KickoffAt.Equal(time.Date(2026, time.October, 18, 13, 30, 0, 0, time.UTC)) {
+		t.Errorf("JAX/HOU kickoff = %s", game.KickoffAt)
 	}
-
-	broncosGame := gameContextByTeams(t, gameContext, "DEN", "SEA")
-	if broncosGame.State != fantasy.NFLGameFinal || broncosGame.Odds != nil || broncosGame.Weather != nil {
-		t.Errorf("DEN/SEA context = %+v", broncosGame)
+	if game.Odds == nil || game.Odds.Line != "JAX -2.5" ||
+		game.Odds.OverUnder == nil || *game.Odds.OverUnder != 42.5 ||
+		game.Odds.Source != "Draft Kings" || game.Weather != nil {
+		t.Errorf("JAX/HOU context = %+v", game)
 	}
+}
 
-	fortyNinersGame := gameContextByTeams(t, gameContext, "SF", "WAS")
-	if fortyNinersGame.AwayTeam != "WAS" {
-		t.Errorf("SF opponent = %q, want WAS", fortyNinersGame.AwayTeam)
+func assertBearsOddsAndWeather(t *testing.T, game fantasy.NFLGameContext) {
+	t.Helper()
+	if game.Odds == nil || game.Odds.Line != "CHI -1.5" ||
+		game.Odds.OverUnder == nil || *game.Odds.OverUnder != 51.5 ||
+		game.Weather == nil || game.Weather.Condition != "Sunny" ||
+		game.Weather.TemperatureF == nil || *game.Weather.TemperatureF != 60 {
+		t.Errorf("ATL/CHI context = %+v", game)
+	}
+}
+
+func assertFinalGameHasNoOddsOrWeather(t *testing.T, game fantasy.NFLGameContext) {
+	t.Helper()
+	if game.State != fantasy.NFLGameFinal || game.Odds != nil || game.Weather != nil {
+		t.Errorf("DEN/SEA context = %+v", game)
+	}
+}
+
+func assertWashingtonMappedToWAS(t *testing.T, game fantasy.NFLGameContext) {
+	t.Helper()
+	if game.AwayTeam != "WAS" {
+		t.Errorf("SF opponent = %q, want WAS", game.AwayTeam)
 	}
 }
 

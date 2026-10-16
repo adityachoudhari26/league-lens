@@ -34,8 +34,9 @@ const getGameContextSchema = `{
   "additionalProperties": false
 }`
 
-type gameContextSource interface {
-	NFLGameContext(context.Context, int) (fantasy.NFLWeekGameContext, error)
+// GameContextSource loads current or selected NFL-week betting lines and forecasts.
+type GameContextSource interface {
+	NFLGameContext(ctx context.Context, week int) (fantasy.NFLWeekGameContext, error)
 }
 
 type gameContextInput struct {
@@ -65,41 +66,58 @@ type gameContextWeather struct {
 	TemperatureF *int   `json:"temperature_f,omitempty"`
 }
 
-func gameContextTools(source gameContextSource) []assistantTool {
+func gameContextTools(source GameContextSource) []assistantTool {
 	return []assistantTool{newAssistantTool(
 		"get_game_context",
 		getGameContextDescription,
 		getGameContextSchema,
 		fixedToolLabel("Checking game lines and weather"),
-		func(ctx context.Context, raw json.RawMessage) (string, error) {
-			input, err := decodeToolInput[gameContextInput](raw)
-			if err != nil {
-				return "", errInvalidToolInput
-			}
-			week, teams, err := validateGameContextInput(input)
-			if err != nil {
-				return "", err
-			}
-			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			defer cancel()
-			gameContext, err := source.NFLGameContext(ctx, week)
-			if err != nil {
-				return "", errGameContextUnavailable
-			}
-			result := gameContextResult{
-				Season: gameContext.Season,
-				Week:   int(gameContext.Week),
-				Games:  gameContextGames(gameContext.Games, teams),
-			}
-			encoded, err := json.Marshal(result)
-			if err != nil {
-				return "", errGameContextUnavailable
-			}
-			return string(encoded), nil
-		},
+		runGameContextTool(source),
 	)}
 }
 
+func runGameContextTool(source GameContextSource) func(context.Context, json.RawMessage) (string, error) {
+	return func(ctx context.Context, raw json.RawMessage) (string, error) {
+		input, err := decodeToolInput[gameContextInput](raw)
+		if err != nil {
+			return "", errInvalidToolInput
+		}
+		week, teams, err := validateGameContextInput(input)
+		if err != nil {
+			return "", err
+		}
+		gameContext, err := loadGameContext(ctx, source, week)
+		if err != nil {
+			return "", err
+		}
+		result := gameContextResult{
+			Season: gameContext.Season,
+			Week:   int(gameContext.Week),
+			Games:  gameContextGames(gameContext.Games, teams),
+		}
+		encoded, err := json.Marshal(result)
+		if err != nil {
+			return "", errGameContextUnavailable
+		}
+		return string(encoded), nil
+	}
+}
+
+func loadGameContext(
+	ctx context.Context,
+	source GameContextSource,
+	week int,
+) (fantasy.NFLWeekGameContext, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	gameContext, err := source.NFLGameContext(ctx, week)
+	if err != nil {
+		return fantasy.NFLWeekGameContext{}, errGameContextUnavailable
+	}
+	return gameContext, nil
+}
+
+// validateGameContextInput treats week 0 as current, nil teams as no filter, and returns teams as an uppercase set.
 func validateGameContextInput(input gameContextInput) (int, map[string]struct{}, error) {
 	week := 0
 	if input.Week != nil {
@@ -134,6 +152,7 @@ func gameContextGames(games []fantasy.NFLGameContext, teams map[string]struct{})
 	return result
 }
 
+// filterGamesByTeam keeps games involving a requested team; an empty set leaves all games unchanged.
 func filterGamesByTeam(games []fantasy.NFLGameContext, teams map[string]struct{}) []fantasy.NFLGameContext {
 	if len(teams) == 0 {
 		return games
