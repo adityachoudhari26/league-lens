@@ -16,6 +16,11 @@ type Querier interface {
 	AddPlayerNews(ctx context.Context, arg AddPlayerNewsParams) error
 	AddPlayerProfileStat(ctx context.Context, arg AddPlayerProfileStatParams) error
 	AddRosterEntry(ctx context.Context, arg AddRosterEntryParams) error
+	// Players on the team's latest successful observed snapshot.
+	AssistantInjuryOwnerRosterPlayerIDs(ctx context.Context, arg AssistantInjuryOwnerRosterPlayerIDsParams) ([]pgtype.UUID, error)
+	// Requested players that exist, with one ESPN and one Sleeper ID (provider-supplied
+	// before dataset mappings) and the NFL team from their most recent successful roster entry.
+	AssistantInjuryPlayers(ctx context.Context, playerIds []pgtype.UUID) ([]AssistantInjuryPlayersRow, error)
 	AssistantScheduleGames(ctx context.Context, arg AssistantScheduleGamesParams) ([]AssistantScheduleGamesRow, error)
 	AssistantScheduleLoaded(ctx context.Context, season int32) (bool, error)
 	// Players on the team's latest successful observed snapshot. Position comes from the
