@@ -2,6 +2,7 @@ package assistant
 
 import (
 	"context"
+	"encoding/json"
 
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 )
