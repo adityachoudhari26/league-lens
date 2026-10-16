@@ -59,7 +59,7 @@ func run(args []string, out, errOut io.Writer) error {
 	if err != nil {
 		fmt.Fprintln(errOut, "Player mapping unavailable; retaining provider identities for this import.")
 	}
-	source, accountID, selection, err := connections.PrepareSource(ctx, connections.ImportSpec{
+	prepared, err := connections.PrepareSource(ctx, connections.ImportSpec{
 		Provider: options.provider, LeagueID: options.leagueID,
 		Season: options.season, TeamID: options.teamID, Username: options.username,
 		ESPN: espn.Credentials{S2: os.Getenv("ESPN_S2"), SWID: os.Getenv("ESPN_SWID")},
@@ -67,8 +67,10 @@ func run(args []string, out, errOut io.Writer) error {
 	if err != nil {
 		return err
 	}
-	service := importer.Service{DB: db, Source: source, Catalog: catalog, CatalogVersion: version}
-	result, err := service.Import(ctx, importer.Request{OwnerEmail: options.ownerEmail, ExternalAccountID: accountID, Selection: selection})
+	service := importer.Service{DB: db, Source: prepared.Provider, Catalog: catalog, CatalogVersion: version}
+	result, err := service.Import(ctx, importer.Request{
+		OwnerEmail: options.ownerEmail, ExternalAccountID: prepared.AccountID, Selection: prepared.Selection, League: prepared.League,
+	})
 	if err != nil {
 		return fmt.Errorf("import failed: %w", err)
 	}

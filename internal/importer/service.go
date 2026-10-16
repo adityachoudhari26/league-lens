@@ -27,6 +27,9 @@ type Service struct {
 type Request struct {
 	OwnerEmail, ExternalAccountID string
 	Selection                     fantasy.ConnectionSelection
+	// League optionally carries a description fetched moments ago by the caller.
+	// When its Ref matches Selection.League, Begin uses it instead of describing again.
+	League fantasy.League
 }
 type Result struct {
 	Teams, Players, MatchupPeriods int
@@ -67,9 +70,13 @@ func (s *Service) Begin(ctx context.Context, request Request) (Started, error) {
 	if strings.TrimSpace(request.OwnerEmail) == "" || request.ExternalAccountID == "" || request.Selection.League.ExternalID == "" {
 		return Started{}, fmt.Errorf("owner, external account, and league selection required")
 	}
-	header, err := s.Source.DescribeLeague(ctx, request.Selection.League.ExternalID)
-	if err != nil {
-		return Started{}, err
+	header := request.League
+	if header.Ref != request.Selection.League {
+		var err error
+		header, err = s.Source.DescribeLeague(ctx, request.Selection.League.ExternalID)
+		if err != nil {
+			return Started{}, err
+		}
 	}
 	if header.Ref != request.Selection.League {
 		return Started{}, fmt.Errorf("league selection changed")

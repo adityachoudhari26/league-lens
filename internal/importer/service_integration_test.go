@@ -47,11 +47,13 @@ func fixture(t *testing.T) fantasy.LeagueData {
 }
 
 type fixtureSource struct {
-	data fantasy.LeagueData
-	err  error
+	data      fantasy.LeagueData
+	err       error
+	describes int
 }
 
 func (f *fixtureSource) DescribeLeague(context.Context, string) (fantasy.League, error) {
+	f.describes++
 	return f.data.League, nil
 }
 
@@ -336,6 +338,42 @@ func TestFinishRecordsProviderFailureOnSyncRun(t *testing.T) {
 	var teams int
 	if err = sqlDB.QueryRow(`SELECT count(*) FROM teams`).Scan(&teams); err != nil || teams != 0 {
 		t.Fatalf("teams after failed Finish = %d, %v", teams, err)
+	}
+}
+
+// A description supplied with the request skips the provider read; a stale or
+// missing one is re-described.
+func TestBeginUsesSuppliedLeagueDescription(t *testing.T) {
+	ctx := context.Background()
+	_, db := openTestDatabase(t)
+	src := &fixtureSource{data: fixture(t)}
+	s := Service{DB: db, Source: src, Catalog: playerids.Catalog{}}
+	req := Request{OwnerEmail: "local@example.test", ExternalAccountID: "owner", Selection: fantasy.ConnectionSelection{League: src.data.League.Ref, SelectedTeamIDs: []string{"1"}}}
+
+	withLeague := req
+	withLeague.League = src.data.League
+	if _, err := s.Begin(ctx, withLeague); err != nil {
+		t.Fatal(err)
+	}
+	if src.describes != 0 {
+		t.Fatalf("describe calls with matching League = %d, want 0", src.describes)
+	}
+
+	stale := withLeague
+	stale.League = src.data.League
+	stale.League.Ref.ExternalID = "other-league"
+	if _, err := s.Begin(ctx, stale); err != nil {
+		t.Fatal(err)
+	}
+	if src.describes != 1 {
+		t.Fatalf("describe calls after stale League = %d, want 1", src.describes)
+	}
+
+	if _, err := s.Begin(ctx, req); err != nil {
+		t.Fatal(err)
+	}
+	if src.describes != 2 {
+		t.Fatalf("describe calls without League = %d, want 2", src.describes)
 	}
 }
 

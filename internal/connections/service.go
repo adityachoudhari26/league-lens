@@ -27,7 +27,7 @@ import (
 
 type DiscoverESPNFunc func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error)
 type DiscoverSleeperFunc func(context.Context, string, int) (string, []fantasy.DiscoveredLeague, error)
-type NewSourceFunc func(context.Context, ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error)
+type NewSourceFunc func(context.Context, ImportSpec) (PreparedSource, error)
 
 // ImportStarter finishes begun imports in the background.
 type ImportStarter interface {
@@ -329,7 +329,7 @@ func (s Service) importPick(
 		result.ErrorCode = "invalid_selection"
 		return result, nil
 	}
-	source, accountID, selection, err := s.NewSource(ctx, ImportSpec{
+	prepared, err := s.NewSource(ctx, ImportSpec{
 		Provider: connection.Provider, LeagueID: pick.GetExternalLeagueId(), Season: fantasy.CurrentSeason(time.Now()),
 		TeamID: teamID, Username: connection.ExternalUserID.String, ESPN: credentials,
 	})
@@ -342,13 +342,13 @@ func (s Service) importPick(
 		result.ErrorCode = "provider_fetch_failed"
 		return result, nil
 	}
-	if accountID != connection.ExternalUserID.String {
+	if prepared.AccountID != connection.ExternalUserID.String {
 		result.ErrorCode = "account_mismatch"
 		return result, nil
 	}
-	imports.Source = source
+	imports.Source = prepared.Provider
 	started, err := imports.Begin(ctx, importer.Request{
-		OwnerEmail: s.OwnerEmail, ExternalAccountID: accountID, Selection: selection,
+		OwnerEmail: s.OwnerEmail, ExternalAccountID: prepared.AccountID, Selection: prepared.Selection, League: prepared.League,
 	})
 	if err != nil {
 		if errors.Is(err, espn.ErrUnauthorized) {
@@ -369,9 +369,9 @@ func (s Service) importPick(
 	return result, &leaguesync.ImportJob{
 		Target: leaguesync.Target{
 			ID: result.LeagueId, ConnectionID: connection.ID,
-			ExternalAccountID: accountID, Selection: selection,
+			ExternalAccountID: prepared.AccountID, Selection: prepared.Selection,
 		},
-		Source: source, Started: started,
+		Source: prepared.Provider, Started: started,
 	}
 }
 

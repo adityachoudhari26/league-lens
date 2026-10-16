@@ -138,9 +138,12 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 		DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
 			return []fantasy.DiscoveredLeague{{Ref: ref, Name: league.Name, TeamID: "1", TeamName: "Home"}}, nil
 		},
-		NewSource: func(_ context.Context, spec ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error) {
+		NewSource: func(_ context.Context, spec ImportSpec) (PreparedSource, error) {
 			selection := fantasy.ConnectionSelection{League: ref, SelectedTeamIDs: []string{fmt.Sprint(spec.TeamID)}}
-			return connectionTestProvider{league: league, data: data}, accountID, selection, nil
+			return PreparedSource{
+				Provider: connectionTestProvider{league: league, data: data}, AccountID: accountID,
+				Selection: selection, League: league,
+			}, nil
 		},
 	}
 
@@ -351,12 +354,16 @@ func TestImportUnauthorizedMarksConnectionForReconnect(t *testing.T) {
 				DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
 					return []fantasy.DiscoveredLeague{{Ref: ref, TeamID: "1"}}, nil
 				},
-				NewSource: func(_ context.Context, spec ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error) {
+				NewSource: func(_ context.Context, spec ImportSpec) (PreparedSource, error) {
 					selection := fantasy.ConnectionSelection{League: ref, SelectedTeamIDs: []string{fmt.Sprint(spec.TeamID)}}
 					if failSource {
-						return nil, "", selection, espn.ErrUnauthorized
+						return PreparedSource{}, espn.ErrUnauthorized
 					}
-					return connectionTestProvider{league: league, describeErr: espn.ErrUnauthorized}, accountID, selection, nil
+					// League left unset so Begin describes the league again and hits the unauthorized provider.
+					return PreparedSource{
+						Provider: connectionTestProvider{league: league, describeErr: espn.ErrUnauthorized}, AccountID: accountID,
+						Selection: selection,
+					}, nil
 				},
 			}
 			connected, err := service.ConnectESPN(ctx, &v1.ConnectESPNRequest{S2: credentials.S2, Swid: credentials.SWID})
