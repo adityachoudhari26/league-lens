@@ -321,7 +321,7 @@ func injuryAthleteIDs(players []injuryPlayer) []int64 {
 }
 
 // buildInjuryReport keeps players ESPN answered for: injured ones always, and healthy
-// requested ones as "Active". Unmapped players and failed lookups are left out.
+// requested ones as "Active". Unmapped players and athletes missing from injuries are left out.
 func buildInjuryReport(players []injuryPlayer, injuries map[int64]*espn.AthleteInjury, now time.Time) injuryReportResult {
 	result := injuryReportResult{Players: []injuryReportPlayer{}}
 	for _, player := range players {

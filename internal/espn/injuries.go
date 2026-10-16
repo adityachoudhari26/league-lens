@@ -70,51 +70,67 @@ func NewInjuryClient(client *http.Client) *InjuryClient {
 	return &InjuryClient{http: client, baseURL: nflCoreBaseURL, now: time.Now}
 }
 
+// errNoAthleteInjuries marks ESPN's 404 for an athlete without an injury list this season.
+var errNoAthleteInjuries = errors.New("ESPN has no injury list for the athlete")
+
 // AthleteInjuries returns each athlete's newest ESPN injury entry, or nil when ESPN
-// lists none. Athletes whose lookup failed are left out of the map; the error is
-// returned only when every lookup failed.
+// lists none. Any athlete still failing after one retry fails the whole call, so a
+// missing lookup is never mistaken for a healthy player.
 func (c *InjuryClient) AthleteInjuries(ctx context.Context, season int, athleteIDs []int64) (map[int64]*AthleteInjury, error) {
 	injuries := make(map[int64]*AthleteInjury, len(athleteIDs))
 	var mu sync.Mutex
-	var firstErr error
-	group := errgroup.Group{}
+	group, groupCtx := errgroup.WithContext(ctx)
 	group.SetLimit(injuryRequestsInFlight)
 	for _, athleteID := range athleteIDs {
 		group.Go(func() error {
-			injury, err := c.athleteInjury(ctx, season, athleteID)
+			injury, err := c.athleteInjury(groupCtx, season, athleteID)
+			if err != nil {
+				return err
+			}
 			mu.Lock()
 			defer mu.Unlock()
-			if err != nil && firstErr == nil {
-				firstErr = err
-			}
-			if err == nil {
-				injuries[athleteID] = injury
-			}
+			injuries[athleteID] = injury
 			return nil
 		})
 	}
-	_ = group.Wait()
-	if len(injuries) == 0 && firstErr != nil {
-		return nil, firstErr
+	if err := group.Wait(); err != nil {
+		return nil, err
 	}
 	return injuries, nil
 }
 
-// athleteInjury serves a fresh cache entry or fetches and caches the athlete's list.
+// athleteInjury serves a fresh cache entry or reads and caches the athlete's list.
 func (c *InjuryClient) athleteInjury(ctx context.Context, season int, athleteID int64) (*AthleteInjury, error) {
 	if injury, found := c.cachedInjury(athleteID); found {
 		return injury, nil
 	}
-	body, err := c.fetchAthleteInjuries(ctx, season, athleteID)
-	if err != nil {
-		return nil, err
+	injury, err := c.readAthleteInjury(ctx, season, athleteID)
+	if shouldRetryInjuryRead(ctx, err) {
+		injury, err = c.readAthleteInjury(ctx, season, athleteID)
 	}
-	injury, err := parseAthleteInjuries(body)
+	if errors.Is(err, errNoAthleteInjuries) {
+		injury, err = nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
 	c.storeInjury(athleteID, injury)
 	return injury, nil
+}
+
+// shouldRetryInjuryRead retries transient failures once, but not a 404 (no injury
+// list) or a cancelled or expired request.
+func shouldRetryInjuryRead(ctx context.Context, err error) bool {
+	return err != nil && ctx.Err() == nil && !errors.Is(err, errNoAthleteInjuries) &&
+		!errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded)
+}
+
+func (c *InjuryClient) readAthleteInjury(ctx context.Context, season int, athleteID int64) (*AthleteInjury, error) {
+	body, err := c.fetchAthleteInjuries(ctx, season, athleteID)
+	if err != nil {
+		return nil, err
+	}
+	return parseAthleteInjuries(body)
 }
 
 func (c *InjuryClient) cachedInjury(athleteID int64) (*AthleteInjury, bool) {
@@ -150,6 +166,9 @@ func (c *InjuryClient) fetchAthleteInjuries(ctx context.Context, season int, ath
 		return nil, errors.New("ESPN injury request failed")
 	}
 	defer response.Body.Close()
+	if response.StatusCode == http.StatusNotFound {
+		return nil, errNoAthleteInjuries
+	}
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("ESPN injuries returned HTTP %d", response.StatusCode)
 	}

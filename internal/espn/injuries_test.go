@@ -135,9 +135,35 @@ func TestInjuryClientKeepsAtMostFourRequestsInFlight(t *testing.T) {
 	}
 }
 
-func TestInjuryClientLeavesOutFailedAthletes(t *testing.T) {
+func TestInjuryClientRetriesAFailedAthleteOnce(t *testing.T) {
+	var athleteTwoHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/athletes/2/") && athleteTwoHits.Add(1) == 1 {
+			http.Error(w, "temporary", http.StatusBadGateway)
+			return
+		}
+		_, _ = w.Write(readInjuryFixture(t, "injuries_athlete_questionable.json"))
+	}))
+	defer server.Close()
+	client := testInjuryClient(server.URL, time.Now)
+
+	injuries, err := client.AthleteInjuries(context.Background(), 2026, []int64{1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(injuries) != 2 || injuries[2] == nil || injuries[2].Status != "Questionable" {
+		t.Fatalf("injuries = %+v", injuries)
+	}
+	if athleteTwoHits.Load() != 2 {
+		t.Fatalf("athlete 2 requests = %d, want 2", athleteTwoHits.Load())
+	}
+}
+
+func TestInjuryClientFailsWhenAnAthleteKeepsFailing(t *testing.T) {
+	var athleteTwoHits atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/athletes/2/") {
+			athleteTwoHits.Add(1)
 			http.Error(w, "secret upstream body", http.StatusInternalServerError)
 			return
 		}
@@ -147,15 +173,54 @@ func TestInjuryClientLeavesOutFailedAthletes(t *testing.T) {
 	client := testInjuryClient(server.URL, time.Now)
 
 	injuries, err := client.AthleteInjuries(context.Background(), 2026, []int64{1, 2})
+	if err == nil || injuries != nil {
+		t.Fatalf("injuries, err = %+v, %v; want an error", injuries, err)
+	}
+	if strings.Contains(err.Error(), "secret upstream body") {
+		t.Fatalf("error leaked the response body: %v", err)
+	}
+	if athleteTwoHits.Load() != 2 {
+		t.Fatalf("athlete 2 requests = %d, want 2", athleteTwoHits.Load())
+	}
+}
+
+func TestInjuryClientTreatsNotFoundAsNoInjuryWithoutRetry(t *testing.T) {
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.NotFound(w, nil)
+	}))
+	defer server.Close()
+	client := testInjuryClient(server.URL, time.Now)
+
+	injuries, err := client.AthleteInjuries(context.Background(), 2026, []int64{7})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, found := injuries[2]; found || len(injuries) != 1 {
-		t.Fatalf("injuries = %+v", injuries)
+	if injury, found := injuries[7]; !found || injury != nil {
+		t.Fatalf("injuries = %+v, want athlete 7 with no injury", injuries)
 	}
-	_, err = client.AthleteInjuries(context.Background(), 2026, []int64{2})
-	if err == nil || strings.Contains(err.Error(), "secret upstream body") {
-		t.Fatalf("all-failed error = %v", err)
+	if hits.Load() != 1 {
+		t.Fatalf("requests = %d, want 1", hits.Load())
+	}
+}
+
+func TestInjuryClientDoesNotRetryCancelledRequests(t *testing.T) {
+	var hits atomic.Int32
+	ctx, cancel := context.WithCancel(context.Background())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		cancel()
+		http.Error(w, "late", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	client := testInjuryClient(server.URL, time.Now)
+
+	if _, err := client.AthleteInjuries(ctx, 2026, []int64{7}); err == nil {
+		t.Fatal("expected an error")
+	}
+	if hits.Load() != 1 {
+		t.Fatalf("requests = %d, want 1", hits.Load())
 	}
 }
 

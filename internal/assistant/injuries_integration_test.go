@@ -5,6 +5,7 @@ package assistant
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"testing"
@@ -66,6 +67,10 @@ func TestInjuryReportReadsOwnerRosterAndRequestedPlayers(t *testing.T) {
 		{Name: "Away WR", NFLTeam: "WAS", Status: "IR", Injury: "Knee", Updated: &recent},
 		{Name: "Healthy RB", NFLTeam: "MIA", Status: "Active"},
 	})
+
+	source.err = errors.New("ESPN injuries returned HTTP 500")
+	assertInjuryToolError(t, tools, fmt.Sprintf(`{"league_season_id":%q}`, leagueID), "couldn't load the requested data")
+	source.err = nil
 
 	assertInjuryToolError(t, tools, `{"league_season_id":"00000000-0000-0000-0000-000000000001"}`, "requested data not found")
 	assertInjuryToolError(t, tools, `{"player_ids":["00000000-0000-0000-0000-000000000001"]}`,
