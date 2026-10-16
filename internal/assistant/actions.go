@@ -13,7 +13,10 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
 
-const maxActionSummaryRunes = 200
+const (
+	maxActionSummaryRunes     = 200
+	maxActionFingerprintRunes = 200
+)
 
 type assistantSync interface {
 	StartSync(context.Context, *v1.StartSyncRequest) (*v1.StartSyncResponse, error)
@@ -180,14 +183,7 @@ func dismissAlertProposal(
 	reader assistantDashboard,
 	raw json.RawMessage,
 ) (*v1.ActionProposal, error) {
-	input, err := decodeToolInput[alertActionInput](raw)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateActionFingerprint(input.Fingerprint); err != nil {
-		return nil, err
-	}
-	summary, err := boundedActionSummary(input.Summary)
+	input, summary, err := decodeAlertAction(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -209,14 +205,7 @@ func dismissAlertProposal(
 }
 
 func restoreAlertProposal(_ context.Context, raw json.RawMessage) (*v1.ActionProposal, error) {
-	input, err := decodeToolInput[alertActionInput](raw)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateActionFingerprint(input.Fingerprint); err != nil {
-		return nil, err
-	}
-	summary, err := boundedActionSummary(input.Summary)
+	input, summary, err := decodeAlertAction(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +219,23 @@ func restoreAlertProposal(_ context.Context, raw json.RawMessage) (*v1.ActionPro
 	}, nil
 }
 
+func decodeAlertAction(raw json.RawMessage) (alertActionInput, string, error) {
+	input, err := decodeToolInput[alertActionInput](raw)
+	if err != nil {
+		return input, "", err
+	}
+	if err := validateActionFingerprint(input.Fingerprint); err != nil {
+		return input, "", err
+	}
+	summary, err := boundedActionSummary(input.Summary)
+	if err != nil {
+		return input, "", err
+	}
+	return input, summary, nil
+}
+
 func validateActionFingerprint(fingerprint string) error {
-	if strings.TrimSpace(fingerprint) == "" || len([]rune(fingerprint)) > maxActionSummaryRunes {
+	if strings.TrimSpace(fingerprint) == "" || len([]rune(fingerprint)) > maxActionFingerprintRunes {
 		return errInvalidToolInput
 	}
 	return nil
