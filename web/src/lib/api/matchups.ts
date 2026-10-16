@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query"
 import { dashboard } from "./client"
 
-// Reads saved snapshots. Matchups reloads these queries after syncs and polls
-// live matchup details; it never starts a sync itself.
+// Reads saved snapshots. Matchups syncs stale leagues on page open, reloads
+// these queries after syncs, and polls live matchup details.
 export const matchupQueries = {
   leagues: queryOptions({
     queryKey: ["matchups", "leagues"],

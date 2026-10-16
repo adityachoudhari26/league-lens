@@ -151,6 +151,64 @@ func TestDescribeLeagueRequestsMinimalViews(t *testing.T) {
 	}
 }
 
+func TestFetchLeagueUsesLiveTotalsForUndecidedCurrentWeek(t *testing.T) {
+	c := fixtureClient(t, func(v map[string]any, r *http.Request) {
+		if r.URL.Query().Get("scoringPeriodId") != "" {
+			return
+		}
+		var includesMatchupScore bool
+		for _, view := range r.URL.Query()["view"] {
+			if view == "mMatchupScore" {
+				includesMatchupScore = true
+				break
+			}
+		}
+		for _, item := range v["schedule"].([]any) {
+			matchup := item.(map[string]any)
+			if matchup["matchupPeriodId"] != float64(2) {
+				continue
+			}
+			home := matchup["home"].(map[string]any)
+			away := matchup["away"].(map[string]any)
+			home["totalPoints"] = 0.0
+			away["totalPoints"] = 0.0
+			delete(home, "totalPointsLive")
+			delete(away, "totalPointsLive")
+			if includesMatchupScore {
+				home["totalPointsLive"] = 11.0
+				away["totalPointsLive"] = 13.6
+			}
+			return
+		}
+		t.Fatal("current matchup not found")
+	})
+	league, err := c.DescribeLeague(context.Background(), "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := c.FetchLeague(context.Background(), league, fantasy.FetchRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, matchup := range data.Matchups {
+		if matchup.ExternalID != "2" {
+			continue
+		}
+		var scoreA, scoreB float64
+		if matchup.TeamA.Score != nil {
+			scoreA = *matchup.TeamA.Score
+		}
+		if matchup.TeamB != nil && matchup.TeamB.Score != nil {
+			scoreB = *matchup.TeamB.Score
+		}
+		if scoreA != 11.0 || scoreB != 13.6 {
+			t.Fatalf("current matchup scores = %.1f and %.1f, want 11.0 and 13.6", scoreA, scoreB)
+		}
+		return
+	}
+	t.Fatal("current matchup not returned")
+}
+
 func TestRejectsWrongHistoricalWeek(t *testing.T) {
 	c := fixtureClient(t, func(v map[string]any, r *http.Request) { v["scoringPeriodId"] = 3 })
 	league, err := c.DescribeLeague(context.Background(), "123")
