@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { type NavigationItem } from "@/components/layout/navigation"
 import { LeagueSettings } from "@/components/connect/league-settings"
+import { AssistantSettings } from "@/components/assistant-settings/assistant-settings"
 import { Button } from "@/components/ui/button"
 import { themeOptions } from "@/components/theme/theme-toggle"
 import { useTheme } from "@/components/theme/theme-provider"
@@ -88,6 +89,7 @@ export function WorkspacePage({ item }: { item: NavigationItem }) {
       {item.path === "/settings" ? (
         <div className="grid gap-6">
           <LeagueSettings />
+          <AssistantSettings />
           <AppearanceSettings />
         </div>
       ) : (

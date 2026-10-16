@@ -28,6 +28,7 @@ type Querier interface {
 	DashboardMatchupPeriods(ctx context.Context, arg DashboardMatchupPeriodsParams) ([]int32, error)
 	DashboardRoster(ctx context.Context, arg DashboardRosterParams) (TeamSnapshot, error)
 	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
+	DeleteAssistantSettings(ctx context.Context, userID pgtype.UUID) error
 	DeleteMatchupLineupPlayersNotIn(ctx context.Context, arg DeleteMatchupLineupPlayersNotInParams) error
 	DeleteNFLSeason(ctx context.Context, season int32) error
 	DeletePlayerProfileStats(ctx context.Context, playerID pgtype.UUID) error
@@ -42,6 +43,7 @@ type Querier interface {
 	FindAttachedLeagueIDForConnection(ctx context.Context, arg FindAttachedLeagueIDForConnectionParams) (pgtype.UUID, error)
 	FindPlayerByExternalID(ctx context.Context, arg FindPlayerByExternalIDParams) (Player, error)
 	FindProviderConnection(ctx context.Context, arg FindProviderConnectionParams) (Connection, error)
+	GetAssistantSettings(ctx context.Context, userID pgtype.UUID) (AssistantSetting, error)
 	GetConnectionForUser(ctx context.Context, arg GetConnectionForUserParams) (Connection, error)
 	GetLatestObservedSnapshot(ctx context.Context, arg GetLatestObservedSnapshotParams) (TeamSnapshot, error)
 	GetPlayerProfile(ctx context.Context, playerID pgtype.UUID) (PlayerProfile, error)
@@ -132,6 +134,7 @@ type Querier interface {
 	// Status stays the full sync's job; live reads only refresh scores.
 	UpdateLiveMatchupScores(ctx context.Context, arg UpdateLiveMatchupScoresParams) error
 	UpdateMappedPlayerName(ctx context.Context, arg UpdateMappedPlayerNameParams) error
+	UpsertAssistantSettings(ctx context.Context, arg UpsertAssistantSettingsParams) error
 	UpsertLeagueSeason(ctx context.Context, arg UpsertLeagueSeasonParams) (LeagueSeason, error)
 	UpsertLiveLineupObservation(ctx context.Context, arg UpsertLiveLineupObservationParams) error
 	UpsertMatchup(ctx context.Context, arg UpsertMatchupParams) (Matchup, error)

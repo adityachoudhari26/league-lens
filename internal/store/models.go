@@ -14,6 +14,17 @@ type AlertDismissal struct {
 	DismissedAt pgtype.Timestamptz
 }
 
+type AssistantSetting struct {
+	UserID          pgtype.UUID
+	Provider        string
+	BaseUrl         string
+	Model           string
+	EncryptedApiKey []byte
+	ApiKeyHint      string
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
 type Connection struct {
 	ID                   pgtype.UUID
 	UserID               pgtype.UUID

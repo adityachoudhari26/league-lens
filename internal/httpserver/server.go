@@ -19,6 +19,7 @@ func NewHandler(
 	dashboard leaguelensv1connect.DashboardServiceHandler,
 	sync leaguelensv1connect.SyncServiceHandler,
 	connections leaguelensv1connect.ConnectionServiceHandler,
+	assistant leaguelensv1connect.AssistantServiceHandler,
 	static fs.FS,
 ) http.Handler {
 	mux := http.NewServeMux()
@@ -41,7 +42,7 @@ func NewHandler(
 	})
 
 	connectMux := http.NewServeMux()
-	if dashboard != nil || sync != nil || connections != nil {
+	if dashboard != nil || sync != nil || connections != nil || assistant != nil {
 		server := connect.NewServer()
 		if dashboard != nil {
 			leaguelensv1connect.RegisterDashboardServiceHandler(server, dashboard)
@@ -51,6 +52,9 @@ func NewHandler(
 		}
 		if connections != nil {
 			leaguelensv1connect.RegisterConnectionServiceHandler(server, connections)
+		}
+		if assistant != nil {
+			leaguelensv1connect.RegisterAssistantServiceHandler(server, assistant)
 		}
 		connecthttp.Mount(connectMux, server, connecthttp.WithReadMaxBytes(64<<10))
 	}

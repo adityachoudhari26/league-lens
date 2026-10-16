@@ -1,0 +1,5 @@
+data: {"choices":[{"delta":{"content":"Hello from OpenAI."},"finish_reason":null}]}
+
+data: {"choices":[{"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]

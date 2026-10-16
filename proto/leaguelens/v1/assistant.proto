@@ -1,0 +1,51 @@
+syntax = "proto3";
+package leaguelens.v1;
+
+option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1";
+
+service AssistantService {
+  rpc GetAssistantSettings(GetAssistantSettingsRequest) returns (GetAssistantSettingsResponse);
+  rpc ListAssistantModels(ListAssistantModelsRequest) returns (ListAssistantModelsResponse);
+  rpc SaveAssistantSettings(SaveAssistantSettingsRequest) returns (SaveAssistantSettingsResponse);
+  rpc DeleteAssistantSettings(DeleteAssistantSettingsRequest) returns (DeleteAssistantSettingsResponse);
+}
+
+enum AssistantProvider {
+  ASSISTANT_PROVIDER_UNSPECIFIED = 0;
+  ASSISTANT_PROVIDER_ANTHROPIC = 1;
+  ASSISTANT_PROVIDER_OPENAI_COMPATIBLE = 2;
+}
+
+message AssistantSettings {
+  AssistantProvider provider = 1;
+  string base_url = 2;
+  string model = 3;
+  string api_key_hint = 4;
+}
+
+message GetAssistantSettingsRequest {}
+message GetAssistantSettingsResponse {
+  AssistantSettings settings = 1;
+}
+
+message ListAssistantModelsRequest {
+  AssistantProvider provider = 1;
+  string base_url = 2;
+  string api_key = 3;
+}
+message ListAssistantModelsResponse {
+  repeated string models = 1;
+}
+
+message SaveAssistantSettingsRequest {
+  AssistantProvider provider = 1;
+  string base_url = 2;
+  string model = 3;
+  string api_key = 4;
+}
+message SaveAssistantSettingsResponse {
+  AssistantSettings settings = 1;
+}
+
+message DeleteAssistantSettingsRequest {}
+message DeleteAssistantSettingsResponse {}

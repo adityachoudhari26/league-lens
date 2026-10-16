@@ -1,5 +1,6 @@
 import { createClient } from "@connectrpc/connect"
 import { createConnectTransport } from "@connectrpc/connect-web"
+import { AssistantService } from "@/gen/leaguelens/v1/assistant_pb"
 import { ConnectionService } from "@/gen/leaguelens/v1/connections_pb"
 import { DashboardService } from "@/gen/leaguelens/v1/dashboard_pb"
 import { SyncService } from "@/gen/leaguelens/v1/sync_pb"
@@ -11,3 +12,5 @@ export const dashboard = createClient(DashboardService, transport)
 export const sync = createClient(SyncService, transport)
 
 export const connections = createClient(ConnectionService, transport)
+
+export const assistant = createClient(AssistantService, transport)

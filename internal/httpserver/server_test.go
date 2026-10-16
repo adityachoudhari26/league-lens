@@ -8,10 +8,21 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
+	"github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1/leaguelensv1connect"
 )
 
+type assistantHandlerStub struct {
+	leaguelensv1connect.UnimplementedAssistantServiceHandler
+}
+
+func (assistantHandlerStub) GetAssistantSettings(context.Context, *v1.GetAssistantSettingsRequest) (*v1.GetAssistantSettingsResponse, error) {
+	return &v1.GetAssistantSettingsResponse{Settings: &v1.AssistantSettings{Model: "test-model"}}, nil
+}
+
 func TestReadinessFailureDoesNotLeakDatabaseError(t *testing.T) {
-	h := NewHandler(func(context.Context) error { return errors.New("password=private-secret") }, nil, nil, nil, nil)
+	h := NewHandler(func(context.Context) error { return errors.New("password=private-secret") }, nil, nil, nil, nil, nil)
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, httptest.NewRequest("GET", "/readyz", nil))
 	if rr.Code != 503 {
@@ -33,7 +44,7 @@ func TestReadyAndUnregisteredEndpoints(t *testing.T) {
 			t.Error("DB check has no deadline")
 		}
 		return nil
-	}, nil, nil, nil, nil)
+	}, nil, nil, nil, nil, nil)
 	for _, tc := range []struct {
 		method, path string
 		status       int
@@ -48,12 +59,26 @@ func TestReadyAndUnregisteredEndpoints(t *testing.T) {
 	}
 }
 
+func TestAssistantServiceIsMounted(t *testing.T) {
+	handler := NewHandler(
+		func(context.Context) error { return nil }, nil, nil, nil, assistantHandlerStub{}, nil,
+	)
+	request := httptest.NewRequest(http.MethodPost, "/api/leaguelens.v1.AssistantService/GetAssistantSettings", strings.NewReader("{}"))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Connect-Protocol-Version", "1")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"model":"test-model"`) {
+		t.Fatalf("assistant settings RPC: status %d, body %s", response.Code, response.Body.String())
+	}
+}
+
 func TestEmbeddedFrontendServesFilesAndClientRoutes(t *testing.T) {
 	static := fstest.MapFS{
 		"index.html":    &fstest.MapFile{Data: []byte("<html>app</html>")},
 		"assets/app.js": &fstest.MapFile{Data: []byte("console.log('app')")},
 	}
-	h := NewHandler(func(context.Context) error { return nil }, nil, nil, nil, static)
+	h := NewHandler(func(context.Context) error { return nil }, nil, nil, nil, nil, static)
 	for _, tc := range []struct {
 		path, body, cacheControl string
 		status                   int
