@@ -79,6 +79,7 @@ func (s *Service) providerForChat(ctx context.Context) (llm.Provider, string, er
 	return provider, settings.Model, nil
 }
 
+// validatedChatMessages drops empty assistant proposal placeholders from client history.
 func validatedChatMessages(messages []*v1.ChatMessage) ([]llm.Message, error) {
 	if len(messages) < 1 || len(messages) > maxChatMessages {
 		return nil, invalidArgument("chat requires between 1 and 40 messages")
@@ -92,14 +93,17 @@ func validatedChatMessages(messages []*v1.ChatMessage) ([]llm.Message, error) {
 		if message == nil {
 			return nil, invalidArgument("chat messages cannot be empty")
 		}
-		text := strings.TrimSpace(message.GetText())
-		textLength := utf8.RuneCountInString(text)
-		if textLength < 1 || textLength > maxChatMessageRunes {
-			return nil, invalidArgument("chat message text must be 1 to 4000 characters")
-		}
 		role, err := chatRole(message.GetRole())
 		if err != nil {
 			return nil, err
+		}
+		text := strings.TrimSpace(message.GetText())
+		textLength := utf8.RuneCountInString(text)
+		if role == llm.RoleAssistant && textLength == 0 {
+			continue
+		}
+		if textLength < 1 || textLength > maxChatMessageRunes {
+			return nil, invalidArgument("chat message text must be 1 to 4000 characters")
 		}
 		validated = append(validated, llm.Message{Role: role, Text: text})
 	}
