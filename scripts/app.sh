@@ -217,7 +217,7 @@ stop_app() {
 restart_app() {
   require_docker
   if is_app_running; then
-    docker compose restart
+    docker compose restart app
   else
     docker compose up -d --build
   fi
@@ -269,19 +269,6 @@ logs_app() {
 db_shell() {
   require_docker
 
-  if [[ $# -eq 1 ]]; then
-    if [[ "$1" == '-c '* ]]; then
-      local query=${1#-c }
-      set -- -c "$query"
-    elif [[ -z "$1" ]]; then
-      set --
-    else
-      local -a shell_arguments
-      read -r -a shell_arguments <<< "$1"
-      set -- "${shell_arguments[@]}"
-    fi
-  fi
-
   if [[ -t 0 ]]; then
     docker compose exec postgres psql -U league_lens -d league_lens "$@"
   else
@@ -300,6 +287,8 @@ update_app() {
     return 1
   fi
 
+  require_docker
+
   local branch old_revision new_revision was_running
   branch=$(git branch --show-current 2>/dev/null || true)
   if [[ "$branch" != main ]]; then
@@ -315,8 +304,10 @@ update_app() {
   fi
 
   old_revision=$(git rev-parse HEAD)
-  if ! git pull --ff-only >/dev/null 2>&1; then
-    printf '%s\n' "League Lens couldn't update cleanly. Check your connection and try again." >&2
+  local pull_output
+  if ! pull_output=$(git pull --ff-only 2>&1); then
+    printf '%s\n' "League Lens couldn't update automatically. Git said:" >&2
+    printf '%s\n' "$pull_output" >&2
     return 1
   fi
   new_revision=$(git rev-parse HEAD)
@@ -329,7 +320,6 @@ update_app() {
   printf '%s\n' "What's new:"
   git log --no-merges --format='  - %s' "$old_revision..$new_revision"
 
-  require_docker
   if is_app_running; then
     was_running=yes
   else

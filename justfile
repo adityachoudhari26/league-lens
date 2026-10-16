@@ -44,8 +44,9 @@ logs:
 
 # Open a database prompt or run a database command.
 [group('app')]
+[positional-arguments]
 db-shell *args:
-    @scripts/app.sh db-shell {{quote(args)}}
+    @scripts/app.sh db-shell "$@"
 
 # Update League Lens from its GitHub repository.
 [group('app')]
