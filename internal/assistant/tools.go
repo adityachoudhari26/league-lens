@@ -31,6 +31,8 @@ type assistantDashboard interface {
 	GetMatchupDetail(context.Context, *v1.GetMatchupDetailRequest) (*v1.GetMatchupDetailResponse, error)
 	GetMatchupWinChance(context.Context, *v1.GetMatchupWinChanceRequest) (*v1.GetMatchupWinChanceResponse, error)
 	GetOverviewAttention(context.Context, *v1.GetOverviewAttentionRequest) (*v1.GetOverviewAttentionResponse, error)
+	DismissLineupAlert(context.Context, *v1.DismissLineupAlertRequest) (*v1.DismissLineupAlertResponse, error)
+	RestoreLineupAlert(context.Context, *v1.RestoreLineupAlertRequest) (*v1.RestoreLineupAlertResponse, error)
 	GetOverviewPlayerUpdates(context.Context, *v1.GetOverviewPlayerUpdatesRequest) (*v1.GetOverviewPlayerUpdatesResponse, error)
 	GetPlayerCard(context.Context, *v1.GetPlayerCardRequest) (*v1.GetPlayerCardResponse, error)
 	GetLiveGames(context.Context, *v1.GetLiveGamesRequest) (*v1.GetLiveGamesResponse, error)
@@ -40,10 +42,7 @@ type assistantTool struct {
 	definition llm.Tool
 	label      func(json.RawMessage) string
 	run        func(context.Context, json.RawMessage) (string, error)
-}
-
-func (s *Service) readOnlyTools() []assistantTool {
-	return buildReadOnlyTools(s.Dashboard)
+	propose    func(context.Context, json.RawMessage) (*v1.ActionProposal, error)
 }
 
 func buildReadOnlyTools(reader assistantDashboard) []assistantTool {
@@ -52,6 +51,11 @@ func buildReadOnlyTools(reader assistantDashboard) []assistantTool {
 	tools = append(tools, overviewTools(reader)...)
 	tools = append(tools, playerTools(reader)...)
 	return tools
+}
+
+func buildAssistantTools(reader assistantDashboard) []assistantTool {
+	tools := buildReadOnlyTools(reader)
+	return append(tools, buildActionTools(reader)...)
 }
 
 func toolDefinitions(tools []assistantTool) []llm.Tool {
@@ -69,6 +73,15 @@ func toolLabel(tools []assistantTool, name string, input json.RawMessage) string
 		}
 	}
 	return "Checking requested data"
+}
+
+func findAssistantToolByName(tools []assistantTool, name string) *assistantTool {
+	for index := range tools {
+		if tools[index].definition.Name == name {
+			return &tools[index]
+		}
+	}
+	return nil
 }
 
 func runAssistantTool(ctx context.Context, tools []assistantTool, call llm.ToolCall) llm.ToolResult {

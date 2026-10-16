@@ -24,7 +24,8 @@ func buildSystemPrompt(today time.Time, page *v1.PageContext) string {
 		"- When you give a number, say where it came from in a few words, like \"projection, week 7\".\n" +
 		"- Be brief: a few sentences or a short list. Plain text only: no headings, tables, or bold.\n" +
 		"- Start/sit, waiver, and trade suggestions are opinions. Give your pick and the one or two reasons behind it.\n" +
-		"- You can't make changes on ESPN or Sleeper."
+		"- You can't make changes on ESPN or Sleeper. You can propose a League Lens action " +
+		"(refresh leagues, dismiss or restore an alert); it only runs if the user taps Confirm."
 	return prompt
 }
 

@@ -50,6 +50,7 @@ type Service struct {
 	OwnerEmail  string
 	NewProvider NewProvider
 	Dashboard   assistantDashboard
+	Sync        assistantSync
 }
 
 // GetAssistantSettings returns the owner's safe-to-display settings, never the key.

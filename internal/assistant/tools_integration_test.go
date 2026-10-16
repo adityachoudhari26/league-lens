@@ -11,6 +11,7 @@ import (
 
 	"github.com/adityachoudhari26/league-lens/internal/dashboard"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
@@ -40,9 +41,18 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 	zero, one := 7.0, 9.0
 	data := fantasy.LeagueData{
 		League: league, FetchedAt: now,
+		Players: []fantasy.Player{{
+			ExternalID: "injured", Name: "Injured Player", Kind: fantasy.PlayerPerson,
+		}},
 		Teams: []fantasy.Team{{ExternalID: "home", Name: "Home Team"}, {ExternalID: "away", Name: "Away Team"}},
 		Rosters: []fantasy.RosterSnapshot{
-			{TeamID: "home", ScoringPeriod: 1, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now},
+			{
+				TeamID: "home", ScoringPeriod: 1, Origin: fantasy.SnapshotObserved,
+				Coverage: fantasy.CoverageFull, ObservedAt: now,
+				Entries: []fantasy.RosterEntry{{
+					PlayerID: "injured", Slot: fantasy.SlotQB, InjuryStatus: fantasy.InjuryOut, ProTeam: "KC",
+				}},
+			},
 			{TeamID: "away", ScoringPeriod: 1, Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now},
 		},
 		Matchups: []fantasy.Matchup{{
@@ -63,7 +73,8 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tools := buildReadOnlyTools(dashboard.New(db, "tools@example.test", nil, nil, nil))
+	dashboardService := dashboard.New(db, "tools@example.test", nil, nil, nil)
+	tools := buildReadOnlyTools(dashboardService)
 	listed := runAssistantTool(ctx, tools, llm.ToolCall{
 		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
 	})
@@ -78,6 +89,26 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 	if matchup.IsError || !containsJSONValue(matchup.Content, "Home Team") ||
 		!containsJSONValue(matchup.Content, "Away Team") {
 		t.Fatalf("get_my_matchup: %s", matchup.Content)
+	}
+
+	attention, err := dashboardService.GetOverviewAttention(ctx, &v1.GetOverviewAttentionRequest{})
+	if err != nil || len(attention.GetAlerts()) == 0 {
+		t.Fatalf("seeded alert: %v %v", attention, err)
+	}
+	actionService := &Service{Dashboard: dashboardService}
+	dismissed, err := actionService.RunAssistantAction(ctx, &v1.RunAssistantActionRequest{
+		Action: &v1.AssistantAction{
+			Action: &v1.AssistantAction_DismissAlert{
+				DismissAlert: &v1.DismissAlertAction{Fingerprint: attention.Alerts[0].Fingerprint},
+			},
+		},
+	})
+	if err != nil || dismissed.GetSummary() != "Dismissed the alert." {
+		t.Fatalf("dismiss action: %v %v", dismissed, err)
+	}
+	remaining, err := dashboardService.GetOverviewAttention(ctx, &v1.GetOverviewAttentionRequest{})
+	if err != nil || hasAlertFingerprint(remaining, attention.Alerts[0].Fingerprint) {
+		t.Fatalf("dismissed alert remained visible: %v %v", remaining, err)
 	}
 }
 

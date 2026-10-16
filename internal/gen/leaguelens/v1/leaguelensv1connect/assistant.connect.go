@@ -38,6 +38,9 @@ const (
 	AssistantServiceDeleteAssistantSettingsProcedure = "/leaguelens.v1.AssistantService/DeleteAssistantSettings"
 	// AssistantServiceChatProcedure is the procedure name of the AssistantService's Chat RPC.
 	AssistantServiceChatProcedure = "/leaguelens.v1.AssistantService/Chat"
+	// AssistantServiceRunAssistantActionProcedure is the procedure name of the AssistantService's
+	// RunAssistantAction RPC.
+	AssistantServiceRunAssistantActionProcedure = "/leaguelens.v1.AssistantService/RunAssistantAction"
 )
 
 var (
@@ -76,6 +79,13 @@ var (
 			Procedure:  AssistantServiceChatProcedure,
 		}
 	})
+	assistantServiceRunAssistantActionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_leaguelens_v1_assistant_proto.Services().ByName("AssistantService").Methods().ByName("RunAssistantAction"),
+			Procedure:  AssistantServiceRunAssistantActionProcedure,
+		}
+	})
 )
 
 // AssistantServiceClient is a client for the leaguelens.v1.AssistantService service.
@@ -85,6 +95,7 @@ type AssistantServiceClient interface {
 	SaveAssistantSettings(context.Context, *v1.SaveAssistantSettingsRequest) (*v1.SaveAssistantSettingsResponse, error)
 	DeleteAssistantSettings(context.Context, *v1.DeleteAssistantSettingsRequest) (*v1.DeleteAssistantSettingsResponse, error)
 	Chat(context.Context, *v1.ChatRequest) (AssistantServiceChatClientStream, error)
+	RunAssistantAction(context.Context, *v1.RunAssistantActionRequest) (*v1.RunAssistantActionResponse, error)
 }
 
 // NewAssistantServiceClient constructs a client for the leaguelens.v1.AssistantService service.
@@ -120,6 +131,7 @@ type AssistantServiceHandler interface {
 	SaveAssistantSettings(context.Context, *v1.SaveAssistantSettingsRequest) (*v1.SaveAssistantSettingsResponse, error)
 	DeleteAssistantSettings(context.Context, *v1.DeleteAssistantSettingsRequest) (*v1.DeleteAssistantSettingsResponse, error)
 	Chat(context.Context, *v1.ChatRequest, AssistantServiceChatServerStream) error
+	RunAssistantAction(context.Context, *v1.RunAssistantActionRequest) (*v1.RunAssistantActionResponse, error)
 }
 
 // RegisterAssistantServiceHandler registers svc as the leaguelens.v1.AssistantService
@@ -132,6 +144,7 @@ func RegisterAssistantServiceHandler(server *connect.Server, svc AssistantServic
 		connect.Method{Spec: assistantServiceSaveAssistantSettingsSpec(), Handler: adapter.saveAssistantSettings},
 		connect.Method{Spec: assistantServiceDeleteAssistantSettingsSpec(), Handler: adapter.deleteAssistantSettings},
 		connect.Method{Spec: assistantServiceChatSpec(), Handler: adapter.chat},
+		connect.Method{Spec: assistantServiceRunAssistantActionSpec(), Handler: adapter.runAssistantAction},
 	)
 }
 
@@ -171,6 +184,10 @@ func (UnimplementedAssistantServiceHandler) DeleteAssistantSettings(context.Cont
 
 func (UnimplementedAssistantServiceHandler) Chat(context.Context, *v1.ChatRequest, AssistantServiceChatServerStream) error {
 	return connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.AssistantService.Chat is not implemented")
+}
+
+func (UnimplementedAssistantServiceHandler) RunAssistantAction(context.Context, *v1.RunAssistantActionRequest) (*v1.RunAssistantActionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.AssistantService.RunAssistantAction is not implemented")
 }
 
 type assistantServiceClient struct {
@@ -215,6 +232,14 @@ func (c *assistantServiceClient) Chat(ctx context.Context, req *v1.ChatRequest) 
 		return AssistantServiceChatClientStream{}, err
 	}
 	return AssistantServiceChatClientStream{stream: stream}, nil
+}
+
+func (c *assistantServiceClient) RunAssistantAction(ctx context.Context, req *v1.RunAssistantActionRequest) (*v1.RunAssistantActionResponse, error) {
+	var res v1.RunAssistantActionResponse
+	if err := c.client.CallUnary(ctx, assistantServiceRunAssistantActionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 type assistantServiceHandler struct{ svc AssistantServiceHandler }
@@ -273,4 +298,16 @@ func (h assistantServiceHandler) chat(ctx context.Context, _ connect.Spec, strea
 		return err
 	}
 	return h.svc.Chat(ctx, &req, AssistantServiceChatServerStream{stream: stream})
+}
+
+func (h assistantServiceHandler) runAssistantAction(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RunAssistantActionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RunAssistantAction(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

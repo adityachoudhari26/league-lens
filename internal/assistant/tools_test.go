@@ -24,6 +24,12 @@ type fakeAssistantDashboard struct {
 	getPlayerNewsRequest    *v1.GetOverviewPlayerUpdatesRequest
 	getPlayerCardRequest    *v1.GetPlayerCardRequest
 	getLiveGamesRequest     *v1.GetLiveGamesRequest
+	dismissAlertRequest     *v1.DismissLineupAlertRequest
+	restoreAlertRequest     *v1.RestoreLineupAlertRequest
+	alerts                  []*v1.LineupAlert
+	getAlertsErr            error
+	dismissAlertErr         error
+	restoreAlertErr         error
 	listLeaguesErr          error
 	availableMatchupPeriods []int32
 }
@@ -60,7 +66,17 @@ func (d *fakeAssistantDashboard) GetMatchupWinChance(_ context.Context, request 
 
 func (d *fakeAssistantDashboard) GetOverviewAttention(_ context.Context, request *v1.GetOverviewAttentionRequest) (*v1.GetOverviewAttentionResponse, error) {
 	d.getAlertsRequest = request
-	return &v1.GetOverviewAttentionResponse{}, nil
+	return &v1.GetOverviewAttentionResponse{Alerts: d.alerts}, d.getAlertsErr
+}
+
+func (d *fakeAssistantDashboard) DismissLineupAlert(_ context.Context, request *v1.DismissLineupAlertRequest) (*v1.DismissLineupAlertResponse, error) {
+	d.dismissAlertRequest = request
+	return &v1.DismissLineupAlertResponse{}, d.dismissAlertErr
+}
+
+func (d *fakeAssistantDashboard) RestoreLineupAlert(_ context.Context, request *v1.RestoreLineupAlertRequest) (*v1.RestoreLineupAlertResponse, error) {
+	d.restoreAlertRequest = request
+	return &v1.RestoreLineupAlertResponse{}, d.restoreAlertErr
 }
 
 func (d *fakeAssistantDashboard) GetOverviewPlayerUpdates(

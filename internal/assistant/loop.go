@@ -50,9 +50,18 @@ func (loop *chatLoop) run(ctx context.Context, page *v1.PageContext, messages []
 		messages = append(messages, llm.Message{
 			Role: llm.RoleAssistant, Text: response.Text, ToolCalls: response.ToolCalls,
 		})
-		results, err := loop.runToolCalls(ctx, response.ToolCalls)
+		results, proposal, err := loop.runToolCalls(ctx, response.ToolCalls)
 		if err != nil {
 			return err
+		}
+		if proposal != nil {
+			if err := loop.send(&v1.ChatResponse{
+				Event: &v1.ChatResponse_Proposal{Proposal: proposal},
+			}); err != nil {
+				loop.cancel()
+				return err
+			}
+			return nil
 		}
 		messages = append(messages, llm.Message{Role: llm.RoleUser, ToolResults: results})
 		toolRounds++
@@ -91,16 +100,42 @@ func (loop *chatLoop) completeRound(
 func (loop *chatLoop) runToolCalls(
 	ctx context.Context,
 	calls []llm.ToolCall,
-) ([]llm.ToolResult, error) {
+) ([]llm.ToolResult, *v1.ActionProposal, error) {
+	actionErrors := make(map[string]llm.ToolResult)
+	for _, call := range calls {
+		tool := findAssistantToolByName(loop.tools, call.Name)
+		if tool == nil || tool.propose == nil {
+			continue
+		}
+		proposal, err := tool.propose(ctx, call.Input)
+		if err != nil {
+			actionErrors[call.ID] = llm.ToolResult{
+				CallID: call.ID, Content: toolErrorMessage(err), IsError: true,
+			}
+			continue
+		}
+		return nil, proposal, nil
+	}
+
 	results := make([]llm.ToolResult, 0, len(calls))
 	for _, call := range calls {
+		if result, invalidAction := actionErrors[call.ID]; invalidAction {
+			results = append(results, result)
+			continue
+		}
 		if err := loop.send(&v1.ChatResponse{
 			Event: &v1.ChatResponse_Tool{Tool: &v1.ToolActivity{Label: toolLabel(loop.tools, call.Name, call.Input)}},
 		}); err != nil {
 			loop.cancel()
-			return nil, err
+			return nil, nil, err
+		}
+		if tool := findAssistantToolByName(loop.tools, call.Name); tool != nil && tool.propose != nil {
+			results = append(results, llm.ToolResult{
+				CallID: call.ID, Content: "couldn't prepare the requested action", IsError: true,
+			})
+			continue
 		}
 		results = append(results, runAssistantTool(ctx, loop.tools, call))
 	}
-	return results, nil
+	return results, nil, nil
 }

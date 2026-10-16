@@ -9,6 +9,7 @@ service AssistantService {
   rpc SaveAssistantSettings(SaveAssistantSettingsRequest) returns (SaveAssistantSettingsResponse);
   rpc DeleteAssistantSettings(DeleteAssistantSettingsRequest) returns (DeleteAssistantSettingsResponse);
   rpc Chat(ChatRequest) returns (stream ChatResponse);
+  rpc RunAssistantAction(RunAssistantActionRequest) returns (RunAssistantActionResponse);
 }
 
 enum AssistantProvider {
@@ -74,6 +75,7 @@ message ChatResponse {
   oneof event {
     TextDelta text = 1;
     ToolActivity tool = 2;
+    ActionProposal proposal = 3;
   }
 }
 message TextDelta {
@@ -81,4 +83,32 @@ message TextDelta {
 }
 message ToolActivity {
   string label = 1;
+}
+message AssistantAction {
+  oneof action {
+    SyncLeaguesAction sync_leagues = 1;
+    DismissAlertAction dismiss_alert = 2;
+    RestoreAlertAction restore_alert = 3;
+  }
+}
+message SyncLeaguesAction {
+  bool only_stale = 1;
+}
+message DismissAlertAction {
+  string fingerprint = 1;
+  string summary = 2;
+}
+message RestoreAlertAction {
+  string fingerprint = 1;
+  string summary = 2;
+}
+message ActionProposal {
+  string summary = 1;
+  AssistantAction action = 2;
+}
+message RunAssistantActionRequest {
+  AssistantAction action = 1;
+}
+message RunAssistantActionResponse {
+  string summary = 1;
 }

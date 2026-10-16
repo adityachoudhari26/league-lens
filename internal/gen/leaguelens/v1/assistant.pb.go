@@ -733,6 +733,7 @@ type ChatResponse struct {
 	//
 	//	*ChatResponse_Text
 	//	*ChatResponse_Tool
+	//	*ChatResponse_Proposal
 	Event         isChatResponse_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -793,6 +794,15 @@ func (x *ChatResponse) GetTool() *ToolActivity {
 	return nil
 }
 
+func (x *ChatResponse) GetProposal() *ActionProposal {
+	if x != nil {
+		if x, ok := x.Event.(*ChatResponse_Proposal); ok {
+			return x.Proposal
+		}
+	}
+	return nil
+}
+
 type isChatResponse_Event interface {
 	isChatResponse_Event()
 }
@@ -805,9 +815,15 @@ type ChatResponse_Tool struct {
 	Tool *ToolActivity `protobuf:"bytes,2,opt,name=tool,proto3,oneof"`
 }
 
+type ChatResponse_Proposal struct {
+	Proposal *ActionProposal `protobuf:"bytes,3,opt,name=proposal,proto3,oneof"`
+}
+
 func (*ChatResponse_Text) isChatResponse_Event() {}
 
 func (*ChatResponse_Tool) isChatResponse_Event() {}
+
+func (*ChatResponse_Proposal) isChatResponse_Event() {}
 
 type TextDelta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -897,6 +913,392 @@ func (x *ToolActivity) GetLabel() string {
 	return ""
 }
 
+type AssistantAction struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Action:
+	//
+	//	*AssistantAction_SyncLeagues
+	//	*AssistantAction_DismissAlert
+	//	*AssistantAction_RestoreAlert
+	Action        isAssistantAction_Action `protobuf_oneof:"action"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AssistantAction) Reset() {
+	*x = AssistantAction{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssistantAction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssistantAction) ProtoMessage() {}
+
+func (x *AssistantAction) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssistantAction.ProtoReflect.Descriptor instead.
+func (*AssistantAction) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *AssistantAction) GetAction() isAssistantAction_Action {
+	if x != nil {
+		return x.Action
+	}
+	return nil
+}
+
+func (x *AssistantAction) GetSyncLeagues() *SyncLeaguesAction {
+	if x != nil {
+		if x, ok := x.Action.(*AssistantAction_SyncLeagues); ok {
+			return x.SyncLeagues
+		}
+	}
+	return nil
+}
+
+func (x *AssistantAction) GetDismissAlert() *DismissAlertAction {
+	if x != nil {
+		if x, ok := x.Action.(*AssistantAction_DismissAlert); ok {
+			return x.DismissAlert
+		}
+	}
+	return nil
+}
+
+func (x *AssistantAction) GetRestoreAlert() *RestoreAlertAction {
+	if x != nil {
+		if x, ok := x.Action.(*AssistantAction_RestoreAlert); ok {
+			return x.RestoreAlert
+		}
+	}
+	return nil
+}
+
+type isAssistantAction_Action interface {
+	isAssistantAction_Action()
+}
+
+type AssistantAction_SyncLeagues struct {
+	SyncLeagues *SyncLeaguesAction `protobuf:"bytes,1,opt,name=sync_leagues,json=syncLeagues,proto3,oneof"`
+}
+
+type AssistantAction_DismissAlert struct {
+	DismissAlert *DismissAlertAction `protobuf:"bytes,2,opt,name=dismiss_alert,json=dismissAlert,proto3,oneof"`
+}
+
+type AssistantAction_RestoreAlert struct {
+	RestoreAlert *RestoreAlertAction `protobuf:"bytes,3,opt,name=restore_alert,json=restoreAlert,proto3,oneof"`
+}
+
+func (*AssistantAction_SyncLeagues) isAssistantAction_Action() {}
+
+func (*AssistantAction_DismissAlert) isAssistantAction_Action() {}
+
+func (*AssistantAction_RestoreAlert) isAssistantAction_Action() {}
+
+type SyncLeaguesAction struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OnlyStale     bool                   `protobuf:"varint,1,opt,name=only_stale,json=onlyStale,proto3" json:"only_stale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncLeaguesAction) Reset() {
+	*x = SyncLeaguesAction{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncLeaguesAction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncLeaguesAction) ProtoMessage() {}
+
+func (x *SyncLeaguesAction) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncLeaguesAction.ProtoReflect.Descriptor instead.
+func (*SyncLeaguesAction) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SyncLeaguesAction) GetOnlyStale() bool {
+	if x != nil {
+		return x.OnlyStale
+	}
+	return false
+}
+
+type DismissAlertAction struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fingerprint   string                 `protobuf:"bytes,1,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Summary       string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DismissAlertAction) Reset() {
+	*x = DismissAlertAction{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DismissAlertAction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DismissAlertAction) ProtoMessage() {}
+
+func (x *DismissAlertAction) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DismissAlertAction.ProtoReflect.Descriptor instead.
+func (*DismissAlertAction) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DismissAlertAction) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+func (x *DismissAlertAction) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+type RestoreAlertAction struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fingerprint   string                 `protobuf:"bytes,1,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Summary       string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreAlertAction) Reset() {
+	*x = RestoreAlertAction{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreAlertAction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreAlertAction) ProtoMessage() {}
+
+func (x *RestoreAlertAction) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreAlertAction.ProtoReflect.Descriptor instead.
+func (*RestoreAlertAction) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RestoreAlertAction) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+func (x *RestoreAlertAction) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+type ActionProposal struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summary       string                 `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	Action        *AssistantAction       `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ActionProposal) Reset() {
+	*x = ActionProposal{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActionProposal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActionProposal) ProtoMessage() {}
+
+func (x *ActionProposal) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActionProposal.ProtoReflect.Descriptor instead.
+func (*ActionProposal) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ActionProposal) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *ActionProposal) GetAction() *AssistantAction {
+	if x != nil {
+		return x.Action
+	}
+	return nil
+}
+
+type RunAssistantActionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Action        *AssistantAction       `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RunAssistantActionRequest) Reset() {
+	*x = RunAssistantActionRequest{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunAssistantActionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunAssistantActionRequest) ProtoMessage() {}
+
+func (x *RunAssistantActionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunAssistantActionRequest.ProtoReflect.Descriptor instead.
+func (*RunAssistantActionRequest) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *RunAssistantActionRequest) GetAction() *AssistantAction {
+	if x != nil {
+		return x.Action
+	}
+	return nil
+}
+
+type RunAssistantActionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summary       string                 `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RunAssistantActionResponse) Reset() {
+	*x = RunAssistantActionResponse{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunAssistantActionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunAssistantActionResponse) ProtoMessage() {}
+
+func (x *RunAssistantActionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunAssistantActionResponse.ProtoReflect.Descriptor instead.
+func (*RunAssistantActionResponse) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *RunAssistantActionResponse) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
 var File_leaguelens_v1_assistant_proto protoreflect.FileDescriptor
 
 const file_leaguelens_v1_assistant_proto_rawDesc = "" +
@@ -937,15 +1339,37 @@ const file_leaguelens_v1_assistant_proto_rawDesc = "" +
 	"\x05_week\"u\n" +
 	"\vChatRequest\x126\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1a.leaguelens.v1.ChatMessageR\bmessages\x12.\n" +
-	"\x04page\x18\x02 \x01(\v2\x1a.leaguelens.v1.PageContextR\x04page\"z\n" +
+	"\x04page\x18\x02 \x01(\v2\x1a.leaguelens.v1.PageContextR\x04page\"\xb7\x01\n" +
 	"\fChatResponse\x12.\n" +
 	"\x04text\x18\x01 \x01(\v2\x18.leaguelens.v1.TextDeltaH\x00R\x04text\x121\n" +
-	"\x04tool\x18\x02 \x01(\v2\x1b.leaguelens.v1.ToolActivityH\x00R\x04toolB\a\n" +
+	"\x04tool\x18\x02 \x01(\v2\x1b.leaguelens.v1.ToolActivityH\x00R\x04tool\x12;\n" +
+	"\bproposal\x18\x03 \x01(\v2\x1d.leaguelens.v1.ActionProposalH\x00R\bproposalB\a\n" +
 	"\x05event\"\x1f\n" +
 	"\tTextDelta\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\"$\n" +
 	"\fToolActivity\x12\x14\n" +
-	"\x05label\x18\x01 \x01(\tR\x05label*\x83\x01\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\"\xf6\x01\n" +
+	"\x0fAssistantAction\x12E\n" +
+	"\fsync_leagues\x18\x01 \x01(\v2 .leaguelens.v1.SyncLeaguesActionH\x00R\vsyncLeagues\x12H\n" +
+	"\rdismiss_alert\x18\x02 \x01(\v2!.leaguelens.v1.DismissAlertActionH\x00R\fdismissAlert\x12H\n" +
+	"\rrestore_alert\x18\x03 \x01(\v2!.leaguelens.v1.RestoreAlertActionH\x00R\frestoreAlertB\b\n" +
+	"\x06action\"2\n" +
+	"\x11SyncLeaguesAction\x12\x1d\n" +
+	"\n" +
+	"only_stale\x18\x01 \x01(\bR\tonlyStale\"P\n" +
+	"\x12DismissAlertAction\x12 \n" +
+	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\x12\x18\n" +
+	"\asummary\x18\x02 \x01(\tR\asummary\"P\n" +
+	"\x12RestoreAlertAction\x12 \n" +
+	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\x12\x18\n" +
+	"\asummary\x18\x02 \x01(\tR\asummary\"b\n" +
+	"\x0eActionProposal\x12\x18\n" +
+	"\asummary\x18\x01 \x01(\tR\asummary\x126\n" +
+	"\x06action\x18\x02 \x01(\v2\x1e.leaguelens.v1.AssistantActionR\x06action\"S\n" +
+	"\x19RunAssistantActionRequest\x126\n" +
+	"\x06action\x18\x01 \x01(\v2\x1e.leaguelens.v1.AssistantActionR\x06action\"6\n" +
+	"\x1aRunAssistantActionResponse\x12\x18\n" +
+	"\asummary\x18\x01 \x01(\tR\asummary*\x83\x01\n" +
 	"\x11AssistantProvider\x12\"\n" +
 	"\x1eASSISTANT_PROVIDER_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cASSISTANT_PROVIDER_ANTHROPIC\x10\x01\x12(\n" +
@@ -953,13 +1377,14 @@ const file_leaguelens_v1_assistant_proto_rawDesc = "" +
 	"\bChatRole\x12\x19\n" +
 	"\x15CHAT_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eCHAT_ROLE_USER\x10\x01\x12\x17\n" +
-	"\x13CHAT_ROLE_ASSISTANT\x10\x022\xa2\x04\n" +
+	"\x13CHAT_ROLE_ASSISTANT\x10\x022\x8d\x05\n" +
 	"\x10AssistantService\x12o\n" +
 	"\x14GetAssistantSettings\x12*.leaguelens.v1.GetAssistantSettingsRequest\x1a+.leaguelens.v1.GetAssistantSettingsResponse\x12l\n" +
 	"\x13ListAssistantModels\x12).leaguelens.v1.ListAssistantModelsRequest\x1a*.leaguelens.v1.ListAssistantModelsResponse\x12r\n" +
 	"\x15SaveAssistantSettings\x12+.leaguelens.v1.SaveAssistantSettingsRequest\x1a,.leaguelens.v1.SaveAssistantSettingsResponse\x12x\n" +
 	"\x17DeleteAssistantSettings\x12-.leaguelens.v1.DeleteAssistantSettingsRequest\x1a..leaguelens.v1.DeleteAssistantSettingsResponse\x12A\n" +
-	"\x04Chat\x12\x1a.leaguelens.v1.ChatRequest\x1a\x1b.leaguelens.v1.ChatResponse0\x01BRZPgithub.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1b\x06proto3"
+	"\x04Chat\x12\x1a.leaguelens.v1.ChatRequest\x1a\x1b.leaguelens.v1.ChatResponse0\x01\x12i\n" +
+	"\x12RunAssistantAction\x12(.leaguelens.v1.RunAssistantActionRequest\x1a).leaguelens.v1.RunAssistantActionResponseBRZPgithub.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1;leaguelensv1b\x06proto3"
 
 var (
 	file_leaguelens_v1_assistant_proto_rawDescOnce sync.Once
@@ -974,7 +1399,7 @@ func file_leaguelens_v1_assistant_proto_rawDescGZIP() []byte {
 }
 
 var file_leaguelens_v1_assistant_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_leaguelens_v1_assistant_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_leaguelens_v1_assistant_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_leaguelens_v1_assistant_proto_goTypes = []any{
 	(AssistantProvider)(0),                  // 0: leaguelens.v1.AssistantProvider
 	(ChatRole)(0),                           // 1: leaguelens.v1.ChatRole
@@ -993,6 +1418,13 @@ var file_leaguelens_v1_assistant_proto_goTypes = []any{
 	(*ChatResponse)(nil),                    // 14: leaguelens.v1.ChatResponse
 	(*TextDelta)(nil),                       // 15: leaguelens.v1.TextDelta
 	(*ToolActivity)(nil),                    // 16: leaguelens.v1.ToolActivity
+	(*AssistantAction)(nil),                 // 17: leaguelens.v1.AssistantAction
+	(*SyncLeaguesAction)(nil),               // 18: leaguelens.v1.SyncLeaguesAction
+	(*DismissAlertAction)(nil),              // 19: leaguelens.v1.DismissAlertAction
+	(*RestoreAlertAction)(nil),              // 20: leaguelens.v1.RestoreAlertAction
+	(*ActionProposal)(nil),                  // 21: leaguelens.v1.ActionProposal
+	(*RunAssistantActionRequest)(nil),       // 22: leaguelens.v1.RunAssistantActionRequest
+	(*RunAssistantActionResponse)(nil),      // 23: leaguelens.v1.RunAssistantActionResponse
 }
 var file_leaguelens_v1_assistant_proto_depIdxs = []int32{
 	0,  // 0: leaguelens.v1.AssistantSettings.provider:type_name -> leaguelens.v1.AssistantProvider
@@ -1005,21 +1437,29 @@ var file_leaguelens_v1_assistant_proto_depIdxs = []int32{
 	12, // 7: leaguelens.v1.ChatRequest.page:type_name -> leaguelens.v1.PageContext
 	15, // 8: leaguelens.v1.ChatResponse.text:type_name -> leaguelens.v1.TextDelta
 	16, // 9: leaguelens.v1.ChatResponse.tool:type_name -> leaguelens.v1.ToolActivity
-	3,  // 10: leaguelens.v1.AssistantService.GetAssistantSettings:input_type -> leaguelens.v1.GetAssistantSettingsRequest
-	5,  // 11: leaguelens.v1.AssistantService.ListAssistantModels:input_type -> leaguelens.v1.ListAssistantModelsRequest
-	7,  // 12: leaguelens.v1.AssistantService.SaveAssistantSettings:input_type -> leaguelens.v1.SaveAssistantSettingsRequest
-	9,  // 13: leaguelens.v1.AssistantService.DeleteAssistantSettings:input_type -> leaguelens.v1.DeleteAssistantSettingsRequest
-	13, // 14: leaguelens.v1.AssistantService.Chat:input_type -> leaguelens.v1.ChatRequest
-	4,  // 15: leaguelens.v1.AssistantService.GetAssistantSettings:output_type -> leaguelens.v1.GetAssistantSettingsResponse
-	6,  // 16: leaguelens.v1.AssistantService.ListAssistantModels:output_type -> leaguelens.v1.ListAssistantModelsResponse
-	8,  // 17: leaguelens.v1.AssistantService.SaveAssistantSettings:output_type -> leaguelens.v1.SaveAssistantSettingsResponse
-	10, // 18: leaguelens.v1.AssistantService.DeleteAssistantSettings:output_type -> leaguelens.v1.DeleteAssistantSettingsResponse
-	14, // 19: leaguelens.v1.AssistantService.Chat:output_type -> leaguelens.v1.ChatResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	21, // 10: leaguelens.v1.ChatResponse.proposal:type_name -> leaguelens.v1.ActionProposal
+	18, // 11: leaguelens.v1.AssistantAction.sync_leagues:type_name -> leaguelens.v1.SyncLeaguesAction
+	19, // 12: leaguelens.v1.AssistantAction.dismiss_alert:type_name -> leaguelens.v1.DismissAlertAction
+	20, // 13: leaguelens.v1.AssistantAction.restore_alert:type_name -> leaguelens.v1.RestoreAlertAction
+	17, // 14: leaguelens.v1.ActionProposal.action:type_name -> leaguelens.v1.AssistantAction
+	17, // 15: leaguelens.v1.RunAssistantActionRequest.action:type_name -> leaguelens.v1.AssistantAction
+	3,  // 16: leaguelens.v1.AssistantService.GetAssistantSettings:input_type -> leaguelens.v1.GetAssistantSettingsRequest
+	5,  // 17: leaguelens.v1.AssistantService.ListAssistantModels:input_type -> leaguelens.v1.ListAssistantModelsRequest
+	7,  // 18: leaguelens.v1.AssistantService.SaveAssistantSettings:input_type -> leaguelens.v1.SaveAssistantSettingsRequest
+	9,  // 19: leaguelens.v1.AssistantService.DeleteAssistantSettings:input_type -> leaguelens.v1.DeleteAssistantSettingsRequest
+	13, // 20: leaguelens.v1.AssistantService.Chat:input_type -> leaguelens.v1.ChatRequest
+	22, // 21: leaguelens.v1.AssistantService.RunAssistantAction:input_type -> leaguelens.v1.RunAssistantActionRequest
+	4,  // 22: leaguelens.v1.AssistantService.GetAssistantSettings:output_type -> leaguelens.v1.GetAssistantSettingsResponse
+	6,  // 23: leaguelens.v1.AssistantService.ListAssistantModels:output_type -> leaguelens.v1.ListAssistantModelsResponse
+	8,  // 24: leaguelens.v1.AssistantService.SaveAssistantSettings:output_type -> leaguelens.v1.SaveAssistantSettingsResponse
+	10, // 25: leaguelens.v1.AssistantService.DeleteAssistantSettings:output_type -> leaguelens.v1.DeleteAssistantSettingsResponse
+	14, // 26: leaguelens.v1.AssistantService.Chat:output_type -> leaguelens.v1.ChatResponse
+	23, // 27: leaguelens.v1.AssistantService.RunAssistantAction:output_type -> leaguelens.v1.RunAssistantActionResponse
+	22, // [22:28] is the sub-list for method output_type
+	16, // [16:22] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_leaguelens_v1_assistant_proto_init() }
@@ -1031,6 +1471,12 @@ func file_leaguelens_v1_assistant_proto_init() {
 	file_leaguelens_v1_assistant_proto_msgTypes[12].OneofWrappers = []any{
 		(*ChatResponse_Text)(nil),
 		(*ChatResponse_Tool)(nil),
+		(*ChatResponse_Proposal)(nil),
+	}
+	file_leaguelens_v1_assistant_proto_msgTypes[15].OneofWrappers = []any{
+		(*AssistantAction_SyncLeagues)(nil),
+		(*AssistantAction_DismissAlert)(nil),
+		(*AssistantAction_RestoreAlert)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1038,7 +1484,7 @@ func file_leaguelens_v1_assistant_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leaguelens_v1_assistant_proto_rawDesc), len(file_leaguelens_v1_assistant_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   15,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
