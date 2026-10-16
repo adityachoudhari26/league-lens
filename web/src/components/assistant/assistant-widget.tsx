@@ -56,12 +56,16 @@ export function AssistantWidget() {
           hasSettingsError={settings.isError}
           isNotSetUp={notSetUp}
           isStreaming={chat.isStreaming}
+          hasPendingAction={chat.hasPendingAction}
+          isActionPending={chat.isActionPending}
           onDraftChange={chat.setDraft}
           onSend={() => void chat.send()}
           onSuggestion={(value) => void chat.send(value)}
           onStop={chat.stop}
           onNewChat={chat.clear}
           onClose={() => setOpen(false)}
+          onConfirmAction={(index) => void chat.confirmAction(index)}
+          onCancelAction={chat.cancelAction}
         />
       ) : null}
     </div>

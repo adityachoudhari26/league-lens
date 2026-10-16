@@ -1,12 +1,16 @@
 import { create } from "@bufbuild/protobuf"
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import {
   ChatRequestSchema,
   type PageContext,
 } from "@/gen/leaguelens/v1/assistant_pb"
+import { useRunAssistantAction } from "@/lib/api/assistant"
 import {
+  appendAssistantOutcome,
   applyChatResponse,
   chatErrorMessage,
+  markActionChoice,
+  markActionPending,
   toChatMessages,
   type AssistantTurn,
   type ChatProblem,
@@ -15,12 +19,16 @@ import { useChatStream } from "./use-chat-stream"
 
 export function useAssistantChat(page: PageContext) {
   const { isStreaming, stream, stop } = useChatStream()
+  const runAssistantAction = useRunAssistantAction()
   const [messages, setMessages] = useState<AssistantTurn[]>([])
   const [draft, setDraft] = useState("")
   const [problem, setProblem] = useState<ChatProblem>()
+  const [isActionPending, setIsActionPending] = useState(false)
+  const handledActions = useRef(new Set<number>())
 
   const clear = useCallback(() => {
     stop()
+    handledActions.current.clear()
     setMessages([])
     setDraft("")
     setProblem(undefined)
@@ -52,6 +60,43 @@ export function useAssistantChat(page: PageContext) {
     [draft, isStreaming, messages, page, stream],
   )
 
+  const runAction = runAssistantAction.mutateAsync
+  const confirmAction = useCallback(
+    async (index: number) => {
+      const turn = messages[index]
+      const action = turn?.actionProposal?.action
+      if (!action || handledActions.current.has(index)) return
+      handledActions.current.add(index)
+      setMessages((current) =>
+        markActionChoice(current, index, "confirmed", true),
+      )
+      setIsActionPending(true)
+      try {
+        const response = await runAction(action)
+        setMessages((current) =>
+          appendAssistantOutcome(current, response.summary),
+        )
+      } catch {
+        setMessages((current) =>
+          appendAssistantOutcome(current, "Couldn't complete that action."),
+        )
+      } finally {
+        setIsActionPending(false)
+        setMessages((current) => markActionPending(current, index, false))
+      }
+    },
+    [messages, runAction],
+  )
+
+  const cancelAction = useCallback((index: number) => {
+    if (handledActions.current.has(index)) return
+    handledActions.current.add(index)
+    setMessages((current) => {
+      const decided = markActionChoice(current, index, "cancelled", false)
+      return appendAssistantOutcome(decided, "Cancelled.")
+    })
+  }, [])
+
   return {
     messages,
     draft,
@@ -59,8 +104,14 @@ export function useAssistantChat(page: PageContext) {
     error: problem?.message,
     requiresSetup: problem?.requiresSetup ?? false,
     isStreaming,
+    isActionPending,
+    hasPendingAction: messages.some(
+      (turn) => turn.actionProposal && !turn.actionChoice,
+    ),
     send,
     stop,
     clear,
+    confirmAction,
+    cancelAction,
   }
 }

@@ -1,6 +1,9 @@
 import { Code, ConnectError } from "@connectrpc/connect"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { AssistantAction } from "@/gen/leaguelens/v1/assistant_pb"
 import { assistant } from "./client"
+import { overviewQueries } from "./overview"
+import { syncStatusQuery } from "./sync"
 
 export const assistantQueries = {
   settings: {
@@ -43,6 +46,31 @@ export function useDeleteAssistantSettings() {
       queryClient.invalidateQueries({
         queryKey: assistantQueries.settings.queryKey,
       }),
+  })
+}
+
+export function useRunAssistantAction() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (action: AssistantAction) =>
+      assistant.runAssistantAction({ action }),
+    onSuccess: async (_response, action) => {
+      const invalidate = Object.values(overviewQueries)
+        .filter(
+          (query) =>
+            action.action.case === "syncLeagues" ||
+            query === overviewQueries.attention,
+        )
+        .map((query) =>
+          queryClient.invalidateQueries({ queryKey: query.queryKey }),
+        )
+      if (action.action.case === "syncLeagues") {
+        invalidate.push(
+          queryClient.invalidateQueries({ queryKey: syncStatusQuery.queryKey }),
+        )
+      }
+      await Promise.all(invalidate)
+    },
   })
 }
 

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/assistant.proto.
  */
 export const file_leaguelens_v1_assistant: GenFile = /*@__PURE__*/
-  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSJCCgtDaGF0TWVzc2FnZRIlCgRyb2xlGAEgASgOMhcubGVhZ3VlbGVucy52MS5DaGF0Um9sZRIMCgR0ZXh0GAIgASgJImIKC1BhZ2VDb250ZXh0EgwKBHBhdGgYASABKAkSGAoQbGVhZ3VlX3NlYXNvbl9pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEhEKBHdlZWsYBCABKAVIAIgBAUIHCgVfd2VlayJlCgtDaGF0UmVxdWVzdBIsCghtZXNzYWdlcxgBIAMoCzIaLmxlYWd1ZWxlbnMudjEuQ2hhdE1lc3NhZ2USKAoEcGFnZRgCIAEoCzIaLmxlYWd1ZWxlbnMudjEuUGFnZUNvbnRleHQibgoMQ2hhdFJlc3BvbnNlEigKBHRleHQYASABKAsyGC5sZWFndWVsZW5zLnYxLlRleHREZWx0YUgAEisKBHRvb2wYAiABKAsyGy5sZWFndWVsZW5zLnYxLlRvb2xBY3Rpdml0eUgAQgcKBWV2ZW50IhkKCVRleHREZWx0YRIMCgR0ZXh0GAEgASgJIh0KDFRvb2xBY3Rpdml0eRINCgVsYWJlbBgBIAEoCSqDAQoRQXNzaXN0YW50UHJvdmlkZXISIgoeQVNTSVNUQU5UX1BST1ZJREVSX1VOU1BFQ0lGSUVEEAASIAocQVNTSVNUQU5UX1BST1ZJREVSX0FOVEhST1BJQxABEigKJEFTU0lTVEFOVF9QUk9WSURFUl9PUEVOQUlfQ09NUEFUSUJMRRACKlIKCENoYXRSb2xlEhkKFUNIQVRfUk9MRV9VTlNQRUNJRklFRBAAEhIKDkNIQVRfUk9MRV9VU0VSEAESFwoTQ0hBVF9ST0xFX0FTU0lTVEFOVBACMqIEChBBc3Npc3RhbnRTZXJ2aWNlEm8KFEdldEFzc2lzdGFudFNldHRpbmdzEioubGVhZ3VlbGVucy52MS5HZXRBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaKy5sZWFndWVsZW5zLnYxLkdldEFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2USbAoTTGlzdEFzc2lzdGFudE1vZGVscxIpLmxlYWd1ZWxlbnMudjEuTGlzdEFzc2lzdGFudE1vZGVsc1JlcXVlc3QaKi5sZWFndWVsZW5zLnYxLkxpc3RBc3Npc3RhbnRNb2RlbHNSZXNwb25zZRJyChVTYXZlQXNzaXN0YW50U2V0dGluZ3MSKy5sZWFndWVsZW5zLnYxLlNhdmVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaLC5sZWFndWVsZW5zLnYxLlNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEngKF0RlbGV0ZUFzc2lzdGFudFNldHRpbmdzEi0ubGVhZ3VlbGVucy52MS5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QaLi5sZWFndWVsZW5zLnYxLkRlbGV0ZUFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2USQQoEQ2hhdBIaLmxlYWd1ZWxlbnMudjEuQ2hhdFJlcXVlc3QaGy5sZWFndWVsZW5zLnYxLkNoYXRSZXNwb25zZTABQlJaUGdpdGh1Yi5jb20vYWRpdHlhY2hvdWRoYXJpMjYvbGVhZ3VlLWxlbnMvaW50ZXJuYWwvZ2VuL2xlYWd1ZWxlbnMvdjE7bGVhZ3VlbGVuc3YxYgZwcm90bzM");
+  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSJCCgtDaGF0TWVzc2FnZRIlCgRyb2xlGAEgASgOMhcubGVhZ3VlbGVucy52MS5DaGF0Um9sZRIMCgR0ZXh0GAIgASgJImIKC1BhZ2VDb250ZXh0EgwKBHBhdGgYASABKAkSGAoQbGVhZ3VlX3NlYXNvbl9pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEhEKBHdlZWsYBCABKAVIAIgBAUIHCgVfd2VlayJlCgtDaGF0UmVxdWVzdBIsCghtZXNzYWdlcxgBIAMoCzIaLmxlYWd1ZWxlbnMudjEuQ2hhdE1lc3NhZ2USKAoEcGFnZRgCIAEoCzIaLmxlYWd1ZWxlbnMudjEuUGFnZUNvbnRleHQioQEKDENoYXRSZXNwb25zZRIoCgR0ZXh0GAEgASgLMhgubGVhZ3VlbGVucy52MS5UZXh0RGVsdGFIABIrCgR0b29sGAIgASgLMhsubGVhZ3VlbGVucy52MS5Ub29sQWN0aXZpdHlIABIxCghwcm9wb3NhbBgDIAEoCzIdLmxlYWd1ZWxlbnMudjEuQWN0aW9uUHJvcG9zYWxIAEIHCgVldmVudCIZCglUZXh0RGVsdGESDAoEdGV4dBgBIAEoCSIdCgxUb29sQWN0aXZpdHkSDQoFbGFiZWwYASABKAkizQEKD0Fzc2lzdGFudEFjdGlvbhI4CgxzeW5jX2xlYWd1ZXMYASABKAsyIC5sZWFndWVsZW5zLnYxLlN5bmNMZWFndWVzQWN0aW9uSAASOgoNZGlzbWlzc19hbGVydBgCIAEoCzIhLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0FsZXJ0QWN0aW9uSAASOgoNcmVzdG9yZV9hbGVydBgDIAEoCzIhLmxlYWd1ZWxlbnMudjEuUmVzdG9yZUFsZXJ0QWN0aW9uSABCCAoGYWN0aW9uIicKEVN5bmNMZWFndWVzQWN0aW9uEhIKCm9ubHlfc3RhbGUYASABKAgiOgoSRGlzbWlzc0FsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiOgoSUmVzdG9yZUFsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiUQoOQWN0aW9uUHJvcG9zYWwSDwoHc3VtbWFyeRgBIAEoCRIuCgZhY3Rpb24YAiABKAsyHi5sZWFndWVsZW5zLnYxLkFzc2lzdGFudEFjdGlvbiJLChlSdW5Bc3Npc3RhbnRBY3Rpb25SZXF1ZXN0Ei4KBmFjdGlvbhgBIAEoCzIeLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50QWN0aW9uIi0KGlJ1bkFzc2lzdGFudEFjdGlvblJlc3BvbnNlEg8KB3N1bW1hcnkYASABKAkqgwEKEUFzc2lzdGFudFByb3ZpZGVyEiIKHkFTU0lTVEFOVF9QUk9WSURFUl9VTlNQRUNJRklFRBAAEiAKHEFTU0lTVEFOVF9QUk9WSURFUl9BTlRIUk9QSUMQARIoCiRBU1NJU1RBTlRfUFJPVklERVJfT1BFTkFJX0NPTVBBVElCTEUQAipSCghDaGF0Um9sZRIZChVDSEFUX1JPTEVfVU5TUEVDSUZJRUQQABISCg5DSEFUX1JPTEVfVVNFUhABEhcKE0NIQVRfUk9MRV9BU1NJU1RBTlQQAjKNBQoQQXNzaXN0YW50U2VydmljZRJvChRHZXRBc3Npc3RhbnRTZXR0aW5ncxIqLmxlYWd1ZWxlbnMudjEuR2V0QXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0GisubGVhZ3VlbGVucy52MS5HZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEmwKE0xpc3RBc3Npc3RhbnRNb2RlbHMSKS5sZWFndWVsZW5zLnYxLkxpc3RBc3Npc3RhbnRNb2RlbHNSZXF1ZXN0GioubGVhZ3VlbGVucy52MS5MaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2UScgoVU2F2ZUFzc2lzdGFudFNldHRpbmdzEisubGVhZ3VlbGVucy52MS5TYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0GiwubGVhZ3VlbGVucy52MS5TYXZlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJ4ChdEZWxldGVBc3Npc3RhbnRTZXR0aW5ncxItLmxlYWd1ZWxlbnMudjEuRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0Gi4ubGVhZ3VlbGVucy52MS5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEkEKBENoYXQSGi5sZWFndWVsZW5zLnYxLkNoYXRSZXF1ZXN0GhsubGVhZ3VlbGVucy52MS5DaGF0UmVzcG9uc2UwARJpChJSdW5Bc3Npc3RhbnRBY3Rpb24SKC5sZWFndWVsZW5zLnYxLlJ1bkFzc2lzdGFudEFjdGlvblJlcXVlc3QaKS5sZWFndWVsZW5zLnYxLlJ1bkFzc2lzdGFudEFjdGlvblJlc3BvbnNlQlJaUGdpdGh1Yi5jb20vYWRpdHlhY2hvdWRoYXJpMjYvbGVhZ3VlLWxlbnMvaW50ZXJuYWwvZ2VuL2xlYWd1ZWxlbnMvdjE7bGVhZ3VlbGVuc3YxYgZwcm90bzM");
 
 /**
  * @generated from message leaguelens.v1.AssistantSettings
@@ -288,6 +288,12 @@ export type ChatResponse = Message<"leaguelens.v1.ChatResponse"> & {
      */
     value: ToolActivity;
     case: "tool";
+  } | {
+    /**
+     * @generated from field: leaguelens.v1.ActionProposal proposal = 3;
+     */
+    value: ActionProposal;
+    case: "proposal";
   } | { case: undefined; value?: undefined };
 };
 
@@ -331,6 +337,158 @@ export type ToolActivity = Message<"leaguelens.v1.ToolActivity"> & {
  */
 export const ToolActivitySchema: GenMessage<ToolActivity> = /*@__PURE__*/
   messageDesc(file_leaguelens_v1_assistant, 14);
+
+/**
+ * @generated from message leaguelens.v1.AssistantAction
+ */
+export type AssistantAction = Message<"leaguelens.v1.AssistantAction"> & {
+  /**
+   * @generated from oneof leaguelens.v1.AssistantAction.action
+   */
+  action: {
+    /**
+     * @generated from field: leaguelens.v1.SyncLeaguesAction sync_leagues = 1;
+     */
+    value: SyncLeaguesAction;
+    case: "syncLeagues";
+  } | {
+    /**
+     * @generated from field: leaguelens.v1.DismissAlertAction dismiss_alert = 2;
+     */
+    value: DismissAlertAction;
+    case: "dismissAlert";
+  } | {
+    /**
+     * @generated from field: leaguelens.v1.RestoreAlertAction restore_alert = 3;
+     */
+    value: RestoreAlertAction;
+    case: "restoreAlert";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message leaguelens.v1.AssistantAction.
+ * Use `create(AssistantActionSchema)` to create a new message.
+ */
+export const AssistantActionSchema: GenMessage<AssistantAction> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 15);
+
+/**
+ * @generated from message leaguelens.v1.SyncLeaguesAction
+ */
+export type SyncLeaguesAction = Message<"leaguelens.v1.SyncLeaguesAction"> & {
+  /**
+   * @generated from field: bool only_stale = 1;
+   */
+  onlyStale: boolean;
+};
+
+/**
+ * Describes the message leaguelens.v1.SyncLeaguesAction.
+ * Use `create(SyncLeaguesActionSchema)` to create a new message.
+ */
+export const SyncLeaguesActionSchema: GenMessage<SyncLeaguesAction> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 16);
+
+/**
+ * @generated from message leaguelens.v1.DismissAlertAction
+ */
+export type DismissAlertAction = Message<"leaguelens.v1.DismissAlertAction"> & {
+  /**
+   * @generated from field: string fingerprint = 1;
+   */
+  fingerprint: string;
+
+  /**
+   * @generated from field: string summary = 2;
+   */
+  summary: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.DismissAlertAction.
+ * Use `create(DismissAlertActionSchema)` to create a new message.
+ */
+export const DismissAlertActionSchema: GenMessage<DismissAlertAction> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 17);
+
+/**
+ * @generated from message leaguelens.v1.RestoreAlertAction
+ */
+export type RestoreAlertAction = Message<"leaguelens.v1.RestoreAlertAction"> & {
+  /**
+   * @generated from field: string fingerprint = 1;
+   */
+  fingerprint: string;
+
+  /**
+   * @generated from field: string summary = 2;
+   */
+  summary: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.RestoreAlertAction.
+ * Use `create(RestoreAlertActionSchema)` to create a new message.
+ */
+export const RestoreAlertActionSchema: GenMessage<RestoreAlertAction> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 18);
+
+/**
+ * @generated from message leaguelens.v1.ActionProposal
+ */
+export type ActionProposal = Message<"leaguelens.v1.ActionProposal"> & {
+  /**
+   * @generated from field: string summary = 1;
+   */
+  summary: string;
+
+  /**
+   * @generated from field: leaguelens.v1.AssistantAction action = 2;
+   */
+  action?: AssistantAction | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.ActionProposal.
+ * Use `create(ActionProposalSchema)` to create a new message.
+ */
+export const ActionProposalSchema: GenMessage<ActionProposal> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 19);
+
+/**
+ * @generated from message leaguelens.v1.RunAssistantActionRequest
+ */
+export type RunAssistantActionRequest = Message<"leaguelens.v1.RunAssistantActionRequest"> & {
+  /**
+   * @generated from field: leaguelens.v1.AssistantAction action = 1;
+   */
+  action?: AssistantAction | undefined;
+};
+
+/**
+ * Describes the message leaguelens.v1.RunAssistantActionRequest.
+ * Use `create(RunAssistantActionRequestSchema)` to create a new message.
+ */
+export const RunAssistantActionRequestSchema: GenMessage<RunAssistantActionRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 20);
+
+/**
+ * @generated from message leaguelens.v1.RunAssistantActionResponse
+ */
+export type RunAssistantActionResponse = Message<"leaguelens.v1.RunAssistantActionResponse"> & {
+  /**
+   * @generated from field: string summary = 1;
+   */
+  summary: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.RunAssistantActionResponse.
+ * Use `create(RunAssistantActionResponseSchema)` to create a new message.
+ */
+export const RunAssistantActionResponseSchema: GenMessage<RunAssistantActionResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 21);
 
 /**
  * @generated from enum leaguelens.v1.AssistantProvider
@@ -427,6 +585,14 @@ export const AssistantService: GenService<{
     methodKind: "server_streaming";
     input: typeof ChatRequestSchema;
     output: typeof ChatResponseSchema;
+  },
+  /**
+   * @generated from rpc leaguelens.v1.AssistantService.RunAssistantAction
+   */
+  runAssistantAction: {
+    methodKind: "unary";
+    input: typeof RunAssistantActionRequestSchema;
+    output: typeof RunAssistantActionResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_leaguelens_v1_assistant, 0);

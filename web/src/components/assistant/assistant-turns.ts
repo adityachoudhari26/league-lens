@@ -3,6 +3,7 @@ import { Code, ConnectError } from "@connectrpc/connect"
 import {
   ChatMessageSchema,
   ChatRole,
+  type ActionProposal,
   type ChatMessage,
   type ChatResponse,
 } from "@/gen/leaguelens/v1/assistant_pb"
@@ -12,6 +13,9 @@ export type AssistantTurn = {
   role: "user" | "assistant"
   text: string
   toolActivities?: string[]
+  actionProposal?: ActionProposal
+  actionChoice?: "confirmed" | "cancelled"
+  actionPending?: boolean
 }
 
 export type ChatProblem = {
@@ -44,6 +48,9 @@ export function applyChatResponse(
   if (response.event.case === "tool") {
     return appendAssistantToolActivity(turns, response.event.value.label)
   }
+  if (response.event.case === "proposal") {
+    return appendAssistantProposal(turns, response.event.value)
+  }
   return turns
 }
 
@@ -74,6 +81,50 @@ function appendAssistantToolActivity(
     ...messages,
     { kind: "message", role: "assistant", text: "", toolActivities: [label] },
   ]
+}
+
+function appendAssistantProposal(
+  messages: AssistantTurn[],
+  proposal: ActionProposal,
+): AssistantTurn[] {
+  const last = messages[messages.length - 1]
+  if (last?.role === "assistant") {
+    return [...messages.slice(0, -1), { ...last, actionProposal: proposal }]
+  }
+  return [
+    ...messages,
+    { kind: "message", role: "assistant", text: "", actionProposal: proposal },
+  ]
+}
+
+export function markActionChoice(
+  messages: AssistantTurn[],
+  index: number,
+  choice: "confirmed" | "cancelled",
+  pending: boolean,
+): AssistantTurn[] {
+  return messages.map((turn, turnIndex) =>
+    turnIndex === index
+      ? { ...turn, actionChoice: choice, actionPending: pending }
+      : turn,
+  )
+}
+
+export function markActionPending(
+  messages: AssistantTurn[],
+  index: number,
+  pending: boolean,
+) {
+  return messages.map((turn, turnIndex) =>
+    turnIndex === index ? { ...turn, actionPending: pending } : turn,
+  )
+}
+
+export function appendAssistantOutcome(
+  messages: AssistantTurn[],
+  text: string,
+): AssistantTurn[] {
+  return [...messages, { kind: "message", role: "assistant", text }]
 }
 
 export function chatErrorMessage(error: unknown): ChatProblem {
