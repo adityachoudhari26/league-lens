@@ -52,11 +52,23 @@ func (s *Service) chat(
 	if err != nil {
 		return err
 	}
-	var sendErr error
-	_, completionErr := provider.Complete(chatCtx, llm.Request{
+	requestToComplete := llm.Request{
 		Model: model, System: buildSystemPrompt(time.Now(), request.GetPage(), false),
 		Messages: messages, MaxTokens: chatCompletionMaxTokens,
-	}, func(delta string) {
+	}
+	return streamChatCompletion(chatCtx, cancel, provider, requestToComplete, send)
+}
+
+// streamChatCompletion sends provider deltas and maps completion errors.
+func streamChatCompletion(
+	ctx context.Context,
+	cancel context.CancelFunc,
+	provider llm.Provider,
+	request llm.Request,
+	send chatEventSender,
+) error {
+	var sendErr error
+	_, completionErr := provider.Complete(ctx, request, func(delta string) {
 		if sendErr != nil || delta == "" {
 			return
 		}

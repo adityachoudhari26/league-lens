@@ -5,6 +5,8 @@ import {
   ChatMessageSchema,
   ChatRequestSchema,
   ChatRole,
+  type ChatMessage,
+  type ChatResponse,
   type PageContext,
 } from "@/gen/leaguelens/v1/assistant_pb"
 import { assistant } from "@/lib/api/client"
@@ -46,36 +48,15 @@ export function useAssistantChat(page: PageContext) {
       setIsStreaming(true)
       const controller = new AbortController()
       abortController.current = controller
-      const chatMessages = nextMessages
-        .filter(
-          (turn): turn is Extract<AssistantTurn, { kind: "message" }> =>
-            turn.kind === "message",
-        )
-        .slice(-40)
-        .map((turn) =>
-          create(ChatMessageSchema, {
-            role: turn.role === "user" ? ChatRole.USER : ChatRole.ASSISTANT,
-            text: turn.text,
-          }),
-        )
       try {
         const request = create(ChatRequestSchema, {
-          messages: chatMessages,
+          messages: toChatMessages(nextMessages),
           page,
         })
         for await (const event of assistant.chat(request, {
           signal: controller.signal,
         })) {
-          if (event.event.case === "text") {
-            const delta = event.event.value.text
-            setMessages((current) => appendAssistantText(current, delta))
-          } else if (event.event.case === "tool") {
-            const label = event.event.value.label
-            setMessages((current): AssistantTurn[] => [
-              ...current,
-              { kind: "tool", text: label },
-            ])
-          }
+          setMessages((current) => applyChatResponse(current, event))
         }
       } catch (chatError) {
         if (!controller.signal.aborted) {
@@ -106,6 +87,34 @@ export function useAssistantChat(page: PageContext) {
     stop,
     clear,
   }
+}
+
+export function toChatMessages(turns: AssistantTurn[]): ChatMessage[] {
+  return turns
+    .filter(
+      (turn): turn is Extract<AssistantTurn, { kind: "message" }> =>
+        turn.kind === "message",
+    )
+    .slice(-40)
+    .map((turn) =>
+      create(ChatMessageSchema, {
+        role: turn.role === "user" ? ChatRole.USER : ChatRole.ASSISTANT,
+        text: turn.text,
+      }),
+    )
+}
+
+export function applyChatResponse(
+  turns: AssistantTurn[],
+  response: ChatResponse,
+): AssistantTurn[] {
+  if (response.event.case === "text") {
+    return appendAssistantText(turns, response.event.value.text)
+  }
+  if (response.event.case === "tool") {
+    return [...turns, { kind: "tool", text: response.event.value.label }]
+  }
+  return turns
 }
 
 function appendAssistantText(
