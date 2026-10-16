@@ -23,7 +23,7 @@ const getScheduleSchema = `{
     "league_season_id": {"type": "string", "format": "uuid", "description": "ID returned by list_leagues; adds the user's roster in that league"},
     "teams": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string"}, "description": "NFL team abbreviations, e.g. KC"},
     "from_week": {"type": "integer", "minimum": 1, "maximum": 18, "description": "Defaults to the current NFL week"},
-    "to_week": {"type": "integer", "minimum": 1, "maximum": 18, "description": "Defaults to from_week + 3; at most 6 weeks after from_week inclusive"}
+    "to_week": {"type": "integer", "minimum": 1, "maximum": 18, "description": "Defaults to from_week + 3; the range covers at most 6 weeks"}
   },
   "additionalProperties": false
 }`
@@ -242,18 +242,16 @@ func loadScheduleScope(ctx context.Context, q *store.Queries, owner, league pgty
 	}, nil
 }
 
+// readSchedule reads one owner-scoped schedule: it refuses an unloaded season, resolves
+// the week range, and returns the requested and roster teams' byes and games.
 func readSchedule(
 	ctx context.Context,
 	q *store.Queries,
 	request scheduleRequest,
 	scope scheduleScope,
 ) (scheduleToolResult, error) {
-	loaded, err := q.AssistantScheduleLoaded(ctx, scope.season)
-	if err != nil {
+	if err := requireScheduleLoaded(ctx, q, scope.season); err != nil {
 		return scheduleToolResult{}, err
-	}
-	if !loaded {
-		return scheduleToolResult{}, scheduleInputError("the NFL schedule hasn't loaded yet; refresh leagues")
 	}
 	from, to, err := resolveScheduleWeeks(request, scope.currentWeek)
 	if err != nil {
@@ -263,23 +261,49 @@ func readSchedule(
 	if err != nil {
 		return scheduleToolResult{}, err
 	}
-
-	byes, err := q.AssistantScheduleTeamByes(ctx, store.AssistantScheduleTeamByesParams{
-		Season: scope.season, Teams: scheduleTeamsWithRoster(request.teams, roster),
-	})
-	if err != nil {
-		return scheduleToolResult{}, err
-	}
-	if unknown := unknownRequestedTeam(request.teams, byes); unknown != "" {
-		return scheduleToolResult{}, scheduleInputError("unknown NFL team %s", unknown)
-	}
-	games, err := q.AssistantScheduleGames(ctx, store.AssistantScheduleGamesParams{
-		Season: scope.season, Teams: knownScheduleTeams(byes), FromWeek: from, ToWeek: to,
-	})
+	byes, games, err := readScheduleTeams(ctx, q, scope.season, request.teams, roster, from, to)
 	if err != nil {
 		return scheduleToolResult{}, err
 	}
 	return buildScheduleResult(scope.season, from, to, byes, games, roster), nil
+}
+
+// requireScheduleLoaded rejects a season with no nfl_games rows, which would otherwise
+// make every team look like it is on bye.
+func requireScheduleLoaded(ctx context.Context, q *store.Queries, season int32) error {
+	loaded, err := q.AssistantScheduleLoaded(ctx, season)
+	if err != nil {
+		return err
+	}
+	if !loaded {
+		return scheduleInputError("the NFL schedule hasn't loaded yet; refresh leagues")
+	}
+	return nil
+}
+
+// readScheduleTeams reads byes and in-range games for the requested teams plus the roster's
+// NFL teams. A requested team with no game in the season is a validation error.
+func readScheduleTeams(
+	ctx context.Context,
+	q *store.Queries,
+	season int32,
+	requested []string,
+	roster []store.AssistantScheduleOwnerRosterRow,
+	from, to int32,
+) ([]store.AssistantScheduleTeamByesRow, []store.AssistantScheduleGamesRow, error) {
+	byes, err := q.AssistantScheduleTeamByes(ctx, store.AssistantScheduleTeamByesParams{
+		Season: season, Teams: scheduleTeamsWithRoster(requested, roster),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if unknown := unknownRequestedTeam(requested, byes); unknown != "" {
+		return nil, nil, scheduleInputError("unknown NFL team %s", unknown)
+	}
+	games, err := q.AssistantScheduleGames(ctx, store.AssistantScheduleGamesParams{
+		Season: season, Teams: knownScheduleTeams(byes), FromWeek: from, ToWeek: to,
+	})
+	return byes, games, err
 }
 
 // readScheduleRoster returns nil without a league, and the owner's roster (possibly empty) with one.

@@ -58,8 +58,8 @@ func TestGetScheduleReadsStoredScheduleAndOwnerRoster(t *testing.T) {
 	})
 	assertScheduleRoster(t, result.Roster, []scheduleRosterPlayer{
 		{Name: "Bench RB", Position: "RB", OnByeInRange: false},
-		{Name: "Bills QB", Position: "QB", NFLTeam: "BUF", ByeWeek: int32Pointer(7), OnByeInRange: true},
-		{Name: "Chiefs WR", Position: "WR", NFLTeam: "KC", ByeWeek: int32Pointer(5), OnByeInRange: false},
+		{Name: "Bills QB", Position: "QB", NFLTeam: "BUF", ByeWeek: scheduleWeekPointer(7), OnByeInRange: true},
+		{Name: "Chiefs WR", Position: "WR", NFLTeam: "KC", ByeWeek: scheduleWeekPointer(5), OnByeInRange: false},
 	})
 
 	teamsOnly := callSchedule(`{"teams":["DET"],"to_week":7}`)
@@ -77,10 +77,10 @@ func TestGetScheduleReadsStoredScheduleAndOwnerRoster(t *testing.T) {
 	}
 
 	for input, want := range map[string]string{
-		`{"teams":["XYZ"]}`:                            "unknown NFL team XYZ",
-		`{"teams":["KC"],"from_week":1,"to_week":7}`:   "pass at most 6 weeks",
-		`{"teams":["KC"],"from_week":9,"to_week":8}`:   "from_week must be at or before to_week",
-		`{"league_season_id":"` + otherLeagueID + `"}`: "requested data not found",
+		`{"teams":["XYZ"]}`:                                    "unknown NFL team XYZ",
+		`{"teams":["KC"],"from_week":1,"to_week":7}`:           "pass at most 6 weeks",
+		`{"teams":["KC"],"from_week":9,"to_week":8}`:           "from_week must be at or before to_week",
+		`{"league_season_id":"` + scheduleOtherLeagueID + `"}`: "requested data not found",
 	} {
 		if rejected := callSchedule(input); !rejected.IsError || rejected.Content != want {
 			t.Fatalf("%s: result %+v, want %q", input, rejected, want)
@@ -88,7 +88,7 @@ func TestGetScheduleReadsStoredScheduleAndOwnerRoster(t *testing.T) {
 	}
 }
 
-const otherLeagueID = "00000000-0000-0000-0000-000000000099"
+const scheduleOtherLeagueID = "00000000-0000-0000-0000-000000000099"
 
 type scheduleTeamWant struct {
 	bye   int32
@@ -129,7 +129,7 @@ func assertScheduleRoster(t *testing.T, roster *[]scheduleRosterPlayer, want []s
 	}
 }
 
-func int32Pointer(value int32) *int32 { return &value }
+func scheduleWeekPointer(value int32) *int32 { return &value }
 
 func importScheduleFixture(ctx context.Context, t *testing.T, db *database.DB, data fantasy.LeagueData) {
 	t.Helper()
