@@ -101,6 +101,64 @@ func TestFetchLiveMatchup(t *testing.T) {
 	}
 }
 
+func TestFetchLiveMatchupUsesLiveTotalsWhileUndecided(t *testing.T) {
+	body, err := os.ReadFile("testdata/live_matchup_week5.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var response map[string]any
+	if err := json.Unmarshal(body, &response); err != nil {
+		t.Fatal(err)
+	}
+	schedule, ok := response["schedule"].([]any)
+	if !ok {
+		t.Fatal("schedule is not an array")
+	}
+	var foundMatchup bool
+	for _, item := range schedule {
+		matchup, ok := item.(map[string]any)
+		if !ok || matchup["id"] != float64(21) {
+			continue
+		}
+		matchup["winner"] = "UNDECIDED"
+		for sideName, livePoints := range map[string]float64{"home": 11.0, "away": 7.6} {
+			side, ok := matchup[sideName].(map[string]any)
+			if !ok {
+				t.Fatalf("%s side is missing", sideName)
+			}
+			side["totalPoints"] = 0.0
+			side["totalPointsLive"] = livePoints
+		}
+		foundMatchup = true
+		break
+	}
+	if !foundMatchup {
+		t.Fatal("matchup 21 not found in fixture")
+	}
+	body, err = json.Marshal(response)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := liveMatchupFixtureClient(t, body, nil)
+	league := fantasy.League{Ref: fantasy.LeagueRef{Provider: fantasy.ProviderESPN, ExternalID: "1002879736", Season: 2026}}
+	live, err := client.FetchLiveMatchup(context.Background(), league, fantasy.LiveMatchupRequest{
+		Week:   5,
+		Period: 5,
+		TeamID: "4",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if live.Matchup.Status != fantasy.MatchupInProgress {
+		t.Fatalf("status = %v, want in-progress", live.Matchup.Status)
+	}
+	if live.Matchup.TeamA.Score == nil || *live.Matchup.TeamA.Score != 11.0 ||
+		live.Matchup.TeamB == nil || live.Matchup.TeamB.Score == nil || *live.Matchup.TeamB.Score != 7.6 {
+		t.Fatalf("matchup scores = %+v, want 11.0 and 7.6", live.Matchup)
+	}
+}
+
 func TestFetchLiveMatchupReturnsErrorWhenNoMatchupFound(t *testing.T) {
 	body, err := os.ReadFile("testdata/live_matchup_week5.json")
 	if err != nil {
