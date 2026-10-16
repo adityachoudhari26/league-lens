@@ -104,53 +104,119 @@ standalone CLI.
 
 ## Installation
 
-### Requirements
+You'll install one free app (Docker), then copy a few commands into a terminal.
+No programming is needed.
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) on Windows
-  or macOS, [OrbStack](https://orbstack.dev/) on macOS, or Docker Engine with
-  the Compose plugin on Linux.
-- Git, or a downloaded ZIP of this repository.
+### 1. Install and open Docker
 
-### Run with Docker
+- **macOS:** install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+  or [OrbStack](https://orbstack.dev/).
+- **Windows:** install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+- **Linux:** install Docker Engine with the Compose plugin.
+
+**Open Docker Desktop (or OrbStack) and leave it running.** League Lens runs
+inside it, so it must be open whenever you use the app.
+
+### 2. Open a terminal
+
+- **macOS:** press ⌘Space, type `Terminal`, and press Return.
+- **Windows:** open the Start menu, type `PowerShell`, and press Enter.
+
+Paste each command below into the terminal and press Enter (Return on macOS).
+
+### 3. Download League Lens
 
 ```sh
 git clone https://github.com/adityachoudhari26/league-lens.git
 cd league-lens
+```
+
+On macOS, if a window asks to install developer tools, click **Install**, wait
+for it to finish, and run the commands again. No Git? Download the ZIP from the
+green **Code** button on GitHub, unzip it, and `cd` into the unzipped folder.
+
+### 4. Start it
+
+```sh
 docker compose up -d
 ```
 
-The first run builds the image on your machine, which can take a few minutes.
-Database migrations run automatically on startup.
+The first run builds the app on your computer and takes a few minutes. When the
+command finishes, League Lens keeps running in the background, even after you
+close the terminal. It starts again on its own whenever Docker is open.
 
-Open **http://league-lens.localhost** in Chrome, Edge, or Firefox. In Safari,
-use **http://localhost**.
+### 5. Open it
 
-If port 80 is already in use, create a `.env` file next to `compose.yaml`:
+Go to **http://league-lens.localhost** in Chrome, Edge, or Firefox. In Safari,
+use **http://localhost**. Then [connect your leagues](#connecting-leagues).
 
-```sh
-LEAGUE_LENS_PORT=8080
-```
+### If something goes wrong
 
-Then run `docker compose up -d` again and open
-`http://league-lens.localhost:8080` (Safari: `http://localhost:8080`).
+- **`command not found: docker` or `Cannot connect to the Docker daemon`:**
+  Docker isn't running. Open Docker Desktop (or OrbStack), wait until it says
+  it's running, and run the command again.
+- **`port is already allocated` or `address already in use`:** another app is
+  using port 80. In the `league-lens` folder, create a file named `.env` with
+  this line (on macOS or Linux, run `echo LEAGUE_LENS_PORT=8080 >> .env`):
+
+  ```sh
+  LEAGUE_LENS_PORT=8080
+  ```
+
+  Then run `docker compose up -d` again and open
+  `http://league-lens.localhost:8080` (Safari: `http://localhost:8080`).
 
 ## Connecting leagues
 
-Open the app and click **Connect leagues** on Home or in **Settings → Leagues**:
-
-- **ESPN:** drag the **Connect to League Lens** bookmarklet to your bookmarks
-  bar, open espn.com while signed in, and click it. Or paste your `espn_s2` and
-  `SWID` cookies (DevTools → Application → Cookies → `https://www.espn.com`).
-  The cookies are stored encrypted on your machine and never shown again. If
-  ESPN later rejects them, Home shows a **Reconnect** button.
-- **Sleeper:** enter your Sleeper username.
-
-Then pick the leagues to import. Removing a league in Settings hides it and
-keeps its saved history.
-
-The command-line importer below is an alternative.
+Open the app and click **Connect leagues** on Home (or in **Settings →
+Leagues**), then choose ESPN or Sleeper.
 
 ### Sleeper
+
+Enter your Sleeper username, then pick the leagues to import. No password is
+needed.
+
+### ESPN
+
+ESPN has no sign-in for other apps, so League Lens reads your ESPN sign-in
+cookies (`espn_s2` and `SWID`). They're stored encrypted on your computer and
+never shown again. There are two ways to connect.
+
+**Option 1: Use a bookmark (recommended)**
+
+1. Show your browser's bookmarks bar: ⌘⇧B on macOS, Ctrl+Shift+B on Windows
+   and Linux.
+2. In the ESPN step of the dialog, drag the **Connect to League Lens** button
+   onto the bookmarks bar. Clicking it inside League Lens, or pasting its code
+   into the address bar, does nothing.
+3. Open [espn.com/fantasy](https://www.espn.com/fantasy/) and sign in.
+4. Click the **Connect to League Lens** bookmark. League Lens opens in a new
+   tab with your leagues listed. Pick the ones to import.
+
+Can't drag it? Click **Copy bookmark code**, add a new bookmark by hand, and
+paste the code as its URL.
+
+Keep the bookmark. If ESPN later rejects your cookies, Home shows a
+**Reconnect** button; click it, then click the bookmark on ESPN again.
+
+**Option 2: Paste your cookies**
+
+1. On espn.com, while signed in, open developer tools: ⌥⌘I on macOS, F12 on
+   Windows and Linux.
+2. Go to **Application → Cookies → https://www.espn.com** (Firefox: **Storage →
+   Cookies**).
+3. Copy the **Value** of `espn_s2` and `SWID` into the two fields in the
+   dialog.
+
+Removing a league in **Settings → Leagues** hides it and keeps its saved
+history.
+
+### Import from the terminal (optional)
+
+The **Connect leagues** dialog is the easiest way. You can also import from
+the terminal:
+
+#### Sleeper
 
 Sleeper needs no credentials. Use your Sleeper username and the league ID from
 the league URL (`sleeper.com/leagues/<league-id>`):
@@ -159,7 +225,7 @@ the league URL (`sleeper.com/leagues/<league-id>`):
 docker compose exec app import sleeper --username YOUR_USERNAME --league-id YOUR_LEAGUE_ID
 ```
 
-### ESPN
+#### ESPN
 
 ESPN private leagues need two cookies from a browser where you're signed in to
 ESPN:
@@ -187,6 +253,8 @@ ESPN:
 The season is required because ESPN reuses league IDs across years.
 
 ## Updating, stopping, and removing
+
+Run these in a terminal from the `league-lens` folder.
 
 | Task | Command |
 | --- | --- |
