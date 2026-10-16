@@ -7,9 +7,12 @@ import {
   type ChatResponse,
 } from "@/gen/leaguelens/v1/assistant_pb"
 
-export type AssistantTurn =
-  | { kind: "message"; role: "user" | "assistant"; text: string }
-  | { kind: "tool"; text: string }
+export type AssistantTurn = {
+  kind: "message"
+  role: "user" | "assistant"
+  text: string
+  toolActivities?: string[]
+}
 
 export type ChatProblem = {
   requiresSetup: boolean
@@ -39,7 +42,7 @@ export function applyChatResponse(
     return appendAssistantText(turns, response.event.value.text)
   }
   if (response.event.case === "tool") {
-    return [...turns, { kind: "tool", text: response.event.value.label }]
+    return appendAssistantToolActivity(turns, response.event.value.label)
   }
   return turns
 }
@@ -54,6 +57,23 @@ function appendAssistantText(
     return [...messages.slice(0, -1), { ...last, text: last.text + delta }]
   }
   return [...messages, { kind: "message", role: "assistant", text: delta }]
+}
+
+function appendAssistantToolActivity(
+  messages: AssistantTurn[],
+  label: string,
+): AssistantTurn[] {
+  const last = messages[messages.length - 1]
+  if (last?.kind === "message" && last.role === "assistant") {
+    return [
+      ...messages.slice(0, -1),
+      { ...last, toolActivities: [...(last.toolActivities ?? []), label] },
+    ]
+  }
+  return [
+    ...messages,
+    { kind: "message", role: "assistant", text: "", toolActivities: [label] },
+  ]
 }
 
 export function chatErrorMessage(error: unknown): ChatProblem {
