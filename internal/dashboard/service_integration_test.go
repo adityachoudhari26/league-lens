@@ -595,6 +595,55 @@ func TestMatchupWinChance(t *testing.T) {
 		t.Fatalf("complete history building=%t, backfill calls=%d; want false and no request", chance.Building, backfill.calls)
 	}
 
+	if _, err := pool.Exec(ctx, `
+		UPDATE matchups SET status='in_progress'
+		WHERE external_matchup_id='period-2'
+	`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `
+		DELETE FROM lineup_point_changes WHERE matchup_id=(
+			SELECT id FROM matchups WHERE external_matchup_id='period-2'
+		)
+	`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `
+		DELETE FROM win_chance_samples WHERE matchup_id=(
+			SELECT id FROM matchups WHERE external_matchup_id='period-2'
+		)
+	`); err != nil {
+		t.Fatal(err)
+	}
+	inProgressPeriod := int32(2)
+	inProgress, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{
+		LeagueSeasonId: leagueSeasonID,
+		MatchupPeriod:  &inProgressPeriod,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	inProgressChance, err := client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{
+		MatchupId: inProgress.Matchup.Id,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !inProgressChance.Building || backfill.calls != 3 {
+		t.Fatalf("empty in-progress matchup building=%t, backfill calls=%d; want true and a request", inProgressChance.Building, backfill.calls)
+	}
+	inProgressSampleAt := now.Truncate(time.Microsecond).Add(-time.Minute)
+	insertMatchupWinChanceFixture(t, db, inProgress.Matchup, inProgressSampleAt)
+	inProgressChance, err = client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{
+		MatchupId: inProgress.Matchup.Id,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inProgressChance.Building || backfill.calls != 3 {
+		t.Fatalf("sampled in-progress matchup building=%t, backfill calls=%d; want false and no request", inProgressChance.Building, backfill.calls)
+	}
+
 	period := int32(1)
 	firstPeriod, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{
 		LeagueSeasonId: leagueSeasonID,
@@ -627,7 +676,7 @@ func TestMatchupWinChance(t *testing.T) {
 	if byeChance.WinChance != nil || byeChance.Building {
 		t.Fatalf("bye win chance = %v, building = %t; want empty and false", byeChance.WinChance, byeChance.Building)
 	}
-	if backfill.calls != 2 {
+	if backfill.calls != 3 {
 		t.Fatalf("bye requested a backfill, calls = %d", backfill.calls)
 	}
 

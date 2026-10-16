@@ -37,8 +37,12 @@ func (s *Service) GetMatchupWinChance(
 			return nil
 		}
 		response.WinChance, err = matchupWinChanceMessage(ctx, q, owner, matchup.ID, matchup.OwnerIsTeamB)
-		if err != nil || matchup.Status != string(fantasy.MatchupFinal) {
+		if err != nil {
 			return err
+		}
+		if matchup.Status != string(fantasy.MatchupFinal) {
+			requestBackfill = response.WinChance == nil || len(response.WinChance.Samples) == 0
+			return nil
 		}
 		matchesFinal, err := matchupWinChanceMatchesFinal(
 			response.WinChance, matchup.ScoreA, matchup.ScoreB, matchup.OwnerIsTeamB,
