@@ -56,16 +56,9 @@ func (p *anthropicProvider) Complete(ctx context.Context, request Request, onTex
 	if err != nil {
 		return Response{}, err
 	}
-	for _, index := range sortedToolIndexes(toolInputs) {
-		input := toolInputs[index].input.String()
-		if input == "" {
-			input = "{}"
-		}
-		if !json.Valid([]byte(input)) {
-			return Response{}, ErrUnavailable
-		}
-		toolInputs[index].call.Input = json.RawMessage(input)
-		result.ToolCalls = append(result.ToolCalls, toolInputs[index].call)
+	result.ToolCalls, err = collectAnthropicToolCalls(toolInputs)
+	if err != nil {
+		return Response{}, err
 	}
 	return result, nil
 }
@@ -89,6 +82,7 @@ type anthropicEventDelta struct {
 	StopReason  string `json:"stop_reason"`
 }
 
+// applyAnthropicEvent decodes and applies recognized Anthropic stream events.
 func applyAnthropicEvent(
 	result *Response,
 	toolInputs map[int]*anthropicToolInput,
@@ -100,43 +94,74 @@ func applyAnthropicEvent(
 		return err
 	}
 	switch event {
+	case "content_block_start", "content_block_delta", "message_delta":
+	default:
+		return nil
+	}
+	var update anthropicStreamEvent
+	if json.Unmarshal(data, &update) != nil {
+		return ErrUnavailable
+	}
+	switch event {
 	case "content_block_start":
-		var update anthropicStreamEvent
-		if json.Unmarshal(data, &update) != nil {
-			return ErrUnavailable
-		}
-		if update.ContentBlock.Type == "tool_use" {
-			toolInputs[update.Index] = &anthropicToolInput{
-				call: ToolCall{ID: update.ContentBlock.ID, Name: update.ContentBlock.Name},
-			}
-		}
+		startAnthropicToolBlock(toolInputs, update)
 	case "content_block_delta":
-		var update anthropicStreamEvent
-		if json.Unmarshal(data, &update) != nil {
-			return ErrUnavailable
-		}
-		if update.Delta.Type == "text_delta" {
-			result.Text += update.Delta.Text
-			if onText != nil {
-				onText(update.Delta.Text)
-			}
-		}
-		if update.Delta.Type == "input_json_delta" && toolInputs[update.Index] != nil {
-			toolInputs[update.Index].input.WriteString(update.Delta.PartialJSON)
-		}
+		applyAnthropicDelta(result, toolInputs, update, onText)
 	case "message_delta":
-		var update anthropicStreamEvent
-		if json.Unmarshal(data, &update) != nil {
-			return ErrUnavailable
-		}
 		result.StopReason = update.Delta.StopReason
 	}
 	return nil
 }
 
+// startAnthropicToolBlock records a newly announced tool-use block.
+func startAnthropicToolBlock(toolInputs map[int]*anthropicToolInput, update anthropicStreamEvent) {
+	if update.ContentBlock.Type != "tool_use" {
+		return
+	}
+	toolInputs[update.Index] = &anthropicToolInput{
+		call: ToolCall{ID: update.ContentBlock.ID, Name: update.ContentBlock.Name},
+	}
+}
+
+// applyAnthropicDelta appends streamed text and fragmented tool JSON.
+func applyAnthropicDelta(
+	result *Response,
+	toolInputs map[int]*anthropicToolInput,
+	update anthropicStreamEvent,
+	onText func(string),
+) {
+	if update.Delta.Type == "text_delta" {
+		result.Text += update.Delta.Text
+		if onText != nil {
+			onText(update.Delta.Text)
+		}
+	}
+	if update.Delta.Type == "input_json_delta" && toolInputs[update.Index] != nil {
+		toolInputs[update.Index].input.WriteString(update.Delta.PartialJSON)
+	}
+}
+
 type anthropicToolInput struct {
 	call  ToolCall
 	input strings.Builder
+}
+
+// collectAnthropicToolCalls validates and orders reconstructed tool inputs.
+func collectAnthropicToolCalls(toolInputs map[int]*anthropicToolInput) ([]ToolCall, error) {
+	calls := make([]ToolCall, 0, len(toolInputs))
+	for _, index := range sortedToolIndexes(toolInputs) {
+		input := toolInputs[index].input.String()
+		if input == "" {
+			input = "{}"
+		}
+		if !json.Valid([]byte(input)) {
+			return nil, ErrUnavailable
+		}
+		call := toolInputs[index].call
+		call.Input = json.RawMessage(input)
+		calls = append(calls, call)
+	}
+	return calls, nil
 }
 
 func (p *anthropicProvider) headers() http.Header {
