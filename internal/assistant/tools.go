@@ -67,6 +67,9 @@ func (s *Service) chatTools() []assistantTool {
 	if s.Trending != nil {
 		tools = append(tools, trendingTools(s)...)
 	}
+	if s.GameContext != nil {
+		tools = append(tools, gameContextTools(s.GameContext)...)
+	}
 	return append(tools, buildActionTools(s.Dashboard)...)
 }
 

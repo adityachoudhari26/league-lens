@@ -79,7 +79,7 @@ func run() error {
 	syncHandler := leaguesync.NewHandler(syncRunner)
 	assistantService := &assistant.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail,
-		Dashboard: dashboardService, Sync: syncHandler, ProviderSources: sources,
+		Dashboard: dashboardService, Sync: syncHandler, ProviderSources: sources, GameContext: sources,
 		Trending: sleeper.NewClient(&http.Client{Timeout: 10 * time.Second}), CatalogPath: catalogPath,
 	}
 	srv := &http.Server{

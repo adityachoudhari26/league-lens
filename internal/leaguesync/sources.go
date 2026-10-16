@@ -58,6 +58,11 @@ func (p ProviderSources) NFLSchedule(ctx context.Context, season int) ([]fantasy
 	return espn.FetchNFLSchedule(ctx, nil, season)
 }
 
+// NFLGameContext returns public betting lines and forecasts for one NFL week.
+func (ProviderSources) NFLGameContext(ctx context.Context, week int) (fantasy.NFLWeekGameContext, error) {
+	return espn.FetchNFLGameContext(ctx, nil, week)
+}
+
 // NFLScoreboard reads the public ESPN scoreboard shared by every provider.
 func (ProviderSources) NFLScoreboard(ctx context.Context) (fantasy.NFLScoreboard, error) {
 	return espn.FetchNFLScoreboard(ctx, nil)

@@ -76,26 +76,34 @@ func FetchNFLWeekScoreboard(ctx context.Context, client *http.Client, season, we
 }
 
 func fetchNFLScoreboard(ctx context.Context, client *http.Client, endpoint string) (fantasy.NFLScoreboard, error) {
+	body, err := fetchScoreboardBody(ctx, client, endpoint)
+	if err != nil {
+		return fantasy.NFLScoreboard{}, err
+	}
+	return parseNFLScoreboard(body)
+}
+
+func fetchScoreboardBody(ctx context.Context, client *http.Client, endpoint string) ([]byte, error) {
 	if client == nil {
 		client = &http.Client{Timeout: 20 * time.Second}
 	}
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return fantasy.NFLScoreboard{}, err
+		return nil, err
 	}
 	response, err := client.Do(request)
 	if err != nil {
-		return fantasy.NFLScoreboard{}, fmt.Errorf("ESPN scoreboard request failed: %w", err)
+		return nil, fmt.Errorf("ESPN scoreboard request failed: %w", err)
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		return fantasy.NFLScoreboard{}, fmt.Errorf("ESPN scoreboard returned HTTP %d", response.StatusCode)
+		return nil, fmt.Errorf("ESPN scoreboard returned HTTP %d", response.StatusCode)
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, 4<<20))
 	if err != nil {
-		return fantasy.NFLScoreboard{}, fmt.Errorf("failed to read ESPN scoreboard: %w", err)
+		return nil, fmt.Errorf("failed to read ESPN scoreboard: %w", err)
 	}
-	return parseNFLScoreboard(body)
+	return body, nil
 }
 
 // parseNFLScoreboard parses ESPN's response. A missing season year or week is an error;
