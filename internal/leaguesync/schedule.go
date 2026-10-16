@@ -35,9 +35,15 @@ func (r *Runner) RefreshAfterImport() {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
-		r.RefreshNFLSchedule(r.ctx, fantasy.CurrentSeason(r.now()))
-		r.RefreshPlayerNews(r.ctx)
+		r.refreshScheduleAndNews()
 	}()
+}
+
+// refreshScheduleAndNews runs a best-effort schedule refresh for the current
+// season followed by a player news refresh on the Runner's context.
+func (r *Runner) refreshScheduleAndNews() {
+	r.RefreshNFLSchedule(r.ctx, fantasy.CurrentSeason(r.now()))
+	r.RefreshPlayerNews(r.ctx)
 }
 
 // RefreshNFLSchedule loads kickoff and bye data during syncs and after league

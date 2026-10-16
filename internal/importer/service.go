@@ -57,6 +57,9 @@ type Started struct {
 	target importTarget
 }
 
+// LeagueSeasonID is the attached league's ID, the key sync status uses.
+func (s Started) LeagueSeasonID() pgtype.UUID { return s.target.league.ID }
+
 // Begin does the quick part of an import: checks the request, describes the
 // league, confirms it still matches the selection, then attaches it and opens
 // a sync run. No bulk provider reads happen here.
@@ -105,6 +108,15 @@ func (s *Service) Import(ctx context.Context, request Request) (Result, error) {
 		return Result{}, err
 	}
 	return s.Finish(ctx, started)
+}
+
+// Abandon closes a begun import's sync run as failed without fetching, used
+// when another sync of the same league is already running.
+func (s *Service) Abandon(started Started, code string) error {
+	cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := s.DB.Queries().FailSync(cleanup, store.FailSyncParams{ID: started.target.run.ID, ErrorCode: text(code)})
+	return err
 }
 
 // Establish the import target and durable run before bulk provider reads.
