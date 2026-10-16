@@ -23,14 +23,20 @@ func (r *Runner) refreshSchedules(targets []Target) {
 			continue
 		}
 		seen[season] = true
-		if err := r.refreshSchedule(season); err != nil {
-			slog.Warn("nfl schedule refresh failed; bye and kickoff checks use saved data", "season", season, "error", err)
-		}
+		r.RefreshNFLSchedule(r.ctx, season)
 	}
 }
 
-func (r *Runner) refreshSchedule(season int) error {
-	ctx, cancel := context.WithTimeout(r.ctx, time.Minute)
+// RefreshNFLSchedule loads kickoff and bye data during syncs and after league
+// imports, so new installs have schedule data right away. Failures only log.
+func (r *Runner) RefreshNFLSchedule(ctx context.Context, season int) {
+	if err := r.refreshSchedule(ctx, season); err != nil {
+		slog.Warn("nfl schedule refresh failed; bye and kickoff checks use saved data", "season", season, "error", err)
+	}
+}
+
+func (r *Runner) refreshSchedule(ctx context.Context, season int) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
 	fetchedAt, err := r.db.Queries().NFLScheduleFetchedAt(ctx, int32(season))

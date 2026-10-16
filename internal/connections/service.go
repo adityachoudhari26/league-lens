@@ -40,6 +40,8 @@ type Service struct {
 	DiscoverESPN    DiscoverESPNFunc
 	DiscoverSleeper DiscoverSleeperFunc
 	NewSource       NewSourceFunc
+	// RefreshNFLSchedule runs a best-effort NFL schedule refresh after imports; nil skips it.
+	RefreshNFLSchedule func(context.Context, int)
 	// RefreshPlayerNews runs a best-effort news refresh after imports; nil skips it.
 	RefreshPlayerNews func(context.Context)
 }
@@ -272,20 +274,22 @@ func (s *Service) ImportLeagues(ctx context.Context, request *v1.ImportLeaguesRe
 	for _, pick := range request.GetPicks() {
 		response.Results = append(response.Results, service.importPick(ctx, importerService, connection, credentials, credentialErr, pick))
 	}
-	service.refreshNewsAfterImport(ctx, response.Results)
+	service.refreshAfterImport(ctx, response.Results)
 	return response, nil
 }
 
-// refreshNewsAfterImport updates news before a successful import response is returned.
-func (s Service) refreshNewsAfterImport(ctx context.Context, results []*v1.ImportResult) {
-	if s.RefreshPlayerNews == nil {
-		return
-	}
+// refreshAfterImport refreshes the schedule and player news after any successful import.
+func (s Service) refreshAfterImport(ctx context.Context, results []*v1.ImportResult) {
 	for _, result := range results {
 		if result.GetSucceeded() {
-			refreshCtx, cancel := context.WithTimeout(ctx, importNewsTimeout)
-			defer cancel()
-			s.RefreshPlayerNews(refreshCtx)
+			if s.RefreshNFLSchedule != nil {
+				s.RefreshNFLSchedule(ctx, fantasy.CurrentSeason(time.Now()))
+			}
+			if s.RefreshPlayerNews != nil {
+				refreshCtx, cancel := context.WithTimeout(ctx, importNewsTimeout)
+				defer cancel()
+				s.RefreshPlayerNews(refreshCtx)
+			}
 			return
 		}
 	}

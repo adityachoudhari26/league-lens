@@ -122,9 +122,15 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	}
 	credentials := espn.Credentials{S2: s2, SWID: swid}
 	accountID := espn.NewClient(nil, credentials, season).AccountID()
+	scheduleRefreshCalls := 0
+	var scheduleRefreshSeason int
 	newsRefreshCalls := 0
 	service := &Service{
 		DB: db, Box: box, OwnerEmail: "connect@example.test",
+		RefreshNFLSchedule: func(_ context.Context, season int) {
+			scheduleRefreshCalls++
+			scheduleRefreshSeason = season
+		},
 		RefreshPlayerNews: func(context.Context) { newsRefreshCalls++ },
 		DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
 			return []fantasy.DiscoveredLeague{{Ref: ref, Name: league.Name, TeamID: "1", TeamName: "Home"}}, nil
@@ -171,6 +177,10 @@ func TestConnectionImportDetachAndReattach(t *testing.T) {
 	}
 	if newsRefreshCalls != 1 {
 		t.Fatalf("news refresh calls after successful import = %d, want 1", newsRefreshCalls)
+	}
+	if scheduleRefreshCalls != 1 || scheduleRefreshSeason != fantasy.CurrentSeason(time.Now()) {
+		t.Fatalf("schedule refresh calls = %d for season %d, want 1 for season %d",
+			scheduleRefreshCalls, scheduleRefreshSeason, fantasy.CurrentSeason(time.Now()))
 	}
 	rows, err := db.Queries().ListSyncTargets(ctx, owner.ID)
 	if err != nil || len(rows) != 1 {
@@ -327,10 +337,12 @@ func TestImportUnauthorizedMarksConnectionForReconnect(t *testing.T) {
 			league := fantasy.League{Ref: ref, Name: "Synthetic League", TeamCount: 2}
 			credentials := espn.Credentials{S2: "synthetic-s2", SWID: "{synthetic-swid}"}
 			accountID := espn.NewClient(nil, credentials, season).AccountID()
+			scheduleRefreshCalls := 0
 			newsRefreshCalls := 0
 			service := &Service{
 				DB: db, Box: box, OwnerEmail: "unauthorized@example.test",
-				RefreshPlayerNews: func(context.Context) { newsRefreshCalls++ },
+				RefreshNFLSchedule: func(context.Context, int) { scheduleRefreshCalls++ },
+				RefreshPlayerNews:  func(context.Context) { newsRefreshCalls++ },
 				DiscoverESPN: func(context.Context, espn.Credentials) ([]fantasy.DiscoveredLeague, error) {
 					return []fantasy.DiscoveredLeague{{Ref: ref, TeamID: "1"}}, nil
 				},
@@ -355,6 +367,9 @@ func TestImportUnauthorizedMarksConnectionForReconnect(t *testing.T) {
 			}
 			if newsRefreshCalls != 0 {
 				t.Fatalf("news refresh calls after failed import = %d, want 0", newsRefreshCalls)
+			}
+			if scheduleRefreshCalls != 0 {
+				t.Fatalf("schedule refresh calls after failed import = %d, want 0", scheduleRefreshCalls)
 			}
 			connectionID, ok := parseUUID(connected.ConnectionId)
 			if !ok {
