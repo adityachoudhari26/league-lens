@@ -21,7 +21,11 @@ func (s assistantLeagueSource) DescribeLeague(context.Context, string) (fantasy.
 	return s.data.League, nil
 }
 
-func (s assistantLeagueSource) FetchLeague(context.Context, fantasy.League) (fantasy.LeagueData, error) {
+func (s assistantLeagueSource) FetchLeague(
+	context.Context,
+	fantasy.League,
+	fantasy.FetchRequest,
+) (fantasy.LeagueData, error) {
 	return s.data, nil
 }
 
