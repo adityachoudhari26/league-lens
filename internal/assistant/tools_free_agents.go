@@ -18,8 +18,9 @@ import (
 )
 
 var (
-	errFreeAgentsESPN    = errors.New("ESPN free-agent lookup failed")
-	errFreeAgentsSleeper = errors.New("sleeper free-agent lookup failed")
+	errFreeAgentsESPN             = errors.New("ESPN free-agent lookup failed")
+	errFreeAgentsSleeper          = errors.New("sleeper free-agent lookup failed")
+	errFreeAgentTargetUnavailable = errors.New("free-agent target unavailable")
 )
 
 const getFreeAgentsSchema = `{
@@ -182,7 +183,10 @@ func (s *Service) freeAgentTarget(ctx context.Context, leagueSeasonID string) (l
 		return leaguesync.Target{}, connect.NewError(connect.CodeNotFound, "league not found")
 	}
 	if err != nil {
-		return leaguesync.Target{}, internalError("free-agent league could not be loaded")
+		return leaguesync.Target{}, connect.NewError(
+			connect.CodeInternal,
+			"free-agent league could not be loaded",
+		).WithCause(errFreeAgentTargetUnavailable)
 	}
 	return target, nil
 }

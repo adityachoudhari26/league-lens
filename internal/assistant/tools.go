@@ -183,6 +183,9 @@ func toolErrorMessage(err error) string {
 	if errors.Is(err, errInvalidToolInput) || connect.CodeOf(err) == connect.CodeInvalidArgument {
 		return "invalid tool input"
 	}
+	if errors.Is(err, errFreeAgentTargetUnavailable) {
+		return "couldn't load free agents from Sleeper"
+	}
 	if errors.Is(err, errFreeAgentsESPN) {
 		return "couldn't load free agents from ESPN"
 	}

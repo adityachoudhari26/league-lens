@@ -239,6 +239,19 @@ func TestFreeAgentProviderErrorsDoNotExposeDetails(t *testing.T) {
 	}
 }
 
+func TestFreeAgentTargetErrorKeepsSafeModelMessage(t *testing.T) {
+	err := connect.NewError(
+		connect.CodeInternal,
+		"free-agent league could not be loaded",
+	).WithCause(errFreeAgentTargetUnavailable)
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("error code = %v, want %v", connect.CodeOf(err), connect.CodeInternal)
+	}
+	if got := toolErrorMessage(err); got != "couldn't load free agents from Sleeper" {
+		t.Fatalf("error message = %q", got)
+	}
+}
+
 func TestTrimWinChanceResponseKeepsStartAndLatestSamples(t *testing.T) {
 	response := &v1.GetMatchupWinChanceResponse{WinChance: &v1.MatchupWinChance{}}
 	for index := 0; index < 20; index++ {
