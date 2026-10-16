@@ -36,6 +36,8 @@ const (
 	// AssistantServiceDeleteAssistantSettingsProcedure is the procedure name of the AssistantService's
 	// DeleteAssistantSettings RPC.
 	AssistantServiceDeleteAssistantSettingsProcedure = "/leaguelens.v1.AssistantService/DeleteAssistantSettings"
+	// AssistantServiceChatProcedure is the procedure name of the AssistantService's Chat RPC.
+	AssistantServiceChatProcedure = "/leaguelens.v1.AssistantService/Chat"
 )
 
 var (
@@ -67,6 +69,13 @@ var (
 			Procedure:  AssistantServiceDeleteAssistantSettingsProcedure,
 		}
 	})
+	assistantServiceChatSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeServer,
+			Schema:     v1.File_leaguelens_v1_assistant_proto.Services().ByName("AssistantService").Methods().ByName("Chat"),
+			Procedure:  AssistantServiceChatProcedure,
+		}
+	})
 )
 
 // AssistantServiceClient is a client for the leaguelens.v1.AssistantService service.
@@ -75,6 +84,7 @@ type AssistantServiceClient interface {
 	ListAssistantModels(context.Context, *v1.ListAssistantModelsRequest) (*v1.ListAssistantModelsResponse, error)
 	SaveAssistantSettings(context.Context, *v1.SaveAssistantSettingsRequest) (*v1.SaveAssistantSettingsResponse, error)
 	DeleteAssistantSettings(context.Context, *v1.DeleteAssistantSettingsRequest) (*v1.DeleteAssistantSettingsResponse, error)
+	Chat(context.Context, *v1.ChatRequest) (AssistantServiceChatClientStream, error)
 }
 
 // NewAssistantServiceClient constructs a client for the leaguelens.v1.AssistantService service.
@@ -83,12 +93,33 @@ func NewAssistantServiceClient(client *connect.Client) AssistantServiceClient {
 	return &assistantServiceClient{client: client}
 }
 
+// AssistantServiceChatClientStream is the client stream for the AssistantService's Chat RPC.
+type AssistantServiceChatClientStream struct {
+	stream connect.ClientStream
+}
+
+// Receive returns the next response message from the server.
+func (s AssistantServiceChatClientStream) Receive() (*v1.ChatResponse, error) {
+	var res v1.ChatResponse
+	if err := s.stream.Receive(&res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// Close releases the stream's resources. It is idempotent and is typically deferred to clean up a
+// stream abandoned before io.EOF.
+func (s AssistantServiceChatClientStream) Close() error {
+	return s.stream.Close()
+}
+
 // AssistantServiceHandler is an implementation of the leaguelens.v1.AssistantService service.
 type AssistantServiceHandler interface {
 	GetAssistantSettings(context.Context, *v1.GetAssistantSettingsRequest) (*v1.GetAssistantSettingsResponse, error)
 	ListAssistantModels(context.Context, *v1.ListAssistantModelsRequest) (*v1.ListAssistantModelsResponse, error)
 	SaveAssistantSettings(context.Context, *v1.SaveAssistantSettingsRequest) (*v1.SaveAssistantSettingsResponse, error)
 	DeleteAssistantSettings(context.Context, *v1.DeleteAssistantSettingsRequest) (*v1.DeleteAssistantSettingsResponse, error)
+	Chat(context.Context, *v1.ChatRequest, AssistantServiceChatServerStream) error
 }
 
 // RegisterAssistantServiceHandler registers svc as the leaguelens.v1.AssistantService
@@ -100,7 +131,23 @@ func RegisterAssistantServiceHandler(server *connect.Server, svc AssistantServic
 		connect.Method{Spec: assistantServiceListAssistantModelsSpec(), Handler: adapter.listAssistantModels},
 		connect.Method{Spec: assistantServiceSaveAssistantSettingsSpec(), Handler: adapter.saveAssistantSettings},
 		connect.Method{Spec: assistantServiceDeleteAssistantSettingsSpec(), Handler: adapter.deleteAssistantSettings},
+		connect.Method{Spec: assistantServiceChatSpec(), Handler: adapter.chat},
 	)
+}
+
+// AssistantServiceChatServerStream is the server stream for the AssistantService's Chat RPC.
+type AssistantServiceChatServerStream struct {
+	stream connect.ServerStream
+}
+
+// SendHeaders flushes the response headers without a message. The first Send does this implicitly.
+func (s AssistantServiceChatServerStream) SendHeaders() error {
+	return s.stream.SendHeaders()
+}
+
+// Send sends a response message to the client.
+func (s AssistantServiceChatServerStream) Send(res *v1.ChatResponse) error {
+	return s.stream.Send(res)
 }
 
 // UnimplementedAssistantServiceHandler returns CodeUnimplemented from all methods.
@@ -120,6 +167,10 @@ func (UnimplementedAssistantServiceHandler) SaveAssistantSettings(context.Contex
 
 func (UnimplementedAssistantServiceHandler) DeleteAssistantSettings(context.Context, *v1.DeleteAssistantSettingsRequest) (*v1.DeleteAssistantSettingsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.AssistantService.DeleteAssistantSettings is not implemented")
+}
+
+func (UnimplementedAssistantServiceHandler) Chat(context.Context, *v1.ChatRequest, AssistantServiceChatServerStream) error {
+	return connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.AssistantService.Chat is not implemented")
 }
 
 type assistantServiceClient struct {
@@ -156,6 +207,14 @@ func (c *assistantServiceClient) DeleteAssistantSettings(ctx context.Context, re
 		return nil, err
 	}
 	return &res, nil
+}
+
+func (c *assistantServiceClient) Chat(ctx context.Context, req *v1.ChatRequest) (AssistantServiceChatClientStream, error) {
+	stream, err := c.client.CallServerStream(ctx, assistantServiceChatSpec(), req)
+	if err != nil {
+		return AssistantServiceChatClientStream{}, err
+	}
+	return AssistantServiceChatClientStream{stream: stream}, nil
 }
 
 type assistantServiceHandler struct{ svc AssistantServiceHandler }
@@ -206,4 +265,12 @@ func (h assistantServiceHandler) deleteAssistantSettings(ctx context.Context, _ 
 		return err
 	}
 	return stream.Send(res)
+}
+
+func (h assistantServiceHandler) chat(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ChatRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	return h.svc.Chat(ctx, &req, AssistantServiceChatServerStream{stream: stream})
 }

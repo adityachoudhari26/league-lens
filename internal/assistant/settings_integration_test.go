@@ -206,3 +206,40 @@ func TestUnauthorizedProviderDoesNotSaveSettings(t *testing.T) {
 		t.Fatalf("unauthorized save created an owner: %v", err)
 	}
 }
+
+func TestChatRequiresAndDecryptsOwnerSettings(t *testing.T) {
+	ctx := context.Background()
+	db := openSettingsTestDatabase(t)
+	box, err := secrets.NewBox(bytes.Repeat([]byte{9}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var configurations []llm.Config
+	service := &Service{
+		DB: db, Box: box, OwnerEmail: "chat@example.test",
+		NewProvider: func(config llm.Config) (llm.Provider, error) {
+			configurations = append(configurations, config)
+			return settingsTestProvider{models: []string{"fake-model"}}, nil
+		},
+	}
+	if _, _, err := service.providerForChat(ctx); !connectErrorCodeIs(err, connect.CodeFailedPrecondition) {
+		t.Fatalf("chat without settings = %v, want FailedPrecondition", err)
+	}
+	_, err = service.SaveAssistantSettings(ctx, &v1.SaveAssistantSettingsRequest{
+		Provider: v1.AssistantProvider_ASSISTANT_PROVIDER_OPENAI_COMPATIBLE,
+		BaseUrl:  "http://localhost:11999/v1",
+		Model:    "fake-model",
+		ApiKey:   "sk-test-chat1234",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider, model, err := service.providerForChat(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if provider == nil || model != "fake-model" || len(configurations) != 2 ||
+		configurations[1].APIKey != "sk-test-chat1234" {
+		t.Fatalf("chat provider = %v, model %q, configs %+v", provider, model, configurations)
+	}
+}

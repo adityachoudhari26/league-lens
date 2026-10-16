@@ -8,6 +8,7 @@ service AssistantService {
   rpc ListAssistantModels(ListAssistantModelsRequest) returns (ListAssistantModelsResponse);
   rpc SaveAssistantSettings(SaveAssistantSettingsRequest) returns (SaveAssistantSettingsResponse);
   rpc DeleteAssistantSettings(DeleteAssistantSettingsRequest) returns (DeleteAssistantSettingsResponse);
+  rpc Chat(ChatRequest) returns (stream ChatResponse);
 }
 
 enum AssistantProvider {
@@ -49,3 +50,35 @@ message SaveAssistantSettingsResponse {
 
 message DeleteAssistantSettingsRequest {}
 message DeleteAssistantSettingsResponse {}
+
+message ChatMessage {
+  ChatRole role = 1;
+  string text = 2;
+}
+enum ChatRole {
+  CHAT_ROLE_UNSPECIFIED = 0;
+  CHAT_ROLE_USER = 1;
+  CHAT_ROLE_ASSISTANT = 2;
+}
+message PageContext {
+  string path = 1;
+  string league_season_id = 2;
+  string team_id = 3;
+  optional int32 week = 4;
+}
+message ChatRequest {
+  repeated ChatMessage messages = 1;
+  PageContext page = 2;
+}
+message ChatResponse {
+  oneof event {
+    TextDelta text = 1;
+    ToolActivity tool = 2;
+  }
+}
+message TextDelta {
+  string text = 1;
+}
+message ToolActivity {
+  string label = 1;
+}
