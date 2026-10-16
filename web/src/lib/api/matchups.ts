@@ -39,4 +39,10 @@ export const matchupQueries = {
       queryFn: ({ signal }) =>
         dashboard.getMatchupWinChance({ matchupId }, { signal }),
     }),
+  // Who has the ball in each NFL game in progress, from the public scoreboard.
+  liveGames: queryOptions({
+    queryKey: ["matchups", "live-games"],
+    queryFn: ({ signal }) => dashboard.getLiveGames({}, { signal }),
+    select: (response) => response.games,
+  }),
 }

@@ -1,0 +1,76 @@
+{
+  "season": {
+    "type": 2,
+    "year": 2026
+  },
+  "week": {
+    "number": 6
+  },
+  "events": [
+    {
+      "id": "401872995",
+      "date": "2026-10-16T00:15Z",
+      "status": {
+        "clock": 857.0,
+        "period": 2,
+        "type": {
+          "state": "in",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "26"
+              }
+            }
+          ],
+          "situation": {
+            "possession": "7",
+            "isRedZone": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "401872996",
+      "date": "2026-10-18T13:30Z",
+      "status": {
+        "clock": 0.0,
+        "period": 0,
+        "type": {
+          "state": "pre",
+          "completed": false
+        }
+      },
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": {
+                "id": "30"
+              }
+            },
+            {
+              "homeAway": "away",
+              "team": {
+                "id": "34"
+              }
+            }
+          ],
+          "situation": null
+        }
+      ]
+    }
+  ]
+}

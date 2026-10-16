@@ -25,6 +25,7 @@ service DashboardService {
   rpc ListMatchups(ListMatchupsRequest) returns (ListMatchupsResponse);
   rpc GetMatchupDetail(GetMatchupDetailRequest) returns (GetMatchupDetailResponse);
   rpc GetMatchupWinChance(GetMatchupWinChanceRequest) returns (GetMatchupWinChanceResponse);
+  rpc GetLiveGames(GetLiveGamesRequest) returns (GetLiveGamesResponse);
   // GetPlayerCard is the one read that contacts a profile source: it fetches
   // the player's profile live and saves it. NOT_FOUND for an unknown player_id.
   rpc GetPlayerCard(GetPlayerCardRequest) returns (GetPlayerCardResponse);

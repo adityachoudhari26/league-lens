@@ -32,11 +32,13 @@ type NFLScoreboard struct {
 
 // NFLGameStatus describes one game's participants and current scoreboard state.
 type NFLGameStatus struct {
-	ID        string // ESPN event ID.
-	HomeTeam  string // Abbreviations shared with roster entries, e.g. "KC".
-	AwayTeam  string
-	KickoffAt time.Time
-	State     NFLGameState
-	Period    int           // 0 before kickoff, 1–4 quarters, 5+ overtime.
-	Clock     time.Duration // Time left in the current period.
+	ID         string // ESPN event ID.
+	HomeTeam   string // Abbreviations shared with roster entries, e.g. "KC".
+	AwayTeam   string
+	KickoffAt  time.Time
+	State      NFLGameState
+	Period     int           // 0 before kickoff, 1–4 quarters, 5+ overtime.
+	Clock      time.Duration // Time left in the current period.
+	Possession string        // Team with the ball (roster abbreviation); live games only, empty when unknown.
+	RedZone    bool          // Possession team is inside the opponent's 20.
 }

@@ -35,6 +35,10 @@ type scoreboardCompetitor struct {
 
 type scoreboardCompetition struct {
 	Competitors []scoreboardCompetitor `json:"competitors"`
+	Situation   *struct {
+		Possession string `json:"possession"`
+		IsRedZone  bool   `json:"isRedZone"`
+	} `json:"situation"`
 }
 
 type scoreboardEvent struct {
@@ -135,14 +139,25 @@ func parseScoreboardEvent(event scoreboardEvent) (fantasy.NFLGameStatus, bool) {
 	if !ok {
 		return fantasy.NFLGameStatus{}, false
 	}
+	var possession string
+	var redZone bool
+	if state == fantasy.NFLGameLive && event.Competitions[0].Situation != nil {
+		teamID, err := strconv.Atoi(event.Competitions[0].Situation.Possession)
+		if err == nil {
+			possession = proTeamAbbreviation(teamID)
+		}
+		redZone = event.Competitions[0].Situation.IsRedZone && possession != ""
+	}
 	return fantasy.NFLGameStatus{
-		ID:        event.ID,
-		HomeTeam:  homeTeam,
-		AwayTeam:  awayTeam,
-		KickoffAt: kickoffAt,
-		State:     state,
-		Period:    event.Status.Period,
-		Clock:     time.Duration(event.Status.Clock * float64(time.Second)),
+		ID:         event.ID,
+		HomeTeam:   homeTeam,
+		AwayTeam:   awayTeam,
+		KickoffAt:  kickoffAt,
+		State:      state,
+		Period:     event.Status.Period,
+		Clock:      time.Duration(event.Status.Clock * float64(time.Second)),
+		Possession: possession,
+		RedZone:    redZone,
 	}, true
 }
 

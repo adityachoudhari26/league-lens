@@ -1,10 +1,17 @@
+import { Shield, type LucideProps } from "lucide-react"
 import { scoreLabel } from "@/components/overview/format"
-import { GameState, type LineupPlayer } from "@/gen/leaguelens/v1/matchups_pb"
 import {
+  GameState,
+  type LineupPlayer,
+  type LiveGame,
+} from "@/gen/leaguelens/v1/matchups_pb"
+import {
+  fieldState,
   gameDetail,
   injuryLabel,
   ownerRowTone,
   playerInfo,
+  type FieldState,
   shownPoints,
   type RoundStatus,
 } from "@/components/matchups/rules"
@@ -41,6 +48,63 @@ export function InjuryBadge({ status }: { status: string }) {
   )
 }
 
+const fieldLabel = {
+  offense: ["Has the ball", "In the red zone"],
+  defense: ["On the field", "Defending the red zone"],
+} as const
+
+// Outside the red zone: a leather-brown football and a soft orange shield.
+const fieldToneClass = {
+  offense: "text-amber-800/75 dark:text-[#c79a72]",
+  defense: "text-orange-500/80 dark:text-[#e5a36f]",
+} as const
+
+// A light tint filling the player's half of the row while their unit is on the
+// field, red once the drive reaches the red zone.
+function fieldTintClass(state?: FieldState) {
+  if (!state) return ""
+  if (state.redZone) return "bg-red-50 dark:bg-[#3a2627]"
+  return state.unit === "offense"
+    ? "bg-amber-50 dark:bg-[#322a20]"
+    : "bg-orange-50 dark:bg-[#36281f]"
+}
+
+// A level, filled football with laces cut out in the card color. Lucide only
+// has an angled rugby ball.
+function FootballIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...props}>
+      <path
+        d="M1.5 12C5 3 19 3 22.5 12C19 21 5 21 1.5 12Z"
+        fill="currentColor"
+      />
+      <path
+        d="M8 12h8M10 10.25v3.5M12 10.25v3.5M14 10.25v3.5"
+        className="stroke-card"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  )
+}
+
+// A football while the player's offense has the ball, a shield while a D/ST is
+// on the field; red once the drive reaches the red zone.
+function FieldBadge({ state }: { state: FieldState }) {
+  const Icon = state.unit === "offense" ? FootballIcon : Shield
+  const label = fieldLabel[state.unit][state.redZone ? 1 : 0]
+  return (
+    <span title={label} className="shrink-0">
+      <Icon
+        aria-label={label}
+        fill="currentColor"
+        className={`size-3.5 ${state.redZone ? "text-red-700/80 dark:text-[#f09591]" : fieldToneClass[state.unit]}`}
+      />
+    </span>
+  )
+}
+
 function PlayerSubtitle({ player }: { player: LineupPlayer }) {
   const info = playerInfo(player)
   const detail = gameDetail(player)
@@ -62,16 +126,19 @@ function PlayerCell({
   player,
   mirrored,
   toneClass,
+  liveGames,
 }: {
   player?: LineupPlayer
   mirrored?: boolean
   toneClass?: string
+  liveGames: LiveGame[]
 }) {
   if (!player) return <div />
   const injury = injuryLabel(player.injuryStatus)
+  const field = fieldState(player, liveGames)
   return (
     <div
-      className={`flex min-w-0 items-center gap-3 ${mirrored ? "flex-row-reverse text-right" : ""}`}
+      className={`flex min-w-0 items-center gap-3 px-3 py-2 ${mirrored ? "flex-row-reverse text-right" : ""} ${fieldTintClass(field)}`}
     >
       <div className="min-w-0 flex-1">
         <div
@@ -84,6 +151,7 @@ function PlayerCell({
             {player.playerName}
           </PlayerCardTrigger>
           {injury && <InjuryBadge status={injury} />}
+          {field && <FieldBadge state={field} />}
         </div>
         <PlayerSubtitle player={player} />
       </div>
@@ -125,7 +193,7 @@ function PlayerPoints({
 function SlotBadge({ slot }: { slot: string }) {
   return (
     <span
-      className={`mx-auto rounded px-1.5 py-0.5 text-[10px] font-semibold ${slotToneClass[slot] ?? "bg-muted text-muted-foreground"}`}
+      className={`m-auto rounded px-1.5 py-0.5 text-[10px] font-semibold ${slotToneClass[slot] ?? "bg-muted text-muted-foreground"}`}
     >
       {slotLabel[slot] ?? slot}
     </span>
@@ -139,40 +207,52 @@ function LineupRow({
   theirs,
   hasOpponent,
   status,
+  liveGames,
 }: {
   slot: string
   mine?: LineupPlayer
   theirs?: LineupPlayer
   hasOpponent: boolean
   status: RoundStatus
+  liveGames: LiveGame[]
 }) {
   const tone = ownerRowTone(status, mine, theirs)
   if (!hasOpponent)
     return (
-      <div className="grid grid-cols-[1fr_3rem] items-center gap-2 px-3 py-2">
-        <PlayerCell player={mine} />
+      <div className="grid grid-cols-[1fr_3rem] items-stretch">
+        <PlayerCell player={mine} liveGames={liveGames} />
         <SlotBadge slot={slot} />
       </div>
     )
   return (
-    <div className="grid grid-cols-[1fr_3rem_1fr] items-center gap-2 px-3 py-2">
-      <PlayerCell player={mine} toneClass={tone && scoreToneClass[tone]} />
+    <div className="grid grid-cols-[1fr_3rem_1fr] items-stretch">
+      <PlayerCell
+        player={mine}
+        toneClass={tone && scoreToneClass[tone]}
+        liveGames={liveGames}
+      />
       <SlotBadge slot={slot} />
-      <PlayerCell player={theirs} mirrored />
+      <PlayerCell player={theirs} mirrored liveGames={liveGames} />
     </div>
   )
 }
 
+/**
+ * Rows of paired players. `liveGames` drives the on-field badges; bench rows
+ * pass none because a bench D/ST can't be told apart from an offensive player.
+ */
 export function Lineup({
   mine,
   theirs,
   hasOpponent,
   status,
+  liveGames = [],
 }: {
   mine: LineupPlayer[]
   theirs: LineupPlayer[]
   hasOpponent: boolean
   status: RoundStatus
+  liveGames?: LiveGame[]
 }) {
   const rows = Array.from({ length: Math.max(mine.length, theirs.length) })
   return (
@@ -185,6 +265,7 @@ export function Lineup({
           theirs={theirs[index]}
           hasOpponent={hasOpponent}
           status={status}
+          liveGames={liveGames}
         />
       ))}
     </div>
