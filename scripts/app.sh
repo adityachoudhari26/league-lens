@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Keep this image name in sync with `image:` in compose.yaml.
-APP_IMAGE=league-lens:local
-
 require_docker() {
   if ! command -v docker >/dev/null 2>&1; then
     printf "%s\n" "Docker isn't installed. Install Docker Desktop (https://www.docker.com/products/docker-desktop/) or OrbStack (https://orbstack.dev/), open it, and run this again." >&2
@@ -98,32 +95,8 @@ is_app_running() {
   return 1
 }
 
-built_app_image_id() {
-  docker image inspect -f '{{.Id}}' "$APP_IMAGE"
-}
-
-running_app_image_id() {
-  local app_container
-  app_container=$(docker compose ps -q app)
-  [[ -n "$app_container" ]] || return 0
-  docker inspect -f '{{.Image}}' "$app_container"
-}
-
-built_app_platform_image_id() {
-  local platform
-  platform=$(docker image inspect -f '{{.Os}}/{{.Architecture}}' "$APP_IMAGE")
-  docker image inspect --platform "$platform" -f '{{.Id}}' "$APP_IMAGE"
-}
-
-running_app_platform_image_id() {
-  local app_container image_id
-  app_container=$(docker compose ps -q app)
-  [[ -n "$app_container" ]] || return 0
-  image_id=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.image"}}' "$app_container")
-  if [[ -z "$image_id" || "$image_id" == "<no value>" ]]; then
-    image_id=$(docker inspect -f '{{.Image}}' "$app_container")
-  fi
-  printf '%s\n' "$image_id"
+app_container_id() {
+  docker compose ps -q app
 }
 
 print_app_urls() {
@@ -311,7 +284,7 @@ tracked_changes() {
   git status --short --untracked-files=no
 }
 
-# Update only a clean main checkout, rebuilding the app when its image is stale.
+# Update only a clean main checkout, letting Compose refresh the app when needed.
 update_app() {
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     printf '%s\n' "This copy was downloaded as a ZIP, so it can't update itself. Download the new ZIP from GitHub, or reinstall with git (see README)." >&2
@@ -320,8 +293,7 @@ update_app() {
 
   require_docker
 
-  local branch old_revision new_revision running_image_id built_image_id
-  local running_platform_image_id built_platform_image_id
+  local branch old_revision new_revision before after
   branch=$(git branch --show-current 2>/dev/null || true)
   if [[ "$branch" != main ]]; then
     branch=${branch:-"detached HEAD"}
@@ -349,23 +321,13 @@ update_app() {
     git log --no-merges --format='  - %s' "$old_revision..$new_revision"
   fi
 
-  if is_app_running; then
-    running_image_id=$(running_app_image_id)
-  else
-    running_image_id=''
-  fi
-
   docker compose build app
-  built_image_id=$(built_app_image_id)
 
-  if [[ -n "$running_image_id" ]]; then
-    if [[ "$running_image_id" == "$built_image_id" ]]; then
-      printf '%s\n' "Already up to date."
-      return 0
-    fi
-    if built_platform_image_id=$(built_app_platform_image_id) &&
-      running_platform_image_id=$(running_app_platform_image_id) &&
-      [[ "$running_platform_image_id" == "$built_platform_image_id" ]]; then
+  if is_app_running; then
+    before=$(app_container_id)
+    docker compose up -d
+    after=$(app_container_id)
+    if [[ "$before" == "$after" ]]; then
       printf '%s\n' "Already up to date."
       return 0
     fi
@@ -374,7 +336,6 @@ update_app() {
       printf '%s\n' "Your code was newer than the running app, so it was rebuilt."
     fi
 
-    docker compose up -d
     wait_until_ready
     app_urls
     printf 'Updated and restarted. League Lens is running at %s\n' "$APP_URL"
