@@ -7,21 +7,20 @@ export type GameWindow = { start: number; end: number; label: string }
 const SAME_SLATE_MS = 2 * 60 * 60 * 1000
 // Long enough for an overtime game plus the final stat updates.
 const GAME_LENGTH_MS = 3.75 * 60 * 60 * 1000
-
-export function slateLabel(at: number) {
-  const date = new Date(at)
-  const day = date.toLocaleDateString(undefined, { weekday: "short" })
-  const time = date
-    .toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
-    .replace(":00", "")
-  return `${day} ${time}`
-}
-
 // A saved point this close to a window widens it; one further away, like a
 // Thursday-night sample when none of the starters play Thursday, gets its
 // own short window instead of stretching a window across the days between.
 const POINT_JOIN_MS = 60 * 60 * 1000
 const POINT_WINDOW_MS = 30 * 60 * 1000
+
+export function clockLabel(at: number) {
+  const date = new Date(at)
+  return `${date.toLocaleDateString(undefined, { weekday: "short" })} ${date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`
+}
+
+function slateLabel(at: number) {
+  return clockLabel(at).replace(":00", "")
+}
 
 /**
  * Windows from the week's kickoffs, widened to cover every saved point so
@@ -31,7 +30,7 @@ export function gameWindows(
   kickoffs: number[],
   points: number[],
 ): GameWindow[] {
-  let windows: GameWindow[] = []
+  const windows: GameWindow[] = []
   for (const kickoff of [...new Set(kickoffs)].sort((a, b) => a - b)) {
     const last = windows.at(-1)
     if (last && (kickoff - last.start <= SAME_SLATE_MS || kickoff < last.end)) {
@@ -61,13 +60,12 @@ export function gameWindows(
     })
     windows.sort((a, b) => a.start - b.start)
   }
-  windows = windows.reduce<GameWindow[]>((merged, w) => {
+  return windows.reduce<GameWindow[]>((merged, w) => {
     const last = merged.at(-1)
     if (last && w.start <= last.end) last.end = Math.max(last.end, w.end)
     else merged.push({ ...w })
     return merged
   }, [])
-  return windows
 }
 
 export type TimeAxis = {

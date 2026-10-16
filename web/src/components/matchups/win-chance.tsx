@@ -1,10 +1,18 @@
 import { timestampMs } from "@bufbuild/protobuf/wkt"
 import { useQuery } from "@tanstack/react-query"
-import { useId, useMemo, useState, type CSSProperties } from "react"
+import {
+  useId,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+  type ReactNode,
+} from "react"
 import { initials } from "@/components/player-card/format"
 import { teamColor } from "@/components/player-card/team-colors"
 import { roundStatus } from "@/components/matchups/rules"
 import {
+  clockLabel,
   gameWindows,
   timeAxis,
   type TimeAxis,
@@ -20,7 +28,6 @@ import { playerCardQuery } from "@/lib/api/player-card"
 
 type Sample = { at: number; x: number; p: number }
 type Moment = {
-  at: number
   x: number
   // The owner's win chance, rounded, at the samples around the moment.
   before: number
@@ -47,12 +54,12 @@ const yesTone = "text-teal-700/80 dark:text-[#86d9b3]"
 const noTone = "text-red-700/80 dark:text-[#f09591]"
 const toneOf = (p: number) => (p >= 50 ? yesTone : noTone)
 // Green when the change helped you: your player gained or theirs dropped.
-const momentTone = (m: Moment) => (m.mine === m.delta >= 0 ? yesTone : noTone)
+const helped = (m: Moment) => m.mine === m.delta >= 0
+const momentTone = (m: Moment) => (helped(m) ? yesTone : noTone)
 // The graph uses softer light-mode colors than the text.
 const yesGraph = "text-[#64a394] dark:text-[#86d9b3]"
 const noGraph = "text-[#cf8e88] dark:text-[#f09591]"
-const momentGraphTone = (m: Moment) =>
-  m.mine === m.delta >= 0 ? yesGraph : noGraph
+const momentGraphTone = (m: Moment) => (helped(m) ? yesGraph : noGraph)
 const swingTone = (swing: number) =>
   swing > 0 ? yesTone : swing < 0 ? noTone : "text-muted-foreground"
 const signed = (n: number, digits = 0) =>
@@ -65,11 +72,6 @@ const LIVE_POLL_MS = 30_000
 // percentage points are left out. Set from weeks 1–5 of real leagues: it
 // keeps about a third of plays, nearly all of them in close games.
 const MIN_PLAY_SWING = 2
-
-function clockLabel(at: number) {
-  const date = new Date(at)
-  return `${date.toLocaleDateString(undefined, { weekday: "short" })} ${date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`
-}
 
 const momentKinds: Record<KeyMomentKind, Moment["kind"]> = {
   [KeyMomentKind.UNSPECIFIED]: "play",
@@ -115,7 +117,6 @@ function buildGraph(
       return []
     return [
       {
-        at,
         x: axis.x(at),
         before: Math.round(pBefore),
         after: Math.round(pAfter),
@@ -246,7 +247,7 @@ function WinChanceChart({
   const focusedMoment =
     focus?.kind === "moment" ? moments[focus.index] : undefined
 
-  function track(e: React.PointerEvent<HTMLDivElement>) {
+  function track(e: PointerEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect()
     const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
     onFocus(focusAt(graph, x, rect.width))
@@ -403,7 +404,7 @@ function FloatingMomentCard({ moment: m }: { moment: Moment }) {
 function KindBadge({ kind }: { kind: Moment["kind"] }) {
   if (kind === "play") return null
   return (
-    <span className="ml-1.5 rounded bg-muted px-1 align-[1px] text-[10px] font-semibold text-muted-foreground dark:bg-white/[0.06]">
+    <span className="shrink-0 rounded bg-muted px-1 text-[10px] font-semibold text-muted-foreground dark:bg-white/[0.06]">
       {kind === "td" ? "TD" : "FG"}
     </span>
   )
@@ -426,7 +427,7 @@ function MomentCard({ moment: m }: { moment: Moment }) {
       >
         <Avatar name={m.player} url={card.data?.headshotUrl} tinted={!!color} />
         <div className="min-w-0 flex-1 text-[11px] text-muted-foreground tabular-nums">
-          <p className="flex items-center text-sm font-semibold text-popover-foreground">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-popover-foreground">
             <span className="truncate">{m.player}</span>
             <KindBadge kind={m.kind} />
           </p>
@@ -504,7 +505,7 @@ function KeyMomentsList({
             className={`flex items-center gap-3 rounded-md px-2 ${scoring ? "py-2" : "py-1.5"} ${active ? "bg-muted/70 dark:bg-white/[0.05]" : ""}`}
           >
             <span
-              className={`shrink-0 rounded-full ${scoring ? `size-2 bg-current ${momentTone(m)}` : "size-1.5 bg-muted-foreground/40"}`}
+              className={`shrink-0 rounded-full ${scoring ? `size-2 bg-current ${momentGraphTone(m)}` : "size-1.5 bg-muted-foreground/40"}`}
             />
             <div className="min-w-0 flex-1">
               <p
@@ -514,11 +515,7 @@ function KeyMomentsList({
                 <span className={`shrink-0 tabular-nums ${momentTone(m)}`}>
                   {signed(m.delta, 1)}
                 </span>
-                {scoring && (
-                  <span className="shrink-0 rounded bg-muted px-1 text-[10px] font-semibold text-muted-foreground dark:bg-white/[0.06]">
-                    {m.kind === "td" ? "TD" : "FG"}
-                  </span>
-                )}
+                <KindBadge kind={m.kind} />
               </p>
               <p className="truncate text-xs text-muted-foreground">
                 {m.mine ? "Yours" : "Opp"} · {m.time}
@@ -541,13 +538,7 @@ function KeyMomentsList({
   )
 }
 
-function Panel({
-  title,
-  children,
-}: {
-  title?: string
-  children: React.ReactNode
-}) {
+function Panel({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <section className="rounded-xl border bg-card px-4 py-3">
       {title && <h2 className="mb-1 text-sm font-medium">{title}</h2>}
@@ -561,7 +552,7 @@ function PanelMessage({
   children,
 }: {
   title: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <Panel title={title}>
