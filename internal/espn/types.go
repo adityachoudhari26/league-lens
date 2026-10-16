@@ -72,9 +72,10 @@ type matchupResponse struct {
 	Away   *sideResponse `json:"away"`
 }
 type sideResponse struct {
-	TeamID int             `json:"teamId"`
-	Points *float64        `json:"totalPoints"`
-	Lineup *lineupResponse `json:"rosterForCurrentScoringPeriod"`
+	TeamID     int             `json:"teamId"`
+	Points     *float64        `json:"totalPoints"`
+	LivePoints *float64        `json:"totalPointsLive"`
+	Lineup     *lineupResponse `json:"rosterForCurrentScoringPeriod"`
 }
 type lineupResponse struct {
 	Entries []entryResponse `json:"entries"`

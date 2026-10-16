@@ -92,6 +92,12 @@ func completeMatchupPeriods(matchups []fantasy.Matchup, teamCount int) []fantasy
 	return periods
 }
 
+// normalizeSide prefers totalPointsLive for undecided ESPN matchups; totalPoints
+// stays at zero until the week is decided, and ESPN then omits totalPointsLive.
 func normalizeSide(raw sideResponse) fantasy.MatchupSide {
-	return fantasy.MatchupSide{TeamID: strconv.Itoa(raw.TeamID), Score: raw.Points}
+	score := raw.Points
+	if raw.LivePoints != nil {
+		score = raw.LivePoints
+	}
+	return fantasy.MatchupSide{TeamID: strconv.Itoa(raw.TeamID), Score: score}
 }
