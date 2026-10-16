@@ -52,7 +52,7 @@ export function AssistantPanel({
     <section
       id="assistant-panel"
       aria-label="Playbook chat panel"
-      className="fixed right-4 bottom-20 z-50 flex h-[min(560px,calc(100dvh-6rem))] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden playbook-ring rounded-xl border-2 shadow-xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:h-[min(560px,100dvh)] max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none"
+      className="fixed right-4 bottom-20 z-50 flex h-[min(560px,calc(100dvh-6rem))] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:h-[min(560px,100dvh)] max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none"
     >
       <AssistantPanelHeader onNewChat={onNewChat} onClose={onClose} />
       <div
