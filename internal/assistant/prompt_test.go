@@ -18,7 +18,7 @@ func TestBuildSystemPromptDateAndPageContext(t *testing.T) {
 		"You are the League Lens assistant, built into a fantasy football dashboard. The user owns teams in one or more ESPN and Sleeper leagues.",
 		"Today is Sunday, October 18, 2026. The user is looking at Matchups (/matchups), league league-1, team team-2, week 7.",
 		"- Answer from League Lens data returned by your tools. Never invent scores, " +
-			"projections, injuries, win chances, or news. If the data doesn't have it, say so.",
+			"projections, injuries, win chances, or news. If the user asks for something your tools don't return, say so in one short sentence.",
 		"- You can't make changes on ESPN or Sleeper.",
 	} {
 		if !strings.Contains(prompt, expected) {
@@ -61,8 +61,16 @@ func TestBuildSystemPromptIncludesFreeAgentAdvice(t *testing.T) {
 		t.Fatalf("free-agent guidance missing from prompt:\n%s", prompt)
 	}
 	tradeAdvice := "- For trade questions, find candidate players with get_league and get_team_roster, then call evaluate_trade. " +
-		"Weigh recent points, projections, injuries, byes, and roster needs, and say what the numbers don't capture."
+		"Weigh recent points, projections, injuries, byes, and roster needs."
 	if !strings.Contains(prompt, tradeAdvice) {
 		t.Fatalf("trade guidance missing from prompt:\n%s", prompt)
+	}
+	missingDataRule := "- Don't list data you don't have or add caveats about missing factors " +
+		"(weather, betting lines, practice reports, and so on) unless the user asks about them."
+	if !strings.Contains(prompt, missingDataRule) {
+		t.Fatalf("missing-data guidance missing from prompt:\n%s", prompt)
+	}
+	if strings.Contains(prompt, "don't capture") {
+		t.Fatalf("trade guidance still lists missing data:\n%s", prompt)
 	}
 }
