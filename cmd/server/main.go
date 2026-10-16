@@ -64,7 +64,8 @@ func run() error {
 	if err != nil {
 		slog.Warn("player mapping cache unavailable; imports and syncs retain provider identities")
 	}
-	syncRunner := newSyncRunner(data, cfg.LocalOwnerEmail, box, catalogPath)
+	sources := newProviderSources(box, catalogPath)
+	syncRunner := leaguesync.New(data, cfg.LocalOwnerEmail, sources, catalogPath)
 	defer syncRunner.Close()
 	if cfg.LiveScores {
 		go syncRunner.RunLiveScores(ctx, time.Minute)
@@ -77,7 +78,7 @@ func run() error {
 	syncHandler := leaguesync.NewHandler(syncRunner)
 	assistantService := &assistant.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail,
-		Dashboard: dashboardService, Sync: syncHandler,
+		Dashboard: dashboardService, Sync: syncHandler, ProviderSources: sources,
 	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
@@ -137,15 +138,9 @@ func newProfileSource(now time.Time) espn.ProfileSource {
 	return espn.ProfileSource{HTTP: &http.Client{Timeout: 5 * time.Second}, Season: fantasy.CurrentSeason(now)}
 }
 
-// newSyncRunner uses saved ESPN credentials when available and environment
-// cookies as a fallback. Sleeper needs no credentials.
-func newSyncRunner(
-	data *database.DB,
-	ownerEmail string,
-	box *secrets.Box,
-	catalogPath string,
-) *leaguesync.Runner {
+// newProviderSources configures saved ESPN credentials and the mapping cache.
+// Saved cookies take precedence over environment cookies; Sleeper needs none.
+func newProviderSources(box *secrets.Box, catalogPath string) leaguesync.ProviderSources {
 	credentials := espn.Credentials{S2: os.Getenv("ESPN_S2"), SWID: os.Getenv("ESPN_SWID")}
-	sources := leaguesync.ProviderSources{ESPN: credentials, Box: box}
-	return leaguesync.New(data, ownerEmail, sources, catalogPath)
+	return leaguesync.ProviderSources{ESPN: credentials, Box: box, PlayerCatalogPath: catalogPath}
 }

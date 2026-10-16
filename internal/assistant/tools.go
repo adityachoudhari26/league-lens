@@ -53,8 +53,11 @@ func buildReadOnlyTools(reader assistantDashboard) []assistantTool {
 	return tools
 }
 
-func buildAssistantTools(reader assistantDashboard) []assistantTool {
+func buildAssistantTools(reader assistantDashboard, service ...*Service) []assistantTool {
 	tools := buildReadOnlyTools(reader)
+	if len(service) > 0 && service[0] != nil && service[0].ProviderSources != nil {
+		tools = append(tools, freeAgentTools(reader, service[0])...)
+	}
 	return append(tools, buildActionTools(reader)...)
 }
 
@@ -174,6 +177,12 @@ func truncateToolResult(content string) string {
 func toolErrorMessage(err error) string {
 	if errors.Is(err, errInvalidToolInput) || connect.CodeOf(err) == connect.CodeInvalidArgument {
 		return "invalid tool input"
+	}
+	if errors.Is(err, errFreeAgentsESPN) {
+		return "couldn't load free agents from ESPN"
+	}
+	if errors.Is(err, errFreeAgentsSleeper) {
+		return "couldn't load free agents from Sleeper"
 	}
 	if connect.CodeOf(err) == connect.CodeNotFound {
 		return "requested data not found"

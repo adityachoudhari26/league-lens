@@ -9,7 +9,9 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/adityachoudhari26/league-lens/internal/database"
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/store"
@@ -45,12 +47,15 @@ type settingsToSave struct {
 
 // Service stores one encrypted provider configuration for the configured owner.
 type Service struct {
-	DB          *database.DB
-	Box         *secrets.Box
-	OwnerEmail  string
-	NewProvider NewProvider
-	Dashboard   assistantDashboard
-	Sync        assistantSync
+	DB              *database.DB
+	Box             *secrets.Box
+	OwnerEmail      string
+	NewProvider     NewProvider
+	Dashboard       assistantDashboard
+	Sync            assistantSync
+	ProviderSources interface {
+		SourceFor(leaguesync.Target) (fantasy.Provider, error)
+	}
 }
 
 // GetAssistantSettings returns the owner's safe-to-display settings, never the key.

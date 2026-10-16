@@ -53,3 +53,11 @@ func TestBuildSystemPromptPageVariants(t *testing.T) {
 		})
 	}
 }
+func TestBuildSystemPromptIncludesFreeAgentAdvice(t *testing.T) {
+	prompt := buildSystemPrompt(time.Now(), nil)
+	waiverAdvice := "- For waiver advice, call get_free_agents and compare against the user's roster. " +
+		"Say if a player is on waivers rather than a free agent."
+	if !strings.Contains(prompt, waiverAdvice) {
+		t.Fatalf("free-agent guidance missing from prompt:\n%s", prompt)
+	}
+}

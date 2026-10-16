@@ -73,7 +73,7 @@ remain stable even though the API and frontend work happened before owner setup.
   - [x] PR2 — Chat bubble and streaming chat.
   - [ ] PR3 — Read-only tools and tool loop.
   - [ ] PR4 — In-chat action confirmation and execution.
-  - [ ] PR5 — Free-agent advice.
+  - [x] PR5 — Free-agent advice.
   - [ ] PR6 — Trade advice.
 
 - [ ] **12. Package and verify self-hosting.**
