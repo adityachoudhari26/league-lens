@@ -25,14 +25,26 @@ func (loop *chatLoop) run(ctx context.Context, page *v1.PageContext, messages []
 	for {
 		availableTools := toolDefinitions(loop.tools)
 		if toolRounds >= maxToolRounds {
-			availableTools = nil
 			system += "\nTool limit reached. Answer with the data you already have."
 		}
 		response, err := loop.completeRound(ctx, system, messages, availableTools)
 		if err != nil {
 			return err
 		}
-		if len(response.ToolCalls) == 0 || toolRounds >= maxToolRounds {
+		if len(response.ToolCalls) == 0 {
+			return nil
+		}
+		if toolRounds >= maxToolRounds {
+			if response.Text == "" {
+				if err := loop.send(&v1.ChatResponse{
+					Event: &v1.ChatResponse_Text{Text: &v1.TextDelta{
+						Text: "I couldn't finish looking that up. Try a narrower question.",
+					}},
+				}); err != nil {
+					loop.cancel()
+					return err
+				}
+			}
 			return nil
 		}
 		messages = append(messages, llm.Message{

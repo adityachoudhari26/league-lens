@@ -16,6 +16,19 @@ type scriptedChatProvider struct {
 	requests  []llm.Request
 }
 
+type countingLeaguesDashboard struct {
+	fakeAssistantDashboard
+	listLeaguesCalls int
+}
+
+func (d *countingLeaguesDashboard) ListLeagues(
+	ctx context.Context,
+	request *v1.ListLeaguesRequest,
+) (*v1.ListLeaguesResponse, error) {
+	d.listLeaguesCalls++
+	return d.fakeAssistantDashboard.ListLeagues(ctx, request)
+}
+
 func (p *scriptedChatProvider) ListModels(context.Context) ([]string, error) { return nil, nil }
 
 func (p *scriptedChatProvider) Complete(_ context.Context, request llm.Request, onText func(string)) (llm.Response, error) {
@@ -62,20 +75,28 @@ func TestChatToolLoopFeedsResultsAndStreamsActivity(t *testing.T) {
 }
 
 func TestChatToolLoopLimitsRoundsAndReturnsErrorResults(t *testing.T) {
-	reader := &fakeAssistantDashboard{listLeaguesErr: errors.New("database detail")}
+	reader := &countingLeaguesDashboard{
+		fakeAssistantDashboard: fakeAssistantDashboard{listLeaguesErr: errors.New("database detail")},
+	}
 	calls := make([]llm.Response, 0, maxToolRounds+1)
 	for index := 0; index < maxToolRounds; index++ {
 		calls = append(calls, llm.Response{ToolCalls: []llm.ToolCall{{
 			ID: "call", Name: "list_leagues", Input: json.RawMessage(`{}`),
 		}}})
 	}
-	calls = append(calls, llm.Response{Text: "Answer from the available data."})
+	calls = append(calls, llm.Response{ToolCalls: []llm.ToolCall{{
+		ID: "final-call", Name: "list_leagues", Input: json.RawMessage(`{}`),
+	}}})
 	provider := &scriptedChatProvider{responses: calls}
+	var events []*v1.ChatResponse
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	loop := chatLoop{
 		cancel: cancel, provider: provider, model: "fake", tools: buildReadOnlyTools(reader),
-		send: func(*v1.ChatResponse) error { return nil },
+		send: func(event *v1.ChatResponse) error {
+			events = append(events, event)
+			return nil
+		},
 	}
 	err := loop.run(ctx, nil, nil)
 	if err != nil {
@@ -84,9 +105,18 @@ func TestChatToolLoopLimitsRoundsAndReturnsErrorResults(t *testing.T) {
 	if len(provider.requests) != maxToolRounds+1 {
 		t.Fatalf("completion rounds = %d", len(provider.requests))
 	}
-	if len(provider.requests[maxToolRounds].Tools) != 0 ||
+	if len(provider.requests[maxToolRounds].Tools) != 10 ||
 		!strings.Contains(provider.requests[maxToolRounds].System, "Tool limit reached. Answer with the data you already have.") {
 		t.Fatalf("final request did not enforce the tool limit: %+v", provider.requests[maxToolRounds])
+	}
+	if reader.listLeaguesCalls != maxToolRounds {
+		t.Fatalf("list_leagues calls = %d, want %d", reader.listLeaguesCalls, maxToolRounds)
+	}
+	if len(events) != maxToolRounds+1 {
+		t.Fatalf("tool-limit events = %+v", events)
+	}
+	if events[len(events)-1].GetText().GetText() != "I couldn't finish looking that up. Try a narrower question." {
+		t.Fatalf("final tool-limit event = %+v", events[len(events)-1])
 	}
 	result := provider.requests[1].Messages[len(provider.requests[1].Messages)-1].ToolResults
 	if len(result) != 1 || !result[0].IsError || result[0].Content != "couldn't load the requested data" {
