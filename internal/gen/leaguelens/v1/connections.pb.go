@@ -694,10 +694,12 @@ type ImportResult struct {
 	ExternalLeagueId string                 `protobuf:"bytes,1,opt,name=external_league_id,json=externalLeagueId,proto3" json:"external_league_id,omitempty"`
 	TeamId           string                 `protobuf:"bytes,2,opt,name=team_id,json=teamId,proto3" json:"team_id,omitempty"`
 	LeagueId         string                 `protobuf:"bytes,3,opt,name=league_id,json=leagueId,proto3" json:"league_id,omitempty"`
-	Succeeded        bool                   `protobuf:"varint,4,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
-	ErrorCode        string                 `protobuf:"bytes,5,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// true when the import was accepted and is running in the background; the final outcome comes from SyncService.GetSyncStatus for league_id
+	Started bool `protobuf:"varint,4,opt,name=started,proto3" json:"started,omitempty"`
+	// set when started is false
+	ErrorCode     string `protobuf:"bytes,5,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImportResult) Reset() {
@@ -751,9 +753,9 @@ func (x *ImportResult) GetLeagueId() string {
 	return ""
 }
 
-func (x *ImportResult) GetSucceeded() bool {
+func (x *ImportResult) GetStarted() bool {
 	if x != nil {
-		return x.Succeeded
+		return x.Started
 	}
 	return false
 }
@@ -940,12 +942,12 @@ const file_leaguelens_v1_connections_proto_rawDesc = "" +
 	"\ateam_id\x18\x02 \x01(\tR\x06teamId\"l\n" +
 	"\x14ImportLeaguesRequest\x12#\n" +
 	"\rconnection_id\x18\x01 \x01(\tR\fconnectionId\x12/\n" +
-	"\x05picks\x18\x02 \x03(\v2\x19.leaguelens.v1.ImportPickR\x05picks\"\xaf\x01\n" +
+	"\x05picks\x18\x02 \x03(\v2\x19.leaguelens.v1.ImportPickR\x05picks\"\xab\x01\n" +
 	"\fImportResult\x12,\n" +
 	"\x12external_league_id\x18\x01 \x01(\tR\x10externalLeagueId\x12\x17\n" +
 	"\ateam_id\x18\x02 \x01(\tR\x06teamId\x12\x1b\n" +
-	"\tleague_id\x18\x03 \x01(\tR\bleagueId\x12\x1c\n" +
-	"\tsucceeded\x18\x04 \x01(\bR\tsucceeded\x12\x1d\n" +
+	"\tleague_id\x18\x03 \x01(\tR\bleagueId\x12\x18\n" +
+	"\astarted\x18\x04 \x01(\bR\astarted\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x05 \x01(\tR\terrorCode\"N\n" +
 	"\x15ImportLeaguesResponse\x125\n" +

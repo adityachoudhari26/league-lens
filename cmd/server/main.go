@@ -70,7 +70,7 @@ func run() error {
 	}
 	connectionService := &connections.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,
-		RefreshAfterImport: syncRunner.RefreshAfterImport,
+		Imports: syncRunner,
 	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,

@@ -28,17 +28,6 @@ func (r *Runner) refreshSchedules(targets []Target) {
 	}
 }
 
-// RefreshAfterImport starts a best-effort NFL schedule and player news refresh in
-// the background after a league import and returns immediately. It runs on the
-// Runner's context so it outlives the import request, and Close waits for it.
-func (r *Runner) RefreshAfterImport() {
-	r.wg.Add(1)
-	go func() {
-		defer r.wg.Done()
-		r.refreshScheduleAndNews()
-	}()
-}
-
 // refreshScheduleAndNews runs a best-effort schedule refresh for the current
 // season followed by a player news refresh on the Runner's context.
 func (r *Runner) refreshScheduleAndNews() {

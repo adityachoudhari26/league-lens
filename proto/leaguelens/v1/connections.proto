@@ -73,7 +73,9 @@ message ImportResult {
   string external_league_id = 1;
   string team_id = 2;
   string league_id = 3;
-  bool succeeded = 4;
+  // true when the import was accepted and is running in the background; the final outcome comes from SyncService.GetSyncStatus for league_id
+  bool started = 4;
+  // set when started is false
   string error_code = 5;
 }
 message ImportLeaguesResponse {
