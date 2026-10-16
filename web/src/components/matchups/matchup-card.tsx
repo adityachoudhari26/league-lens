@@ -10,6 +10,7 @@ import {
   type ScoreTone,
 } from "@/components/matchups/rules"
 import { scoreToneClass } from "@/components/matchups/tones"
+import { MatchupWinChancePanels } from "@/components/matchups/win-chance"
 import {
   type MatchupDetail,
   type MatchupLineup,
@@ -66,48 +67,63 @@ export function MatchupCard({
   const status = roundStatus(matchup)
   const tone = ownerScoreTone(team, opponent, status)
   return (
-    <section className="rounded-xl border bg-card">
+    <div className="@container">
       <div
-        className={`grid items-center gap-4 px-4 py-4 ${hasOpponent ? "grid-cols-[1fr_auto_1fr]" : "grid-cols-[1fr_auto]"}`}
+        className={`grid gap-4 ${hasOpponent ? "@4xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] @4xl:items-start" : ""}`}
       >
-        <TeamScore side={team} label="You" status={status} tone={tone} />
-        <StatusPill status={status} tone={tone} />
-        {opponent && (
-          <TeamScore
-            side={opponent}
-            label="Opponent"
-            status={status}
-            mirrored
-          />
-        )}
-        {opponent && (
-          <div className="col-span-3">
-            <ScoreShareBar team={team} opponent={opponent} status={status} />
+        <section className="rounded-xl border bg-card @4xl:col-start-1 @4xl:row-start-1">
+          <div
+            className={`grid items-center gap-4 px-4 py-4 ${hasOpponent ? "grid-cols-[1fr_auto_1fr]" : "grid-cols-[1fr_auto]"}`}
+          >
+            <TeamScore side={team} label="You" status={status} tone={tone} />
+            <StatusPill status={status} tone={tone} />
+            {opponent && (
+              <TeamScore
+                side={opponent}
+                label="Opponent"
+                status={status}
+                mirrored
+              />
+            )}
+            {opponent && (
+              <div className="col-span-3">
+                <ScoreShareBar
+                  team={team}
+                  opponent={opponent}
+                  status={status}
+                />
+              </div>
+            )}
           </div>
+        </section>
+        {hasOpponent && (
+          <aside className="@4xl:sticky @4xl:top-4 @4xl:col-start-2 @4xl:row-span-2 @4xl:row-start-1">
+            <MatchupWinChancePanels key={matchup.id} matchup={matchup} />
+          </aside>
         )}
-      </div>
-      <div className="border-t">
-        <Lineup
-          mine={team.starters}
-          theirs={opponent?.starters ?? []}
-          hasOpponent={hasOpponent}
-          status={status}
-        />
-      </div>
-      <details className="group border-t">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-muted-foreground select-none hover:text-foreground">
-          Bench ({team.bench.length}
-          {opponent && ` · ${opponent.bench.length}`})
-        </summary>
-        <div className="border-t">
+        <section className="rounded-xl border bg-card @4xl:col-start-1 @4xl:row-start-2">
           <Lineup
-            mine={team.bench}
-            theirs={opponent?.bench ?? []}
+            mine={team.starters}
+            theirs={opponent?.starters ?? []}
             hasOpponent={hasOpponent}
             status={status}
           />
-        </div>
-      </details>
-    </section>
+          <details className="group border-t">
+            <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-muted-foreground select-none hover:text-foreground">
+              Bench ({team.bench.length}
+              {opponent && ` · ${opponent.bench.length}`})
+            </summary>
+            <div className="border-t">
+              <Lineup
+                mine={team.bench}
+                theirs={opponent?.bench ?? []}
+                hasOpponent={hasOpponent}
+                status={status}
+              />
+            </div>
+          </details>
+        </section>
+      </div>
+    </div>
   )
 }

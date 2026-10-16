@@ -83,7 +83,7 @@ function LeagueMatchup({
     })
   }
   return (
-    <div className="mx-auto grid w-full max-w-4xl gap-4">
+    <div className="mx-auto grid w-full max-w-6xl gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <LeagueSelector
           leagues={leagues}
