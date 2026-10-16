@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { MessageCirclePlus, X } from "lucide-react"
+import { MessageCirclePlus, RugbyBall, X } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import type { AssistantTurn } from "./assistant-turns"
@@ -51,8 +51,8 @@ export function AssistantPanel({
   return (
     <section
       id="assistant-panel"
-      aria-label="Assistant chat panel"
-      className="fixed right-4 bottom-20 z-50 flex h-[min(560px,calc(100dvh-6rem))] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:h-[min(560px,100dvh)] max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none"
+      aria-label="Playbook chat panel"
+      className="fixed right-4 bottom-20 z-50 flex h-[min(560px,calc(100dvh-6rem))] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden playbook-ring rounded-xl border-2 shadow-xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:h-[min(560px,100dvh)] max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none"
     >
       <AssistantPanelHeader onNewChat={onNewChat} onClose={onClose} />
       <div
@@ -98,7 +98,17 @@ function AssistantPanelHeader({
 }) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-      <h2 className="text-sm font-semibold">Assistant</h2>
+      <div className="flex items-center gap-2.5">
+        <span className="playbook-gradient grid size-8 place-items-center rounded-full text-white">
+          <RugbyBall aria-hidden="true" className="size-4" />
+        </span>
+        <div>
+          <h2 className="text-sm leading-5 font-semibold">Playbook</h2>
+          <p className="text-xs text-muted-foreground">
+            Your fantasy assistant
+          </p>
+        </div>
+      </div>
       <div className="flex items-center gap-2">
         <Button
           type="button"
@@ -169,7 +179,7 @@ function AssistantSetupPrompt() {
   return (
     <div className="my-auto flex flex-col items-center gap-3 text-center">
       <p className="max-w-64 text-sm leading-6 text-muted-foreground">
-        Add an AI key in Settings to use the assistant.
+        Add an AI key in Settings to use Playbook.
       </p>
       <Button
         type="button"
@@ -199,9 +209,13 @@ function AssistantSuggestions({
             type="button"
             variant="outline"
             size="sm"
-            className="h-auto justify-start whitespace-normal py-2 text-left"
+            className="h-auto justify-start gap-2.5 whitespace-normal py-2 text-left"
             onClick={() => onSuggestion(suggestion)}
           >
+            <span
+              aria-hidden="true"
+              className="playbook-gradient size-2 shrink-0 rounded-full"
+            />
             {suggestion}
           </Button>
         ))}
