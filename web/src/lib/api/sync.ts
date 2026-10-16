@@ -44,6 +44,12 @@ export function useStartSync() {
   })
 }
 
+/** Syncs leagues with stale saved data once when the page opens. */
+export function useStaleSyncOnOpen() {
+  const start = useStartSync()
+  useStaleSyncOnMount(start.mutate)
+}
+
 /**
  * Keeps provider data current: opening the page syncs stale leagues in the
  * background, refresh syncs every league, and the overview reloads when
