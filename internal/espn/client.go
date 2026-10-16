@@ -56,7 +56,7 @@ func (c *Client) AccountID() string {
 }
 
 func (c *Client) readLeague(ctx context.Context, id string, week int) (leagueResponse, error) {
-	return c.readLeagueWithViews(ctx, id, week, []string{"mSettings", "mTeam", "mRoster", "mMatchup", "mBoxscore"}, nil)
+	return c.readLeagueWithViews(ctx, id, week, []string{"mSettings", "mTeam", "mRoster", "mMatchup", "mMatchupScore", "mBoxscore"}, nil)
 }
 
 // readLeagueWithViews fetches one league week using the requested views and headers.
