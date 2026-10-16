@@ -62,6 +62,7 @@ func (s *Service) chatTools() []assistantTool {
 	tools := buildReadOnlyTools(s.Dashboard)
 	if s.ProviderSources != nil {
 		tools = append(tools, freeAgentTools(s.Dashboard, s)...)
+		tools = append(tools, transactionTools(s.Dashboard, s)...)
 	}
 	tools = append(tools, tradeTools(s)...)
 	tools = append(tools, scheduleTools(s)...)
@@ -198,11 +199,20 @@ func toolErrorMessage(err error) string {
 	if errors.Is(err, errFreeAgentTargetUnavailable) {
 		return "couldn't load free agents from Sleeper"
 	}
+	if errors.Is(err, errTransactionsUnavailable) {
+		return "couldn't load league activity"
+	}
 	if errors.Is(err, errFreeAgentsESPN) {
 		return "couldn't load free agents from ESPN"
 	}
 	if errors.Is(err, errFreeAgentsSleeper) {
 		return "couldn't load free agents from Sleeper"
+	}
+	if errors.Is(err, errTransactionsESPN) {
+		return "couldn't load league activity from ESPN"
+	}
+	if errors.Is(err, errTransactionsSleeper) {
+		return "couldn't load league activity from Sleeper"
 	}
 	if connect.CodeOf(err) == connect.CodeNotFound {
 		return "requested data not found"

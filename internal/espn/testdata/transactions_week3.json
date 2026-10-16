@@ -1,0 +1,35 @@
+{
+  "id": 1002879736,
+  "seasonId": 2026,
+  "scoringPeriodId": 3,
+  "settings": {
+    "acquisitionSettings": {
+      "isUsingAcquisitionBudget": false
+    }
+  },
+  "transactions": [
+    {
+      "id": "bbc41609-3b29-4c02-9d8a-c40b070ced3a",
+      "type": "TRADE_PROPOSAL",
+      "status": "PENDING",
+      "teamId": 2,
+      "proposedDate": 1790181283294,
+      "processDate": null,
+      "bidAmount": 0,
+      "items": [
+        {
+          "playerId": 4595348,
+          "type": "TRADE",
+          "fromTeamId": 2,
+          "toTeamId": 3
+        },
+        {
+          "playerId": 4426502,
+          "type": "TRADE",
+          "fromTeamId": 3,
+          "toTeamId": 2
+        }
+      ]
+    }
+  ]
+}
