@@ -10,6 +10,7 @@ import (
 	"maps"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -601,25 +602,40 @@ func settledWeeksFixture(t *testing.T) fantasy.LeagueData {
 			status = fantasy.MatchupInProgress
 		}
 		data.Matchups = append(data.Matchups, fantasy.Matchup{
-			ExternalID: fmt.Sprintf("m%d", week), Period: fantasy.MatchupPeriod(week), ScoringPeriods: []fantasy.ScoringPeriod{fantasy.ScoringPeriod(week)},
-			TeamA: fantasy.MatchupSide{TeamID: "1", Score: &score}, TeamB: &fantasy.MatchupSide{TeamID: "2", Score: &score}, Status: status,
+			ExternalID:     fmt.Sprintf("m%d", week),
+			Period:         fantasy.MatchupPeriod(week),
+			ScoringPeriods: []fantasy.ScoringPeriod{fantasy.ScoringPeriod(week)},
+			TeamA:          fantasy.MatchupSide{TeamID: "1", Score: &score},
+			TeamB:          &fantasy.MatchupSide{TeamID: "2", Score: &score},
+			Status:         status,
 		})
 		for _, team := range []string{"1", "2"} {
 			player := "10"
 			if team == "2" {
 				player = "30"
 			}
-			origin := fantasy.SnapshotHistory
 			if week == 4 {
-				data.Rosters = append(data.Rosters, fantasy.RosterSnapshot{TeamID: team, ScoringPeriod: fantasy.ScoringPeriod(week), Origin: fantasy.SnapshotObserved, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{PlayerID: player, Slot: fantasy.SlotQB}}})
+				data.Rosters = append(data.Rosters, fantasy.RosterSnapshot{
+					TeamID: team, ScoringPeriod: fantasy.ScoringPeriod(week), Origin: fantasy.SnapshotObserved,
+					Coverage: fantasy.CoverageFull, ObservedAt: now,
+					Entries: []fantasy.RosterEntry{{PlayerID: player, Slot: fantasy.SlotQB}},
+				})
 			}
-			data.Rosters = append(data.Rosters, fantasy.RosterSnapshot{TeamID: team, ScoringPeriod: fantasy.ScoringPeriod(week), Origin: origin, Coverage: fantasy.CoverageFull, ObservedAt: now, Entries: []fantasy.RosterEntry{{PlayerID: player, Slot: fantasy.SlotQB}}})
+			data.Rosters = append(data.Rosters, fantasy.RosterSnapshot{
+				TeamID: team, ScoringPeriod: fantasy.ScoringPeriod(week), Origin: fantasy.SnapshotHistory,
+				Coverage: fantasy.CoverageFull, ObservedAt: now,
+				Entries: []fantasy.RosterEntry{{PlayerID: player, Slot: fantasy.SlotQB}},
+			})
 		}
 		points, projected := float64(week), float64(week)+0.5
 		for _, side := range []struct{ team, player string }{{"1", "10"}, {"2", "30"}} {
 			data.Lineups = append(data.Lineups, fantasy.MatchupLineup{
-				Period: fantasy.MatchupPeriod(week), MatchupID: fmt.Sprintf("m%d", week), TeamID: side.team,
-				Entries: []fantasy.LineupEntry{{PlayerID: side.player, Slot: fantasy.SlotQB, Starter: true, Points: &points, ProjectedPoints: &projected}},
+				Period:    fantasy.MatchupPeriod(week),
+				MatchupID: fmt.Sprintf("m%d", week),
+				TeamID:    side.team,
+				Entries: []fantasy.LineupEntry{
+					{PlayerID: side.player, Slot: fantasy.SlotQB, Starter: true, Points: &points, ProjectedPoints: &projected},
+				},
 			})
 		}
 	}
@@ -661,7 +677,7 @@ func TestFinishSkipsSettledWeeks(t *testing.T) {
 	if _, err := s.Import(ctx, req); err != nil {
 		t.Fatal(err)
 	}
-	if len(src.lastRequest.SkipWeeks) != 2 || src.lastRequest.SkipWeeks[0] != 1 || src.lastRequest.SkipWeeks[1] != 2 {
+	if !slices.Equal(src.lastRequest.SkipWeeks, []fantasy.ScoringPeriod{1, 2}) {
 		t.Fatalf("second import SkipWeeks = %v, want [1 2]", src.lastRequest.SkipWeeks)
 	}
 	if after := settledRows(); after != before {
@@ -676,7 +692,7 @@ func TestFinishSkipsSettledWeeks(t *testing.T) {
 	if _, err := s.Import(ctx, req); err != nil {
 		t.Fatal(err)
 	}
-	if len(src.lastRequest.SkipWeeks) != 1 || src.lastRequest.SkipWeeks[0] != 2 {
+	if !slices.Equal(src.lastRequest.SkipWeeks, []fantasy.ScoringPeriod{2}) {
 		t.Fatalf("third import SkipWeeks = %v, want [2]", src.lastRequest.SkipWeeks)
 	}
 

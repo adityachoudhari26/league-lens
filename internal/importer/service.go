@@ -98,7 +98,8 @@ func (s *Service) Begin(ctx context.Context, request Request) (Started, error) {
 func (s *Service) Finish(ctx context.Context, started Started) (Result, error) {
 	target := started.target
 	result := Result{SyncID: target.run.ID}
-	data, err := s.Source.FetchLeague(ctx, started.header, fantasy.FetchRequest{SkipWeeks: s.weeksToSkip(ctx, started)})
+	skipWeeks := s.weeksToSkip(ctx, started)
+	data, err := s.Source.FetchLeague(ctx, started.header, fantasy.FetchRequest{SkipWeeks: skipWeeks})
 	if err != nil {
 		return result, s.recordFailure(target.run.ID, err, "provider_fetch_failed")
 	}
@@ -115,8 +116,9 @@ func (s *Service) Finish(ctx context.Context, started Started) (Result, error) {
 // weeksToSkip lists the settled weeks Finish may skip re-reading. A week is
 // settled when every matchup covering it is final AND every team has a
 // provider_history snapshot for it. The newest settled week is always re-read
-// as the stat-correction window, and the current week is never listed. A read
-// failure falls back to a full read rather than failing the import.
+// as the stat-correction window; providers still read the current week even if
+// it is listed. A read failure falls back to a full read rather than failing
+// the import.
 func (s *Service) weeksToSkip(ctx context.Context, started Started) []fantasy.ScoringPeriod {
 	if started.fullHistory {
 		return nil

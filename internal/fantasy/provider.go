@@ -2,7 +2,10 @@
 // It contains no HTTP, database, credential, or provider response types.
 package fantasy
 
-import "context"
+import (
+	"context"
+	"slices"
+)
 
 // Provider translates a provider's API into fantasy concepts. Credentials,
 // HTTP clients, and provider-specific season selection belong to its constructor.
@@ -33,6 +36,12 @@ type FetchRequest struct {
 	// projections out too, and does not list them in CompleteMatchupPeriods.
 	// The current scoring week is never skipped, even if listed.
 	SkipWeeks []ScoringPeriod
+}
+
+// SkipsWeek reports whether a provider should leave week unread: it is listed
+// in SkipWeeks and is not the current scoring week, which is always read.
+func (r FetchRequest) SkipsWeek(week, current ScoringPeriod) bool {
+	return week != current && slices.Contains(r.SkipWeeks, week)
 }
 
 type ProviderID string

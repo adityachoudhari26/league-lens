@@ -123,9 +123,9 @@ func TestSkipsSettledWeeks(t *testing.T) {
 	}
 	history := map[fantasy.ScoringPeriod]bool{}
 	observed := 0
-	for _, r := range data.Rosters {
-		if r.Origin == fantasy.SnapshotHistory {
-			history[r.ScoringPeriod] = true
+	for _, roster := range data.Rosters {
+		if roster.Origin == fantasy.SnapshotHistory {
+			history[roster.ScoringPeriod] = true
 		} else {
 			observed++
 		}

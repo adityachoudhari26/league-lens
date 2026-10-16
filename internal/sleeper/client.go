@@ -193,42 +193,29 @@ func (c *Client) Fetch(ctx context.Context, header Header, request fantasy.Fetch
 		return data, err
 	}
 	if data.State.SeasonType != "pre" {
-		skip := skippedWeeks(request, period)
-		weeks, err := c.fetchMatchupWeeks(ctx, base, period, rosterIDs, skip)
+		weeks, err := c.fetchMatchupWeeks(ctx, base, period, rosterIDs, request)
 		// Retain fetched weeks in partial results, matching the existing error contract.
 		data.Weeks = weeks
 		if err != nil {
 			return data, err
 		}
-		data.Projections = c.fetchProjections(ctx, header.League.Season, period, skip)
+		data.Projections = c.fetchProjections(ctx, header.League.Season, period, request)
 	}
 	return data, nil
-}
-
-// skippedWeeks lists the weeks the request settles for. The current scoring
-// period is always read, even when listed, so post-season week 18 survives.
-func skippedWeeks(request fantasy.FetchRequest, period int) map[int]bool {
-	skip := map[int]bool{}
-	for _, week := range request.SkipWeeks {
-		if int(week) != period {
-			skip[int(week)] = true
-		}
-	}
-	return skip
 }
 
 // projectionPositions limits the weekly projections to fantasy positions,
 // which keeps each response near 2 MB instead of 6 MB.
 var projectionPositions = []string{"QB", "RB", "WR", "TE", "K", "DEF"}
 
-// fetchProjections reads the league season's projections for every synced
-// week. The endpoint is undocumented, so a failed week is logged and skipped
-// rather than failing the import.
-func (c *Client) fetchProjections(ctx context.Context, season string, period int, skip map[int]bool) map[int][]Projection {
+// fetchProjections reads the league season's projections for every week the
+// request doesn't settle. The endpoint is undocumented, so a failed week is
+// logged and skipped rather than failing the import.
+func (c *Client) fetchProjections(ctx context.Context, season string, period int, request fantasy.FetchRequest) map[int][]Projection {
 	query := url.Values{"season_type": {"regular"}, "position[]": projectionPositions}.Encode()
 	projections := map[int][]Projection{}
 	for week := 1; week <= period; week++ {
-		if skip[week] {
+		if request.SkipsWeek(fantasy.ScoringPeriod(week), fantasy.ScoringPeriod(period)) {
 			continue
 		}
 		path := "/" + url.PathEscape(season) + "/" + strconv.Itoa(week)
@@ -242,11 +229,12 @@ func (c *Client) fetchProjections(ctx context.Context, season string, period int
 	return projections
 }
 
-// Fetch each week once, sequentially: bounded to 18 small requests per import.
-func (c *Client) fetchMatchupWeeks(ctx context.Context, base string, period int, rosterIDs map[int]bool, skip map[int]bool) (map[int][]Matchup, error) {
+// fetchMatchupWeeks reads each week once, sequentially, except weeks the
+// request settles: at most 18 small requests per import.
+func (c *Client) fetchMatchupWeeks(ctx context.Context, base string, period int, rosterIDs map[int]bool, request fantasy.FetchRequest) (map[int][]Matchup, error) {
 	weeks := map[int][]Matchup{}
 	for week := 1; week <= period; week++ {
-		if skip[week] {
+		if request.SkipsWeek(fantasy.ScoringPeriod(week), fantasy.ScoringPeriod(period)) {
 			continue
 		}
 		var matchups []Matchup

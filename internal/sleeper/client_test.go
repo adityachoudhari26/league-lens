@@ -2,43 +2,48 @@ package sleeper
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
 
-func TestFetch(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// fixtureLeagueHandler serves a two-team league at the given regular-season
+// week: matchups/{1..week} from testdata/week.json and a one-row projections
+// response for any week. Anything else is a 404.
+func fixtureLeagueHandler(t *testing.T, week int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
 		var file string
-		switch r.URL.Path {
-		case "/user/test":
+		switch {
+		case path == "/user/test":
 			_, _ = w.Write([]byte(`{"user_id":"owner"}`))
 			return
-		case "/league/123":
+		case path == "/league/123":
 			file = "league.json"
-		case "/league/123/rosters":
+		case path == "/league/123/rosters":
 			file = "rosters.json"
-		case "/league/123/users":
+		case path == "/league/123/users":
 			_, _ = w.Write([]byte(`[{"user_id":"owner","display_name":"Owner","metadata":{"team_name":"My Team"}}]`))
 			return
-		case "/state/nfl":
-			_, _ = w.Write([]byte(`{"season":"2026","season_type":"regular","week":2}`))
+		case path == "/state/nfl":
+			_, _ = fmt.Fprintf(w, `{"season":"2026","season_type":"regular","week":%d}`, week)
 			return
-		case "/league/123/matchups/1", "/league/123/matchups/2":
-			file = "week.json"
-		case "/projections/nfl/2026/1":
-			query := r.URL.Query()
-			if query.Get("season_type") != "regular" || len(query["position[]"]) != len(projectionPositions) {
-				t.Errorf("projections query = %s", r.URL.RawQuery)
+		case strings.HasPrefix(path, "/league/123/matchups/"):
+			n, err := strconv.Atoi(strings.TrimPrefix(path, "/league/123/matchups/"))
+			if err != nil || n < 1 || n > week {
+				http.NotFound(w, r)
+				return
 			}
+			file = "week.json"
+		case strings.HasPrefix(path, "/projections/nfl/2026/"):
 			_, _ = w.Write([]byte(`[{"player_id":"10","stats":{"rec":2}}]`))
-			return
-		case "/projections/nfl/2026/2":
-			w.WriteHeader(http.StatusInternalServerError)
 			return
 		default:
 			http.NotFound(w, r)
@@ -49,6 +54,25 @@ func TestFetch(t *testing.T) {
 			t.Error(err)
 		}
 		_, _ = w.Write(b)
+	}
+}
+
+func TestFetch(t *testing.T) {
+	fixture := fixtureLeagueHandler(t, 2)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/projections/nfl/2026/1":
+			query := r.URL.Query()
+			if query.Get("season_type") != "regular" || len(query["position[]"]) != len(projectionPositions) {
+				t.Errorf("projections query = %s", r.URL.RawQuery)
+			}
+			_, _ = w.Write([]byte(`[{"player_id":"10","stats":{"rec":2}}]`))
+			return
+		case "/projections/nfl/2026/2":
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		fixture(w, r)
 	}))
 	defer srv.Close()
 	c := NewClient(srv.Client())
@@ -89,39 +113,14 @@ func TestFetch(t *testing.T) {
 // lineups, projections, and complete-period marks are absent from the payload.
 // The current period is fetched even when listed in SkipWeeks.
 func TestFetchSkipsSettledWeeks(t *testing.T) {
+	var mu sync.Mutex
 	var requested []string
+	fixture := fixtureLeagueHandler(t, 4)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
 		requested = append(requested, r.URL.Path)
-		var file string
-		switch r.URL.Path {
-		case "/user/test":
-			_, _ = w.Write([]byte(`{"user_id":"owner"}`))
-			return
-		case "/league/123":
-			file = "league.json"
-		case "/league/123/rosters":
-			file = "rosters.json"
-		case "/league/123/users":
-			_, _ = w.Write([]byte(`[{"user_id":"owner","display_name":"Owner","metadata":{"team_name":"My Team"}}]`))
-			return
-		case "/state/nfl":
-			_, _ = w.Write([]byte(`{"season":"2026","season_type":"regular","week":4}`))
-			return
-		case "/league/123/matchups/1", "/league/123/matchups/2", "/league/123/matchups/3", "/league/123/matchups/4":
-			file = "week.json"
-		default:
-			if strings.HasPrefix(r.URL.Path, "/projections/nfl/2026/") {
-				_, _ = w.Write([]byte(`[{"player_id":"10","stats":{"rec":2}}]`))
-				return
-			}
-			http.NotFound(w, r)
-			return
-		}
-		b, err := os.ReadFile("testdata/" + file)
-		if err != nil {
-			t.Error(err)
-		}
-		_, _ = w.Write(b)
+		mu.Unlock()
+		fixture(w, r)
 	}))
 	defer srv.Close()
 	c := NewClient(srv.Client())
@@ -131,8 +130,10 @@ func TestFetchSkipsSettledWeeks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	forbidden := func() {
+	assertSettledWeeksNotRequested := func() {
 		t.Helper()
+		mu.Lock()
+		defer mu.Unlock()
 		for _, path := range requested {
 			if strings.HasSuffix(path, "/matchups/1") || strings.HasSuffix(path, "/matchups/2") ||
 				path == "/projections/nfl/2026/1" || path == "/projections/nfl/2026/2" {
@@ -140,12 +141,17 @@ func TestFetchSkipsSettledWeeks(t *testing.T) {
 			}
 		}
 	}
-	requested = nil
+	resetRequested := func() {
+		mu.Lock()
+		requested = nil
+		mu.Unlock()
+	}
+	resetRequested()
 	data, err := c.Fetch(context.Background(), head, fantasy.FetchRequest{SkipWeeks: []fantasy.ScoringPeriod{1, 2}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	forbidden()
+	assertSettledWeeksNotRequested()
 	if len(data.Weeks) != 2 || data.Weeks[3] == nil || data.Weeks[4] == nil {
 		t.Fatalf("weeks = %v, want 3 and 4", data.Weeks)
 	}
@@ -181,12 +187,12 @@ func TestFetchSkipsSettledWeeks(t *testing.T) {
 	}
 
 	// Listing the current week changes nothing: it is always read.
-	requested = nil
+	resetRequested()
 	data, err = c.Fetch(context.Background(), head, fantasy.FetchRequest{SkipWeeks: []fantasy.ScoringPeriod{1, 2, 4}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	forbidden()
+	assertSettledWeeksNotRequested()
 	if data.Weeks[4] == nil {
 		t.Fatal("current week skipped by request")
 	}

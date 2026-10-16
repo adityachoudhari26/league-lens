@@ -12,9 +12,12 @@ import (
 
 var _ fantasy.Provider = (*Client)(nil)
 
+// describeViews are all normalizeLeague needs, so the describe before every
+// sync stays light instead of repeating the full five-view read.
+var describeViews = []string{"mSettings", "mTeam"}
+
 func (c *Client) DescribeLeague(ctx context.Context, id string) (fantasy.League, error) {
-	// normalizeLeague needs only settings and teams, so a describe stays light.
-	raw, err := c.readLeagueWithViews(ctx, id, 0, []string{"mSettings", "mTeam"}, nil)
+	raw, err := c.readLeagueWithViews(ctx, id, 0, describeViews, nil)
 	if err != nil {
 		return fantasy.League{}, err
 	}
@@ -67,12 +70,8 @@ func (c *Client) appendHistory(
 	raw leagueResponse,
 	request fantasy.FetchRequest,
 ) error {
-	skip := map[int]bool{}
-	for _, week := range request.SkipWeeks {
-		skip[int(week)] = true
-	}
 	for week := 1; week < raw.Week; week++ {
-		if skip[week] {
+		if request.SkipsWeek(fantasy.ScoringPeriod(week), fantasy.ScoringPeriod(raw.Week)) {
 			continue
 		}
 		history, fetchErr := c.readLeague(ctx, data.League.Ref.ExternalID, week)
