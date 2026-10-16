@@ -61,15 +61,30 @@ func (f fakeSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error
 
 type scheduleSources struct {
 	fakeSources
-	games []fantasy.NFLGame
-	err   error
-	calls atomic.Int32
+	games   []fantasy.NFLGame
+	err     error
+	release chan struct{}
+	calls   atomic.Int32
 }
 
-func (s *scheduleSources) NFLSchedule(context.Context, int) ([]fantasy.NFLGame, error) {
+func (s *scheduleSources) NFLSchedule(ctx context.Context, _ int) ([]fantasy.NFLGame, error) {
 	s.calls.Add(1)
+	if s.release != nil {
+		select {
+		case <-s.release:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 	return s.games, s.err
 }
+
+type importRefreshSources struct {
+	scheduleSources
+	news news.Source
+}
+
+func (s *importRefreshSources) NewsSource() news.Source { return s.news }
 
 func (fakeSources) NFLScoreboard(context.Context) (fantasy.NFLScoreboard, error) {
 	return fantasy.NFLScoreboard{}, nil
@@ -1176,6 +1191,57 @@ func TestFailedPlayerNewsRefreshKeepsSavedNewsAndLeagueSucceeds(t *testing.T) {
 	if err != nil || len(rows) != 1 || rows[0].SourceItemID != "saved-item" || rows[0].Headline != "Previously saved" {
 		t.Fatalf("saved news after failed refresh = %+v, %v", rows, err)
 	}
+}
+
+func TestRefreshAfterImportRunsInBackground(t *testing.T) {
+	db := openDatabase(t)
+	seedLeague(t, db, fantasy.ProviderSleeper)
+	season := fantasy.CurrentSeason(time.Now())
+	release := make(chan struct{})
+	source := &importRefreshSources{
+		scheduleSources: scheduleSources{fakeSources: fakeSources{}, games: kcSFScheduleFixture(), release: release},
+		news:            fakeNewsSource{headline: "Import news"},
+	}
+	runner := New(db, owner, source, "")
+
+	returned := make(chan struct{})
+	go func() {
+		defer close(returned)
+		runner.RefreshAfterImport()
+	}()
+	select {
+	case <-returned:
+	case <-time.After(5 * time.Second):
+		t.Fatal("RefreshAfterImport blocked on the schedule refresh")
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for source.calls.Load() == 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if calls := source.calls.Load(); calls != 1 {
+		t.Fatalf("schedule source calls = %d, want 1", calls)
+	}
+
+	close(release)
+	waitForScheduleGames(t, db, season)
+	waitForPlayerNews(t, db, "Import news")
+	runner.Close()
+
+	assertScheduleGames(t, weekGames(t, db, season, 6), kcSFScheduleFixture())
+}
+
+// waitForScheduleGames polls until the season's games are saved so the refresh
+// finishes before Close cancels the Runner context.
+func waitForScheduleGames(t *testing.T, db *database.DB, season int) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if len(weekGames(t, db, season, 6)) == 2 {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("schedule games for season %d were not saved", season)
 }
 
 func TestRefreshNFLScheduleSavesGames(t *testing.T) {

@@ -29,8 +29,6 @@ type DiscoverESPNFunc func(context.Context, espn.Credentials) ([]fantasy.Discove
 type DiscoverSleeperFunc func(context.Context, string, int) (string, []fantasy.DiscoveredLeague, error)
 type NewSourceFunc func(context.Context, ImportSpec) (fantasy.Provider, string, fantasy.ConnectionSelection, error)
 
-const importNewsTimeout = 5 * time.Second
-
 // Service manages the configured owner's provider connections and league imports.
 type Service struct {
 	DB              *database.DB
@@ -40,10 +38,8 @@ type Service struct {
 	DiscoverESPN    DiscoverESPNFunc
 	DiscoverSleeper DiscoverSleeperFunc
 	NewSource       NewSourceFunc
-	// RefreshNFLSchedule runs a best-effort NFL schedule refresh after imports; nil skips it.
-	RefreshNFLSchedule func(context.Context, int)
-	// RefreshPlayerNews runs a best-effort news refresh after imports; nil skips it.
-	RefreshPlayerNews func(context.Context)
+	// RefreshAfterImport starts a background schedule and news refresh after a successful import; it must not block. nil skips it.
+	RefreshAfterImport func()
 }
 
 func (s *Service) withDefaults() Service {
@@ -274,21 +270,17 @@ func (s *Service) ImportLeagues(ctx context.Context, request *v1.ImportLeaguesRe
 	for _, pick := range request.GetPicks() {
 		response.Results = append(response.Results, service.importPick(ctx, importerService, connection, credentials, credentialErr, pick))
 	}
-	service.refreshAfterImport(ctx, response.Results)
+	service.refreshAfterImport(response.Results)
 	return response, nil
 }
 
-// refreshAfterImport refreshes the schedule and player news after any successful import.
-func (s Service) refreshAfterImport(ctx context.Context, results []*v1.ImportResult) {
+// refreshAfterImport kicks off a background schedule and player news refresh
+// once after any successful import.
+func (s Service) refreshAfterImport(results []*v1.ImportResult) {
 	for _, result := range results {
 		if result.GetSucceeded() {
-			if s.RefreshNFLSchedule != nil {
-				s.RefreshNFLSchedule(ctx, fantasy.CurrentSeason(time.Now()))
-			}
-			if s.RefreshPlayerNews != nil {
-				refreshCtx, cancel := context.WithTimeout(ctx, importNewsTimeout)
-				defer cancel()
-				s.RefreshPlayerNews(refreshCtx)
+			if s.RefreshAfterImport != nil {
+				s.RefreshAfterImport()
 			}
 			return
 		}

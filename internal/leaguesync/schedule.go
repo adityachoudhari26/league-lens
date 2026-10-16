@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -25,6 +26,18 @@ func (r *Runner) refreshSchedules(targets []Target) {
 		seen[season] = true
 		r.RefreshNFLSchedule(r.ctx, season)
 	}
+}
+
+// RefreshAfterImport starts a best-effort NFL schedule and player news refresh in
+// the background after a league import and returns immediately. It runs on the
+// Runner's context so it outlives the import request, and Close waits for it.
+func (r *Runner) RefreshAfterImport() {
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+		r.RefreshNFLSchedule(r.ctx, fantasy.CurrentSeason(r.now()))
+		r.RefreshPlayerNews(r.ctx)
+	}()
 }
 
 // RefreshNFLSchedule loads kickoff and bye data during syncs and after league
