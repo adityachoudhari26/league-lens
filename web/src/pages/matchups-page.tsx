@@ -7,12 +7,15 @@ import {
   WeekSelector,
 } from "@/components/matchups/matchup-controls"
 import { MatchupCard } from "@/components/matchups/matchup-card"
+import { roundStatus } from "@/components/matchups/rules"
 import { SectionMessage } from "@/components/overview/section"
 import { Button } from "@/components/ui/button"
 import { type League } from "@/gen/leaguelens/v1/leagues_pb"
 import { matchupQueries } from "@/lib/api/matchups"
 import { useReloadAfterSync } from "@/lib/api/sync"
 import { PageHeading } from "@/pages/workspace-page"
+
+const MATCHUP_DETAIL_LIVE_POLL_MS = 30_000
 
 function LoadError({ retry }: { retry: () => void }) {
   return (
@@ -55,6 +58,12 @@ function useMatchupDetail(leagueSeasonId: string, period?: number) {
   return useQuery({
     ...matchupQueries.detail(leagueSeasonId, period),
     placeholderData: keepPreviousData,
+    refetchInterval: (query) => {
+      const matchup = query.state.data?.matchup
+      return matchup && roundStatus(matchup) === "In progress"
+        ? MATCHUP_DETAIL_LIVE_POLL_MS
+        : false
+    },
   })
 }
 
