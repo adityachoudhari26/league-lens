@@ -36,10 +36,14 @@ func TestChatToolLoopFeedsResultsAndStreamsActivity(t *testing.T) {
 	var events []*v1.ChatResponse
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	err := runChatLoop(ctx, cancel, &v1.ChatRequest{}, provider, "fake", []llm.Message{{Role: llm.RoleUser, Text: "matchup"}}, func(event *v1.ChatResponse) error {
-		events = append(events, event)
-		return nil
-	}, buildReadOnlyTools(reader))
+	loop := chatLoop{
+		cancel: cancel, provider: provider, model: "fake", tools: buildReadOnlyTools(reader),
+		send: func(event *v1.ChatResponse) error {
+			events = append(events, event)
+			return nil
+		},
+	}
+	err := loop.run(ctx, nil, []llm.Message{{Role: llm.RoleUser, Text: "matchup"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +73,11 @@ func TestChatToolLoopLimitsRoundsAndReturnsErrorResults(t *testing.T) {
 	provider := &scriptedChatProvider{responses: calls}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	err := runChatLoop(ctx, cancel, &v1.ChatRequest{}, provider, "fake", nil, func(*v1.ChatResponse) error { return nil }, buildReadOnlyTools(reader))
+	loop := chatLoop{
+		cancel: cancel, provider: provider, model: "fake", tools: buildReadOnlyTools(reader),
+		send: func(*v1.ChatResponse) error { return nil },
+	}
+	err := loop.run(ctx, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

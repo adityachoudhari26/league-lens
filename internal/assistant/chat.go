@@ -52,7 +52,10 @@ func (s *Service) chat(
 	if err != nil {
 		return err
 	}
-	return runChatLoop(chatCtx, cancel, request, provider, model, messages, send, s.readOnlyTools())
+	loop := chatLoop{
+		cancel: cancel, provider: provider, model: model, send: send, tools: s.readOnlyTools(),
+	}
+	return loop.run(chatCtx, request.GetPage(), messages)
 }
 
 func (s *Service) providerForChat(ctx context.Context) (llm.Provider, string, error) {

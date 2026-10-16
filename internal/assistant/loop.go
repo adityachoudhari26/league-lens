@@ -10,26 +10,25 @@ import (
 
 const maxToolRounds = 5
 
-// runChatLoop completes a chat with sequential, bounded read-only tool rounds.
-func runChatLoop(
-	ctx context.Context,
-	cancel context.CancelFunc,
-	request *v1.ChatRequest,
-	provider llm.Provider,
-	model string,
-	messages []llm.Message,
-	send chatEventSender,
-	tools []assistantTool,
-) error {
-	system := buildSystemPrompt(time.Now(), request.GetPage(), true)
+type chatLoop struct {
+	cancel   context.CancelFunc
+	provider llm.Provider
+	model    string
+	send     chatEventSender
+	tools    []assistantTool
+}
+
+// run completes a chat with sequential, bounded read-only tool rounds.
+func (loop *chatLoop) run(ctx context.Context, page *v1.PageContext, messages []llm.Message) error {
+	system := buildSystemPrompt(time.Now(), page, true)
 	toolRounds := 0
 	for {
-		availableTools := toolDefinitions(tools)
+		availableTools := toolDefinitions(loop.tools)
 		if toolRounds >= maxToolRounds {
 			availableTools = nil
 			system += "\nTool limit reached. Answer with the data you already have."
 		}
-		response, err := completeChatRound(ctx, cancel, provider, request, model, system, messages, availableTools, send)
+		response, err := loop.completeRound(ctx, system, messages, availableTools)
 		if err != nil {
 			return err
 		}
@@ -39,7 +38,7 @@ func runChatLoop(
 		messages = append(messages, llm.Message{
 			Role: llm.RoleAssistant, Text: response.Text, ToolCalls: response.ToolCalls,
 		})
-		results, err := runToolCalls(ctx, cancel, tools, response.ToolCalls, send)
+		results, err := loop.runToolCalls(ctx, response.ToolCalls)
 		if err != nil {
 			return err
 		}
@@ -48,28 +47,24 @@ func runChatLoop(
 	}
 }
 
-func completeChatRound(
+func (loop *chatLoop) completeRound(
 	ctx context.Context,
-	cancel context.CancelFunc,
-	provider llm.Provider,
-	request *v1.ChatRequest,
-	model, system string,
+	system string,
 	messages []llm.Message,
 	tools []llm.Tool,
-	send chatEventSender,
 ) (llm.Response, error) {
 	var sendErr error
-	response, completionErr := provider.Complete(ctx, llm.Request{
-		Model: model, System: system, Messages: messages, Tools: tools, MaxTokens: chatCompletionMaxTokens,
+	response, completionErr := loop.provider.Complete(ctx, llm.Request{
+		Model: loop.model, System: system, Messages: messages, Tools: tools, MaxTokens: chatCompletionMaxTokens,
 	}, func(delta string) {
 		if sendErr != nil || delta == "" {
 			return
 		}
-		sendErr = send(&v1.ChatResponse{
+		sendErr = loop.send(&v1.ChatResponse{
 			Event: &v1.ChatResponse_Text{Text: &v1.TextDelta{Text: delta}},
 		})
 		if sendErr != nil {
-			cancel()
+			loop.cancel()
 		}
 	})
 	if sendErr != nil {
@@ -81,22 +76,19 @@ func completeChatRound(
 	return response, nil
 }
 
-func runToolCalls(
+func (loop *chatLoop) runToolCalls(
 	ctx context.Context,
-	cancel context.CancelFunc,
-	tools []assistantTool,
 	calls []llm.ToolCall,
-	send chatEventSender,
 ) ([]llm.ToolResult, error) {
 	results := make([]llm.ToolResult, 0, len(calls))
 	for _, call := range calls {
-		if err := send(&v1.ChatResponse{
-			Event: &v1.ChatResponse_Tool{Tool: &v1.ToolActivity{Label: toolLabel(tools, call.Name, call.Input)}},
+		if err := loop.send(&v1.ChatResponse{
+			Event: &v1.ChatResponse_Tool{Tool: &v1.ToolActivity{Label: toolLabel(loop.tools, call.Name, call.Input)}},
 		}); err != nil {
-			cancel()
+			loop.cancel()
 			return nil, err
 		}
-		results = append(results, runAssistantTool(ctx, tools, call))
+		results = append(results, runAssistantTool(ctx, loop.tools, call))
 	}
 	return results, nil
 }
