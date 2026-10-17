@@ -102,7 +102,7 @@ func (s *Service) listFreeAgents(
 	leagueSeasonID, position string,
 	limit int,
 ) (freeAgentToolResult, error) {
-	target, err := s.freeAgentTarget(ctx, leagueSeasonID)
+	target, err := s.ownerSyncTarget(ctx, leagueSeasonID, errFreeAgentTargetUnavailable)
 	if err != nil {
 		return freeAgentToolResult{}, err
 	}
@@ -156,7 +156,12 @@ func freeAgentSourceName(provider fantasy.ProviderID) string {
 	return "ESPN player pool"
 }
 
-func (s *Service) freeAgentTarget(ctx context.Context, leagueSeasonID string) (leaguesync.Target, error) {
+// ownerSyncTarget returns the requested league only when it is attached to the configured owner.
+func (s *Service) ownerSyncTarget(
+	ctx context.Context,
+	leagueSeasonID string,
+	unavailable error,
+) (leaguesync.Target, error) {
 	var id pgtype.UUID
 	if err := id.Scan(leagueSeasonID); err != nil {
 		return leaguesync.Target{}, connect.NewError(connect.CodeInvalidArgument, errInvalidToolInput.Error())
@@ -185,10 +190,17 @@ func (s *Service) freeAgentTarget(ctx context.Context, leagueSeasonID string) (l
 	if err != nil {
 		return leaguesync.Target{}, connect.NewError(
 			connect.CodeInternal,
-			"free-agent league could not be loaded",
-		).WithCause(errFreeAgentTargetUnavailable)
+			ownerSyncTargetErrorMessage(unavailable),
+		).WithCause(unavailable)
 	}
 	return target, nil
+}
+
+func ownerSyncTargetErrorMessage(unavailable error) string {
+	if errors.Is(unavailable, errFreeAgentTargetUnavailable) {
+		return "free-agent league could not be loaded"
+	}
+	return "league could not be loaded"
 }
 
 func latestSelectedScoringWeek(ctx context.Context, reader assistantDashboard, league *v1.GetLeagueResponse) (int, error) {

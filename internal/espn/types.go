@@ -10,15 +10,19 @@ type leagueResponse struct {
 		LatestWeek int `json:"latestScoringPeriod"`
 		FinalWeek  int `json:"finalScoringPeriod"`
 	} `json:"status"`
-	Settings settingsResponse  `json:"settings"`
-	Teams    []teamResponse    `json:"teams"`
-	Schedule []matchupResponse `json:"schedule"`
+	Settings     settingsResponse      `json:"settings"`
+	Teams        []teamResponse        `json:"teams"`
+	Schedule     []matchupResponse     `json:"schedule"`
+	Transactions []transactionResponse `json:"transactions"`
 }
 type settingsResponse struct {
-	Name     string          `json:"name"`
-	Size     int             `json:"size"`
-	Roster   json.RawMessage `json:"rosterSettings"`
-	Scoring  json.RawMessage `json:"scoringSettings"`
+	Name                string          `json:"name"`
+	Size                int             `json:"size"`
+	Roster              json.RawMessage `json:"rosterSettings"`
+	Scoring             json.RawMessage `json:"scoringSettings"`
+	AcquisitionSettings struct {
+		IsUsingAcquisitionBudget bool `json:"isUsingAcquisitionBudget"`
+	} `json:"acquisitionSettings"`
 	Schedule struct {
 		Periods map[string][]int `json:"matchupPeriods"`
 	} `json:"scheduleSettings"`

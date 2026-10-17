@@ -5,6 +5,7 @@ package fantasy
 import (
 	"context"
 	"slices"
+	"time"
 )
 
 // FreeAgent is a provider's available player with optional point and ownership data.
@@ -30,6 +31,43 @@ type FreeAgentQuery struct {
 // FreeAgentLister returns provider-specific available players for a league.
 type FreeAgentLister interface {
 	ListFreeAgents(ctx context.Context, league League, query FreeAgentQuery) ([]FreeAgent, error)
+}
+
+// TransactionType identifies the provider-independent kind of a league move.
+type TransactionType string
+
+const (
+	// TransactionAdd is a free-agent acquisition.
+	TransactionAdd TransactionType = "add"
+	// TransactionDrop is a free-agent release without an acquisition.
+	TransactionDrop TransactionType = "drop"
+	// TransactionWaiver is a completed waiver claim.
+	TransactionWaiver TransactionType = "waiver"
+	// TransactionTrade is an executed trade.
+	TransactionTrade TransactionType = "trade"
+)
+
+// Transaction is one completed league transaction.
+type Transaction struct {
+	ExternalID string
+	Type       TransactionType
+	ExecutedAt time.Time
+	Moves      []TransactionMove
+	FAABBid    *int // Only set for waiver claims in leagues using FAAB.
+}
+
+// TransactionMove describes one player's movement between provider teams.
+// An empty FromTeamID means free agency or waivers; an empty ToTeamID means dropped.
+type TransactionMove struct {
+	ExternalPlayerID string
+	FromTeamID       string
+	ToTeamID         string
+	DefenseTeam      string
+}
+
+// TransactionLister returns completed league transactions for scoring weeks.
+type TransactionLister interface {
+	ListTransactions(ctx context.Context, league League, weeks []int) ([]Transaction, error)
 }
 
 // Provider translates a provider's API into fantasy concepts. Credentials,
