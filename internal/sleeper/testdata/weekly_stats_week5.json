@@ -1,0 +1,208 @@
+[
+  {
+    "player_id": "10214",
+    "team": "LAR",
+    "player": {
+      "position": "TE"
+    },
+    "stats": {
+      "gms_active": 1.0,
+      "gp": 1.0,
+      "off_snp": 41.0,
+      "rec_air_yd": 21.0,
+      "rec_rz_tgt": 1.0,
+      "rec_tgt": 2.0,
+      "tm_off_snp": 82.0
+    }
+  },
+  {
+    "player_id": "421",
+    "team": "LAR",
+    "player": {
+      "position": "QB"
+    },
+    "stats": {
+      "gp": 1.0,
+      "gms_active": 1.0,
+      "pass_att": 54.0,
+      "pass_rz_att": 10.0,
+      "tm_off_snp": 82.0,
+      "off_snp": 82.0
+    }
+  },
+  {
+    "player_id": "9493",
+    "team": "LAR",
+    "player": {
+      "position": "WR"
+    },
+    "stats": {
+      "gp": 1.0,
+      "gms_active": 1.0,
+      "rush_att": 2.0,
+      "tm_off_snp": 82.0,
+      "rec_rz_tgt": 3.0,
+      "off_snp": 70.0,
+      "rec_air_yd": 57.0,
+      "rush_rz_att": 1.0,
+      "rec_tgt": 24.0
+    }
+  },
+  {
+    "player_id": "11586",
+    "team": "LAR",
+    "player": {
+      "position": "RB"
+    },
+    "stats": {
+      "gp": 1.0,
+      "gms_active": 1.0,
+      "rush_att": 5.0,
+      "tm_off_snp": 82.0,
+      "rec_rz_tgt": 1.0,
+      "off_snp": 22.0,
+      "rec_air_yd": 4.0,
+      "rush_rz_att": 1.0,
+      "rec_tgt": 4.0
+    }
+  },
+  {
+    "player_id": "3271",
+    "team": "LAR",
+    "player": {
+      "position": "TE"
+    },
+    "stats": {
+      "gp": 1.0,
+      "gms_active": 1.0,
+      "tm_off_snp": 82.0,
+      "off_snp": 55.0,
+      "rec_air_yd": 50.0,
+      "rec_tgt": 6.0
+    }
+  },
+  {
+    "player_id": "8150",
+    "team": "LAR",
+    "player": {
+      "position": "RB"
+    },
+    "stats": {
+      "gp": 1.0,
+      "gms_active": 1.0,
+      "rush_att": 16.0,
+      "tm_off_snp": 82.0,
+      "rec_rz_tgt": 2.0,
+      "off_snp": 60.0,
+      "rec_air_yd": -12.0,
+      "rush_rz_att": 4.0,
+      "rec_tgt": 8.0
+    }
+  },
+  {
+    "player_id": "7562",
+    "team": "LAR",
+    "player": {
+      "position": "WR"
+    },
+    "stats": {
+      "gms_active": 1.0,
+      "gp": 1.0,
+      "off_snp": 32.0,
+      "rec_air_yd": 4.0,
+      "rec_tgt": 1.0,
+      "tm_off_snp": 82.0
+    }
+  },
+  {
+    "player_id": "2133",
+    "team": "LAR",
+    "player": {
+      "position": "WR"
+    },
+    "stats": {
+      "gp": 1.0,
+      "gms_active": 1.0,
+      "tm_off_snp": 82.0,
+      "rec_rz_tgt": 3.0,
+      "off_snp": 60.0,
+      "rec_air_yd": 42.0,
+      "rec_tgt": 7.0
+    }
+  },
+  {
+    "player_id": "6865",
+    "team": "LAR",
+    "player": {
+      "position": "TE"
+    },
+    "stats": {
+      "gms_active": 1.0,
+      "gp": 1.0,
+      "off_snp": 53.0,
+      "rec_air_yd": 1.0,
+      "rec_tgt": 2.0,
+      "tm_off_snp": 82.0
+    }
+  },
+  {
+    "player_id": "TEAM_LAR",
+    "team": "LAR",
+    "player": {
+      "position": "TEAM"
+    },
+    "stats": {
+      "gp": 1.0,
+      "pass_att": 54.0,
+      "rush_att": 23.0,
+      "pass_rz_att": 10.0,
+      "rec_rz_tgt": 10.0,
+      "rec_air_yd": 167.0,
+      "rush_rz_att": 6.0,
+      "rec_tgt": 54.0
+    }
+  },
+  {
+    "player_id": "LAR",
+    "team": "LAR",
+    "player": {
+      "position": "DEF"
+    },
+    "stats": {
+      "gp": 1.0
+    }
+  },
+  {
+    "player_id": "12015",
+    "team": "LAR",
+    "player": {
+      "position": "K"
+    },
+    "stats": {
+      "gms_active": 1.0,
+      "gp": 1.0
+    }
+  },
+  {
+    "player_id": "11782",
+    "team": "LAR",
+    "player": {
+      "position": "OL"
+    },
+    "stats": {
+      "gms_active": 1.0,
+      "gp": 1.0,
+      "tm_off_snp": 82.0
+    }
+  },
+  {
+    "player_id": "11514",
+    "team": "DAL",
+    "player": {
+      "position": "LB"
+    },
+    "stats": {
+      "gms_active": 1.0
+    }
+  }
+]

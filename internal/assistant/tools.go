@@ -75,6 +75,9 @@ func (s *Service) chatTools() []assistantTool {
 	if s.Injuries != nil {
 		tools = append(tools, injuryTools(s)...)
 	}
+	if s.Usage != nil {
+		tools = append(tools, usageTools(s)...)
+	}
 	return append(tools, buildActionTools(s.Dashboard)...)
 }
 
