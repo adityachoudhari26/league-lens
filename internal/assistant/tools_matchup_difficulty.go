@@ -328,13 +328,13 @@ func matchupDifficultyNeedsCatalog(players []store.MatchupDifficultyOwnerRosterR
 }
 
 func matchupPositionNeedsCatalog(stored, sleeperID string) bool {
-	if normalizeMatchupPosition(stored) != "" || (sleeperID != "" && !isNumericSleeperID(sleeperID)) {
+	if normalizeMatchupPosition(stored) != "" || (sleeperID != "" && !isSleeperPlayerID(sleeperID)) {
 		return false
 	}
 	return true
 }
 
-func isNumericSleeperID(sleeperID string) bool {
+func isSleeperPlayerID(sleeperID string) bool {
 	_, err := strconv.Atoi(sleeperID)
 	return err == nil
 }
@@ -344,7 +344,7 @@ func matchupPosition(stored, sleeperID string, catalog playerids.Catalog) string
 	if position := normalizeMatchupPosition(stored); position != "" {
 		return position
 	}
-	if sleeperID != "" && !isNumericSleeperID(sleeperID) {
+	if sleeperID != "" && !isSleeperPlayerID(sleeperID) {
 		return "DST"
 	}
 	player, found := catalog.Lookup("sleeper", sleeperID)
