@@ -81,6 +81,7 @@ func run() error {
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail,
 		Dashboard: dashboardService, Sync: syncHandler, ProviderSources: sources, GameContext: sources,
 		Trending: sleeper.NewClient(&http.Client{Timeout: 10 * time.Second}), CatalogPath: catalogPath,
+		Injuries: espn.NewInjuryClient(nil),
 	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,

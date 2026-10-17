@@ -62,6 +62,7 @@ type Service struct {
 		SourceFor(leaguesync.Target) (fantasy.Provider, error)
 	}
 	GameContext GameContextSource
+	Injuries    InjurySource
 }
 
 // GetAssistantSettings returns the owner's safe-to-display settings, never the key.

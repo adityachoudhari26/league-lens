@@ -1,0 +1,36 @@
+{
+  "count": 1,
+  "pageIndex": 1,
+  "pageSize": 3,
+  "pageCount": 1,
+  "items": [
+    {
+      "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4361748/injuries/-2043338?lang=en&region=us",
+      "id": "-2043338",
+      "shortComment": "ir",
+      "status": "Injured Reserve",
+      "date": "2026-10-16T18:54Z",
+      "athlete": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4361748?lang=en&region=us"
+      },
+      "team": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/3?lang=en&region=us"
+      },
+      "type": {
+        "id": "5",
+        "name": "INJURY_STATUS_IR",
+        "description": "Injured Reserve",
+        "abbreviation": "IR"
+      },
+      "details": {
+        "fantasyStatus": {
+          "description": "IR",
+          "abbreviation": "IR"
+        },
+        "type": "Undisclosed",
+        "location": "Other",
+        "returnDate": "2026-10-18"
+      }
+    }
+  ]
+}

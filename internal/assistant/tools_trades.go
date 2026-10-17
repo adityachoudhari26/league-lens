@@ -78,11 +78,11 @@ type rosterCounts struct {
 	After  map[string]int `json:"after"`
 }
 
-type tradeValidationError struct {
+type toolValidationError struct {
 	message string
 }
 
-func (e tradeValidationError) Error() string { return e.message }
+func (e toolValidationError) Error() string { return e.message }
 
 func tradeTools(service *Service) []assistantTool {
 	return []assistantTool{newAssistantTool(
@@ -161,7 +161,7 @@ func parseTradeInput(input evaluateTradeInput) (tradeIDs, error) {
 }
 
 func tradeLoadError(err error) error {
-	if asTradeValidationError(err) || connect.CodeOf(err) == connect.CodeNotFound {
+	if asToolValidationError(err) || connect.CodeOf(err) == connect.CodeNotFound {
 		return err
 	}
 	return internalError("trade data could not be loaded")
@@ -282,7 +282,7 @@ func tradeOpponent(getPlayers []tradePlayer) (pgtype.UUID, error) {
 	teamID := getPlayers[0].teamID
 	for _, player := range getPlayers[1:] {
 		if player.teamID != teamID {
-			return pgtype.UUID{}, tradeValidationError{message: "get players must all come from the same other team"}
+			return pgtype.UUID{}, toolValidationError{message: "get players must all come from the same other team"}
 		}
 	}
 	return parseTradeUUID(teamID)
@@ -341,13 +341,13 @@ func findTradePlayers(ids []pgtype.UUID, players map[string]tradePlayer, ownerTe
 	for _, id := range ids {
 		player, ok := players[id.String()]
 		if !ok || player.teamID == "" {
-			return nil, tradeValidationError{message: fmt.Sprintf("player %s is not on a current roster", id.String())}
+			return nil, toolValidationError{message: fmt.Sprintf("player %s is not on a current roster", id.String())}
 		}
 		if giving && player.teamID != ownerTeamID.String() {
-			return nil, tradeValidationError{message: fmt.Sprintf("%s is not on your team to give", player.Name)}
+			return nil, toolValidationError{message: fmt.Sprintf("%s is not on your team to give", player.Name)}
 		}
 		if !giving && player.teamID == ownerTeamID.String() {
-			return nil, tradeValidationError{message: fmt.Sprintf("%s is on your team; choose a player from another team", player.Name)}
+			return nil, toolValidationError{message: fmt.Sprintf("%s is on your team; choose a player from another team", player.Name)}
 		}
 		found = append(found, player)
 	}
@@ -411,7 +411,7 @@ func averageTradePoints(points []tradePoints) *float64 {
 	return &average
 }
 
-func asTradeValidationError(err error) bool {
-	var validation tradeValidationError
+func asToolValidationError(err error) bool {
+	var validation toolValidationError
 	return errors.As(err, &validation)
 }

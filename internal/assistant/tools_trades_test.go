@@ -31,7 +31,7 @@ func TestEvaluateTradeToolIsWiredAndRejectsInvalidSides(t *testing.T) {
 }
 
 func TestTradeValidationErrorsNameTheProblem(t *testing.T) {
-	if got := toolErrorMessage(tradeValidationError{message: "Target WR is not on your team to give"}); got != "Target WR is not on your team to give" {
+	if got := toolErrorMessage(toolValidationError{message: "Target WR is not on your team to give"}); got != "Target WR is not on your team to give" {
 		t.Fatalf("trade error message %q", got)
 	}
 }

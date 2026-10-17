@@ -1,0 +1,38 @@
+{
+  "count": 1,
+  "pageIndex": 1,
+  "pageSize": 3,
+  "pageCount": 1,
+  "items": [
+    {
+      "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4036275/injuries/-1998786?lang=en&region=us",
+      "id": "-1998786",
+      "shortComment": "questionable",
+      "status": "Questionable",
+      "date": "2026-09-08T20:42Z",
+      "athlete": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4036275?lang=en&region=us"
+      },
+      "team": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/11?lang=en&region=us"
+      },
+      "type": {
+        "id": "2",
+        "name": "INJURY_STATUS_QUESTIONABLE",
+        "description": "questionable",
+        "abbreviation": "Q"
+      },
+      "details": {
+        "fantasyStatus": {
+          "description": "QUESTIONABLE",
+          "abbreviation": "QUESTIONABLE"
+        },
+        "type": "Undisclosed",
+        "location": "Other",
+        "detail": "Not Specified",
+        "side": "Not Specified",
+        "returnDate": "2027-02-15"
+      }
+    }
+  ]
+}
