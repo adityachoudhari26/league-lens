@@ -10,10 +10,11 @@ type leagueResponse struct {
 		LatestWeek int `json:"latestScoringPeriod"`
 		FinalWeek  int `json:"finalScoringPeriod"`
 	} `json:"status"`
-	Settings     settingsResponse      `json:"settings"`
-	Teams        []teamResponse        `json:"teams"`
-	Schedule     []matchupResponse     `json:"schedule"`
-	Transactions []transactionResponse `json:"transactions"`
+	Settings                settingsResponse                `json:"settings"`
+	Teams                   []teamResponse                  `json:"teams"`
+	Schedule                []matchupResponse               `json:"schedule"`
+	Transactions            []transactionResponse           `json:"transactions"`
+	PositionAgainstOpponent positionAgainstOpponentResponse `json:"positionAgainstOpponent"`
 }
 type settingsResponse struct {
 	Name                string          `json:"name"`

@@ -75,6 +75,9 @@ func (s *Service) chatTools() []assistantTool {
 	if s.Injuries != nil {
 		tools = append(tools, injuryTools(s)...)
 	}
+	if s.ProviderSources != nil {
+		tools = append(tools, matchupDifficultyTools(s)...)
+	}
 	return append(tools, buildActionTools(s.Dashboard)...)
 }
 
@@ -201,6 +204,9 @@ func toolErrorMessage(err error) string {
 	}
 	if errors.Is(err, errFreeAgentTargetUnavailable) {
 		return "couldn't load free agents from Sleeper"
+	}
+	if errors.Is(err, errMatchupRatingsUnavailable) {
+		return "matchup ratings couldn't be loaded"
 	}
 	if errors.Is(err, errTransactionsUnavailable) {
 		return "couldn't load league activity"
