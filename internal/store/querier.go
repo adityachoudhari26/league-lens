@@ -136,6 +136,8 @@ type Querier interface {
 	// matching OverviewTeamMatchup.
 	MatchupDetailRound(ctx context.Context, arg MatchupDetailRoundParams) (Matchup, error)
 	MatchupDetailWinChanceSamples(ctx context.Context, arg MatchupDetailWinChanceSamplesParams) ([]MatchupDetailWinChanceSamplesRow, error)
+	// The owner's latest successful observed roster, including provider-supplied Sleeper IDs.
+	MatchupDifficultyOwnerRoster(ctx context.Context, arg MatchupDifficultyOwnerRosterParams) ([]MatchupDifficultyOwnerRosterRow, error)
 	MatchupHasWinChanceHistory(ctx context.Context, matchupID pgtype.UUID) (pgtype.Bool, error)
 	MatchupHasWinChanceHistoryAfter(ctx context.Context, arg MatchupHasWinChanceHistoryAfterParams) (pgtype.Bool, error)
 	// The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.

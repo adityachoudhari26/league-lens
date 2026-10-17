@@ -58,6 +58,7 @@ type Service struct {
 	PlayerCatalog   playerids.Catalog
 	CatalogPath     string
 	trending        trendingCache
+	matchupRatings  matchupRatingsCache
 	ProviderSources interface {
 		SourceFor(leaguesync.Target) (fantasy.Provider, error)
 	}
