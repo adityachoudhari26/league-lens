@@ -51,7 +51,7 @@ func (s *Service) tradeRestOfSeasonRequest(
 	ctx context.Context,
 	leagueSeasonID string,
 ) (tradeRestOfSeasonRequest, bool) {
-	target, err := s.freeAgentTarget(ctx, leagueSeasonID)
+	target, err := s.ownerSyncTarget(ctx, leagueSeasonID, errFreeAgentTargetUnavailable)
 	if err != nil {
 		return tradeRestOfSeasonRequest{}, false
 	}
