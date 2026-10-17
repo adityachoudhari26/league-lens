@@ -63,6 +63,8 @@ type Service struct {
 	}
 	GameContext GameContextSource
 	Injuries    InjurySource
+	Usage       UsageSource
+	usage       usageCache
 }
 
 // GetAssistantSettings returns the owner's safe-to-display settings, never the key.
