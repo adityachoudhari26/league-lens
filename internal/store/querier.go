@@ -31,6 +31,7 @@ type Querier interface {
 	AssistantTradeLineupCoverage(ctx context.Context, arg AssistantTradeLineupCoverageParams) ([]AssistantTradeLineupCoverageRow, error)
 	AssistantTradeOwnerRosterCounts(ctx context.Context, arg AssistantTradeOwnerRosterCountsParams) ([]AssistantTradeOwnerRosterCountsRow, error)
 	AssistantTradeOwnerTeam(ctx context.Context, arg AssistantTradeOwnerTeamParams) (AssistantTradeOwnerTeamRow, error)
+	AssistantTradePlayerExternalIDs(ctx context.Context, arg AssistantTradePlayerExternalIDsParams) ([]AssistantTradePlayerExternalIDsRow, error)
 	AssistantTradeRecentPoints(ctx context.Context, arg AssistantTradeRecentPointsParams) ([]AssistantTradeRecentPointsRow, error)
 	AssistantTransactionPlayers(ctx context.Context, arg AssistantTransactionPlayersParams) ([]AssistantTransactionPlayersRow, error)
 	AssistantTransactionTeams(ctx context.Context, leagueSeasonID pgtype.UUID) ([]AssistantTransactionTeamsRow, error)

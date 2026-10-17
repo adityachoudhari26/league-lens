@@ -39,10 +39,18 @@ type assistantFreeAgentSource struct {
 func (s *assistantFreeAgentSource) ListFreeAgents(_ context.Context, _ fantasy.League, query fantasy.FreeAgentQuery) ([]fantasy.FreeAgent, error) {
 	s.query = query
 	points := 12.5
-	return []fantasy.FreeAgent{{
-		ExternalPlayerID: "free-agent-1", Name: "Available Player", Position: "RB",
-		Status: "available", ProjectedPoints: &points,
-	}}, nil
+	restOfSeasonPoints, restOfSeasonWeeks := 99.9, 11
+	return []fantasy.FreeAgent{
+		{
+			ExternalPlayerID: "free-agent-1", Name: "Available Player", Position: "RB",
+			Status: "available", ProjectedPoints: &points,
+			RestOfSeasonPoints: &restOfSeasonPoints, RestOfSeasonWeeks: &restOfSeasonWeeks,
+		},
+		{
+			ExternalPlayerID: "free-agent-2", Name: "Unknown Player", Position: "WR",
+			Status: "available",
+		},
+	}, nil
 }
 
 type assistantFreeAgentSourceFactory struct{ source fantasy.Provider }
@@ -112,10 +120,21 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 		ID: "agents", Name: "get_free_agents",
 		Input: json.RawMessage(`{"league_season_id":"` + leagueID + `","position":"RB","limit":4}`),
 	})
+	var freeAgentOutput struct {
+		FreeAgents []map[string]json.RawMessage `json:"free_agents"`
+	}
+	if err := json.Unmarshal([]byte(freeAgents.Content), &freeAgentOutput); err != nil {
+		t.Fatal(err)
+	}
 	if freeAgents.IsError || !strings.Contains(freeAgents.Content, `"source":"Sleeper projections minus rostered players"`) ||
 		!strings.Contains(freeAgents.Content, `"week":1`) ||
 		strings.Contains(freeAgents.Content, `"season_points"`) ||
-		freeAgentSource.query.Week != 1 || freeAgentSource.query.Position != "RB" || freeAgentSource.query.Limit != 4 {
+		freeAgentSource.query.Week != 1 || freeAgentSource.query.Position != "RB" || freeAgentSource.query.Limit != 4 ||
+		len(freeAgentOutput.FreeAgents) != 2 ||
+		string(freeAgentOutput.FreeAgents[0]["rest_of_season_points"]) != "99.9" ||
+		string(freeAgentOutput.FreeAgents[0]["rest_of_season_weeks"]) != "11" ||
+		freeAgentOutput.FreeAgents[1]["rest_of_season_points"] != nil ||
+		freeAgentOutput.FreeAgents[1]["rest_of_season_weeks"] != nil {
 		t.Fatalf("get_free_agents result=%+v query=%+v", freeAgents, freeAgentSource.query)
 	}
 	matchup := runAssistantTool(ctx, tools, llm.ToolCall{

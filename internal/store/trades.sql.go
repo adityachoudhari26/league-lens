@@ -228,6 +228,42 @@ func (q *Queries) AssistantTradeOwnerTeam(ctx context.Context, arg AssistantTrad
 	return i, err
 }
 
+const assistantTradePlayerExternalIDs = `-- name: AssistantTradePlayerExternalIDs :many
+SELECT player_id::text AS player_id, external_id
+FROM player_external_ids
+WHERE provider = $1 AND player_id = ANY($2::uuid[])
+`
+
+type AssistantTradePlayerExternalIDsParams struct {
+	Provider  string
+	PlayerIds []pgtype.UUID
+}
+
+type AssistantTradePlayerExternalIDsRow struct {
+	PlayerID   string
+	ExternalID string
+}
+
+func (q *Queries) AssistantTradePlayerExternalIDs(ctx context.Context, arg AssistantTradePlayerExternalIDsParams) ([]AssistantTradePlayerExternalIDsRow, error) {
+	rows, err := q.db.Query(ctx, assistantTradePlayerExternalIDs, arg.Provider, arg.PlayerIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AssistantTradePlayerExternalIDsRow{}
+	for rows.Next() {
+		var i AssistantTradePlayerExternalIDsRow
+		if err := rows.Scan(&i.PlayerID, &i.ExternalID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const assistantTradeRecentPoints = `-- name: AssistantTradeRecentPoints :many
 WITH settled_periods AS (
  SELECT m.period

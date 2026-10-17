@@ -50,7 +50,9 @@ type freeAgentToolResult struct {
 func freeAgentTools(reader assistantDashboard, service *Service) []assistantTool {
 	return []assistantTool{newAssistantTool(
 		"get_free_agents",
-		"Returns currently available players for one league, ranked by the current week's league-scored projections.",
+		"Returns currently available players for one league, ranked by the current week's league-scored projections. "+
+			"Each player may include rest_of_season_points, league-scored projected points "+
+			"from the next unplayed week through week 17, and rest_of_season_weeks, the number of projected games it covers.",
 		getFreeAgentsSchema,
 		fixedToolLabel("Checking free agents"),
 		func(ctx context.Context, raw json.RawMessage) (string, error) {

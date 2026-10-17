@@ -10,15 +10,17 @@ import (
 
 // FreeAgent is a provider's available player with optional point and ownership data.
 type FreeAgent struct {
-	ExternalPlayerID string   `json:"external_player_id"`
-	Name             string   `json:"name"`
-	Position         string   `json:"position"`
-	NFLTeam          string   `json:"nfl_team"`
-	InjuryStatus     string   `json:"injury_status"`
-	Status           string   `json:"status"`
-	ProjectedPoints  *float64 `json:"projected_points,omitempty"`
-	SeasonPoints     *float64 `json:"season_points,omitempty"`
-	PercentRostered  *float64 `json:"percent_rostered,omitempty"`
+	ExternalPlayerID   string   `json:"external_player_id"`
+	Name               string   `json:"name"`
+	Position           string   `json:"position"`
+	NFLTeam            string   `json:"nfl_team"`
+	InjuryStatus       string   `json:"injury_status"`
+	Status             string   `json:"status"`
+	ProjectedPoints    *float64 `json:"projected_points,omitempty"`
+	SeasonPoints       *float64 `json:"season_points,omitempty"`
+	RestOfSeasonPoints *float64 `json:"rest_of_season_points,omitempty"`
+	RestOfSeasonWeeks  *int     `json:"rest_of_season_weeks,omitempty"`
+	PercentRostered    *float64 `json:"percent_rostered,omitempty"`
 }
 
 // FreeAgentQuery selects the scoring week, position, and result count.
