@@ -18,6 +18,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
+// lateHistoryGrace is the maximum delay from the week's first play before in-progress history is rebuilt.
 const lateHistoryGrace = 5 * time.Minute
 
 // RequestWinChanceBackfill starts a matchup replay unless one is running or recently failed.
@@ -294,6 +295,7 @@ func latestBackfillPlayAt(games []replay.Game) time.Time {
 	return latest
 }
 
+// earliestBackfillPlayAt returns the start of the first replay window.
 func earliestBackfillPlayAt(games []replay.Game) time.Time {
 	var earliest time.Time
 	for _, game := range games {

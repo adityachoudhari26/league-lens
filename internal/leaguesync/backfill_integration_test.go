@@ -664,9 +664,20 @@ func (s *inProgressLiveBackfillSources) NFLScoreboard(context.Context) (fantasy.
 	return s.liveBoard, nil
 }
 
+func TestInProgressBackfillThenLiveTickDoesNotDuplicatePointChange(t *testing.T) {
+	testInProgressBackfillThenLiveTickDoesNotDuplicatePointChange(t, false)
+}
+
 func TestInProgressLateBackfillThenLiveTickDoesNotDuplicatePointChange(t *testing.T) {
+	testInProgressBackfillThenLiveTickDoesNotDuplicatePointChange(t, true)
+}
+
+func testInProgressBackfillThenLiveTickDoesNotDuplicatePointChange(t *testing.T, lateSample bool) {
+	t.Helper()
 	db, pool, backfill, provider, matchupID, now := newInProgressBackfillFixture(t)
-	insertInProgressBackfillSample(t, db, matchupID, now.Add(90*time.Minute))
+	if lateSample {
+		insertInProgressBackfillSample(t, db, matchupID, now.Add(90*time.Minute))
+	}
 	liveProvider := &fakeLiveProvider{fakeSource: provider}
 	backfill.fakeSources[fantasy.ProviderESPN] = liveProvider
 	liveSources := &inProgressLiveBackfillSources{

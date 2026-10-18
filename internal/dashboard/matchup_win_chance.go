@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -48,7 +47,7 @@ func (s *Service) GetMatchupWinChance(
 			}
 			requestBackfill, err = q.MatchupWinChanceStartsLate(ctx, store.MatchupWinChanceStartsLateParams{
 				MatchupID: matchup.ID,
-				Now:       pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true},
+				Now:       pgtype.Timestamptz{Time: s.now().UTC(), Valid: true},
 			})
 			return err
 		}

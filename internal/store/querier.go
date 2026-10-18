@@ -147,6 +147,7 @@ type Querier interface {
 	MatchupHasWinChanceHistoryAfter(ctx context.Context, arg MatchupHasWinChanceHistoryAfterParams) (pgtype.Bool, error)
 	// The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
 	MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupWinChanceOwnerMatchupParams) (MatchupWinChanceOwnerMatchupRow, error)
+	// Kickoff is a cheap pre-filter; backfillMatchup checks the authoritative first-play time.
 	MatchupWinChanceStartsLate(ctx context.Context, arg MatchupWinChanceStartsLateParams) (bool, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)
 	NextNFLGame(ctx context.Context, arg NextNFLGameParams) (NextNFLGameRow, error)
