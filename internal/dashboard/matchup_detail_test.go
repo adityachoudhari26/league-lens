@@ -153,33 +153,93 @@ func TestStartersLeftToPlay(t *testing.T) {
 func TestProjectedScore(t *testing.T) {
 	actual, projected, zero := 8.5, 14.25, 0.0
 	tenth, fifth, threeTenths := 0.1, 0.2, 0.3
+	four, fourteen, ten, eleven := 4.0, 14.0, 10.0, 11.0
+	two, seven, thirtyOnePointFive := 2.0, 7.0, 31.5
 	notStarted, kickedOff := v1.GameState_GAME_STATE_NOT_STARTED, v1.GameState_GAME_STATE_KICKED_OFF
+	liveGame := fantasy.NFLGameStatus{State: fantasy.NFLGameLive, Period: 3, Clock: 15 * time.Minute}
 	tests := []struct {
-		name     string
-		starters []*v1.LineupPlayer
-		want     *float64
+		name      string
+		starters  []*v1.LineupPlayer
+		liveGames map[string]fantasy.NFLGameStatus
+		want      *float64
 	}{
-		{"not started uses projection", []*v1.LineupPlayer{{GameState: notStarted, Points: &zero, ProjectedPoints: &projected}}, &projected},
-		{"kicked off uses actual", []*v1.LineupPlayer{{GameState: kickedOff, Points: &actual, ProjectedPoints: &projected}}, &actual},
-		{"bye and unknown use actual", []*v1.LineupPlayer{
-			{GameState: v1.GameState_GAME_STATE_BYE, ProjectedPoints: &projected},
-			{GameState: v1.GameState_GAME_STATE_UNKNOWN, Points: &actual, ProjectedPoints: &projected},
-		}, &actual},
-		{"missing projection counts as zero", []*v1.LineupPlayer{
-			{GameState: notStarted},
-			{GameState: notStarted, ProjectedPoints: &projected},
-		}, &projected},
-		{"float noise is rounded", []*v1.LineupPlayer{
-			{GameState: kickedOff, Points: &tenth},
-			{GameState: kickedOff, Points: &fifth, ProjectedPoints: &zero},
-		}, &threeTenths},
-		{"zero projection is present", []*v1.LineupPlayer{{GameState: notStarted, ProjectedPoints: &zero}}, &zero},
-		{"no projections is absent", []*v1.LineupPlayer{{GameState: kickedOff, Points: &actual}}, nil},
-		{"no starters is absent", nil, nil},
+		{
+			name:     "not started uses projection",
+			starters: []*v1.LineupPlayer{{GameState: notStarted, Points: &zero, ProjectedPoints: &ten}},
+			want:     &ten,
+		},
+		{
+			name: "live game includes remaining projection",
+			starters: []*v1.LineupPlayer{{
+				ProTeam: "KC", GameState: kickedOff, Points: &four, ProjectedPoints: &fourteen,
+			}},
+			liveGames: map[string]fantasy.NFLGameStatus{"KC": liveGame},
+			want:      &eleven,
+		},
+		{
+			name: "live starter without a matching game uses actual",
+			starters: []*v1.LineupPlayer{{
+				ProTeam: "BUF", GameState: kickedOff, Points: &actual, ProjectedPoints: &projected,
+			}},
+			liveGames: map[string]fantasy.NFLGameStatus{"KC": liveGame},
+			want:      &actual,
+		},
+		{
+			name: "live starter with no projection uses actual",
+			starters: []*v1.LineupPlayer{
+				{ProTeam: "KC", GameState: kickedOff, Points: &four},
+				{GameState: notStarted, ProjectedPoints: &zero},
+			},
+			liveGames: map[string]fantasy.NFLGameStatus{"KC": liveGame},
+			want:      &four,
+		},
+		{
+			name: "nil live games map keeps actual points",
+			starters: []*v1.LineupPlayer{{
+				ProTeam: "KC", GameState: kickedOff, Points: &actual, ProjectedPoints: &projected,
+			}},
+			want: &actual,
+		},
+		{
+			name: "mixed lineup",
+			starters: []*v1.LineupPlayer{
+				{GameState: notStarted, ProjectedPoints: &ten},
+				{ProTeam: "KC", GameState: kickedOff, Points: &four, ProjectedPoints: &fourteen},
+				{ProTeam: "BUF", GameState: kickedOff, Points: &actual, ProjectedPoints: &projected},
+				{GameState: v1.GameState_GAME_STATE_BYE, Points: &two, ProjectedPoints: &seven},
+			},
+			liveGames: map[string]fantasy.NFLGameStatus{"KC": liveGame},
+			want:      &thirtyOnePointFive,
+		},
+		{
+			name: "bye and unknown use actual", starters: []*v1.LineupPlayer{
+				{GameState: v1.GameState_GAME_STATE_BYE, ProjectedPoints: &projected},
+				{GameState: v1.GameState_GAME_STATE_UNKNOWN, Points: &actual, ProjectedPoints: &projected},
+			}, want: &actual,
+		},
+		{
+			name: "missing projection counts as zero", starters: []*v1.LineupPlayer{
+				{GameState: notStarted},
+				{GameState: notStarted, ProjectedPoints: &projected},
+			}, want: &projected,
+		},
+		{
+			name: "float noise is rounded", starters: []*v1.LineupPlayer{
+				{GameState: kickedOff, Points: &tenth},
+				{GameState: kickedOff, Points: &fifth, ProjectedPoints: &zero},
+			}, want: &threeTenths,
+		},
+		{
+			name: "zero projection is present", starters: []*v1.LineupPlayer{{GameState: notStarted, ProjectedPoints: &zero}}, want: &zero,
+		},
+		{
+			name: "no projections is absent", starters: []*v1.LineupPlayer{{GameState: kickedOff, Points: &actual}},
+		},
+		{name: "no starters is absent"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := projectedScore(test.starters)
+			got := projectedScore(test.starters, test.liveGames)
 			if (got == nil) != (test.want == nil) || (got != nil && *got != *test.want) {
 				t.Fatalf("projectedScore = %v, want %v", got, test.want)
 			}

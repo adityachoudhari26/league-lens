@@ -33,6 +33,12 @@ import (
 
 type source struct{ data fantasy.LeagueData }
 
+type integrationScoreboardStub struct{ scoreboard fantasy.NFLScoreboard }
+
+func (s *integrationScoreboardStub) NFLScoreboard(context.Context) (fantasy.NFLScoreboard, error) {
+	return s.scoreboard, nil
+}
+
 func (s source) DescribeLeague(context.Context, string) (fantasy.League, error) {
 	return s.data.League, nil
 }
@@ -112,7 +118,7 @@ func importLeague(t *testing.T, db *database.DB, owner string, provider fantasy.
 }
 
 func clientFor(t *testing.T, db *database.DB, owner string) leaguelensv1connect.DashboardServiceClient {
-	return clientForBackfill(t, db, owner, nil)
+	return clientForWithSources(t, db, owner, nil, nil)
 }
 
 type fakeWinChanceBackfill struct {
@@ -131,8 +137,27 @@ func clientForBackfill(
 	owner string,
 	backfill dashboard.WinChanceBackfill,
 ) leaguelensv1connect.DashboardServiceClient {
+	return clientForWithSources(t, db, owner, backfill, nil)
+}
+
+func clientForWithScoreboard(
+	t *testing.T,
+	db *database.DB,
+	owner string,
+	scoreboard dashboard.LiveScoreboard,
+) leaguelensv1connect.DashboardServiceClient {
+	return clientForWithSources(t, db, owner, nil, scoreboard)
+}
+
+func clientForWithSources(
+	t *testing.T,
+	db *database.DB,
+	owner string,
+	backfill dashboard.WinChanceBackfill,
+	scoreboard dashboard.LiveScoreboard,
+) leaguelensv1connect.DashboardServiceClient {
 	t.Helper()
-	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, nil, backfill, nil), nil, nil, nil, nil))
+	server := httptest.NewServer(httpserver.NewHandler(db.Ping, dashboard.New(db, owner, nil, backfill, scoreboard), nil, nil, nil, nil))
 	t.Cleanup(server.Close)
 	return leaguelensv1connect.NewDashboardServiceClient(connect.NewClient(connecthttp.NewTransport(server.Client(), server.URL+"/api", connecthttp.WithProtoJSON())))
 }
@@ -503,7 +528,10 @@ func TestMatchupDetail(t *testing.T) {
 	now := time.Now().UTC()
 	addMatchupDetailSchedule(t, db, now)
 
-	client := clientFor(t, db, "matchup-owner@test")
+	scoreboard := &integrationScoreboardStub{scoreboard: fantasy.NFLScoreboard{Games: []fantasy.NFLGameStatus{
+		{HomeTeam: "BUF", AwayTeam: "KC", State: fantasy.NFLGameLive, Period: 3, Clock: 15 * time.Minute},
+	}}}
+	client := clientForWithScoreboard(t, db, "matchup-owner@test", scoreboard)
 	detail, err := client.GetMatchupDetail(ctx, &v1.GetMatchupDetailRequest{LeagueSeasonId: leagueSeasonID})
 	if err != nil {
 		t.Fatal(err)
@@ -978,13 +1006,12 @@ func assertDefaultMatchupDetail(t *testing.T, detail *v1.MatchupDetail) {
 	}
 }
 
-// assertHomeProjections checks the projected total: the not-started QB's
-// projection, the kicked-off RB's actual, and zero for the rest; the bench
-// projection is excluded.
+// assertHomeProjections checks the not-started QB's projection, the live RB's
+// current points plus remaining projection, and zero for the rest.
 func assertHomeProjections(t *testing.T, team *v1.MatchupLineup) {
 	t.Helper()
-	if team.ProjectedScore == nil || *team.ProjectedScore != 30 {
-		t.Fatalf("projected score = %v, want 30", team.ProjectedScore)
+	if team.ProjectedScore == nil || *team.ProjectedScore != 37.125 {
+		t.Fatalf("projected score = %v, want 37.125", team.ProjectedScore)
 	}
 	assertProjectedPoints(t, team.Starters[0], true, 21.5)
 	assertProjectedPoints(t, team.Starters[1], true, 14.25)
