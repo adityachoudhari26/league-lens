@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"math"
+	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -115,6 +117,10 @@ func matchupWinChanceMessage(
 	if err != nil {
 		return nil, err
 	}
+	pointChangeRows, err = mergeSplitScoringChanges(pointChangeRows)
+	if err != nil {
+		return nil, err
+	}
 
 	message := &v1.MatchupWinChance{}
 	for _, row := range sampleRows {
@@ -137,6 +143,133 @@ func matchupWinChanceMessage(
 		return nil, nil
 	}
 	return message, nil
+}
+
+const (
+	splitScoringChangeWindow = 3 * time.Minute
+	unchangedPointsTolerance = 0.005
+)
+
+type pointChangePlayer struct {
+	teamID, playerID pgtype.UUID
+}
+
+// mergeSplitScoringChanges joins a provider's count-only and points-only updates for one score.
+func mergeSplitScoringChanges(rows []store.MatchupDetailPointChangesRow) ([]store.MatchupDetailPointChangesRow, error) {
+	merged := make([]store.MatchupDetailPointChangesRow, 0, len(rows))
+	for _, playerRows := range pointChangesByPlayer(rows) {
+		playerMerged, err := mergePlayerSplitScoring(playerRows)
+		if err != nil {
+			return nil, err
+		}
+		merged = append(merged, playerMerged...)
+	}
+	sortPointChanges(merged)
+	return merged, nil
+}
+
+// pointChangesByPlayer groups rows by player while preserving their input time order.
+func pointChangesByPlayer(rows []store.MatchupDetailPointChangesRow) map[pointChangePlayer][]store.MatchupDetailPointChangesRow {
+	groups := make(map[pointChangePlayer][]store.MatchupDetailPointChangesRow, len(rows))
+	for _, row := range rows {
+		key := pointChangePlayer{teamID: row.TeamID, playerID: row.PlayerID}
+		groups[key] = append(groups[key], row)
+	}
+	return groups
+}
+
+// mergePlayerSplitScoring merges adjacent eligible pairs without chaining them.
+func mergePlayerSplitScoring(rows []store.MatchupDetailPointChangesRow) ([]store.MatchupDetailPointChangesRow, error) {
+	merged := make([]store.MatchupDetailPointChangesRow, 0, len(rows))
+	for index := 0; index < len(rows); index++ {
+		if index+1 >= len(rows) {
+			merged = append(merged, rows[index])
+			continue
+		}
+		mergedRow, paired, err := mergeSplitScoringPair(rows[index], rows[index+1])
+		if err != nil {
+			return nil, err
+		}
+		if !paired {
+			merged = append(merged, rows[index])
+			continue
+		}
+		merged = append(merged, mergedRow)
+		index++
+	}
+	return merged, nil
+}
+
+// mergeSplitScoringPair joins two close rows when exactly one is count-only.
+// The merged row uses the points update's time, when the win-chance swing occurred.
+func mergeSplitScoringPair(
+	earlier, later store.MatchupDetailPointChangesRow,
+) (store.MatchupDetailPointChangesRow, bool, error) {
+	if !withinSplitScoringWindow(earlier, later) {
+		return store.MatchupDetailPointChangesRow{}, false, nil
+	}
+	earlierCountOnly, err := isCountOnlyChange(earlier)
+	if err != nil {
+		return store.MatchupDetailPointChangesRow{}, false, err
+	}
+	laterCountOnly, err := isCountOnlyChange(later)
+	if err != nil {
+		return store.MatchupDetailPointChangesRow{}, false, err
+	}
+	if earlierCountOnly == laterCountOnly {
+		return store.MatchupDetailPointChangesRow{}, false, nil
+	}
+	merged := earlier
+	if earlierCountOnly {
+		merged.ObservedAt = later.ObservedAt
+	}
+	merged.PointsAfter = later.PointsAfter
+	merged.TouchdownsAfter = later.TouchdownsAfter
+	merged.FieldGoalsAfter = later.FieldGoalsAfter
+	return merged, true, nil
+}
+
+// withinSplitScoringWindow reports whether both timestamps are valid and close enough to merge.
+func withinSplitScoringWindow(earlier, later store.MatchupDetailPointChangesRow) bool {
+	if !earlier.ObservedAt.Valid || !later.ObservedAt.Valid {
+		return false
+	}
+	elapsed := later.ObservedAt.Time.Sub(earlier.ObservedAt.Time)
+	return elapsed >= 0 && elapsed <= splitScoringChangeWindow
+}
+
+// isCountOnlyChange reports a scoring-count increase without a meaningful points change.
+func isCountOnlyChange(row store.MatchupDetailPointChangesRow) (bool, error) {
+	pointsBefore, err := requiredNumericValue(row.PointsBefore)
+	if err != nil {
+		return false, err
+	}
+	pointsAfter, err := requiredNumericValue(row.PointsAfter)
+	if err != nil {
+		return false, err
+	}
+	return math.Abs(pointsAfter-pointsBefore) < unchangedPointsTolerance &&
+		(countIncreased(row.TouchdownsBefore, row.TouchdownsAfter) ||
+			countIncreased(row.FieldGoalsBefore, row.FieldGoalsAfter)), nil
+}
+
+// countIncreased reports whether a known touchdown or field-goal count increased.
+func countIncreased(before, after pgtype.Int4) bool {
+	return before.Valid && after.Valid && after.Int32 > before.Int32
+}
+
+// sortPointChanges orders rows by observed time, then team and player ID.
+func sortPointChanges(rows []store.MatchupDetailPointChangesRow) {
+	sort.SliceStable(rows, func(i, j int) bool {
+		left, right := rows[i], rows[j]
+		if !left.ObservedAt.Time.Equal(right.ObservedAt.Time) {
+			return left.ObservedAt.Time.Before(right.ObservedAt.Time)
+		}
+		if left.TeamID.String() != right.TeamID.String() {
+			return left.TeamID.String() < right.TeamID.String()
+		}
+		return left.PlayerID.String() < right.PlayerID.String()
+	})
 }
 
 // winChanceSampleMessage orients stored team-A values around the owner and rounds flipped probabilities.
