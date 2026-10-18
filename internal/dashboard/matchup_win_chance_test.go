@@ -191,7 +191,7 @@ func TestMergeSplitScoringChanges(t *testing.T) {
 				makeChange(base.Add(time.Minute), 2, 9.9, 9.9, 0, 1, 0, 0),
 			},
 			wantRows: []pointChange{
-				makeChange(base.Add(time.Minute), 2, 0, 9.9, 0, 1, 0, 0),
+				makeChange(base, 2, 0, 9.9, 0, 1, 0, 0),
 			},
 			wantMoment: &momentExpectation{row: 0, kind: v1.KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN, points: 9.9},
 		},

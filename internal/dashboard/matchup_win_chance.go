@@ -183,7 +183,10 @@ func mergeSplitScoringChanges(rows []store.MatchupDetailPointChangesRow) ([]stor
 						}
 						if earlierCountOnly != laterCountOnly {
 							merged := earlier
-							merged.ObservedAt = later.ObservedAt
+							merged.ObservedAt = earlier.ObservedAt
+							if earlierCountOnly {
+								merged.ObservedAt = later.ObservedAt
+							}
 							merged.PointsAfter = later.PointsAfter
 							merged.TouchdownsAfter = later.TouchdownsAfter
 							merged.FieldGoalsAfter = later.FieldGoalsAfter
