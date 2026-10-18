@@ -16,6 +16,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
 	"github.com/adityachoudhari26/league-lens/internal/store"
+	"github.com/adityachoudhari26/league-lens/internal/winchance"
 )
 
 // GetMatchupDetail returns the owner's selected team's matchup and saved lineup.
@@ -30,18 +31,37 @@ func (s *Service) GetMatchupDetail(ctx context.Context, request *v1.GetMatchupDe
 		}
 	}
 
-	now := time.Now()
+	now := s.now()
+	var liveGamesByTeam map[string]fantasy.NFLGameStatus
+	if liveGames, liveGamesErr := s.liveGamesSnapshot(ctx); liveGamesErr == nil {
+		liveGamesByTeam = make(map[string]fantasy.NFLGameStatus, len(liveGames)*2)
+		for _, game := range liveGames {
+			if game.HomeTeam != "" {
+				liveGamesByTeam[game.HomeTeam] = game
+			}
+			if game.AwayTeam != "" {
+				liveGamesByTeam[game.AwayTeam] = game
+			}
+		}
+	}
 	var matchup *v1.MatchupDetail
 	err = s.read(ctx, func(ctx context.Context, q *store.Queries, owner pgtype.UUID) error {
 		var err error
-		matchup, err = readMatchupDetail(ctx, q, owner, leagueSeasonID, request.MatchupPeriod, now)
+		matchup, err = readMatchupDetail(ctx, q, owner, leagueSeasonID, request.MatchupPeriod, now, liveGamesByTeam)
 		return err
 	})
 	return &v1.GetMatchupDetailResponse{Matchup: matchup}, err
 }
 
 // readMatchupDetail loads the owner's selected team, its round, and the schedule; a missing round is not an error.
-func readMatchupDetail(ctx context.Context, q *store.Queries, owner, leagueSeasonID pgtype.UUID, period *int32, now time.Time) (*v1.MatchupDetail, error) {
+func readMatchupDetail(
+	ctx context.Context,
+	q *store.Queries,
+	owner, leagueSeasonID pgtype.UUID,
+	period *int32,
+	now time.Time,
+	liveGames map[string]fantasy.NFLGameStatus,
+) (*v1.MatchupDetail, error) {
 	selectedTeam, err := q.MatchupDetailOwnerTeam(ctx, store.MatchupDetailOwnerTeamParams{UserID: owner, LeagueSeasonID: leagueSeasonID})
 	if err != nil {
 		return nil, err
@@ -60,7 +80,7 @@ func readMatchupDetail(ctx context.Context, q *store.Queries, owner, leagueSeaso
 		return nil, err
 	}
 
-	return matchupDetailMessage(ctx, q, owner, selectedTeam.TeamID, matchup, schedule, now)
+	return matchupDetailMessage(ctx, q, owner, selectedTeam.TeamID, matchup, schedule, now, liveGames)
 }
 
 // readMatchupRound returns false when no observed week or matching round is available.
@@ -115,6 +135,7 @@ func matchupDetailMessage(
 	matchup store.Matchup,
 	schedule weekSchedule,
 	now time.Time,
+	liveGames map[string]fantasy.NFLGameStatus,
 ) (*v1.MatchupDetail, error) {
 	teamScore, opponentScore := matchup.ScoreA, matchup.ScoreB
 	opponentID := matchup.TeamBID
@@ -123,7 +144,7 @@ func matchupDetailMessage(
 		opponentID = matchup.TeamAID
 	}
 
-	team, err := matchupLineupMessage(ctx, q, owner, selectedTeamID, teamScore, matchup.ID, schedule, now)
+	team, err := matchupLineupMessage(ctx, q, owner, selectedTeamID, teamScore, matchup.ID, schedule, now, liveGames)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +157,7 @@ func matchupDetailMessage(
 		FetchedAt:     timestamp(matchup.FetchedAt),
 	}
 	if !matchup.IsBye && opponentID.Valid {
-		detail.Opponent, err = matchupLineupMessage(ctx, q, owner, opponentID, opponentScore, matchup.ID, schedule, now)
+		detail.Opponent, err = matchupLineupMessage(ctx, q, owner, opponentID, opponentScore, matchup.ID, schedule, now, liveGames)
 		if err != nil {
 			return nil, err
 		}
@@ -153,6 +174,7 @@ func matchupLineupMessage(
 	matchupID pgtype.UUID,
 	schedule weekSchedule,
 	now time.Time,
+	liveGames map[string]fantasy.NFLGameStatus,
 ) (*v1.MatchupLineup, error) {
 	team, err := q.DashboardTeam(ctx, store.DashboardTeamParams{ID: teamID, UserID: owner})
 	if err != nil {
@@ -183,7 +205,7 @@ func matchupLineupMessage(
 	sortLineupPlayers(lineup.Starters, starterSlotOrder)
 	sortLineupPlayers(lineup.Bench, benchSlotOrder)
 	lineup.StartersLeftToPlay = startersLeftToPlay(lineup.Starters)
-	lineup.ProjectedScore = projectedScore(lineup.Starters)
+	lineup.ProjectedScore = projectedScore(lineup.Starters, liveGames)
 	return lineup, nil
 }
 
@@ -281,13 +303,14 @@ func startersLeftToPlay(starters []*v1.LineupPlayer) int32 {
 	return remaining
 }
 
-// projectedScore is absent when no starter has a projection.
-func projectedScore(starters []*v1.LineupPlayer) *float64 {
+// projectedScore is absent when no starter has a projection. Live starters
+// include only the projection remaining in their game.
+func projectedScore(starters []*v1.LineupPlayer, liveGames map[string]fantasy.NFLGameStatus) *float64 {
 	var total float64
 	hasProjection := false
 	for _, starter := range starters {
 		hasProjection = hasProjection || starter.ProjectedPoints != nil
-		total += starterProjectedPoints(starter)
+		total += starterProjectedPoints(starter, liveGames)
 	}
 	if !hasProjection {
 		return nil
@@ -296,17 +319,30 @@ func projectedScore(starters []*v1.LineupPlayer) *float64 {
 	return &total
 }
 
-// starterProjectedPoints counts the projection only before kickoff; bye and
-// unknown-schedule starters keep their actual points. Missing counts as zero.
-func starterProjectedPoints(starter *v1.LineupPlayer) float64 {
-	points := starter.Points
+// starterProjectedPoints uses the full projection before kickoff and the
+// remaining projection while live; other states use actual points.
+func starterProjectedPoints(starter *v1.LineupPlayer, liveGames map[string]fantasy.NFLGameStatus) float64 {
 	if starter.GameState == v1.GameState_GAME_STATE_NOT_STARTED {
-		points = starter.ProjectedPoints
+		if starter.ProjectedPoints == nil {
+			return 0
+		}
+		return *starter.ProjectedPoints
 	}
-	if points == nil {
-		return 0
+
+	points := 0.0
+	if starter.Points != nil {
+		points = *starter.Points
 	}
-	return *points
+	if starter.GameState == v1.GameState_GAME_STATE_KICKED_OFF {
+		if game, ok := liveGames[starter.ProTeam]; ok {
+			projected := 0.0
+			if starter.ProjectedPoints != nil {
+				projected = *starter.ProjectedPoints
+			}
+			return points + projected*winchance.GameRemaining(game)
+		}
+	}
+	return points
 }
 
 var starterSlotOrder = []fantasy.RosterSlot{
