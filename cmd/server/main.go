@@ -23,6 +23,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/httpserver"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
+	"github.com/adityachoudhari26/league-lens/internal/livescore"
 	"github.com/adityachoudhari26/league-lens/internal/playerids"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
 	"github.com/adityachoudhari26/league-lens/internal/sleeper"
@@ -68,14 +69,16 @@ func run() error {
 	sources := newProviderSources(box, catalogPath)
 	syncRunner := leaguesync.New(data, cfg.LocalOwnerEmail, sources, catalogPath)
 	defer syncRunner.Close()
+	liveScores := livescore.New(data, sources, syncRunner)
+	defer liveScores.Close()
 	if cfg.LiveScores {
-		go syncRunner.RunLiveScores(ctx, time.Minute)
+		go liveScores.Run(ctx, time.Minute)
 	}
 	connectionService := &connections.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,
 		Imports: syncRunner,
 	}
-	dashboardService := dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now()), syncRunner, leaguesync.ProviderSources{})
+	dashboardService := dashboard.New(data, cfg.LocalOwnerEmail, newProfileSource(time.Now()), liveScores, leaguesync.ProviderSources{})
 	syncHandler := leaguesync.NewHandler(syncRunner)
 	assistantService := &assistant.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail,

@@ -1,6 +1,6 @@
 //go:build integration
 
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 )
 
 type liveLineupResyncRun struct {
@@ -19,7 +20,9 @@ type liveLineupResyncRun struct {
 	status string
 }
 
-func newLiveLineupResyncRunner(t *testing.T) (*Runner, *pgxpool.Pool, *fakeSource, *fakeLiveProvider) {
+func newLiveLineupResyncLoop(
+	t *testing.T,
+) (*Loop, *leaguesync.Runner, *pgxpool.Pool, *fakeSource, *fakeLiveProvider) {
 	t.Helper()
 	db, pool := openDatabaseWithTestPool(t, true)
 	data := liveLeagueFixture()
@@ -42,20 +45,24 @@ func newLiveLineupResyncRunner(t *testing.T) (*Runner, *pgxpool.Pool, *fakeSourc
 			}},
 		},
 	}
-	runner := New(db, owner, sources, "")
-	t.Cleanup(runner.Close)
-	return runner, pool, provider, liveProvider
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	t.Cleanup(func() {
+		loop.Close()
+		syncRunner.Close()
+	})
+	return loop, syncRunner, pool, provider, liveProvider
 }
 
-func runLiveLineupResyncTick(runner *Runner) {
-	runner.runLiveScoreTick(context.Background(), map[string]time.Time{})
+func runLiveLineupResyncTick(loop *Loop) {
+	loop.runLiveScoreTick(context.Background(), map[string]time.Time{})
 }
 
-func waitForLiveLineupSync(t *testing.T, runner *Runner) {
+func waitForLiveLineupSync(t *testing.T, runner *leaguesync.Runner) {
 	t.Helper()
 	finished := waitUntilIdle(t, runner)
 	status, found := finished[fantasy.ProviderSleeper]
-	if !found || status.State != StateSucceeded {
+	if !found || status.State != leaguesync.StateSucceeded {
 		t.Fatalf("sync status = %+v, want succeeded", status)
 	}
 }
@@ -93,7 +100,7 @@ func assertOneNewSucceededResync(t *testing.T, before, after []liveLineupResyncR
 		t.Fatalf("sync runs grew from %d to %d, want exactly one new run", len(before), len(after))
 	}
 	run := after[len(after)-1]
-	if run.kind != "refresh" || run.status != StateSucceeded {
+	if run.kind != "refresh" || run.status != string(leaguesync.StateSucceeded) {
 		t.Fatalf("new sync run = %+v, want succeeded refresh", run)
 	}
 }
@@ -156,7 +163,7 @@ func readHomeLineupStarters(t *testing.T, pool *pgxpool.Pool) map[string]bool {
 }
 
 func TestLiveLineupSwapStartsOneResync(t *testing.T) {
-	runner, pool, provider, liveProvider := newLiveLineupResyncRunner(t)
+	loop, syncRunner, pool, provider, liveProvider := newLiveLineupResyncLoop(t)
 	before := readLiveLineupResyncRuns(t, pool)
 	changedEntries := []fantasy.LineupEntry{
 		{PlayerID: "p", Slot: fantasy.SlotBench, Starter: false},
@@ -170,8 +177,8 @@ func TestLiveLineupSwapStartsOneResync(t *testing.T) {
 		liveLineupEntry("bench", true),
 	})
 
-	runLiveLineupResyncTick(runner)
-	waitForLiveLineupSync(t, runner)
+	runLiveLineupResyncTick(loop)
+	waitForLiveLineupSync(t, syncRunner)
 	assertOneNewSucceededResync(t, before, readLiveLineupResyncRuns(t, pool))
 
 	starters := readHomeLineupStarters(t, pool)
@@ -184,7 +191,7 @@ func TestLiveLineupSwapStartsOneResync(t *testing.T) {
 }
 
 func TestLiveLineupPickupStartsResyncAndImportsPlayer(t *testing.T) {
-	runner, pool, provider, liveProvider := newLiveLineupResyncRunner(t)
+	loop, syncRunner, pool, provider, liveProvider := newLiveLineupResyncLoop(t)
 	before := readLiveLineupResyncRuns(t, pool)
 	provider.data.Players = append(provider.data.Players,
 		fantasy.Player{ExternalID: "new", Name: "New Starter", Kind: fantasy.PlayerPerson},
@@ -202,8 +209,8 @@ func TestLiveLineupPickupStartsResyncAndImportsPlayer(t *testing.T) {
 		liveLineupEntry("new", true),
 	})
 
-	runLiveLineupResyncTick(runner)
-	waitForLiveLineupSync(t, runner)
+	runLiveLineupResyncTick(loop)
+	waitForLiveLineupSync(t, syncRunner)
 	assertOneNewSucceededResync(t, before, readLiveLineupResyncRuns(t, pool))
 
 	if starters := readHomeLineupStarters(t, pool); !starters["new"] {
@@ -212,7 +219,7 @@ func TestLiveLineupPickupStartsResyncAndImportsPlayer(t *testing.T) {
 }
 
 func TestLiveLineupDropStartsOneResync(t *testing.T) {
-	runner, pool, provider, liveProvider := newLiveLineupResyncRunner(t)
+	loop, syncRunner, pool, provider, liveProvider := newLiveLineupResyncLoop(t)
 	before := readLiveLineupResyncRuns(t, pool)
 	provider.data = homeLineupWithEntries(provider.data, []fantasy.LineupEntry{
 		{PlayerID: "p", Slot: fantasy.SlotRB, Starter: true},
@@ -223,8 +230,8 @@ func TestLiveLineupDropStartsOneResync(t *testing.T) {
 		liveLineupEntry("bench", false),
 	})
 
-	runLiveLineupResyncTick(runner)
-	waitForLiveLineupSync(t, runner)
+	runLiveLineupResyncTick(loop)
+	waitForLiveLineupSync(t, syncRunner)
 	assertOneNewSucceededResync(t, before, readLiveLineupResyncRuns(t, pool))
 
 	starters := readHomeLineupStarters(t, pool)
@@ -234,7 +241,7 @@ func TestLiveLineupDropStartsOneResync(t *testing.T) {
 }
 
 func TestUnchangedLiveLineupDoesNotResync(t *testing.T) {
-	runner, pool, _, liveProvider := newLiveLineupResyncRunner(t)
+	loop, syncRunner, pool, _, liveProvider := newLiveLineupResyncLoop(t)
 	before := readLiveLineupResyncRuns(t, pool)
 	liveProvider.live = liveLineupWithHomeEntries([]fantasy.LineupEntry{
 		liveLineupEntry("p", true),
@@ -242,8 +249,8 @@ func TestUnchangedLiveLineupDoesNotResync(t *testing.T) {
 		liveLineupEntry("bench", false),
 	})
 
-	runLiveLineupResyncTick(runner)
-	waitForLiveLineupSync(t, runner)
+	runLiveLineupResyncTick(loop)
+	waitForLiveLineupSync(t, syncRunner)
 
 	if after := readLiveLineupResyncRuns(t, pool); len(after) != len(before) {
 		t.Fatalf("unchanged lineup added %d sync runs, want none", len(after)-len(before))
@@ -251,18 +258,18 @@ func TestUnchangedLiveLineupDoesNotResync(t *testing.T) {
 }
 
 func TestLiveLineupResyncCooldownPreventsRepeatedSync(t *testing.T) {
-	runner, pool, _, liveProvider := newLiveLineupResyncRunner(t)
+	loop, syncRunner, pool, _, liveProvider := newLiveLineupResyncLoop(t)
 	before := readLiveLineupResyncRuns(t, pool)
 	now := time.Date(2026, time.October, 16, 12, 0, 0, 0, time.UTC)
-	runner.now = func() time.Time { return now }
+	loop.now = func() time.Time { return now }
 	liveProvider.live = liveLineupWithHomeEntries([]fantasy.LineupEntry{
 		liveLineupEntry("p", false),
 		liveLineupEntry("old", true),
 		liveLineupEntry("bench", true),
 	})
 
-	runLiveLineupResyncTick(runner)
-	waitForLiveLineupSync(t, runner)
+	runLiveLineupResyncTick(loop)
+	waitForLiveLineupSync(t, syncRunner)
 	starters := readHomeLineupStarters(t, pool)
 	pStarter, pFound := starters["p"]
 	benchStarter, benchFound := starters["bench"]
@@ -270,8 +277,8 @@ func TestLiveLineupResyncCooldownPreventsRepeatedSync(t *testing.T) {
 		t.Fatalf("full sync did not retain the old lineup: %+v", starters)
 	}
 	now = now.Add(time.Minute)
-	runLiveLineupResyncTick(runner)
-	waitForLiveLineupSync(t, runner)
+	runLiveLineupResyncTick(loop)
+	waitForLiveLineupSync(t, syncRunner)
 
 	assertOneNewSucceededResync(t, before, readLiveLineupResyncRuns(t, pool))
 }

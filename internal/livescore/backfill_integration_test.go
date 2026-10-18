@@ -1,6 +1,6 @@
 //go:build integration
 
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -113,8 +114,10 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 		},
 		plays: plays,
 	}
-	runner := New(db, owner, sources, "")
-	defer runner.Close()
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
+	defer loop.Close()
 	var matchupID pgtype.UUID
 	if err := pool.QueryRow(context.Background(), `
 		SELECT m.id FROM matchups m
@@ -124,7 +127,7 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sampleCount, changeCount, err := runner.backfillMatchup(context.Background(), matchupID)
+	sampleCount, changeCount, err := loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +151,7 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 		t.Fatalf("saved history = %d samples/%d changes, final %s-%s", savedSamples, savedChanges, finalScoreA, finalScoreB)
 	}
 
-	sampleCount, changeCount, err = runner.backfillMatchup(context.Background(), matchupID)
+	sampleCount, changeCount, err = loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +223,7 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tailSamples, tailChanges, err := runner.backfillMatchup(context.Background(), matchupID)
+	tailSamples, tailChanges, err := loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +267,7 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 			tailChangeCount, changeAt, changeBefore, changeAfter)
 	}
 	samplesBeforeRepeat, changesBeforeRepeat := tailSampleCount, tailChangeCount
-	sampleCount, changeCount, err = runner.backfillMatchup(context.Background(), matchupID)
+	sampleCount, changeCount, err = loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,17 +292,17 @@ func TestWinChanceBackfillPersistsOnceAndSkipsExistingHistory(t *testing.T) {
 	`).Scan(&ineligibleMatchupID); err != nil {
 		t.Fatal(err)
 	}
-	if !runner.RequestWinChanceBackfill(ineligibleMatchupID) {
+	if !loop.RequestWinChanceBackfill(ineligibleMatchupID) {
 		t.Fatal("first ineligible backfill request was not scheduled")
 	}
-	runner.wg.Wait()
-	runner.mu.Lock()
-	failure := runner.backfillFailures[ineligibleMatchupID.String()]
-	runner.mu.Unlock()
+	loop.wg.Wait()
+	loop.mu.Lock()
+	failure := loop.backfillFailures[ineligibleMatchupID.String()]
+	loop.mu.Unlock()
 	if failure.code != "nothing_to_rebuild" {
 		t.Fatalf("ineligible backfill failure code = %q, want nothing_to_rebuild", failure.code)
 	}
-	if runner.RequestWinChanceBackfill(ineligibleMatchupID) {
+	if loop.RequestWinChanceBackfill(ineligibleMatchupID) {
 		t.Fatal("second ineligible backfill request should be throttled")
 	}
 }
@@ -400,11 +403,13 @@ func insertInProgressBackfillSample(t *testing.T, db *database.DB, matchupID pgt
 
 func TestInProgressWinChanceBackfillUsesFinishedAndScheduledGames(t *testing.T) {
 	db, pool, sources, _, matchupID, now := newInProgressBackfillFixture(t)
-	runner := New(db, owner, sources, "")
-	runner.now = func() time.Time { return now.Add(2 * time.Hour) }
-	defer runner.Close()
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
+	loop.now = func() time.Time { return now.Add(2 * time.Hour) }
+	defer loop.Close()
 
-	samples, changes, err := runner.backfillMatchup(context.Background(), matchupID)
+	samples, changes, err := loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -457,10 +462,12 @@ func TestInProgressWinChanceBackfillSkipsAllScheduledGames(t *testing.T) {
 		{ID: "scheduled-1", HomeTeam: "KC", AwayTeam: "CIN", State: fantasy.NFLGameScheduled},
 		{ID: "scheduled-2", HomeTeam: "BUF", AwayTeam: "MIA", State: fantasy.NFLGameScheduled},
 	}
-	runner := New(db, owner, sources, "")
-	defer runner.Close()
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
+	defer loop.Close()
 
-	samples, changes, err := runner.backfillMatchup(context.Background(), matchupID)
+	samples, changes, err := loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -474,11 +481,13 @@ func TestInProgressWinChanceBackfillSkipsExistingHistory(t *testing.T) {
 	db, pool, sources, _, matchupID, now := newInProgressBackfillFixture(t)
 	sampleAt := now.Add(15 * time.Minute)
 	insertInProgressBackfillSample(t, db, matchupID, sampleAt)
-	runner := New(db, owner, sources, "")
-	runner.now = func() time.Time { return now.Add(2 * time.Hour) }
-	defer runner.Close()
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
+	loop.now = func() time.Time { return now.Add(2 * time.Hour) }
+	defer loop.Close()
 
-	samples, changes, err := runner.backfillMatchup(context.Background(), matchupID)
+	samples, changes, err := loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -500,9 +509,11 @@ func TestInProgressWinChanceBackfillSkipsExistingHistory(t *testing.T) {
 
 func TestInProgressWinChanceBackfillRebuildsLateHistory(t *testing.T) {
 	db, pool, sources, _, matchupID, now := newInProgressBackfillFixture(t)
-	runner := New(db, owner, sources, "")
-	runner.now = func() time.Time { return now.Add(2 * time.Hour) }
-	defer runner.Close()
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
+	loop.now = func() time.Time { return now.Add(2 * time.Hour) }
+	defer loop.Close()
 
 	insertInProgressBackfillSample(t, db, matchupID, now.Add(90*time.Minute))
 	var teamID, playerID pgtype.UUID
@@ -557,7 +568,7 @@ func TestInProgressWinChanceBackfillRebuildsLateHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	samples, changes, err := runner.backfillMatchup(context.Background(), matchupID)
+	samples, changes, err := loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -620,7 +631,7 @@ func TestInProgressWinChanceBackfillRebuildsLateHistory(t *testing.T) {
 	}
 
 	historyBefore := inProgressBackfillHistorySnapshot(t, pool, matchupID)
-	samples, changes, err = runner.backfillMatchup(context.Background(), matchupID)
+	samples, changes, err = loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -701,11 +712,13 @@ func testInProgressBackfillThenLiveTickDoesNotDuplicatePointChange(t *testing.T,
 			{TeamID: "2", Entries: []fantasy.LineupEntry{{PlayerID: "202", Starter: true, Points: floatPtr(0)}}},
 		},
 	}
-	runner := New(db, owner, liveSources, "")
-	runner.now = func() time.Time { return now.Add(2 * time.Hour) }
-	defer runner.Close()
+	syncRunner := leaguesync.New(db, owner, liveSources, "")
+	loop := New(db, liveSources, syncRunner)
+	defer syncRunner.Close()
+	loop.now = func() time.Time { return now.Add(2 * time.Hour) }
+	defer loop.Close()
 
-	backfilled, _, err := runner.backfillMatchup(context.Background(), matchupID)
+	backfilled, _, err := loop.backfillMatchup(context.Background(), matchupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -721,7 +734,7 @@ func testInProgressBackfillThenLiveTickDoesNotDuplicatePointChange(t *testing.T,
 			changesBefore, samplesBefore, backfilled)
 	}
 
-	runner.runLiveScoreTick(context.Background(), map[string]time.Time{})
+	loop.runLiveScoreTick(context.Background(), map[string]time.Time{})
 	var changesAfter, samplesAfter int
 	if err := pool.QueryRow(context.Background(), `
 		SELECT (SELECT count(*) FROM lineup_point_changes WHERE matchup_id=$1),

@@ -1,4 +1,4 @@
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -14,74 +14,78 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/replay"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
-// lateHistoryGrace is the maximum delay from the week's first play before in-progress history is rebuilt.
-const lateHistoryGrace = 5 * time.Minute
+const (
+	winChanceBackfillTimeout       = 2 * time.Minute
+	winChanceBackfillFailureWindow = 10 * time.Minute
+	lateHistoryGrace               = 5 * time.Minute
+)
 
 // RequestWinChanceBackfill starts a matchup replay unless one is running or recently failed.
-func (r *Runner) RequestWinChanceBackfill(matchupID pgtype.UUID) bool {
-	if !matchupID.Valid || r.ctx == nil {
+func (l *Loop) RequestWinChanceBackfill(matchupID pgtype.UUID) bool {
+	if !matchupID.Valid || l.ctx == nil {
 		return false
 	}
 	key := matchupID.String()
-	return r.requestWinChanceJob(key, func() {
-		r.runWinChanceBackfill(matchupID, key)
+	return l.requestWinChanceJob(key, func() {
+		l.runWinChanceBackfill(matchupID, key)
 	})
 }
 
-func (r *Runner) requestWinChanceJob(key string, run func()) bool {
-	r.mu.Lock()
-	if r.ctx == nil || r.ctx.Err() != nil {
-		r.mu.Unlock()
+func (l *Loop) requestWinChanceJob(key string, run func()) bool {
+	l.mu.Lock()
+	if l.ctx == nil || l.ctx.Err() != nil {
+		l.mu.Unlock()
 		return false
 	}
-	if r.backfillRunning == nil {
-		r.backfillRunning = map[string]bool{}
+	if l.backfillRunning == nil {
+		l.backfillRunning = map[string]bool{}
 	}
-	if r.backfillFailures == nil {
-		r.backfillFailures = map[string]failure{}
+	if l.backfillFailures == nil {
+		l.backfillFailures = map[string]failure{}
 	}
-	if r.backfillRunning[key] {
-		r.mu.Unlock()
+	if l.backfillRunning[key] {
+		l.mu.Unlock()
 		return true
 	}
-	if recentFailure, found := r.backfillFailures[key]; found {
-		if r.now().Sub(recentFailure.at) < winChanceBackfillFailureWindow {
-			r.mu.Unlock()
+	if recentFailure, found := l.backfillFailures[key]; found {
+		if l.now().Sub(recentFailure.at) < winChanceBackfillFailureWindow {
+			l.mu.Unlock()
 			return false
 		}
-		delete(r.backfillFailures, key)
+		delete(l.backfillFailures, key)
 	}
-	r.backfillRunning[key] = true
-	r.wg.Add(1)
-	r.mu.Unlock()
+	l.backfillRunning[key] = true
+	l.wg.Add(1)
+	l.mu.Unlock()
 
 	go run()
 	return true
 }
 
-func (r *Runner) runWinChanceBackfill(matchupID pgtype.UUID, key string) {
-	defer r.wg.Done()
-	ctx, cancel := context.WithTimeout(r.ctx, winChanceBackfillTimeout)
+func (l *Loop) runWinChanceBackfill(matchupID pgtype.UUID, key string) {
+	defer l.wg.Done()
+	ctx, cancel := context.WithTimeout(l.ctx, winChanceBackfillTimeout)
 	defer cancel()
 
-	samples, changes, err := r.backfillMatchup(ctx, matchupID)
-	r.mu.Lock()
-	delete(r.backfillRunning, key)
+	samples, changes, err := l.backfillMatchup(ctx, matchupID)
+	l.mu.Lock()
+	delete(l.backfillRunning, key)
 	if err != nil {
-		r.backfillFailures[key] = failure{code: failureCode(err), at: r.now()}
+		l.backfillFailures[key] = failure{code: leaguesync.FailureCode(err), at: l.now()}
 	} else if samples == 0 && changes == 0 {
-		r.backfillFailures[key] = failure{code: "nothing_to_rebuild", at: r.now()}
+		l.backfillFailures[key] = failure{code: "nothing_to_rebuild", at: l.now()}
 	} else {
-		delete(r.backfillFailures, key)
+		delete(l.backfillFailures, key)
 	}
-	r.mu.Unlock()
+	l.mu.Unlock()
 
 	if err != nil {
-		slog.Warn("matchup win-chance backfill failed", "matchup_id", key, "code", failureCode(err))
+		slog.Warn("matchup win-chance backfill failed", "matchup_id", key, "code", leaguesync.FailureCode(err))
 		return
 	}
 	slog.Info("matchup win-chance backfill completed",
@@ -89,8 +93,8 @@ func (r *Runner) runWinChanceBackfill(matchupID pgtype.UUID, key string) {
 }
 
 // backfillMatchup fetches and persists reconstructed history for an eligible matchup.
-func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (int, int, error) {
-	matchup, err := r.db.Queries().BackfillMatchup(ctx, matchupID)
+func (l *Loop) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (int, int, error) {
+	matchup, err := l.db.Queries().BackfillMatchup(ctx, matchupID)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -111,7 +115,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 		return 0, 0, fmt.Errorf("decode matchup scoring settings: %w", err)
 	}
 
-	hasHistory, err := r.db.Queries().MatchupHasWinChanceHistory(ctx, matchupID)
+	hasHistory, err := l.db.Queries().MatchupHasWinChanceHistory(ctx, matchupID)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -119,7 +123,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	tailReplay := isFinal && hasHistory.Valid && hasHistory.Bool
 	var from time.Time
 	if tailReplay {
-		latestSample, err := r.db.Queries().LatestWinChanceSample(ctx, matchupID)
+		latestSample, err := l.db.Queries().LatestWinChanceSample(ctx, matchupID)
 		if err == nil {
 			matchesFinal, err := latestBackfillSampleMatchesFinal(latestSample, matchup.ScoreA, matchup.ScoreB)
 			if err != nil {
@@ -132,7 +136,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 			return 0, 0, err
 		}
 
-		latestObservation, err := r.db.Queries().LatestLiveLineupObservationAt(ctx, matchupID)
+		latestObservation, err := l.db.Queries().LatestLiveLineupObservationAt(ctx, matchupID)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -141,7 +145,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 		}
 		from = latestObservation.Time
 	}
-	starterRows, err := r.db.Queries().ListBackfillMatchupStarters(ctx, matchupID)
+	starterRows, err := l.db.Queries().ListBackfillMatchupStarters(ctx, matchupID)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -155,7 +159,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	}
 	var starterCounts map[string]gapStarterCounts
 	if tailReplay {
-		observations, err := loadLiveLineupObservations(ctx, r.db.Queries(), matchupID)
+		observations, err := loadLiveLineupObservations(ctx, l.db.Queries(), matchupID)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -164,21 +168,21 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 			return 0, 0, err
 		}
 	}
-	scoreboard, err := r.sources.NFLWeekScoreboard(ctx, int(matchup.Season), int(week))
+	scoreboard, err := l.sources.NFLWeekScoreboard(ctx, int(matchup.Season), int(week))
 	if err != nil {
 		return 0, 0, err
 	}
 	if !isFinal && !hasStartedBackfillGame(scoreboard.Games) {
 		return 0, 0, nil
 	}
-	games, err := r.fetchBackfillGames(ctx, scoreboard.Games, !isFinal)
+	games, err := l.fetchBackfillGames(ctx, scoreboard.Games, !isFinal)
 	if err != nil {
 		return 0, 0, err
 	}
 	replaceHistory := false
 	if inProgressHistory {
 		earliestPlay := earliestBackfillPlayAt(games)
-		earliestSample, err := r.db.Queries().EarliestWinChanceSampleAt(ctx, matchupID)
+		earliestSample, err := l.db.Queries().EarliestWinChanceSampleAt(ctx, matchupID)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -196,17 +200,17 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 		}
 		input.From, input.To = from, to
 	} else if !isFinal {
-		input.To = r.now()
+		input.To = l.now()
 	}
 	timeline := replay.Build(input)
 	if len(timeline.Samples) == 0 && len(timeline.Changes) == 0 {
 		return 0, 0, nil
 	}
 	if tailReplay {
-		return r.saveBackfillTailTimeline(ctx, matchupID, from, input.To, timeline,
+		return l.saveBackfillTailTimeline(ctx, matchupID, from, input.To, timeline,
 			starterRowsByKey, starterCounts)
 	}
-	return r.saveBackfillTimeline(ctx, matchupID, timeline, starterRowsByKey, replaceHistory)
+	return l.saveBackfillTimeline(ctx, matchupID, timeline, starterRowsByKey, replaceHistory)
 }
 
 // latestBackfillSampleMatchesFinal compares the latest saved scores to the final matchup score.
@@ -358,7 +362,7 @@ func backfillStarterKey(teamID, playerID pgtype.UUID) string {
 	return teamID.String() + ":" + playerID.String()
 }
 
-func (r *Runner) fetchBackfillGames(
+func (l *Loop) fetchBackfillGames(
 	ctx context.Context,
 	scoreboardGames []fantasy.NFLGameStatus,
 	skipScheduled bool,
@@ -369,7 +373,7 @@ func (r *Runner) fetchBackfillGames(
 			games = append(games, replay.Game{HomeTeam: game.HomeTeam, AwayTeam: game.AwayTeam})
 			continue
 		}
-		plays, err := r.sources.NFLGamePlays(ctx, game.ID)
+		plays, err := l.sources.NFLGamePlays(ctx, game.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -389,7 +393,7 @@ func hasStartedBackfillGame(games []fantasy.NFLGameStatus) bool {
 	return false
 }
 
-func (r *Runner) saveBackfillTimeline(
+func (l *Loop) saveBackfillTimeline(
 	ctx context.Context,
 	matchupID pgtype.UUID,
 	timeline replay.Timeline,
@@ -397,7 +401,7 @@ func (r *Runner) saveBackfillTimeline(
 	replace bool,
 ) (int, int, error) {
 	sampleCount, changeCount := 0, 0
-	err := r.db.InTx(ctx, func(queries *store.Queries) error {
+	err := l.db.InTx(ctx, func(queries *store.Queries) error {
 		if err := queries.LockImportWrites(ctx); err != nil {
 			return err
 		}
@@ -463,7 +467,7 @@ func (r *Runner) saveBackfillTimeline(
 }
 
 // saveBackfillTailTimeline persists only the reconstructed tail if no newer history appeared.
-func (r *Runner) saveBackfillTailTimeline(
+func (l *Loop) saveBackfillTailTimeline(
 	ctx context.Context,
 	matchupID pgtype.UUID,
 	from, to time.Time,
@@ -475,7 +479,7 @@ func (r *Runner) saveBackfillTailTimeline(
 	for key, row := range starterRows {
 		targets[key] = windowedStarterTarget{teamID: row.TeamID, playerID: row.PlayerID}
 	}
-	return r.saveWindowedTimeline(ctx, matchupID, from, to, timeline, targets, counts,
+	return l.saveWindowedTimeline(ctx, matchupID, from, to, timeline, targets, counts,
 		windowedTimelineOptions{rejectNewerThan: &from, includeEndSample: true})
 }
 

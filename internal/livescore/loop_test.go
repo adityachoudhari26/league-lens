@@ -1,4 +1,4 @@
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/news"
 )
 
@@ -15,7 +16,7 @@ type scoreboardTestSources struct {
 	providerUse int
 }
 
-func (s *scoreboardTestSources) SourceFor(Target) (fantasy.Provider, error) {
+func (s *scoreboardTestSources) SourceFor(leaguesync.Target) (fantasy.Provider, error) {
 	s.providerUse++
 	return nil, nil
 }
@@ -83,8 +84,8 @@ func TestLiveCandidateRelevance(t *testing.T) {
 
 func TestLiveScoreTickSkipsNonRegularSeason(t *testing.T) {
 	sources := &scoreboardTestSources{board: fantasy.NFLScoreboard{SeasonType: 1}}
-	runner := &Runner{sources: sources}
-	runner.runLiveScoreTick(context.Background(), map[string]time.Time{})
+	loop := &Loop{sources: sources}
+	loop.runLiveScoreTick(context.Background(), map[string]time.Time{})
 	if sources.scoreboard != 1 || sources.providerUse != 0 {
 		t.Fatalf("scoreboard reads=%d provider calls=%d, want 1 and 0", sources.scoreboard, sources.providerUse)
 	}
@@ -92,8 +93,8 @@ func TestLiveScoreTickSkipsNonRegularSeason(t *testing.T) {
 
 func TestLiveScoreTickSkipsDatabaseWhenNoGamesAreLive(t *testing.T) {
 	sources := &scoreboardTestSources{board: fantasy.NFLScoreboard{SeasonType: 2}}
-	runner := &Runner{sources: sources, now: time.Now}
-	runner.runLiveScoreTick(context.Background(), map[string]time.Time{})
+	loop := &Loop{sources: sources, now: time.Now}
+	loop.runLiveScoreTick(context.Background(), map[string]time.Time{})
 	if sources.scoreboard != 1 || sources.providerUse != 0 {
 		t.Fatalf("scoreboard reads=%d provider calls=%d, want 1 and 0", sources.scoreboard, sources.providerUse)
 	}

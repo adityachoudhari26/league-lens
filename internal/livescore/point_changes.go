@@ -1,4 +1,4 @@
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -40,7 +40,7 @@ func loadLiveLineupObservations(
 
 // saveLiveLineupEntry updates a provider entry, records eligible starter changes, and refreshes its baseline.
 // Duplicate entries in a tick are safe because change inserts ignore primary-key conflicts.
-func (r *Runner) saveLiveLineupEntry(
+func (l *Loop) saveLiveLineupEntry(
 	ctx context.Context,
 	queries *store.Queries,
 	matchupID, teamID pgtype.UUID,

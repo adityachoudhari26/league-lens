@@ -1,4 +1,4 @@
-package leaguesync
+package livescore
 
 import (
 	"testing"
