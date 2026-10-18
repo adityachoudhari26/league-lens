@@ -11,6 +11,74 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
+type pointChangeMomentExpectation struct {
+	row    int
+	kind   v1.KeyMomentKind
+	points float64
+}
+
+func assertPointChangeRows(t *testing.T, got, want []store.MatchupDetailPointChangesRow) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("got %d rows, want %d", len(got), len(want))
+	}
+	for index, expected := range want {
+		assertPointChangeRow(t, index, got[index], expected)
+	}
+}
+
+func assertPointChangeRow(t *testing.T, index int, actual, want store.MatchupDetailPointChangesRow) {
+	t.Helper()
+	if !actual.ObservedAt.Valid || !actual.ObservedAt.Time.Equal(want.ObservedAt.Time) {
+		t.Errorf("row %d observed_at = %v, want %v", index, actual.ObservedAt, want.ObservedAt)
+	}
+	if actual.TeamID != want.TeamID || actual.PlayerID != want.PlayerID || actual.DisplayName != want.DisplayName {
+		t.Errorf("row %d identity = (%v, %v, %q), want (%v, %v, %q)",
+			index, actual.TeamID, actual.PlayerID, actual.DisplayName, want.TeamID, want.PlayerID, want.DisplayName)
+	}
+	assertPointChangeNumeric(t, index, "points_before", actual.PointsBefore, want.PointsBefore)
+	assertPointChangeNumeric(t, index, "points_after", actual.PointsAfter, want.PointsAfter)
+	if actual.TouchdownsBefore != want.TouchdownsBefore || actual.TouchdownsAfter != want.TouchdownsAfter {
+		t.Errorf("row %d touchdowns = %v→%v, want %v→%v",
+			index, actual.TouchdownsBefore, actual.TouchdownsAfter, want.TouchdownsBefore, want.TouchdownsAfter)
+	}
+	if actual.FieldGoalsBefore != want.FieldGoalsBefore || actual.FieldGoalsAfter != want.FieldGoalsAfter {
+		t.Errorf("row %d field goals = %v→%v, want %v→%v",
+			index, actual.FieldGoalsBefore, actual.FieldGoalsAfter, want.FieldGoalsBefore, want.FieldGoalsAfter)
+	}
+}
+
+func assertPointChangeNumeric(t *testing.T, index int, field string, actual, expected pgtype.Numeric) {
+	t.Helper()
+	actualValue, err := requiredNumericValue(actual)
+	if err != nil {
+		t.Errorf("row %d %s: %v", index, field, err)
+		return
+	}
+	expectedValue, err := requiredNumericValue(expected)
+	if err != nil {
+		t.Errorf("expected row %d %s: %v", index, field, err)
+		return
+	}
+	if math.Abs(actualValue-expectedValue) > 1e-9 {
+		t.Errorf("row %d %s = %v, want %v", index, field, actualValue, expectedValue)
+	}
+}
+
+func assertKeyMoment(t *testing.T, row store.MatchupDetailPointChangesRow, want pointChangeMomentExpectation) {
+	t.Helper()
+	moment, classified, err := keyMomentMessage(row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !classified {
+		t.Fatal("expected merged row to be classified")
+	}
+	if moment.Kind != want.kind || math.Abs(moment.Points-want.points) > 1e-9 {
+		t.Fatalf("moment = %+v, want kind %v and points %v", moment, want.kind, want.points)
+	}
+}
+
 func TestWinChanceSampleMessage(t *testing.T) {
 	observedAt := time.Date(2026, time.October, 18, 13, 0, 0, 0, time.UTC)
 	row := store.MatchupDetailWinChanceSamplesRow{
@@ -134,11 +202,6 @@ func TestKeyMomentMessage(t *testing.T) {
 
 func TestMergeSplitScoringChanges(t *testing.T) {
 	type pointChange = store.MatchupDetailPointChangesRow
-	type momentExpectation struct {
-		row    int
-		kind   v1.KeyMomentKind
-		points float64
-	}
 	makeUUID := func(lastByte byte) pgtype.UUID {
 		var id pgtype.UUID
 		id.Bytes[15] = lastByte
@@ -171,7 +234,7 @@ func TestMergeSplitScoringChanges(t *testing.T) {
 		name       string
 		rows       []pointChange
 		wantRows   []pointChange
-		wantMoment *momentExpectation
+		wantMoment *pointChangeMomentExpectation
 	}{
 		{
 			name: "touchdown count first",
@@ -182,7 +245,7 @@ func TestMergeSplitScoringChanges(t *testing.T) {
 			wantRows: []pointChange{
 				makeChange(base.Add(time.Minute), 2, 0, 9.9, 0, 1, 0, 0),
 			},
-			wantMoment: &momentExpectation{row: 0, kind: v1.KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN, points: 9.9},
+			wantMoment: &pointChangeMomentExpectation{row: 0, kind: v1.KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN, points: 9.9},
 		},
 		{
 			name: "points first",
@@ -193,7 +256,7 @@ func TestMergeSplitScoringChanges(t *testing.T) {
 			wantRows: []pointChange{
 				makeChange(base, 2, 0, 9.9, 0, 1, 0, 0),
 			},
-			wantMoment: &momentExpectation{row: 0, kind: v1.KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN, points: 9.9},
+			wantMoment: &pointChangeMomentExpectation{row: 0, kind: v1.KeyMomentKind_KEY_MOMENT_KIND_TOUCHDOWN, points: 9.9},
 		},
 		{
 			name: "field goal count first",
@@ -204,7 +267,7 @@ func TestMergeSplitScoringChanges(t *testing.T) {
 			wantRows: []pointChange{
 				makeChange(base.Add(time.Minute), 2, 0, 3, 0, 0, 0, 1),
 			},
-			wantMoment: &momentExpectation{row: 0, kind: v1.KeyMomentKind_KEY_MOMENT_KIND_FIELD_GOAL, points: 3},
+			wantMoment: &pointChangeMomentExpectation{row: 0, kind: v1.KeyMomentKind_KEY_MOMENT_KIND_FIELD_GOAL, points: 3},
 		},
 		{
 			name: "four minute gap stays separate",
@@ -279,56 +342,9 @@ func TestMergeSplitScoringChanges(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(got) != len(test.wantRows) {
-				t.Fatalf("got %d rows, want %d", len(got), len(test.wantRows))
-			}
-			for index, want := range test.wantRows {
-				actual := got[index]
-				if !actual.ObservedAt.Valid || !actual.ObservedAt.Time.Equal(want.ObservedAt.Time) {
-					t.Errorf("row %d observed_at = %v, want %v", index, actual.ObservedAt, want.ObservedAt)
-				}
-				if actual.TeamID != want.TeamID || actual.PlayerID != want.PlayerID || actual.DisplayName != want.DisplayName {
-					t.Errorf("row %d identity = (%v, %v, %q), want (%v, %v, %q)",
-						index, actual.TeamID, actual.PlayerID, actual.DisplayName, want.TeamID, want.PlayerID, want.DisplayName)
-				}
-				assertNumeric := func(field string, actual, expected pgtype.Numeric) {
-					t.Helper()
-					actualValue, err := requiredNumericValue(actual)
-					if err != nil {
-						t.Errorf("row %d %s: %v", index, field, err)
-						return
-					}
-					expectedValue, err := requiredNumericValue(expected)
-					if err != nil {
-						t.Errorf("expected row %d %s: %v", index, field, err)
-						return
-					}
-					if math.Abs(actualValue-expectedValue) > 1e-9 {
-						t.Errorf("row %d %s = %v, want %v", index, field, actualValue, expectedValue)
-					}
-				}
-				assertNumeric("points_before", actual.PointsBefore, want.PointsBefore)
-				assertNumeric("points_after", actual.PointsAfter, want.PointsAfter)
-				if actual.TouchdownsBefore != want.TouchdownsBefore || actual.TouchdownsAfter != want.TouchdownsAfter {
-					t.Errorf("row %d touchdowns = %v→%v, want %v→%v",
-						index, actual.TouchdownsBefore, actual.TouchdownsAfter, want.TouchdownsBefore, want.TouchdownsAfter)
-				}
-				if actual.FieldGoalsBefore != want.FieldGoalsBefore || actual.FieldGoalsAfter != want.FieldGoalsAfter {
-					t.Errorf("row %d field goals = %v→%v, want %v→%v",
-						index, actual.FieldGoalsBefore, actual.FieldGoalsAfter, want.FieldGoalsBefore, want.FieldGoalsAfter)
-				}
-			}
+			assertPointChangeRows(t, got, test.wantRows)
 			if test.wantMoment != nil {
-				moment, classified, err := keyMomentMessage(got[test.wantMoment.row])
-				if err != nil {
-					t.Fatal(err)
-				}
-				if !classified {
-					t.Fatal("expected merged row to be classified")
-				}
-				if moment.Kind != test.wantMoment.kind || math.Abs(moment.Points-test.wantMoment.points) > 1e-9 {
-					t.Fatalf("moment = %+v, want kind %v and points %v", moment, test.wantMoment.kind, test.wantMoment.points)
-				}
+				assertKeyMoment(t, got[test.wantMoment.row], *test.wantMoment)
 			}
 		})
 	}
