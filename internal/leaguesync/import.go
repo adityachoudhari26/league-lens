@@ -90,8 +90,8 @@ func (r *Runner) finishImport(job ImportJob, catalog playerids.Catalog, version 
 	defer cancel()
 	service := importer.Service{DB: r.db, Source: job.Source, Catalog: catalog, CatalogVersion: version}
 	_, err := service.Finish(ctx, job.Started)
-	if shouldMarkNeedsReconnect(err) {
-		r.markNeedsReconnect(job.Target)
+	if ShouldMarkNeedsReconnect(err) {
+		r.MarkNeedsReconnect(job.Target)
 	}
 	r.recordOutcome(job.Target, err)
 	return err

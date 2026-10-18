@@ -96,8 +96,8 @@ func TestFailureCodeNeverExposesErrorText(t *testing.T) {
 		{fmt.Errorf("fetch: %w", context.DeadlineExceeded), "sync_timed_out"},
 		{errors.New("espn returned 401 for cookie=private"), "provider_unavailable"},
 	} {
-		if got := failureCode(tc.err); got != tc.want {
-			t.Errorf("failureCode(%v) = %q, want %q", tc.err, got, tc.want)
+		if got := FailureCode(tc.err); got != tc.want {
+			t.Errorf("FailureCode(%v) = %q, want %q", tc.err, got, tc.want)
 		}
 	}
 }

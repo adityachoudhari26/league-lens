@@ -1,6 +1,6 @@
 //go:build integration
 
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/winchance"
 )
 
@@ -44,17 +45,19 @@ func runLiveLoopUntilScoreboardTick(
 	`).Scan(&previousFetchedAt); err != nil {
 		t.Fatal(err)
 	}
-	runner := New(db, owner, sources, "")
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
 	if len(tickTimes) > 0 {
 		tickAt := tickTimes[0]
-		runner.now = func() time.Time { return tickAt }
+		loop.now = func() time.Time { return tickAt }
 	}
-	defer runner.Close()
+	defer loop.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	initialCalls := source.calls.Load()
 	go func() {
-		runner.RunLiveScores(ctx, 10*time.Millisecond)
+		loop.Run(ctx, 10*time.Millisecond)
 		close(done)
 	}()
 	deadline := time.Now().Add(3 * time.Second)
@@ -568,11 +571,13 @@ func TestLiveScoreLoopRejectsMismatchedMatchupID(t *testing.T) {
 	sources := &liveScoreSources{fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
 		board: fantasy.NFLScoreboard{Season: 2026, SeasonType: 2, Week: 5,
 			Games: []fantasy.NFLGameStatus{{HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive}}}}
-	runner := New(db, owner, sources, "")
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
-		runner.RunLiveScores(ctx, 10*time.Millisecond)
+		loop.Run(ctx, 10*time.Millisecond)
 		close(done)
 	}()
 	deadline := time.Now().Add(2 * time.Second)
@@ -582,7 +587,7 @@ func TestLiveScoreLoopRejectsMismatchedMatchupID(t *testing.T) {
 	called := liveSource.calls.Load() > 0
 	cancel()
 	<-done
-	runner.Close()
+	loop.Close()
 	if !called {
 		t.Fatal("live provider was not called")
 	}
@@ -619,17 +624,19 @@ func TestLiveScoreLoopWithNoLiveGamesDoesNotCallLeagueProvider(t *testing.T) {
 	liveSource := &fakeLiveProvider{fakeSource: initial, live: liveMatchupFixture("m")}
 	sources := &liveScoreSources{fakeSources: fakeSources{fantasy.ProviderSleeper: liveSource},
 		board: fantasy.NFLScoreboard{Season: 2026, SeasonType: 2, Week: 5}}
-	runner := New(db, owner, sources, "")
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
-		runner.RunLiveScores(ctx, 10*time.Millisecond)
+		loop.Run(ctx, 10*time.Millisecond)
 		close(done)
 	}()
 	time.Sleep(60 * time.Millisecond)
 	cancel()
 	<-done
-	runner.Close()
+	loop.Close()
 	if sources.calls.Load() == 0 {
 		t.Fatal("scoreboard was not read")
 	}

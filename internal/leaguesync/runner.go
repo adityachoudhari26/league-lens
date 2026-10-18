@@ -20,10 +20,8 @@ const (
 	// StaleAfter is how old saved data may be before a load-triggered sync refreshes it.
 	StaleAfter = 15 * time.Minute
 
-	leagueSyncTimeout              = 5 * time.Minute
-	targetReadTimeout              = 5 * time.Second
-	winChanceBackfillTimeout       = 2 * time.Minute
-	winChanceBackfillFailureWindow = 10 * time.Minute
+	leagueSyncTimeout = 5 * time.Minute
+	targetReadTimeout = 5 * time.Second
 )
 
 // Runner refreshes the local owner's leagues in the background through the
@@ -40,13 +38,9 @@ type Runner struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	mu             sync.Mutex
-	running        map[string]bool
-	failures       map[string]failure
-	lineupResyncAt map[string]time.Time
-
-	backfillRunning  map[string]bool
-	backfillFailures map[string]failure
+	mu       sync.Mutex
+	running  map[string]bool
+	failures map[string]failure
 }
 
 // failure is the most recent failed sync of a league since its last success.
@@ -59,18 +53,15 @@ type failure struct {
 func New(db *database.DB, ownerEmail string, sources SourceFactory, catalogPath string) *Runner {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Runner{
-		db:               db,
-		ownerEmail:       ownerEmail,
-		sources:          sources,
-		catalogPath:      catalogPath,
-		now:              time.Now,
-		ctx:              ctx,
-		cancel:           cancel,
-		running:          map[string]bool{},
-		failures:         map[string]failure{},
-		lineupResyncAt:   map[string]time.Time{},
-		backfillRunning:  map[string]bool{},
-		backfillFailures: map[string]failure{},
+		db:          db,
+		ownerEmail:  ownerEmail,
+		sources:     sources,
+		catalogPath: catalogPath,
+		now:         time.Now,
+		ctx:         ctx,
+		cancel:      cancel,
+		running:     map[string]bool{},
+		failures:    map[string]failure{},
 	}
 }
 
@@ -107,11 +98,12 @@ func (r *Runner) Status(ctx context.Context) ([]Status, error) {
 }
 
 func (r *Runner) listTargets(ctx context.Context) ([]Target, error) {
-	_, targets, err := r.listTargetsWithOwner(ctx)
+	_, targets, err := r.TargetsWithOwner(ctx)
 	return targets, err
 }
 
-func (r *Runner) listTargetsWithOwner(ctx context.Context) (pgtype.UUID, []Target, error) {
+// TargetsWithOwner returns the owner ID and attached sync targets.
+func (r *Runner) TargetsWithOwner(ctx context.Context) (pgtype.UUID, []Target, error) {
 	ctx, cancel := context.WithTimeout(ctx, targetReadTimeout)
 	defer cancel()
 
@@ -151,6 +143,23 @@ func (r *Runner) claimTargets(targets []Target, onlyStale bool) []Target {
 		claimed = append(claimed, target)
 	}
 	return claimed
+}
+
+// StartTarget starts a sync for target unless that league is already syncing.
+func (r *Runner) StartTarget(target Target) bool {
+	r.mu.Lock()
+	if r.running[target.ID] {
+		r.mu.Unlock()
+		return false
+	}
+	if r.running == nil {
+		r.running = make(map[string]bool)
+	}
+	r.running[target.ID] = true
+	r.mu.Unlock()
+
+	r.launch([]Target{target})
+	return true
 }
 
 // isStale reports whether a league has never synced or its saved data is older than StaleAfter.
@@ -219,13 +228,14 @@ func (r *Runner) syncTarget(target Target, catalog playerids.Catalog, version st
 	ctx, cancel := context.WithTimeout(r.ctx, leagueSyncTimeout)
 	defer cancel()
 	err := r.importTarget(ctx, target, catalog, version)
-	if shouldMarkNeedsReconnect(err) {
-		r.markNeedsReconnect(target)
+	if ShouldMarkNeedsReconnect(err) {
+		r.MarkNeedsReconnect(target)
 	}
 	r.recordOutcome(target, err)
 }
 
-func shouldMarkNeedsReconnect(err error) bool {
+// ShouldMarkNeedsReconnect reports whether the provider error means saved credentials need reconnection.
+func ShouldMarkNeedsReconnect(err error) bool {
 	if errors.Is(err, espn.ErrUnauthorized) {
 		return true
 	}
@@ -233,7 +243,8 @@ func shouldMarkNeedsReconnect(err error) bool {
 	return errors.As(err, &setup) && setup == "espn_credentials_unavailable"
 }
 
-func (r *Runner) markNeedsReconnect(target Target) {
+// MarkNeedsReconnect marks the target's provider connection as requiring reconnection.
+func (r *Runner) MarkNeedsReconnect(target Target) {
 	ctx, cancel := context.WithTimeout(context.Background(), targetReadTimeout)
 	defer cancel()
 	if err := r.db.Queries().MarkConnectionNeedsReconnect(ctx, target.ConnectionID); err != nil {
@@ -266,7 +277,7 @@ func (r *Runner) recordOutcome(target Target, err error) {
 		return
 	}
 
-	code := failureCode(err)
+	code := FailureCode(err)
 	r.failures[target.ID] = failure{code: code, at: r.now()}
 	slog.Warn("league sync failed", "league", target.ID, "provider", target.Selection.League.Provider, "code", code, "error", err)
 }
@@ -277,8 +288,8 @@ func (r *Runner) release(id string) {
 	delete(r.running, id)
 }
 
-// failureCode maps a sync error to a stable, credential-free code.
-func failureCode(err error) string {
+// FailureCode maps a sync error to a stable, credential-free code.
+func FailureCode(err error) string {
 	var setup setupError
 	var recorded *importer.RecordedSyncError
 	switch {

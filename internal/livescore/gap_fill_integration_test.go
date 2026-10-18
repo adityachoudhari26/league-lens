@@ -1,6 +1,6 @@
 //go:build integration
 
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -72,10 +73,12 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 		},
 	}}
 	liveProvider := sources.fakeSources[fantasy.ProviderSleeper].(*fakeLiveProvider)
-	runner := New(db, owner, sources, "")
-	defer runner.Close()
+	syncRunner := leaguesync.New(db, owner, sources, "")
+	loop := New(db, sources, syncRunner)
+	defer syncRunner.Close()
+	defer loop.Close()
 	tickAt := startedAt
-	runner.now = func() time.Time { return tickAt }
+	loop.now = func() time.Time { return tickAt }
 	user, err := db.Queries().GetUserByEmail(ctx, owner)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +89,7 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	if err != nil || len(candidates) != 1 {
 		t.Fatalf("live candidates = %d, error = %v", len(candidates), err)
 	}
-	targets, err := runner.listTargets(ctx)
+	_, targets, err := syncRunner.TargetsWithOwner(ctx)
 	if err != nil || len(targets) != 1 {
 		t.Fatalf("sync targets = %d, error = %v", len(targets), err)
 	}
@@ -94,7 +97,7 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	firstTick := pointChangeLiveFixture(17, 4, 0, 0)
 	firstTick.Lineups[1].Entries[0].Scoring = nil
 	liveProvider.live = firstTick
-	if _, _, _, err := runner.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], firstTick); err != nil {
+	if _, _, _, err := loop.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], firstTick); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := pool.Exec(ctx, `
@@ -107,7 +110,7 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	tickAt = endedAt
 	secondTick := pointChangeLiveFixture(23.8, 4, 1, 0)
 	liveProvider.live = secondTick
-	if _, _, _, err := runner.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], secondTick); err != nil {
+	if _, _, _, err := loop.saveLiveMatchup(ctx, scoreboard, targets[0], candidates[0], secondTick); err != nil {
 		t.Fatal(err)
 	}
 
@@ -162,16 +165,16 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	if err := gapID.Scan(matchupID); err != nil {
 		t.Fatal(err)
 	}
-	if !runner.requestWinChanceGapFill(gapID, startedAt) {
+	if !loop.requestWinChanceGapFill(gapID, startedAt) {
 		t.Fatal("gap fill request was not accepted")
 	}
-	runner.wg.Wait()
+	loop.wg.Wait()
 	assertLiveGapFill(t, pool, matchupID, startedAt, endedAt)
 
-	if !runner.requestWinChanceGapFill(gapID, startedAt) {
+	if !loop.requestWinChanceGapFill(gapID, startedAt) {
 		t.Fatal("repeat gap fill request was not accepted")
 	}
-	runner.wg.Wait()
+	loop.wg.Wait()
 	assertLiveGapFill(t, pool, matchupID, startedAt, endedAt)
 }
 

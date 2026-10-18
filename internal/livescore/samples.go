@@ -1,4 +1,4 @@
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 )
 
 // saveWinChanceSample records the matchup's current win estimate when it differs from the latest saved sample.
-func (r *Runner) saveWinChanceSample(
+func (l *Loop) saveWinChanceSample(
 	ctx context.Context,
 	queries *store.Queries,
 	candidate store.ListLiveMatchupCandidatesRow,
@@ -33,7 +33,7 @@ func (r *Runner) saveWinChanceSample(
 		return err
 	}
 	sample, err := newWinChanceSample(
-		candidate.MatchupID, r.now(), sideA.Score, sideB.Score, winchance.Estimate(sideA, sideB),
+		candidate.MatchupID, l.now(), sideA.Score, sideB.Score, winchance.Estimate(sideA, sideB),
 	)
 	if err != nil {
 		return err

@@ -1,4 +1,4 @@
-package leaguesync
+package livescore
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/replay"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
@@ -34,13 +35,13 @@ type windowedTimelineOptions struct {
 }
 
 // requestWinChanceGapFill schedules one stale live window for background replay.
-func (r *Runner) requestWinChanceGapFill(matchupID pgtype.UUID, startedAt time.Time) bool {
+func (l *Loop) requestWinChanceGapFill(matchupID pgtype.UUID, startedAt time.Time) bool {
 	if !matchupID.Valid || startedAt.IsZero() {
 		return false
 	}
 	key := winChanceGapKey(matchupID, startedAt)
-	return r.requestWinChanceJob(key, func() {
-		r.runWinChanceGapFill(matchupID, startedAt, key)
+	return l.requestWinChanceJob(key, func() {
+		l.runWinChanceGapFill(matchupID, startedAt, key)
 	})
 }
 
@@ -48,52 +49,52 @@ func winChanceGapKey(matchupID pgtype.UUID, startedAt time.Time) string {
 	return matchupID.String() + ":" + startedAt.UTC().Format(time.RFC3339Nano)
 }
 
-func (r *Runner) requestUnfilledWinChanceGaps(ctx context.Context) {
-	if r.db == nil || ctx.Err() != nil {
+func (l *Loop) requestUnfilledWinChanceGaps(ctx context.Context) {
+	if l.db == nil || ctx.Err() != nil {
 		return
 	}
 	readCtx, cancel := context.WithTimeout(ctx, targetReadTimeout)
-	gaps, err := r.db.Queries().ListUnfilledWinChanceGaps(readCtx)
+	gaps, err := l.db.Queries().ListUnfilledWinChanceGaps(readCtx)
 	cancel()
 	if err != nil {
-		slog.Warn("unfilled win-chance gaps read failed", "code", failureCode(err))
+		slog.Warn("unfilled win-chance gaps read failed", "code", leaguesync.FailureCode(err))
 		return
 	}
 	for _, gap := range gaps {
-		r.requestWinChanceGapFill(gap.MatchupID, gap.StartedAt.Time)
+		l.requestWinChanceGapFill(gap.MatchupID, gap.StartedAt.Time)
 	}
 }
 
-func (r *Runner) runWinChanceGapFill(matchupID pgtype.UUID, startedAt time.Time, key string) {
-	defer r.wg.Done()
-	ctx, cancel := context.WithTimeout(r.ctx, winChanceBackfillTimeout)
+func (l *Loop) runWinChanceGapFill(matchupID pgtype.UUID, startedAt time.Time, key string) {
+	defer l.wg.Done()
+	ctx, cancel := context.WithTimeout(l.ctx, winChanceBackfillTimeout)
 	defer cancel()
 
-	samples, changes, err := r.fillWinChanceGap(ctx, matchupID, startedAt)
-	r.mu.Lock()
-	delete(r.backfillRunning, key)
+	samples, changes, err := l.fillWinChanceGap(ctx, matchupID, startedAt)
+	l.mu.Lock()
+	delete(l.backfillRunning, key)
 	if err != nil {
-		r.backfillFailures[key] = failure{code: failureCode(err), at: r.now()}
+		l.backfillFailures[key] = failure{code: leaguesync.FailureCode(err), at: l.now()}
 	} else {
-		delete(r.backfillFailures, key)
+		delete(l.backfillFailures, key)
 	}
-	r.mu.Unlock()
+	l.mu.Unlock()
 
 	if err != nil {
 		slog.Warn("live win-chance gap fill failed", "matchup_id", matchupID.String(),
-			"started_at", startedAt, "code", failureCode(err))
+			"started_at", startedAt, "code", leaguesync.FailureCode(err))
 		return
 	}
 	slog.Info("live win-chance gap fill completed", "matchup_id", matchupID.String(),
 		"started_at", startedAt, "samples", samples, "changes", changes)
 }
 
-func (r *Runner) fillWinChanceGap(
+func (l *Loop) fillWinChanceGap(
 	ctx context.Context,
 	matchupID pgtype.UUID,
 	startedAt time.Time,
 ) (int, int, error) {
-	gap, err := r.db.Queries().LoadWinChanceGap(ctx, store.LoadWinChanceGapParams{
+	gap, err := l.db.Queries().LoadWinChanceGap(ctx, store.LoadWinChanceGapParams{
 		MatchupID: matchupID,
 		StartedAt: pgtype.Timestamptz{Time: startedAt, Valid: true},
 	})
@@ -115,7 +116,7 @@ func (r *Runner) fillWinChanceGap(
 		return 0, 0, fmt.Errorf("decode live gap scoring settings: %w", err)
 	}
 
-	scoreboard, err := r.sources.NFLScoreboard(ctx)
+	scoreboard, err := l.sources.NFLScoreboard(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -123,7 +124,7 @@ func (r *Runner) fillWinChanceGap(
 		scoreboard.Week != week {
 		return 0, 0, fmt.Errorf("live gap does not match the current NFL scoreboard week")
 	}
-	starterRows, err := r.db.Queries().ListWinChanceGapStarters(ctx, store.ListWinChanceGapStartersParams{
+	starterRows, err := l.db.Queries().ListWinChanceGapStarters(ctx, store.ListWinChanceGapStartersParams{
 		MatchupID: matchupID,
 		StartedAt: pgtype.Timestamptz{Time: startedAt, Valid: true},
 	})
@@ -137,7 +138,7 @@ func (r *Runner) fillWinChanceGap(
 	if len(starters) == 0 {
 		return 0, 0, fmt.Errorf("live gap has no starter snapshots")
 	}
-	games, err := r.fetchLiveGapGames(ctx, scoreboard.Games, gap.EndedAt.Time)
+	games, err := l.fetchLiveGapGames(ctx, scoreboard.Games, gap.EndedAt.Time)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -145,7 +146,7 @@ func (r *Runner) fillWinChanceGap(
 		Starters: starters, Games: games, Rules: settings.ScoringRules,
 		From: gap.StartedAt.Time, To: gap.EndedAt.Time,
 	})
-	return r.saveLiveGapTimeline(ctx, matchupID, gap.StartedAt.Time, gap.EndedAt.Time,
+	return l.saveLiveGapTimeline(ctx, matchupID, gap.StartedAt.Time, gap.EndedAt.Time,
 		timeline, rowsByKey, countsByKey)
 }
 
@@ -190,7 +191,7 @@ func int4OrZero(value pgtype.Int4) int {
 	return int(value.Int32)
 }
 
-func (r *Runner) fetchLiveGapGames(
+func (l *Loop) fetchLiveGapGames(
 	ctx context.Context,
 	scoreboardGames []fantasy.NFLGameStatus,
 	endedAt time.Time,
@@ -200,7 +201,7 @@ func (r *Runner) fetchLiveGapGames(
 		if game.State == fantasy.NFLGameScheduled || !game.KickoffAt.Before(endedAt) {
 			continue
 		}
-		plays, err := r.sources.NFLGamePlays(ctx, game.ID)
+		plays, err := l.sources.NFLGamePlays(ctx, game.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -226,7 +227,7 @@ func playsEndTooEarly(plays []fantasy.NFLPlay, endedAt time.Time) bool {
 	return latest.IsZero() || latest.Before(endedAt.Add(-liveGapIncompletePlayTail))
 }
 
-func (r *Runner) saveLiveGapTimeline(
+func (l *Loop) saveLiveGapTimeline(
 	ctx context.Context,
 	matchupID pgtype.UUID,
 	startedAt, endedAt time.Time,
@@ -238,12 +239,12 @@ func (r *Runner) saveLiveGapTimeline(
 	for key, row := range starterRows {
 		targets[key] = windowedStarterTarget{teamID: row.TeamID, playerID: row.PlayerID}
 	}
-	return r.saveWindowedTimeline(ctx, matchupID, startedAt, endedAt, timeline, targets, counts,
+	return l.saveWindowedTimeline(ctx, matchupID, startedAt, endedAt, timeline, targets, counts,
 		windowedTimelineOptions{gapStartedAt: &startedAt})
 }
 
 // saveWindowedTimeline persists a replay window after validating its gap or concurrent-history guard.
-func (r *Runner) saveWindowedTimeline(
+func (l *Loop) saveWindowedTimeline(
 	ctx context.Context,
 	matchupID pgtype.UUID,
 	from, to time.Time,
@@ -253,7 +254,7 @@ func (r *Runner) saveWindowedTimeline(
 	options windowedTimelineOptions,
 ) (int, int, error) {
 	sampleCount, changeCount := 0, 0
-	err := r.db.InTx(ctx, func(queries *store.Queries) error {
+	err := l.db.InTx(ctx, func(queries *store.Queries) error {
 		if err := queries.LockImportWrites(ctx); err != nil {
 			return err
 		}
