@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -41,8 +42,15 @@ func (s *Service) GetMatchupWinChance(
 			return err
 		}
 		if matchup.Status != string(fantasy.MatchupFinal) {
-			requestBackfill = response.WinChance == nil || len(response.WinChance.Samples) == 0
-			return nil
+			if response.WinChance == nil || len(response.WinChance.Samples) == 0 {
+				requestBackfill = true
+				return nil
+			}
+			requestBackfill, err = q.MatchupWinChanceStartsLate(ctx, store.MatchupWinChanceStartsLateParams{
+				MatchupID: matchup.ID,
+				Now:       pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true},
+			})
+			return err
 		}
 		matchesFinal, err := matchupWinChanceMatchesFinal(
 			response.WinChance, matchup.ScoreA, matchup.ScoreB, matchup.OwnerIsTeamB,

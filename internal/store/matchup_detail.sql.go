@@ -322,3 +322,36 @@ func (q *Queries) MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupW
 	)
 	return i, err
 }
+
+const matchupWinChanceStartsLate = `-- name: MatchupWinChanceStartsLate :one
+SELECT coalesce((
+ SELECT min(s.observed_at) > min(g.kickoff_at) + interval '10 minutes'
+ FROM matchups m
+ JOIN league_seasons l ON l.id=m.league_season_id
+ JOIN win_chance_samples s ON s.matchup_id=m.id
+ CROSS JOIN LATERAL (
+  SELECT CASE
+   WHEN jsonb_typeof(m.scoring_periods_json) = 'array' THEN
+    CASE WHEN jsonb_array_length(m.scoring_periods_json) = 1
+     THEN m.scoring_periods_json->>0
+    END
+  END AS week
+ ) scoring_period
+ JOIN nfl_games g ON g.season=l.season
+  AND g.week::text=scoring_period.week
+  AND g.kickoff_at <= $1
+ WHERE m.id = $2
+), false)::boolean
+`
+
+type MatchupWinChanceStartsLateParams struct {
+	Now       pgtype.Timestamptz
+	MatchupID pgtype.UUID
+}
+
+func (q *Queries) MatchupWinChanceStartsLate(ctx context.Context, arg MatchupWinChanceStartsLateParams) (bool, error) {
+	row := q.db.QueryRow(ctx, matchupWinChanceStartsLate, arg.Now, arg.MatchupID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}

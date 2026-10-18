@@ -58,6 +58,7 @@ type Querier interface {
 	DashboardTeam(ctx context.Context, arg DashboardTeamParams) (Team, error)
 	DeleteAssistantSettings(ctx context.Context, userID pgtype.UUID) error
 	DeleteMatchupLineupPlayersNotIn(ctx context.Context, arg DeleteMatchupLineupPlayersNotInParams) error
+	DeleteMatchupWinChanceHistory(ctx context.Context, matchupID pgtype.UUID) error
 	DeleteNFLSeason(ctx context.Context, season int32) error
 	DeletePlayerProfileStats(ctx context.Context, playerID pgtype.UUID) error
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
@@ -66,6 +67,7 @@ type Querier interface {
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
 	DetachLeagueForUser(ctx context.Context, arg DetachLeagueForUserParams) (int64, error)
 	DismissAlert(ctx context.Context, arg DismissAlertParams) error
+	EarliestWinChanceSampleAt(ctx context.Context, matchupID pgtype.UUID) (pgtype.Timestamptz, error)
 	EnsureLeagueSeason(ctx context.Context, arg EnsureLeagueSeasonParams) (LeagueSeason, error)
 	FailSync(ctx context.Context, arg FailSyncParams) (SyncRun, error)
 	FindAttachedLeagueIDForConnection(ctx context.Context, arg FindAttachedLeagueIDForConnectionParams) (pgtype.UUID, error)
@@ -145,6 +147,7 @@ type Querier interface {
 	MatchupHasWinChanceHistoryAfter(ctx context.Context, arg MatchupHasWinChanceHistoryAfterParams) (pgtype.Bool, error)
 	// The matchup with the owner's selected team on either side; no row when the owner has no selected team in it.
 	MatchupWinChanceOwnerMatchup(ctx context.Context, arg MatchupWinChanceOwnerMatchupParams) (MatchupWinChanceOwnerMatchupRow, error)
+	MatchupWinChanceStartsLate(ctx context.Context, arg MatchupWinChanceStartsLateParams) (bool, error)
 	NFLScheduleFetchedAt(ctx context.Context, season int32) (pgtype.Timestamptz, error)
 	NextNFLGame(ctx context.Context, arg NextNFLGameParams) (NextNFLGameRow, error)
 	// Match the latest observed scoring week, not the greatest (possibly future) round.
