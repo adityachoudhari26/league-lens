@@ -1,0 +1,296 @@
+{
+  "HOU": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 55.0,
+    "fan_pts_allow_def": 26.0,
+    "fan_pts_allow_qb": 84.84,
+    "fan_pts_allow_wr": 205.1,
+    "fan_pts_allow_te": 45.1,
+    "fan_pts_allow_rb": 83.3
+  },
+  "NE": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 28.0,
+    "fan_pts_allow_def": 45.0,
+    "fan_pts_allow_qb": 74.82,
+    "fan_pts_allow_wr": 156.8,
+    "fan_pts_allow_te": 49.7,
+    "fan_pts_allow_rb": 107.9
+  },
+  "BAL": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 45.0,
+    "fan_pts_allow_def": 22.0,
+    "fan_pts_allow_qb": 82.7,
+    "fan_pts_allow_wr": 181.1,
+    "fan_pts_allow_te": 59.0,
+    "fan_pts_allow_rb": 93.8
+  },
+  "PIT": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 60.0,
+    "fan_pts_allow_def": 42.0,
+    "fan_pts_allow_qb": 64.32,
+    "fan_pts_allow_wr": 136.6,
+    "fan_pts_allow_te": 65.9,
+    "fan_pts_allow_rb": 112.4
+  },
+  "IND": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 55.0,
+    "fan_pts_allow_def": 28.0,
+    "fan_pts_allow_qb": 104.8,
+    "fan_pts_allow_wr": 159.5,
+    "fan_pts_allow_te": 79.6,
+    "fan_pts_allow_rb": 134.2
+  },
+  "ARI": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 39.0,
+    "fan_pts_allow_def": 31.0,
+    "fan_pts_allow_qb": 115.88,
+    "fan_pts_allow_wr": 185.1,
+    "fan_pts_allow_te": 96.4,
+    "fan_pts_allow_rb": 98.5
+  },
+  "SEA": {
+    "gp": 6.0,
+    "fan_pts_allow_k": 42.0,
+    "fan_pts_allow_def": 63.0,
+    "fan_pts_allow_qb": 73.94,
+    "fan_pts_allow_wr": 136.3,
+    "fan_pts_allow_te": 54.5,
+    "fan_pts_allow_rb": 132.6
+  },
+  "LV": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 25.0,
+    "fan_pts_allow_def": 23.0,
+    "fan_pts_allow_qb": 108.84,
+    "fan_pts_allow_wr": 161.5,
+    "fan_pts_allow_te": 94.5,
+    "fan_pts_allow_rb": 111.5
+  },
+  "NYJ": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 37.0,
+    "fan_pts_allow_def": 33.0,
+    "fan_pts_allow_qb": 66.88,
+    "fan_pts_allow_wr": 142.5,
+    "fan_pts_allow_te": 42.1,
+    "fan_pts_allow_rb": 119.3
+  },
+  "DAL": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 47.0,
+    "fan_pts_allow_def": 18.0,
+    "fan_pts_allow_qb": 107.46,
+    "fan_pts_allow_wr": 177.3,
+    "fan_pts_allow_te": 68.1,
+    "fan_pts_allow_rb": 126.6
+  },
+  "WAS": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 57.0,
+    "fan_pts_allow_def": 25.0,
+    "fan_pts_allow_qb": 119.0,
+    "fan_pts_allow_wr": 197.76,
+    "fan_pts_allow_te": 111.2,
+    "fan_pts_allow_rb": 78.8
+  },
+  "LAC": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 44.0,
+    "fan_pts_allow_def": 59.0,
+    "fan_pts_allow_qb": 79.4,
+    "fan_pts_allow_wr": 156.5,
+    "fan_pts_allow_te": 48.9,
+    "fan_pts_allow_rb": 108.7
+  },
+  "TB": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 60.0,
+    "fan_pts_allow_def": 55.0,
+    "fan_pts_allow_qb": 75.02,
+    "fan_pts_allow_wr": 151.4,
+    "fan_pts_allow_te": 78.4,
+    "fan_pts_allow_rb": 84.3
+  },
+  "CLE": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 53.0,
+    "fan_pts_allow_def": 46.0,
+    "fan_pts_allow_qb": 87.56,
+    "fan_pts_allow_wr": 180.0,
+    "fan_pts_allow_te": 72.9,
+    "fan_pts_allow_rb": 88.0
+  },
+  "ATL": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 38.0,
+    "fan_pts_allow_def": 48.0,
+    "fan_pts_allow_qb": 95.68,
+    "fan_pts_allow_wr": 188.3,
+    "fan_pts_allow_te": 72.9,
+    "fan_pts_allow_rb": 98.2
+  },
+  "CAR": {
+    "gp": 4.0,
+    "fan_pts_allow_k": 42.0,
+    "fan_pts_allow_def": 17.0,
+    "fan_pts_allow_qb": 80.4,
+    "fan_pts_allow_wr": 113.7,
+    "fan_pts_allow_te": 66.3,
+    "fan_pts_allow_rb": 112.0
+  },
+  "JAX": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 30.0,
+    "fan_pts_allow_def": 20.0,
+    "fan_pts_allow_qb": 76.0,
+    "fan_pts_allow_wr": 183.64,
+    "fan_pts_allow_te": 47.5,
+    "fan_pts_allow_rb": 81.6
+  },
+  "LAR": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 41.0,
+    "fan_pts_allow_def": 37.0,
+    "fan_pts_allow_qb": 96.6,
+    "fan_pts_allow_wr": 139.8,
+    "fan_pts_allow_te": 31.8,
+    "fan_pts_allow_rb": 100.3
+  },
+  "NO": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 49.0,
+    "fan_pts_allow_def": 46.0,
+    "fan_pts_allow_qb": 85.44,
+    "fan_pts_allow_wr": 149.7,
+    "fan_pts_allow_te": 83.6,
+    "fan_pts_allow_rb": 155.4
+  },
+  "GB": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 24.0,
+    "fan_pts_allow_def": 35.0,
+    "fan_pts_allow_qb": 68.78,
+    "fan_pts_allow_wr": 151.5,
+    "fan_pts_allow_te": 48.0,
+    "fan_pts_allow_rb": 142.1
+  },
+  "MIA": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 46.0,
+    "fan_pts_allow_def": 52.0,
+    "fan_pts_allow_qb": 97.1,
+    "fan_pts_allow_wr": 115.9,
+    "fan_pts_allow_te": 99.1,
+    "fan_pts_allow_rb": 130.7
+  },
+  "DET": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 23.0,
+    "fan_pts_allow_def": 11.0,
+    "fan_pts_allow_qb": 139.8,
+    "fan_pts_allow_wr": 204.88,
+    "fan_pts_allow_te": 159.5,
+    "fan_pts_allow_rb": 93.3
+  },
+  "BUF": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 30.0,
+    "fan_pts_allow_def": 24.0,
+    "fan_pts_allow_qb": 114.46,
+    "fan_pts_allow_wr": 225.3,
+    "fan_pts_allow_te": 64.0,
+    "fan_pts_allow_rb": 140.9
+  },
+  "PHI": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 36.0,
+    "fan_pts_allow_def": 31.0,
+    "fan_pts_allow_qb": 96.58,
+    "fan_pts_allow_wr": 191.2,
+    "fan_pts_allow_te": 49.4,
+    "fan_pts_allow_rb": 103.8
+  },
+  "SF": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 52.0,
+    "fan_pts_allow_def": 7.0,
+    "fan_pts_allow_qb": 68.46,
+    "fan_pts_allow_wr": 139.4,
+    "fan_pts_allow_te": 40.8,
+    "fan_pts_allow_rb": 117.9
+  },
+  "NYG": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 19.0,
+    "fan_pts_allow_def": 46.0,
+    "fan_pts_allow_qb": 99.52,
+    "fan_pts_allow_wr": 154.5,
+    "fan_pts_allow_te": 71.9,
+    "fan_pts_allow_rb": 103.9
+  },
+  "TEN": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 58.0,
+    "fan_pts_allow_def": 44.0,
+    "fan_pts_allow_qb": 77.52,
+    "fan_pts_allow_wr": 179.5,
+    "fan_pts_allow_te": 50.0,
+    "fan_pts_allow_rb": 96.0
+  },
+  "CHI": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 25.0,
+    "fan_pts_allow_def": 46.0,
+    "fan_pts_allow_qb": 87.62,
+    "fan_pts_allow_wr": 158.1,
+    "fan_pts_allow_te": 38.5,
+    "fan_pts_allow_rb": 91.8
+  },
+  "CIN": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 47.0,
+    "fan_pts_allow_def": 31.0,
+    "fan_pts_allow_qb": 86.3,
+    "fan_pts_allow_wr": 147.4,
+    "fan_pts_allow_te": 83.2,
+    "fan_pts_allow_rb": 93.1
+  },
+  "DEN": {
+    "gp": 6.0,
+    "fan_pts_allow_k": 48.0,
+    "fan_pts_allow_def": 33.0,
+    "fan_pts_allow_qb": 96.6,
+    "fan_pts_allow_wr": 175.9,
+    "fan_pts_allow_te": 79.9,
+    "fan_pts_allow_rb": 139.9
+  },
+  "KC": {
+    "gp": 4.0,
+    "fan_pts_allow_k": 38.0,
+    "fan_pts_allow_def": 7.0,
+    "fan_pts_allow_qb": 53.44,
+    "fan_pts_allow_wr": 83.8,
+    "fan_pts_allow_te": 90.2,
+    "fan_pts_allow_rb": 79.9
+  },
+  "MIN": {
+    "gp": 5.0,
+    "fan_pts_allow_k": 32.0,
+    "fan_pts_allow_def": 34.0,
+    "fan_pts_allow_qb": 47.88,
+    "fan_pts_allow_wr": 135.7,
+    "fan_pts_allow_te": 38.1,
+    "fan_pts_allow_rb": 71.4
+  },
+  "11533": {
+    "gp": 5.0
+  },
+  "2064": {
+    "gp": 6.0
+  }
+}
