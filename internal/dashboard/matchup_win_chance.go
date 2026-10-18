@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"math"
+	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -115,6 +117,10 @@ func matchupWinChanceMessage(
 	if err != nil {
 		return nil, err
 	}
+	pointChangeRows, err = mergeSplitScoringChanges(pointChangeRows)
+	if err != nil {
+		return nil, err
+	}
 
 	message := &v1.MatchupWinChance{}
 	for _, row := range sampleRows {
@@ -137,6 +143,89 @@ func matchupWinChanceMessage(
 		return nil, nil
 	}
 	return message, nil
+}
+
+const splitScoringChangeWindow = 3 * time.Minute
+
+// mergeSplitScoringChanges joins a provider's count-only and points-only updates for one score.
+func mergeSplitScoringChanges(rows []store.MatchupDetailPointChangesRow) ([]store.MatchupDetailPointChangesRow, error) {
+	type playerKey struct {
+		teamID   pgtype.UUID
+		playerID pgtype.UUID
+	}
+
+	groups := make(map[playerKey][]store.MatchupDetailPointChangesRow, len(rows))
+	groupOrder := make([]playerKey, 0, len(rows))
+	for _, row := range rows {
+		key := playerKey{teamID: row.TeamID, playerID: row.PlayerID}
+		if _, exists := groups[key]; !exists {
+			groupOrder = append(groupOrder, key)
+		}
+		groups[key] = append(groups[key], row)
+	}
+
+	mergedRows := make([]store.MatchupDetailPointChangesRow, 0, len(rows))
+	for _, key := range groupOrder {
+		playerRows := groups[key]
+		for index := 0; index < len(playerRows); {
+			if index+1 < len(playerRows) {
+				earlier, later := playerRows[index], playerRows[index+1]
+				if earlier.ObservedAt.Valid && later.ObservedAt.Valid {
+					elapsed := later.ObservedAt.Time.Sub(earlier.ObservedAt.Time)
+					if elapsed >= 0 && elapsed <= splitScoringChangeWindow {
+						earlierCountOnly, err := splitScoringRowIsCountOnly(earlier)
+						if err != nil {
+							return nil, err
+						}
+						laterCountOnly, err := splitScoringRowIsCountOnly(later)
+						if err != nil {
+							return nil, err
+						}
+						if earlierCountOnly != laterCountOnly {
+							merged := earlier
+							merged.ObservedAt = later.ObservedAt
+							merged.PointsAfter = later.PointsAfter
+							merged.TouchdownsAfter = later.TouchdownsAfter
+							merged.FieldGoalsAfter = later.FieldGoalsAfter
+							mergedRows = append(mergedRows, merged)
+							index += 2
+							continue
+						}
+					}
+				}
+			}
+			mergedRows = append(mergedRows, playerRows[index])
+			index++
+		}
+	}
+
+	sort.SliceStable(mergedRows, func(i, j int) bool {
+		left, right := mergedRows[i], mergedRows[j]
+		if !left.ObservedAt.Time.Equal(right.ObservedAt.Time) {
+			return left.ObservedAt.Time.Before(right.ObservedAt.Time)
+		}
+		if left.TeamID.String() != right.TeamID.String() {
+			return left.TeamID.String() < right.TeamID.String()
+		}
+		return left.PlayerID.String() < right.PlayerID.String()
+	})
+	return mergedRows, nil
+}
+
+func splitScoringRowIsCountOnly(row store.MatchupDetailPointChangesRow) (bool, error) {
+	pointsBefore, err := requiredNumericValue(row.PointsBefore)
+	if err != nil {
+		return false, err
+	}
+	pointsAfter, err := requiredNumericValue(row.PointsAfter)
+	if err != nil {
+		return false, err
+	}
+	countIncreased := row.TouchdownsBefore.Valid && row.TouchdownsAfter.Valid &&
+		row.TouchdownsAfter.Int32 > row.TouchdownsBefore.Int32 ||
+		row.FieldGoalsBefore.Valid && row.FieldGoalsAfter.Valid &&
+			row.FieldGoalsAfter.Int32 > row.FieldGoalsBefore.Int32
+	return math.Abs(pointsAfter-pointsBefore) < 0.005 && countIncreased, nil
 }
 
 // winChanceSampleMessage orients stored team-A values around the owner and rounds flipped probabilities.
