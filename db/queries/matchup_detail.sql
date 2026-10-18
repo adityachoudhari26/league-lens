@@ -87,3 +87,16 @@ JOIN connections c ON c.id=ut.connection_id AND c.status<>'disabled'
 JOIN connection_leagues cl ON cl.connection_id=ut.connection_id
  AND cl.league_season_id=ut.league_season_id AND cl.user_id=ut.user_id AND cl.detached_at IS NULL
 WHERE m.id = @matchup_id AND ut.user_id = @user_id;
+
+-- Kickoff is a cheap pre-filter; backfillMatchup checks the authoritative first-play time.
+-- name: MatchupWinChanceStartsLate :one
+SELECT coalesce((
+ SELECT min(s.observed_at) > min(g.kickoff_at) + interval '10 minutes'
+ FROM matchups m
+ JOIN league_seasons l ON l.id=m.league_season_id
+ JOIN win_chance_samples s ON s.matchup_id=m.id
+ JOIN nfl_games g ON g.season=l.season
+  AND m.scoring_periods_json = jsonb_build_array(g.week)
+  AND g.kickoff_at <= @now
+ WHERE m.id = @matchup_id
+), false)::boolean;

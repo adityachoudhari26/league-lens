@@ -18,6 +18,9 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
+// lateHistoryGrace is the maximum delay from the week's first play before in-progress history is rebuilt.
+const lateHistoryGrace = 5 * time.Minute
+
 // RequestWinChanceBackfill starts a matchup replay unless one is running or recently failed.
 func (r *Runner) RequestWinChanceBackfill(matchupID pgtype.UUID) bool {
 	if !matchupID.Valid || r.ctx == nil {
@@ -112,10 +115,8 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	if err != nil {
 		return 0, 0, err
 	}
-	if !isFinal && hasHistory.Valid && hasHistory.Bool {
-		return 0, 0, nil
-	}
-	tailReplay := hasHistory.Valid && hasHistory.Bool
+	inProgressHistory := !isFinal && hasHistory.Valid && hasHistory.Bool
+	tailReplay := isFinal && hasHistory.Valid && hasHistory.Bool
 	var from time.Time
 	if tailReplay {
 		latestSample, err := r.db.Queries().LatestWinChanceSample(ctx, matchupID)
@@ -174,6 +175,19 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 	if err != nil {
 		return 0, 0, err
 	}
+	replaceHistory := false
+	if inProgressHistory {
+		earliestPlay := earliestBackfillPlayAt(games)
+		earliestSample, err := r.db.Queries().EarliestWinChanceSampleAt(ctx, matchupID)
+		if err != nil {
+			return 0, 0, err
+		}
+		if !earliestSample.Valid || earliestPlay.IsZero() ||
+			!earliestSample.Time.After(earliestPlay.Add(lateHistoryGrace)) {
+			return 0, 0, nil
+		}
+		replaceHistory = true
+	}
 	input := replay.Input{Starters: starters, Games: games, Rules: settings.ScoringRules}
 	if tailReplay {
 		to := latestBackfillPlayAt(games)
@@ -192,7 +206,7 @@ func (r *Runner) backfillMatchup(ctx context.Context, matchupID pgtype.UUID) (in
 		return r.saveBackfillTailTimeline(ctx, matchupID, from, input.To, timeline,
 			starterRowsByKey, starterCounts)
 	}
-	return r.saveBackfillTimeline(ctx, matchupID, timeline, starterRowsByKey)
+	return r.saveBackfillTimeline(ctx, matchupID, timeline, starterRowsByKey, replaceHistory)
 }
 
 // latestBackfillSampleMatchesFinal compares the latest saved scores to the final matchup score.
@@ -281,6 +295,19 @@ func latestBackfillPlayAt(games []replay.Game) time.Time {
 	return latest
 }
 
+// earliestBackfillPlayAt returns the start of the first replay window.
+func earliestBackfillPlayAt(games []replay.Game) time.Time {
+	var earliest time.Time
+	for _, game := range games {
+		for _, play := range game.Plays {
+			if earliest.IsZero() || play.At.Before(earliest) {
+				earliest = play.At
+			}
+		}
+	}
+	return earliest
+}
+
 func backfillWeek(value []byte) (fantasy.ScoringPeriod, bool, error) {
 	var weeks []fantasy.ScoringPeriod
 	if err := json.Unmarshal(value, &weeks); err != nil {
@@ -367,18 +394,25 @@ func (r *Runner) saveBackfillTimeline(
 	matchupID pgtype.UUID,
 	timeline replay.Timeline,
 	starterRows map[string]store.ListBackfillMatchupStartersRow,
+	replace bool,
 ) (int, int, error) {
 	sampleCount, changeCount := 0, 0
 	err := r.db.InTx(ctx, func(queries *store.Queries) error {
 		if err := queries.LockImportWrites(ctx); err != nil {
 			return err
 		}
-		hasHistory, err := queries.MatchupHasWinChanceHistory(ctx, matchupID)
-		if err != nil {
-			return err
-		}
-		if hasHistory.Valid && hasHistory.Bool {
-			return nil
+		if replace {
+			if err := queries.DeleteMatchupWinChanceHistory(ctx, matchupID); err != nil {
+				return err
+			}
+		} else {
+			hasHistory, err := queries.MatchupHasWinChanceHistory(ctx, matchupID)
+			if err != nil {
+				return err
+			}
+			if hasHistory.Valid && hasHistory.Bool {
+				return nil
+			}
 		}
 
 		observedAt := make(map[time.Time]bool, len(timeline.Samples))

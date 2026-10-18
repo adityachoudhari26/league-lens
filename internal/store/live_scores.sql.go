@@ -43,6 +43,34 @@ func (q *Queries) BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (B
 	return i, err
 }
 
+const deleteMatchupWinChanceHistory = `-- name: DeleteMatchupWinChanceHistory :exec
+WITH deleted_samples AS (
+ DELETE FROM win_chance_samples AS samples WHERE samples.matchup_id = $1
+), deleted_changes AS (
+ DELETE FROM lineup_point_changes AS changes WHERE changes.matchup_id = $1
+), deleted_gaps AS (
+ DELETE FROM win_chance_gaps AS gaps WHERE gaps.matchup_id = $1
+)
+SELECT 1
+`
+
+func (q *Queries) DeleteMatchupWinChanceHistory(ctx context.Context, matchupID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteMatchupWinChanceHistory, matchupID)
+	return err
+}
+
+const earliestWinChanceSampleAt = `-- name: EarliestWinChanceSampleAt :one
+SELECT min(observed_at)::timestamptz AS observed_at
+FROM win_chance_samples WHERE matchup_id = $1
+`
+
+func (q *Queries) EarliestWinChanceSampleAt(ctx context.Context, matchupID pgtype.UUID) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, earliestWinChanceSampleAt, matchupID)
+	var observed_at pgtype.Timestamptz
+	err := row.Scan(&observed_at)
+	return observed_at, err
+}
+
 const insertLineupPointChange = `-- name: InsertLineupPointChange :exec
 INSERT INTO lineup_point_changes (
  matchup_id, team_id, player_id, observed_at, points_before, points_after,

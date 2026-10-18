@@ -104,6 +104,20 @@ SELECT EXISTS (
  SELECT 1 FROM lineup_point_changes c WHERE c.matchup_id = @matchup_id
 ) AS has_history;
 
+-- name: EarliestWinChanceSampleAt :one
+SELECT min(observed_at)::timestamptz AS observed_at
+FROM win_chance_samples WHERE matchup_id = @matchup_id;
+
+-- name: DeleteMatchupWinChanceHistory :exec
+WITH deleted_samples AS (
+ DELETE FROM win_chance_samples AS samples WHERE samples.matchup_id = @matchup_id
+), deleted_changes AS (
+ DELETE FROM lineup_point_changes AS changes WHERE changes.matchup_id = @matchup_id
+), deleted_gaps AS (
+ DELETE FROM win_chance_gaps AS gaps WHERE gaps.matchup_id = @matchup_id
+)
+SELECT 1;
+
 -- name: LatestWinChanceSample :one
 SELECT team_a_win_chance, score_a, score_b, projected_a, projected_b
 FROM win_chance_samples WHERE matchup_id = @matchup_id ORDER BY observed_at DESC LIMIT 1;

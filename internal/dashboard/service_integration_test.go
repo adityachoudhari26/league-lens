@@ -640,8 +640,29 @@ func TestMatchupWinChance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if inProgressChance.Building || backfill.calls != 3 {
-		t.Fatalf("sampled in-progress matchup building=%t, backfill calls=%d; want false and no request", inProgressChance.Building, backfill.calls)
+	if !inProgressChance.Building || backfill.calls != 4 {
+		t.Fatalf("late in-progress matchup building=%t, backfill calls=%d; want true and a request", inProgressChance.Building, backfill.calls)
+	}
+	if _, err := pool.Exec(ctx, `
+		DELETE FROM lineup_point_changes WHERE matchup_id=$1
+	`, matchupDetailUUID(t, inProgress.Matchup.Id)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `
+		DELETE FROM win_chance_samples WHERE matchup_id=$1
+	`, matchupDetailUUID(t, inProgress.Matchup.Id)); err != nil {
+		t.Fatal(err)
+	}
+	onTimeSampleAt := now.Add(-48*time.Hour + 5*time.Minute).Truncate(time.Microsecond)
+	insertMatchupWinChanceFixture(t, db, inProgress.Matchup, onTimeSampleAt)
+	inProgressChance, err = client.GetMatchupWinChance(ctx, &v1.GetMatchupWinChanceRequest{
+		MatchupId: inProgress.Matchup.Id,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inProgressChance.Building || backfill.calls != 4 {
+		t.Fatalf("on-time in-progress matchup building=%t, backfill calls=%d; want false and no request", inProgressChance.Building, backfill.calls)
 	}
 
 	period := int32(1)
@@ -676,7 +697,7 @@ func TestMatchupWinChance(t *testing.T) {
 	if byeChance.WinChance != nil || byeChance.Building {
 		t.Fatalf("bye win chance = %v, building = %t; want empty and false", byeChance.WinChance, byeChance.Building)
 	}
-	if backfill.calls != 3 {
+	if backfill.calls != 4 {
 		t.Fatalf("bye requested a backfill, calls = %d", backfill.calls)
 	}
 
