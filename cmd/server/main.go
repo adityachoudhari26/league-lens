@@ -82,6 +82,7 @@ func run() error {
 		Dashboard: dashboardService, Sync: syncHandler, ProviderSources: sources, GameContext: sources,
 		Trending: sleeper.NewClient(&http.Client{Timeout: 10 * time.Second}), CatalogPath: catalogPath,
 		Injuries: espn.NewInjuryClient(nil),
+		Usage:    sleeper.NewClient(&http.Client{Timeout: 10 * time.Second}),
 	}
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,

@@ -41,6 +41,9 @@ type Querier interface {
 	AssistantTransactionPlayers(ctx context.Context, arg AssistantTransactionPlayersParams) ([]AssistantTransactionPlayersRow, error)
 	AssistantTransactionTeams(ctx context.Context, leagueSeasonID pgtype.UUID) ([]AssistantTransactionTeamsRow, error)
 	AssistantTrendingRosteredPlayers(ctx context.Context, arg AssistantTrendingRosteredPlayersParams) ([]AssistantTrendingRosteredPlayersRow, error)
+	// The season's newest weeks whose games have all kicked off by @as_of and that come before
+	// the current week (0 when no league has synced one, leaving only the kickoff rule), newest first.
+	AssistantUsageCompletedWeeks(ctx context.Context, arg AssistantUsageCompletedWeeksParams) ([]int32, error)
 	AttachLeague(ctx context.Context, arg AttachLeagueParams) error
 	BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (BackfillMatchupRow, error)
 	ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeamsParams) error
