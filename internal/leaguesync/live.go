@@ -200,7 +200,7 @@ func (r *Runner) updateLiveCandidate(
 	if lineupChanged {
 		r.startLineupResync(target)
 	}
-	slog.Info("live matchup updated", "league", target.ID, "provider", target.Selection.League.Provider,
+	slog.Debug("live matchup updated", "league", target.ID, "provider", target.Selection.League.Provider,
 		"updated_entries", updatedEntries, "skipped_entries", skippedEntries)
 }
 

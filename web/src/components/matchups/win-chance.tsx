@@ -23,7 +23,7 @@ import {
   type MatchupDetail,
   type MatchupWinChance,
 } from "@/gen/leaguelens/v1/matchups_pb"
-import { matchupQueries } from "@/lib/api/matchups"
+import { MATCHUP_LIVE_POLL_MS, matchupQueries } from "@/lib/api/matchups"
 import { playerCardQuery } from "@/lib/api/player-card"
 
 type Sample = { at: number; x: number; p: number }
@@ -67,7 +67,6 @@ const signed = (n: number, digits = 0) =>
 
 const SNAP_PX = 10
 const BUILDING_POLL_MS = 1_000
-const LIVE_POLL_MS = 15_000
 // Plays (not TDs or FGs) that moved the win chance less than this many
 // percentage points are left out. Set from weeks 1–5 of real leagues: it
 // keeps about a third of plays, nearly all of them in close games.
@@ -596,7 +595,7 @@ export function MatchupWinChancePanels({
       q.state.data?.building
         ? BUILDING_POLL_MS
         : status === "In progress"
-          ? LIVE_POLL_MS
+          ? MATCHUP_LIVE_POLL_MS
           : false,
   })
   const winChance = query.data?.winChance

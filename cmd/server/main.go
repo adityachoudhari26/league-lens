@@ -30,6 +30,7 @@ import (
 )
 
 // liveScoreInterval is how often live matchups are re-read from providers during games.
+// The web app's MATCHUP_LIVE_POLL_MS uses the same interval.
 const liveScoreInterval = 15 * time.Second
 
 func main() {
