@@ -5,6 +5,7 @@ package leaguesync
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
+	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/news"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
@@ -91,6 +93,85 @@ func TestFailedPlayerNewsRefreshKeepsSavedNewsAndLeagueSucceeds(t *testing.T) {
 	})
 	if err != nil || len(rows) != 1 || rows[0].SourceItemID != "saved-item" || rows[0].Headline != "Previously saved" {
 		t.Fatalf("saved news after failed refresh = %+v, %v", rows, err)
+	}
+}
+
+const otherOwner = "other-owner@test"
+
+func TestPlayerNewsRefreshKeepsOtherOwnersNews(t *testing.T) {
+	db := openDatabase(t)
+	seedTwoOwnerLeague(t, db)
+	ownerPlayer := onlyNewsPlayer(t, db, owner)
+	otherPlayer := onlyNewsPlayer(t, db, otherOwner)
+	saveNewsItem(t, db, ownerPlayer, "owner-old", "Owner old news")
+	saveNewsItem(t, db, otherPlayer, "other-saved", "Other owner news")
+
+	runner := New(db, owner, fakeNewsSources{news: fakeNewsSource{headline: "Owner fresh news"}}, "")
+	t.Cleanup(runner.Close)
+	runner.RefreshPlayerNews(context.Background())
+
+	assertNewsHeadlines(t, db, ownerPlayer, "Owner fresh news")
+	assertNewsHeadlines(t, db, otherPlayer, "Other owner news")
+}
+
+// seedTwoOwnerLeague imports one league for two owners: owner selects team 1
+// (player p) and otherOwner selects team 2 (player q).
+func seedTwoOwnerLeague(t *testing.T, db *database.DB) {
+	t.Helper()
+	data := leagueData(fantasy.ProviderSleeper, "Home")
+	data.Players = append(data.Players, fantasy.Player{ExternalID: "q", Name: "Other Player", Kind: fantasy.PlayerPerson})
+	data.Rosters[1].Entries = []fantasy.RosterEntry{{PlayerID: "q", Slot: fantasy.SlotBench}}
+
+	for _, selection := range []struct{ email, account, team string }{
+		{owner, "account", "1"},
+		{otherOwner, "other-account", "2"},
+	} {
+		service := importer.Service{DB: db, Source: &fakeSource{data: data}}
+		_, err := service.Import(context.Background(), importer.Request{
+			OwnerEmail: selection.email, ExternalAccountID: selection.account,
+			Selection: fantasy.ConnectionSelection{League: data.League.Ref, SelectedTeamIDs: []string{selection.team}},
+		})
+		if err != nil {
+			t.Fatalf("import for %s: %v", selection.email, err)
+		}
+	}
+}
+
+func onlyNewsPlayer(t *testing.T, db *database.DB, email string) pgtype.UUID {
+	t.Helper()
+	rows, err := db.Queries().ListNewsPlayers(context.Background(), email)
+	if err != nil || len(rows) != 1 {
+		t.Fatalf("news players for %s = %v, %v", email, rows, err)
+	}
+	return rows[0].PlayerID
+}
+
+func saveNewsItem(t *testing.T, db *database.DB, playerID pgtype.UUID, itemID, headline string) {
+	t.Helper()
+	now := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
+	if err := db.Queries().AddPlayerNews(context.Background(), store.AddPlayerNewsParams{
+		Source: "fake", SourceItemID: itemID, PlayerID: playerID, Headline: headline,
+		Url: "https://example.test/" + itemID, SourceLabel: "Fixture source", PublishedAt: now, FetchedAt: now,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertNewsHeadlines(t *testing.T, db *database.DB, playerID pgtype.UUID, want ...string) {
+	t.Helper()
+	rows, err := db.Queries().ListRecentPlayerNews(context.Background(), store.ListRecentPlayerNewsParams{
+		PlayerIds: []pgtype.UUID{playerID},
+		Since:     pgtype.Timestamptz{Time: time.Now().Add(-time.Hour), Valid: true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := make([]string, 0, len(rows))
+	for _, row := range rows {
+		got = append(got, row.Headline)
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("news headlines = %v, want %v", got, want)
 	}
 }
 

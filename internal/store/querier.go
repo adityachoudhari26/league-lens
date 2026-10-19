@@ -62,7 +62,8 @@ type Querier interface {
 	DeleteNFLSeason(ctx context.Context, season int32) error
 	DeletePlayerProfileStats(ctx context.Context, playerID pgtype.UUID) error
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
-	DeleteSourceNews(ctx context.Context, source string) error
+	// Clears one source's saved news for the players a refresh asked about; other players' rows stay.
+	DeleteSourceNewsForPlayers(ctx context.Context, arg DeleteSourceNewsForPlayersParams) error
 	DeleteStaleMatchupLineupTeams(ctx context.Context, matchupID pgtype.UUID) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
 	DetachLeagueForUser(ctx context.Context, arg DetachLeagueForUserParams) (int64, error)
