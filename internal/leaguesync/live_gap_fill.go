@@ -198,6 +198,7 @@ func (r *Runner) fetchLiveGapGames(
 	games := make([]replay.Game, 0)
 	for _, game := range scoreboardGames {
 		if game.State == fantasy.NFLGameScheduled || !game.KickoffAt.Before(endedAt) {
+			games = append(games, replay.Game{HomeTeam: game.HomeTeam, AwayTeam: game.AwayTeam})
 			continue
 		}
 		plays, err := r.sources.NFLGamePlays(ctx, game.ID)

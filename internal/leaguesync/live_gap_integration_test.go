@@ -17,10 +17,12 @@ import (
 
 type liveGapSources struct {
 	*liveScoreSources
-	plays []fantasy.NFLPlay
+	plays            []fantasy.NFLPlay
+	requestedGameIDs []string
 }
 
-func (s *liveGapSources) NFLGamePlays(context.Context, string) ([]fantasy.NFLPlay, error) {
+func (s *liveGapSources) NFLGamePlays(_ context.Context, gameID string) ([]fantasy.NFLPlay, error) {
+	s.requestedGameIDs = append(s.requestedGameIDs, gameID)
 	return s.plays, nil
 }
 
@@ -51,10 +53,21 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	endedAt := startedAt.Add(8 * time.Minute)
 	scoreboard := fantasy.NFLScoreboard{
 		Season: 2026, SeasonType: 2, Week: 5,
-		Games: []fantasy.NFLGameStatus{{
-			ID: "event-gap", HomeTeam: "KC", AwayTeam: "SF", State: fantasy.NFLGameLive,
-			Period: 2, Clock: 8 * time.Minute,
-		}},
+		Games: []fantasy.NFLGameStatus{
+			{
+				ID: "event-gap", HomeTeam: "KC", AwayTeam: "DET",
+				KickoffAt: startedAt.Add(-time.Hour), State: fantasy.NFLGameLive,
+				Period: 2, Clock: 8 * time.Minute,
+			},
+			{
+				ID: "scheduled-sf", HomeTeam: "SF", AwayTeam: "NYG",
+				KickoffAt: endedAt.Add(-time.Second), State: fantasy.NFLGameScheduled,
+			},
+			{
+				ID: "postponed-after-gap", HomeTeam: "BUF", AwayTeam: "MIA",
+				KickoffAt: endedAt.Add(time.Minute), State: fantasy.NFLGamePostponed,
+			},
+		},
 	}
 	sources := &liveGapSources{liveScoreSources: &liveScoreSources{
 		fakeSources: fakeSources{fantasy.ProviderSleeper: &fakeLiveProvider{fakeSource: provider}},
@@ -167,6 +180,37 @@ func TestLiveGapFillReplaysStaleBaselineWindowOnce(t *testing.T) {
 	}
 	runner.wg.Wait()
 	assertLiveGapFill(t, pool, matchupID, startedAt, endedAt)
+	if len(sources.requestedGameIDs) != 1 || sources.requestedGameIDs[0] != "event-gap" {
+		t.Fatalf("games requested for plays = %v, want only event-gap", sources.requestedGameIDs)
+	}
+	samples, err := pool.Query(ctx, `
+		SELECT score_b::float8, projected_b::float8
+		FROM win_chance_samples
+		WHERE matchup_id=$1 AND observed_at > $2 AND observed_at < $3
+		ORDER BY observed_at
+	`, matchupID, startedAt, endedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer samples.Close()
+	sampleCount := 0
+	for samples.Next() {
+		var scoreB, projectedB float64
+		if err := samples.Scan(&scoreB, &projectedB); err != nil {
+			t.Fatal(err)
+		}
+		if projectedB-scoreB < 30 {
+			t.Errorf("gap sample projected B = %.4f with score %.4f, want the full 30-point projection",
+				projectedB, scoreB)
+		}
+		sampleCount++
+	}
+	if err := samples.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if sampleCount == 0 {
+		t.Fatal("gap fill saved no win-chance samples")
+	}
 
 	if !runner.requestWinChanceGapFill(gapID, startedAt) {
 		t.Fatal("repeat gap fill request was not accepted")
