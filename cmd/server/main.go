@@ -29,6 +29,10 @@ import (
 	"github.com/adityachoudhari26/league-lens/web"
 )
 
+// liveScoreInterval is how often live matchups are re-read from providers during games.
+// The web app's MATCHUP_LIVE_POLL_MS uses the same interval.
+const liveScoreInterval = 15 * time.Second
+
 func main() {
 	if err := run(); err != nil {
 		slog.Error(err.Error())
@@ -69,7 +73,7 @@ func run() error {
 	syncRunner := leaguesync.New(data, cfg.LocalOwnerEmail, sources, catalogPath)
 	defer syncRunner.Close()
 	if cfg.LiveScores {
-		go syncRunner.RunLiveScores(ctx, time.Minute)
+		go syncRunner.RunLiveScores(ctx, liveScoreInterval)
 	}
 	connectionService := &connections.Service{
 		DB: data, Box: box, OwnerEmail: cfg.LocalOwnerEmail, CatalogPath: catalogPath,

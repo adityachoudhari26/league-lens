@@ -12,7 +12,7 @@ import {
 } from "@/components/matchups/rules"
 import { scoreToneClass } from "@/components/matchups/tones"
 import { MatchupWinChancePanels } from "@/components/matchups/win-chance"
-import { matchupQueries } from "@/lib/api/matchups"
+import { MATCHUP_LIVE_POLL_MS, matchupQueries } from "@/lib/api/matchups"
 import {
   type MatchupDetail,
   type MatchupLineup,
@@ -57,15 +57,13 @@ function TeamScore({
   )
 }
 
-const LIVE_GAMES_POLL_MS = 15_000
-
 // Possession for the NFL games in progress, polled only while the round is.
 function useLiveGames(status: RoundStatus) {
   const live = status === "In progress"
   const query = useQuery({
     ...matchupQueries.liveGames,
     enabled: live,
-    refetchInterval: live ? LIVE_GAMES_POLL_MS : false,
+    refetchInterval: live ? MATCHUP_LIVE_POLL_MS : false,
   })
   return live ? query.data : undefined
 }
