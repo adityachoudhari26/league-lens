@@ -43,12 +43,18 @@ func (q *Queries) AddPlayerNews(ctx context.Context, arg AddPlayerNewsParams) er
 	return err
 }
 
-const deleteSourceNews = `-- name: DeleteSourceNews :exec
-DELETE FROM player_news WHERE source=$1
+const deleteSourceNewsForPlayers = `-- name: DeleteSourceNewsForPlayers :exec
+DELETE FROM player_news WHERE source = $1 AND player_id = ANY($2::uuid[])
 `
 
-func (q *Queries) DeleteSourceNews(ctx context.Context, source string) error {
-	_, err := q.db.Exec(ctx, deleteSourceNews, source)
+type DeleteSourceNewsForPlayersParams struct {
+	Source    string
+	PlayerIds []pgtype.UUID
+}
+
+// Clears one source's saved news for the players a refresh asked about; other players' rows stay.
+func (q *Queries) DeleteSourceNewsForPlayers(ctx context.Context, arg DeleteSourceNewsForPlayersParams) error {
+	_, err := q.db.Exec(ctx, deleteSourceNewsForPlayers, arg.Source, arg.PlayerIds)
 	return err
 }
 

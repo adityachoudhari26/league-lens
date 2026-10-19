@@ -16,8 +16,9 @@ LEFT JOIN player_external_ids x ON x.player_id=e.player_id
 WHERE lower(u.email)=lower($1)
 GROUP BY e.player_id;
 
--- name: DeleteSourceNews :exec
-DELETE FROM player_news WHERE source=$1;
+-- name: DeleteSourceNewsForPlayers :exec
+-- Clears one source's saved news for the players a refresh asked about; other players' rows stay.
+DELETE FROM player_news WHERE source = @source AND player_id = ANY(@player_ids::uuid[]);
 
 -- name: AddPlayerNews :exec
 INSERT INTO player_news (source,source_item_id,player_id,headline,summary,url,source_label,published_at,fetched_at)

@@ -32,11 +32,14 @@ func (r *Runner) updatePlayerNews(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if len(players) == 0 {
+		return nil
+	}
 	items, err := source.PlayerNews(ctx, players)
 	if err != nil {
 		return err
 	}
-	return r.savePlayerNews(ctx, source.Name(), items)
+	return r.savePlayerNews(ctx, source.Name(), players, items)
 }
 
 func (r *Runner) listNewsPlayers(ctx context.Context) ([]news.Player, error) {
@@ -55,17 +58,27 @@ func (r *Runner) listNewsPlayers(ctx context.Context) ([]news.Player, error) {
 	return players, nil
 }
 
-// savePlayerNews replaces all of a source's saved rows in one transaction.
-func (r *Runner) savePlayerNews(ctx context.Context, source string, items []news.Item) error {
+// savePlayerNews replaces the source's saved rows for the requested players in
+// one transaction. News rows are global, so rows for players outside this
+// refresh (other owners' rosters) are left untouched. A requested player with
+// no items loses its old rows, so news that aged out of the feed disappears.
+func (r *Runner) savePlayerNews(ctx context.Context, source string, players []news.Player, items []news.Item) error {
+	requestedIDs, err := newsPlayerIDs(players)
+	if err != nil {
+		return err
+	}
+
 	fetchedAt := pgtype.Timestamptz{Time: r.now(), Valid: true}
 	return r.db.InTx(ctx, func(q *store.Queries) error {
-		if err := q.DeleteSourceNews(ctx, source); err != nil {
+		if err := q.DeleteSourceNewsForPlayers(ctx, store.DeleteSourceNewsForPlayersParams{
+			Source: source, PlayerIds: requestedIDs,
+		}); err != nil {
 			return err
 		}
 		for _, item := range items {
-			var playerID pgtype.UUID
-			if err := playerID.Scan(item.PlayerID); err != nil {
-				return fmt.Errorf("decode player news player ID: %w", err)
+			playerID, err := parsePlayerID(item.PlayerID)
+			if err != nil {
+				return err
 			}
 			if err := q.AddPlayerNews(ctx, store.AddPlayerNewsParams{
 				Source:       source,
@@ -83,4 +96,24 @@ func (r *Runner) savePlayerNews(ctx context.Context, source string, items []news
 		}
 		return nil
 	})
+}
+
+func newsPlayerIDs(players []news.Player) ([]pgtype.UUID, error) {
+	ids := make([]pgtype.UUID, 0, len(players))
+	for _, player := range players {
+		id, err := parsePlayerID(player.ID)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func parsePlayerID(value string) (pgtype.UUID, error) {
+	var id pgtype.UUID
+	if err := id.Scan(value); err != nil {
+		return pgtype.UUID{}, fmt.Errorf("decode player news player ID: %w", err)
+	}
+	return id, nil
 }
