@@ -1,11 +1,11 @@
 import { queryOptions } from "@tanstack/react-query"
 import { dashboard } from "./client"
 
-// Reads saved snapshots. Matchups syncs stale leagues on page open, reloads
-// these queries after syncs, and polls live matchup details.
 // How often in-progress matchup data is refetched; matches the server's live score interval.
 export const MATCHUP_LIVE_POLL_MS = 15_000
 
+// Reads saved snapshots. Matchups syncs stale leagues on page open, reloads
+// these queries after syncs, and polls live matchup details.
 export const matchupQueries = {
   leagues: queryOptions({
     queryKey: ["matchups", "leagues"],
