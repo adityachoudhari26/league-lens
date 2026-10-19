@@ -15,7 +15,7 @@ import { matchupQueries } from "@/lib/api/matchups"
 import { useReloadAfterSync, useStaleSyncChecks } from "@/lib/api/sync"
 import { PageHeading } from "@/pages/workspace-page"
 
-const MATCHUP_DETAIL_LIVE_POLL_MS = 30_000
+const MATCHUP_DETAIL_LIVE_POLL_MS = 15_000
 
 function LoadError({ retry }: { retry: () => void }) {
   return (
