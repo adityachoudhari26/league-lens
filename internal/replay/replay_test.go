@@ -264,6 +264,39 @@ func TestBuildWindowAnchorsResidualAtGameEnd(t *testing.T) {
 	}
 }
 
+func TestBuildWindowKeepsProjectionForUnplayedGame(t *testing.T) {
+	from := time.Date(2026, time.October, 9, 19, 0, 0, 0, time.UTC)
+	gameEnd := from.Add(5 * time.Minute)
+	projected := 20.0
+	timeline := Build(Input{
+		From: from,
+		To:   from.Add(10 * time.Minute),
+		Starters: []Starter{
+			{Key: "kc", ProTeam: "KC", FinalPoints: 79},
+			{Key: "sf", TeamB: true, ProTeam: "SF", StartPoints: 79, FinalPoints: 79, Projected: &projected},
+		},
+		Games: []Game{
+			{HomeTeam: "KC", Plays: []fantasy.NFLPlay{
+				{At: gameEnd, Period: 4, Kind: fantasy.NFLPlayEndOfGame},
+			}},
+			{HomeTeam: "SF"},
+		},
+	})
+	if len(timeline.Samples) == 0 {
+		t.Fatal("window has no samples")
+	}
+	for _, sample := range timeline.Samples {
+		if sample.Estimate.ProjectedB != 99 {
+			t.Errorf("sample at %s projected B = %.4f, want score 79 plus projection 20",
+				sample.At, sample.Estimate.ProjectedB)
+		}
+		if sample.Estimate.WinChanceA >= 0.99 {
+			t.Errorf("sample at %s win chance A = %.4f, want less than 0.99",
+				sample.At, sample.Estimate.WinChanceA)
+		}
+	}
+}
+
 func TestBuildWindowWithoutGamesAnchorsResidualAtTo(t *testing.T) {
 	to := time.Date(2026, time.October, 9, 13, 5, 30, 0, time.UTC)
 	timeline := Build(Input{
