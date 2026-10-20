@@ -10,7 +10,15 @@ SELECT cl.league_season_id,c.id AS connection_id,c.encrypted_credentials,c.provi
    WHERE attached.connection_id=ut.connection_id
    AND attached.league_season_id=ut.league_season_id
    AND attached.user_id=ut.user_id AND attached.detached_at IS NULL)
-  ORDER BY t.external_team_id)::text[] AS selected_team_ids
+  ORDER BY t.external_team_id)::text[] AS selected_team_ids,
+ -- Every app user's team in the league, so one sync looks up availability for all of them.
+ ARRAY(SELECT DISTINCT t.external_team_id FROM user_teams ut JOIN teams t ON t.id=ut.team_id
+  JOIN connections active ON active.id=ut.connection_id AND active.status<>'disabled'
+  JOIN connection_leagues attached ON attached.connection_id=ut.connection_id
+   AND attached.league_season_id=ut.league_season_id
+   AND attached.user_id=ut.user_id AND attached.detached_at IS NULL
+  WHERE ut.league_season_id=cl.league_season_id
+  ORDER BY t.external_team_id)::text[] AS availability_team_ids
 FROM connection_leagues cl
 JOIN connections c ON c.id=cl.connection_id
 JOIN league_seasons l ON l.id=cl.league_season_id
@@ -30,3 +38,14 @@ AND l.season=COALESCE((
  WHERE attached.user_id=$1 AND attached.detached_at IS NULL
 ))
 ORDER BY l.provider,l.name,cl.connection_id;
+
+-- Every app user's team in one league, for imports that start outside ListSyncTargets.
+-- name: ListLeagueAvailabilityTeams :many
+SELECT DISTINCT t.external_team_id FROM user_teams ut JOIN teams t ON t.id=ut.team_id
+JOIN league_seasons l ON l.id=ut.league_season_id
+JOIN connections active ON active.id=ut.connection_id AND active.status<>'disabled'
+JOIN connection_leagues attached ON attached.connection_id=ut.connection_id
+ AND attached.league_season_id=ut.league_season_id
+ AND attached.user_id=ut.user_id AND attached.detached_at IS NULL
+WHERE l.provider=$1 AND l.external_league_id=$2 AND l.season=$3
+ORDER BY t.external_team_id;

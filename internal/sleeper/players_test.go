@@ -134,3 +134,11 @@ func TestCurrentOpponentsIgnoresByes(t *testing.T) {
 		t.Fatalf("opponents = %v, want none", opponents)
 	}
 }
+
+func TestAddAvailabilityTeamsSkipsListedTeams(t *testing.T) {
+	client := &Client{AvailabilityTeamIDs: []string{"7"}}
+	client.AddAvailabilityTeams("3", "7", "3")
+	if got := strings.Join(client.AvailabilityTeamIDs, ","); got != "7,3" {
+		t.Fatalf("availability teams = %s, want 7,3", got)
+	}
+}

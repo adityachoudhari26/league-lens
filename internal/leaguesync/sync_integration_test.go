@@ -6,13 +6,17 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"slices"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adityachoudhari26/league-lens/internal/database"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/news"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
+	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -238,5 +242,58 @@ func TestListSyncTargetsIncludesFirstImportBeforeSave(t *testing.T) {
 	}
 	if statuses[0].Target.ID != started.LeagueSeasonID().String() || statuses[0].State != StateNeverSynced {
 		t.Fatalf("status = %+v, want the begun league as never_synced", statuses[0])
+	}
+}
+
+// A Sleeper sync looks up availability only for the listed teams, and the
+// league's roster rows are shared, so each owner's sync must list every owner's team.
+func TestSyncTargetLooksUpAvailabilityForEveryOwnersTeam(t *testing.T) {
+	db := openDatabase(t)
+	seedTwoOwnerLeague(t, db)
+
+	target := onlySyncTarget(t, db, owner)
+	if !slices.Equal(target.Selection.SelectedTeamIDs, []string{"1"}) {
+		t.Fatalf("selected teams = %v, want [1]", target.Selection.SelectedTeamIDs)
+	}
+	source, err := ProviderSources{}.SourceFor(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, ok := source.(*sleeper.Client)
+	if !ok || !slices.Equal(client.AvailabilityTeamIDs, []string{"1", "2"}) {
+		t.Fatalf("availability teams = %v, want [1 2]", client.AvailabilityTeamIDs)
+	}
+
+	detachLeague(t, db, otherOwner, target.ID)
+	if got := onlySyncTarget(t, db, owner).AvailabilityTeamIDs; !slices.Equal(got, []string{"1"}) {
+		t.Fatalf("availability teams after detach = %v, want [1]", got)
+	}
+}
+
+func onlySyncTarget(t *testing.T, db *database.DB, email string) Target {
+	t.Helper()
+	user, err := db.Queries().GetUserByEmail(context.Background(), email)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, err := db.Queries().ListSyncTargets(context.Background(), user.ID)
+	if err != nil || len(rows) != 1 {
+		t.Fatalf("sync targets for %s = %d, %v", email, len(rows), err)
+	}
+	return TargetFromRow(rows[0])
+}
+
+func detachLeague(t *testing.T, db *database.DB, email, leagueSeasonID string) {
+	t.Helper()
+	user, err := db.Queries().GetUserByEmail(context.Background(), email)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var leagueID pgtype.UUID
+	if err = leagueID.Scan(leagueSeasonID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Queries().DetachLeagueForUser(context.Background(), store.DetachLeagueForUserParams{UserID: user.ID, LeagueSeasonID: leagueID}); err != nil {
+		t.Fatal(err)
 	}
 }

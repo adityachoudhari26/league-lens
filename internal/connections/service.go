@@ -346,6 +346,10 @@ func (s Service) importPick(
 		result.ErrorCode = "account_mismatch"
 		return result, nil
 	}
+	if err = AddLeagueAvailability(ctx, s.DB.Queries(), prepared); err != nil {
+		result.ErrorCode = "import_failed"
+		return result, nil
+	}
 	imports.Source = prepared.Provider
 	started, err := imports.Begin(ctx, importer.Request{
 		OwnerEmail: s.OwnerEmail, ExternalAccountID: prepared.AccountID, Selection: prepared.Selection, League: prepared.League,

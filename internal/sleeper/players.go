@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/url"
+	"slices"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 )
@@ -12,6 +13,15 @@ import (
 type playerRecord struct {
 	Team         *string `json:"team"`
 	InjuryStatus *string `json:"injury_status"`
+}
+
+// AddAvailabilityTeams adds roster IDs to AvailabilityTeamIDs, skipping ones already listed.
+func (c *Client) AddAvailabilityTeams(ids ...string) {
+	for _, id := range ids {
+		if !slices.Contains(c.AvailabilityTeamIDs, id) {
+			c.AvailabilityTeamIDs = append(c.AvailabilityTeamIDs, id)
+		}
+	}
 }
 
 // annotateAvailability adds injury status and NFL team to the observed rosters

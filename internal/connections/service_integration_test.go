@@ -25,6 +25,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/importer"
 	"github.com/adityachoudhari26/league-lens/internal/leaguesync"
 	"github.com/adityachoudhari26/league-lens/internal/secrets"
+	"github.com/adityachoudhari26/league-lens/internal/sleeper"
 	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
@@ -537,5 +538,33 @@ func TestImportUnauthorizedMarksConnectionForReconnect(t *testing.T) {
 				t.Fatalf("connection status = %q, %v", connection.Status, err)
 			}
 		})
+	}
+}
+
+func TestAddLeagueAvailabilityIncludesOtherUsersTeams(t *testing.T) {
+	ctx := context.Background()
+	db := openConnectionTestDatabase(t)
+	ref := fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "shared-league", Season: fantasy.CurrentSeason(time.Now())}
+	league := fantasy.League{Ref: ref, Name: "Shared League", TeamCount: 2}
+	data := fantasy.LeagueData{
+		League: league, FetchedAt: time.Now().UTC(),
+		Teams: []fantasy.Team{{ExternalID: "1", Name: "Home"}, {ExternalID: "2", Name: "Away"}},
+	}
+	imports := importer.Service{DB: db, Source: connectionTestProvider{league: league, data: data}}
+	if _, err := imports.Import(ctx, importer.Request{
+		OwnerEmail: "first@example.test", ExternalAccountID: "first-account",
+		Selection: fantasy.ConnectionSelection{League: ref, SelectedTeamIDs: []string{"1"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	client := sleeper.NewClient(nil)
+	client.AvailabilityTeamIDs = []string{"2"}
+	prepared := PreparedSource{Provider: client, League: league}
+	if err := AddLeagueAvailability(ctx, db.Queries(), prepared); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(client.AvailabilityTeamIDs, ","); got != "2,1" {
+		t.Fatalf("availability teams = %s, want 2,1", got)
 	}
 }

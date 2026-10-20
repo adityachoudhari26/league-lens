@@ -11,6 +11,44 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const listLeagueAvailabilityTeams = `-- name: ListLeagueAvailabilityTeams :many
+SELECT DISTINCT t.external_team_id FROM user_teams ut JOIN teams t ON t.id=ut.team_id
+JOIN league_seasons l ON l.id=ut.league_season_id
+JOIN connections active ON active.id=ut.connection_id AND active.status<>'disabled'
+JOIN connection_leagues attached ON attached.connection_id=ut.connection_id
+ AND attached.league_season_id=ut.league_season_id
+ AND attached.user_id=ut.user_id AND attached.detached_at IS NULL
+WHERE l.provider=$1 AND l.external_league_id=$2 AND l.season=$3
+ORDER BY t.external_team_id
+`
+
+type ListLeagueAvailabilityTeamsParams struct {
+	Provider         string
+	ExternalLeagueID string
+	Season           int32
+}
+
+// Every app user's team in one league, for imports that start outside ListSyncTargets.
+func (q *Queries) ListLeagueAvailabilityTeams(ctx context.Context, arg ListLeagueAvailabilityTeamsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listLeagueAvailabilityTeams, arg.Provider, arg.ExternalLeagueID, arg.Season)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var external_team_id string
+		if err := rows.Scan(&external_team_id); err != nil {
+			return nil, err
+		}
+		items = append(items, external_team_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSyncTargets = `-- name: ListSyncTargets :many
 SELECT cl.league_season_id,c.id AS connection_id,c.encrypted_credentials,c.provider,c.external_user_id,
  l.external_league_id,l.season,l.name,cl.last_successful_sync_at,
@@ -20,7 +58,15 @@ SELECT cl.league_season_id,c.id AS connection_id,c.encrypted_credentials,c.provi
    WHERE attached.connection_id=ut.connection_id
    AND attached.league_season_id=ut.league_season_id
    AND attached.user_id=ut.user_id AND attached.detached_at IS NULL)
-  ORDER BY t.external_team_id)::text[] AS selected_team_ids
+  ORDER BY t.external_team_id)::text[] AS selected_team_ids,
+ -- Every app user's team in the league, so one sync looks up availability for all of them.
+ ARRAY(SELECT DISTINCT t.external_team_id FROM user_teams ut JOIN teams t ON t.id=ut.team_id
+  JOIN connections active ON active.id=ut.connection_id AND active.status<>'disabled'
+  JOIN connection_leagues attached ON attached.connection_id=ut.connection_id
+   AND attached.league_season_id=ut.league_season_id
+   AND attached.user_id=ut.user_id AND attached.detached_at IS NULL
+  WHERE ut.league_season_id=cl.league_season_id
+  ORDER BY t.external_team_id)::text[] AS availability_team_ids
 FROM connection_leagues cl
 JOIN connections c ON c.id=cl.connection_id
 JOIN league_seasons l ON l.id=cl.league_season_id
@@ -53,6 +99,7 @@ type ListSyncTargetsRow struct {
 	Name                 string
 	LastSuccessfulSyncAt pgtype.Timestamptz
 	SelectedTeamIds      []string
+	AvailabilityTeamIds  []string
 }
 
 // Sync targets are the owner's attached leagues in the season the overview shows.
@@ -78,6 +125,7 @@ func (q *Queries) ListSyncTargets(ctx context.Context, userID pgtype.UUID) ([]Li
 			&i.Name,
 			&i.LastSuccessfulSyncAt,
 			&i.SelectedTeamIds,
+			&i.AvailabilityTeamIds,
 		); err != nil {
 			return nil, err
 		}
