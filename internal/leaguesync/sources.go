@@ -43,7 +43,8 @@ func (p ProviderSources) SourceFor(target Target) (fantasy.Provider, error) {
 	switch target.Selection.League.Provider {
 	case fantasy.ProviderSleeper:
 		client := sleeper.NewClient(nil)
-		client.AvailabilityTeamIDs = target.Selection.SelectedTeamIDs
+		client.AddAvailabilityTeams(target.Selection.SelectedTeamIDs...)
+		client.AddAvailabilityTeams(target.AvailabilityTeamIDs...)
 		client.CatalogPath = p.PlayerCatalogPath
 		return client, nil
 	case fantasy.ProviderESPN:

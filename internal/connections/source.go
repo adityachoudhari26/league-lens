@@ -9,6 +9,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/espn"
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	"github.com/adityachoudhari26/league-lens/internal/sleeper"
+	"github.com/adityachoudhari26/league-lens/internal/store"
 )
 
 // ImportSpec describes one provider league and team selection to import.
@@ -93,4 +94,24 @@ func contains(values []string, target string) bool {
 		}
 	}
 	return false
+}
+
+// AddLeagueAvailability makes a Sleeper import also look up availability for
+// every other app user's team in the league, because the league's roster rows
+// are shared. Other providers already return every team's availability.
+func AddLeagueAvailability(ctx context.Context, queries *store.Queries, prepared PreparedSource) error {
+	client, ok := prepared.Provider.(*sleeper.Client)
+	if !ok {
+		return nil
+	}
+	teams, err := queries.ListLeagueAvailabilityTeams(ctx, store.ListLeagueAvailabilityTeamsParams{
+		Provider:         string(prepared.League.Ref.Provider),
+		ExternalLeagueID: prepared.League.Ref.ExternalID,
+		Season:           int32(prepared.League.Ref.Season),
+	})
+	if err != nil {
+		return err
+	}
+	client.AddAvailabilityTeams(teams...)
+	return nil
 }

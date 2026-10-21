@@ -67,6 +67,9 @@ func run(args []string, out, errOut io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if err = connections.AddLeagueAvailability(ctx, db.Queries(), prepared); err != nil {
+		return err
+	}
 	service := importer.Service{DB: db, Source: prepared.Provider, Catalog: catalog, CatalogVersion: version}
 	result, err := service.Import(ctx, importer.Request{
 		OwnerEmail: options.ownerEmail, ExternalAccountID: prepared.AccountID, Selection: prepared.Selection, League: prepared.League, FullHistory: true,

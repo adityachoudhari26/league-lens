@@ -94,6 +94,8 @@ type Querier interface {
 	ListConnectionsForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionsForUserRow, error)
 	// Only the fingerprints of alerts currently shown, so old dismissals never load.
 	ListDismissedAlerts(ctx context.Context, arg ListDismissedAlertsParams) ([]string, error)
+	// Every app user's team in one league, for imports that start outside ListSyncTargets.
+	ListLeagueAvailabilityTeams(ctx context.Context, arg ListLeagueAvailabilityTeamsParams) ([]string, error)
 	ListLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]LeagueSeason, error)
 	ListLiveLineupObservations(ctx context.Context, matchupID pgtype.UUID) ([]ListLiveLineupObservationsRow, error)
 	// The owner's single-week matchup for @week in each attached league of @season,

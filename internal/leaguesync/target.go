@@ -21,6 +21,9 @@ type Target struct {
 	Name                 string
 	ExternalAccountID    string
 	Selection            fantasy.ConnectionSelection
+	// AvailabilityTeamIDs are every app user's teams in the league. The league's
+	// roster rows are shared, so a sync looks up availability for all of them.
+	AvailabilityTeamIDs  []string
 	LastSuccessfulSyncAt time.Time
 }
 
@@ -38,6 +41,7 @@ func TargetFromRow(row store.ListSyncTargetsRow) Target {
 		Name:                 row.Name,
 		ExternalAccountID:    row.ExternalUserID.String,
 		Selection:            fantasy.ConnectionSelection{League: league, SelectedTeamIDs: row.SelectedTeamIds},
+		AvailabilityTeamIDs:  row.AvailabilityTeamIds,
 		LastSuccessfulSyncAt: timeOf(row.LastSuccessfulSyncAt),
 	}
 }
