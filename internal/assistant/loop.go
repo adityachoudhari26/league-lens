@@ -8,7 +8,7 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
 
-const maxToolRounds = 5
+const maxToolRounds = 8
 
 type chatLoop struct {
 	cancel   context.CancelFunc

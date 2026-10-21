@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -130,11 +131,15 @@ func TestBuildUsageResultUsesWeeklyTeamTotalsAndSkipsNonSkillPlayers(t *testing.
 	wantGame := usageGame{
 		Week: 5, Snaps: 70, TeamSnaps: 82, SnapPct: 85.4, Targets: 24,
 		TargetShare: 44.4, RedZoneTargets: 3, Carries: 2, RedZoneCarries: 1, AirYards: 57,
+		PositionRoom: []usageTeammate{
+			{Snaps: 60, SnapPct: 73.2, Targets: 7},
+			{Snaps: 32, SnapPct: 39, Targets: 1},
+		},
 	}
-	if len(puka.Games) != 1 || puka.Games[0] != wantGame ||
-		puka.Position != "WR" || puka.NFLTeam != "LAR" {
-		t.Fatalf("Puka usage = %+v, want game %+v", puka, wantGame)
+	if len(puka.Games) != 1 || puka.Position != "WR" || puka.NFLTeam != "LAR" {
+		t.Fatalf("Puka usage = %+v, want one WR game for LAR", puka)
 	}
+	assertUsageGame(t, puka.Games[0], wantGame)
 	encoded, err := json.Marshal(puka.Games[0])
 	if err != nil {
 		t.Fatal(err)
@@ -184,6 +189,143 @@ func TestBuildUsageResultAveragesUnroundedPercentagesAndUsesNewestTeam(t *testin
 	wantAverage := usageAverage{SnapPct: 50, Targets: 1.5, TargetShare: 41.7, Carries: 1.5}
 	if player.Average != wantAverage {
 		t.Fatalf("average = %+v, want %+v", player.Average, wantAverage)
+	}
+}
+
+func TestBuildUsageResultIncludesPositionRoomByUsageAndName(t *testing.T) {
+	rows := []sleeper.WeeklyStat{
+		usageTestNamedStat(t, "8228", "PIT", "RB", "Jaylen", "Warren", map[string]float64{
+			"gp": 1, "off_snp": 59, "tm_off_snp": 79,
+		}),
+		usageTestNamedStat(t, "7021", "PIT", "RB", "Rico", "Dowdle", map[string]float64{
+			"off_snp": 21, "tm_off_snp": 79, "rush_att": 7, "rec_tgt": 4,
+		}),
+		usageTestNamedStat(t, "3", "PIT", "RB", "Lew", "Nichols", map[string]float64{
+			"off_snp": 0, "tm_off_snp": 79,
+		}),
+		usageTestNamedStat(t, "4", "PIT", "WR", "PIT", "Receiver", map[string]float64{
+			"off_snp": 40, "tm_off_snp": 79,
+		}),
+		usageTestNamedStat(t, "5", "OTHER", "RB", "Other", "Team", map[string]float64{
+			"off_snp": 70, "tm_off_snp": 79,
+		}),
+		usageTestNamedStat(t, "6", "PIT", "RB", "Charlie", "Backup", map[string]float64{
+			"off_snp": 18, "tm_off_snp": 79,
+		}),
+		usageTestNamedStat(t, "7", "PIT", "RB", "Aaron", "Backup", map[string]float64{
+			"off_snp": 12, "tm_off_snp": 79,
+		}),
+		usageTestNamedStat(t, "8", "PIT", "RB", "Zeke", "Backup", map[string]float64{
+			"off_snp": 12, "tm_off_snp": 79,
+		}),
+	}
+	indexed := indexUsageWeek(rows)
+	result := buildUsageResult(2026, []int32{6}, []usagePlayer{{name: "Jaylen Warren", statsID: "8228"}},
+		map[int32]usageWeek{6: indexed})
+	warren := findUsagePlayer(t, result.Players, "Jaylen Warren")
+
+	assertPositionRoom(t, warren.Games[0].PositionRoom)
+}
+
+func TestBuildUsageResultOmitsPositionRoomForAbsentTeammate(t *testing.T) {
+	weekOne := indexUsageWeek([]sleeper.WeeklyStat{
+		usageTestNamedStat(t, "1", "PIT", "RB", "Jaylen", "Warren", map[string]float64{
+			"gp": 1, "off_snp": 59, "tm_off_snp": 79,
+		}),
+	})
+	weekTwo := indexUsageWeek([]sleeper.WeeklyStat{
+		usageTestNamedStat(t, "1", "PIT", "RB", "Jaylen", "Warren", map[string]float64{
+			"gp": 1, "off_snp": 58, "tm_off_snp": 79,
+		}),
+		usageTestNamedStat(t, "2", "PIT", "RB", "Rico", "Dowdle", map[string]float64{
+			"off_snp": 21, "tm_off_snp": 79,
+		}),
+	})
+	result := buildUsageResult(2026, []int32{1, 2}, []usagePlayer{{name: "Jaylen Warren", statsID: "1"}},
+		map[int32]usageWeek{1: weekOne, 2: weekTwo})
+	warren := findUsagePlayer(t, result.Players, "Jaylen Warren")
+
+	assertAbsentPositionRoom(t, warren.Games[0])
+	assertPositionRoomNames(t, warren.Games[1].PositionRoom, "Rico Dowdle")
+}
+
+func TestBuildUsageResultUsesWeeklyTeamForTradedPlayerRoom(t *testing.T) {
+	weekOne := indexUsageWeek([]sleeper.WeeklyStat{
+		usageTestNamedStat(t, "1", "A", "RB", "Traded", "Player", map[string]float64{
+			"gp": 1, "off_snp": 40, "tm_off_snp": 70,
+		}),
+		usageTestNamedStat(t, "2", "A", "RB", "Team", "A Back", map[string]float64{
+			"off_snp": 20, "tm_off_snp": 70,
+		}),
+		usageTestNamedStat(t, "3", "B", "RB", "Team", "B Back", map[string]float64{
+			"off_snp": 30, "tm_off_snp": 70,
+		}),
+	})
+	weekTwo := indexUsageWeek([]sleeper.WeeklyStat{
+		usageTestNamedStat(t, "1", "B", "RB", "Traded", "Player", map[string]float64{
+			"gp": 1, "off_snp": 40, "tm_off_snp": 70,
+		}),
+		usageTestNamedStat(t, "2", "A", "RB", "Team", "A Back", map[string]float64{
+			"off_snp": 20, "tm_off_snp": 70,
+		}),
+		usageTestNamedStat(t, "3", "B", "RB", "Team", "B Back", map[string]float64{
+			"off_snp": 30, "tm_off_snp": 70,
+		}),
+	})
+	result := buildUsageResult(2026, []int32{1, 2}, []usagePlayer{{name: "Traded Player", statsID: "1"}},
+		map[int32]usageWeek{1: weekOne, 2: weekTwo})
+	player := findUsagePlayer(t, result.Players, "Traded Player")
+
+	assertTradedPositionRooms(t, player.Games)
+}
+
+func assertPositionRoom(t *testing.T, room []usageTeammate) {
+	t.Helper()
+	want := []usageTeammate{
+		{Name: "Rico Dowdle", Snaps: 21, SnapPct: 26.6, Carries: 7, Targets: 4},
+		{Name: "Charlie Backup", Snaps: 18, SnapPct: 22.8},
+		{Name: "Aaron Backup", Snaps: 12, SnapPct: 15.2},
+	}
+	if len(room) != len(want) || room[0] != want[0] || room[1] != want[1] || room[2] != want[2] {
+		t.Fatalf("position room = %+v, want capped ordered room %+v", room, want)
+	}
+}
+
+func assertUsageGame(t *testing.T, got, want usageGame) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("usage game = %+v, want %+v", got, want)
+	}
+}
+
+func assertAbsentPositionRoom(t *testing.T, game usageGame) {
+	t.Helper()
+	if len(game.PositionRoom) != 0 {
+		t.Fatalf("week %d position room = %+v, want none", game.Week, game.PositionRoom)
+	}
+	encoded, err := json.Marshal(game)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(encoded), `"position_room"`) {
+		t.Fatalf("empty position room was serialized: %s", encoded)
+	}
+}
+
+func assertPositionRoomNames(t *testing.T, room []usageTeammate, want string) {
+	t.Helper()
+	if len(room) != 1 || room[0].Name != want {
+		t.Fatalf("position room = %+v, want only %q", room, want)
+	}
+}
+
+func assertTradedPositionRooms(t *testing.T, games []usageGame) {
+	t.Helper()
+	if len(games) != 2 || len(games[0].PositionRoom) != 1 || len(games[1].PositionRoom) != 1 {
+		t.Fatalf("traded player games = %+v, want one room entry per week", games)
+	}
+	if games[0].PositionRoom[0].Name != "Team A Back" || games[1].PositionRoom[0].Name != "Team B Back" {
+		t.Fatalf("weekly rooms = %+v, want each week's team-specific back", games)
 	}
 }
 
@@ -290,19 +432,40 @@ func usageFixtureRows(t *testing.T) []sleeper.WeeklyStat {
 }
 
 func usageTestStat(t *testing.T, playerID, team, position string, stats map[string]float64) sleeper.WeeklyStat {
+	return usageTestStatWithName(t, playerID, team, position, "", "", stats)
+}
+
+func usageTestNamedStat(
+	t *testing.T,
+	playerID, team, position, firstName, lastName string,
+	stats map[string]float64,
+) sleeper.WeeklyStat {
+	t.Helper()
+	return usageTestStatWithName(t, playerID, team, position, firstName, lastName, stats)
+}
+
+func usageTestStatWithName(
+	t *testing.T,
+	playerID, team, position, firstName, lastName string,
+	stats map[string]float64,
+) sleeper.WeeklyStat {
 	t.Helper()
 	content, err := json.Marshal(struct {
 		PlayerID string             `json:"player_id"`
 		Team     string             `json:"team"`
 		Stats    map[string]float64 `json:"stats"`
 		Player   struct {
-			Position string `json:"position"`
+			FirstName string `json:"first_name"`
+			LastName  string `json:"last_name"`
+			Position  string `json:"position"`
 		} `json:"player"`
 	}{
 		PlayerID: playerID, Team: team, Stats: stats,
 		Player: struct {
-			Position string `json:"position"`
-		}{Position: position},
+			FirstName string `json:"first_name"`
+			LastName  string `json:"last_name"`
+			Position  string `json:"position"`
+		}{FirstName: firstName, LastName: lastName, Position: position},
 	})
 	if err != nil {
 		t.Fatal(err)
