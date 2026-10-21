@@ -87,3 +87,20 @@ func TestWeeklyStatPositionHandlesMissingPlayer(t *testing.T) {
 		t.Fatalf("Position() = %q, want empty", got)
 	}
 }
+
+func TestWeeklyStatNameTrimsAndHandlesMissingPlayer(t *testing.T) {
+	var namedRow WeeklyStat
+	if err := json.Unmarshal([]byte(`{"player":{"first_name":"  Jaylen","last_name":"Warren  "}}`), &namedRow); err != nil {
+		t.Fatal(err)
+	}
+	assertWeeklyStatName(t, namedRow, "Jaylen Warren")
+	var missingRow WeeklyStat
+	assertWeeklyStatName(t, missingRow, "")
+}
+
+func assertWeeklyStatName(t *testing.T, row WeeklyStat, want string) {
+	t.Helper()
+	if got := row.Name(); got != want {
+		t.Fatalf("Name() = %q, want %q", got, want)
+	}
+}

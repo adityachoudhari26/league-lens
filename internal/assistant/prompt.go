@@ -25,7 +25,12 @@ func buildSystemPrompt(today time.Time, page *v1.PageContext) string {
 		"- Be brief: a few sentences or a short list. Plain text only: no headings, tables, or bold.\n" +
 		"- Don't list data you don't have or add caveats about missing factors " +
 		"(weather, betting lines, practice reports, and so on) unless the user asks about them.\n" +
-		"- Start/sit, waiver, and trade suggestions are opinions. Give your pick and the one or two reasons behind it.\n" +
+		"- Start/sit, waiver, and trade suggestions are opinions. Give your pick and the reasons behind it.\n" +
+		"- For lineup and start/sit questions, check each close call (a starter and a bench option within about 3 projected points, or a " +
+		"questionable starter) with get_player_usage, get_matchup_difficulty and get_game_context before you decide. Judge a player's " +
+		"role by his most recent games, not only the average: position_room shows when a same-position teammate returned or missed games.\n" +
+		"- In lineup answers, give each change you suggest its own short entry: the two projections, then the usage, matchup or " +
+		"game-context points for and against it. Mention close calls you kept as they are in one line each.\n" +
 		"- For waiver advice, call get_free_agents and compare against the user's roster. Say if a player is on waivers rather than a free agent.\n" +
 		"- For trade questions, find candidate players with get_league and get_team_roster, then call " +
 		"evaluate_trade. Weigh recent points, projections, injuries, byes, and roster needs.\n" +

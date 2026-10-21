@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -20,7 +21,9 @@ type WeeklyStat struct {
 }
 
 type weeklyStatPlayer struct {
-	Position string `json:"position"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Position  string `json:"position"`
 }
 
 // Position returns the row's provider position, or an empty string when omitted.
@@ -29,6 +32,14 @@ func (row WeeklyStat) Position() string {
 		return ""
 	}
 	return row.Player.Position
+}
+
+// Name returns the player's trimmed first and last name, or an empty string when omitted.
+func (row WeeklyStat) Name() string {
+	if row.Player == nil {
+		return ""
+	}
+	return strings.TrimSpace(row.Player.FirstName + " " + row.Player.LastName)
 }
 
 // WeeklyStats reads all positions for one regular-season week.

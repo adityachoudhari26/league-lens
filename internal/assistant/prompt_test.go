@@ -53,6 +53,26 @@ func TestBuildSystemPromptPageVariants(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildSystemPromptIncludesLineupUsageGuidance(t *testing.T) {
+	prompt := buildSystemPrompt(time.Now(), nil)
+	for _, expected := range []string{
+		"- Start/sit, waiver, and trade suggestions are opinions. Give your pick and the reasons behind it.",
+		"- For lineup and start/sit questions, check each close call (a starter and a bench option within about 3 projected points, or a " +
+			"questionable starter) with get_player_usage, get_matchup_difficulty and get_game_context before you decide. Judge a player's " +
+			"role by his most recent games, not only the average: position_room shows when a same-position teammate returned or missed games.",
+		"- In lineup answers, give each change you suggest its own short entry: the two projections, then the usage, matchup or " +
+			"game-context points for and against it. Mention close calls you kept as they are in one line each.",
+	} {
+		if !strings.Contains(prompt, expected) {
+			t.Errorf("prompt missing %q:\n%s", expected, prompt)
+		}
+	}
+	if strings.Contains(prompt, "one or two reasons") {
+		t.Fatalf("outdated start/sit guidance remains in prompt:\n%s", prompt)
+	}
+}
+
 func TestBuildSystemPromptIncludesFreeAgentAdvice(t *testing.T) {
 	prompt := buildSystemPrompt(time.Now(), nil)
 	waiverAdvice := "- For waiver advice, call get_free_agents and compare against the user's roster. " +

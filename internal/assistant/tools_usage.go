@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,8 +20,10 @@ import (
 )
 
 const getPlayerUsageDescription = "Recent snap share, targets, target share, carries, pass attempts and red-zone opportunities for NFL " +
-	"players over the last completed NFL weeks. Pass league_season_id for the user's roster in that league, or player_ids for specific " +
-	"players. Use it for start/sit, waiver and trade questions where a player's role and opportunity matter."
+	"players over the last completed NFL weeks. Each game also lists the same-team teammates at the player's position who played that " +
+	"week (position_room), so you can see a backfield or receiver split and teammates returning from or missing games. Pass " +
+	"league_season_id for the user's roster in that league, or player_ids for specific players. Use it for start/sit, waiver and trade " +
+	"questions where a player's role and opportunity matter."
 
 const getPlayerUsageSchema = `{
   "type": "object",
@@ -42,11 +45,12 @@ const getPlayerUsageSchema = `{
 }`
 
 const (
-	defaultUsageWeeks       = 3
-	maxUsageWeeks           = 6
-	usageToolTimeout        = 15 * time.Second
-	usageWeekCacheTTL       = 6 * time.Hour
-	maxUsageFetchesInFlight = 3
+	defaultUsageWeeks        = 3
+	maxUsageWeeks            = 6
+	usageToolTimeout         = 15 * time.Second
+	usageWeekCacheTTL        = 6 * time.Hour
+	maxUsageFetchesInFlight  = 3
+	maxPositionRoomTeammates = 3
 )
 
 // UsageSource reads all players' public stats for one Sleeper NFL week.
@@ -97,7 +101,13 @@ type usageScope struct {
 
 type usageWeek struct {
 	players     map[string]sleeper.WeeklyStat
+	rooms       map[usageRoomKey][]sleeper.WeeklyStat
 	teamTargets map[string]float64
+}
+
+type usageRoomKey struct {
+	team     string
+	position string
 }
 
 type usageToolResult struct {
@@ -115,18 +125,27 @@ type usagePlayerResult struct {
 }
 
 type usageGame struct {
-	Week                int32   `json:"week"`
-	Snaps               int     `json:"snaps"`
-	TeamSnaps           int     `json:"team_snaps"`
-	SnapPct             float64 `json:"snap_pct"`
-	Targets             int     `json:"targets,omitempty"`
-	TargetShare         float64 `json:"target_share,omitempty"`
-	RedZoneTargets      int     `json:"red_zone_targets,omitempty"`
-	Carries             int     `json:"carries,omitempty"`
-	RedZoneCarries      int     `json:"red_zone_carries,omitempty"`
-	PassAttempts        int     `json:"pass_attempts,omitempty"`
-	RedZonePassAttempts int     `json:"red_zone_pass_attempts,omitempty"`
-	AirYards            int     `json:"air_yards,omitempty"`
+	Week                int32           `json:"week"`
+	Snaps               int             `json:"snaps"`
+	TeamSnaps           int             `json:"team_snaps"`
+	SnapPct             float64         `json:"snap_pct"`
+	Targets             int             `json:"targets,omitempty"`
+	TargetShare         float64         `json:"target_share,omitempty"`
+	RedZoneTargets      int             `json:"red_zone_targets,omitempty"`
+	Carries             int             `json:"carries,omitempty"`
+	RedZoneCarries      int             `json:"red_zone_carries,omitempty"`
+	PassAttempts        int             `json:"pass_attempts,omitempty"`
+	RedZonePassAttempts int             `json:"red_zone_pass_attempts,omitempty"`
+	AirYards            int             `json:"air_yards,omitempty"`
+	PositionRoom        []usageTeammate `json:"position_room,omitempty"`
+}
+
+type usageTeammate struct {
+	Name    string  `json:"name"`
+	Snaps   int     `json:"snaps"`
+	SnapPct float64 `json:"snap_pct"`
+	Carries int     `json:"carries,omitempty"`
+	Targets int     `json:"targets,omitempty"`
 }
 
 type usageAverage struct {
@@ -458,10 +477,11 @@ func shouldRetryUsageRead(ctx context.Context, err error) bool {
 		!errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded)
 }
 
-// indexUsageWeek separates real numeric player rows from team totals and defenses.
+// indexUsageWeek separates real numeric player rows from team totals and defenses, then indexes position rooms.
 func indexUsageWeek(rows []sleeper.WeeklyStat) usageWeek {
 	week := usageWeek{
 		players:     make(map[string]sleeper.WeeklyStat, len(rows)),
+		rooms:       make(map[usageRoomKey][]sleeper.WeeklyStat),
 		teamTargets: make(map[string]float64),
 	}
 	for _, row := range rows {
@@ -469,6 +489,8 @@ func indexUsageWeek(rows []sleeper.WeeklyStat) usageWeek {
 			continue
 		}
 		week.players[row.PlayerID] = row
+		roomKey := usageRoomKey{team: row.Team, position: row.Position()}
+		week.rooms[roomKey] = append(week.rooms[roomKey], row)
 		week.teamTargets[row.Team] += row.Stats["rec_tgt"]
 	}
 	return week
@@ -515,6 +537,7 @@ func buildUsagePlayer(
 	return result, true
 }
 
+// collectUsageGames builds each requested player's games using that week's team and position context.
 func collectUsageGames(
 	player usagePlayer,
 	weeks []int32,
@@ -537,12 +560,55 @@ func collectUsageGames(
 			continue
 		}
 		game, snapPct, targetShare := buildUsageGame(week, row, data.teamTargets[row.Team])
+		game.PositionRoom = buildUsagePositionRoom(
+			row.PlayerID, data.rooms[usageRoomKey{team: row.Team, position: row.Position()}],
+		)
 		games = append(games, usageGameRow{
 			game: game, snapPct: snapPct, targetShare: targetShare,
 			position: row.Position(), team: row.Team,
 		})
 	}
 	return games, false
+}
+
+// buildUsagePositionRoom reports the leading same-team players at a position who took offensive snaps.
+func buildUsagePositionRoom(playerID string, rows []sleeper.WeeklyStat) []usageTeammate {
+	teammates := make([]usageTeammate, 0, len(rows))
+	for _, row := range rows {
+		if row.PlayerID == playerID || row.Stats["off_snp"] <= 0 {
+			continue
+		}
+		teammates = append(teammates, buildUsageTeammate(row))
+	}
+	slices.SortFunc(teammates, compareUsageTeammates)
+	if len(teammates) > maxPositionRoomTeammates {
+		teammates = teammates[:maxPositionRoomTeammates]
+	}
+	return teammates
+}
+
+// buildUsageTeammate converts one weekly row into the usage fields shown for a position-room teammate.
+func buildUsageTeammate(row sleeper.WeeklyStat) usageTeammate {
+	snaps := int(row.Stats["off_snp"])
+	teamSnaps := int(row.Stats["tm_off_snp"])
+	snapPct := 0.0
+	if teamSnaps > 0 {
+		snapPct = float64(snaps) * 100 / float64(teamSnaps)
+	}
+	return usageTeammate{
+		Name: row.Name(), Snaps: snaps, SnapPct: roundUsage(snapPct),
+		Carries: int(row.Stats["rush_att"]), Targets: int(row.Stats["rec_tgt"]),
+	}
+}
+
+func compareUsageTeammates(left, right usageTeammate) int {
+	if left.Snaps > right.Snaps {
+		return -1
+	}
+	if left.Snaps < right.Snaps {
+		return 1
+	}
+	return strings.Compare(left.Name, right.Name)
 }
 
 func averageUsageGames(games []usageGameRow) usageAverage {
