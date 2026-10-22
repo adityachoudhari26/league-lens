@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import type { AssistantTurn } from "./assistant-turns"
 import { AssistantActionProposal } from "./assistant-action-proposal"
 import { AssistantComposer } from "./assistant-composer"
+import { AssistantToolActivity, TypingDots } from "./assistant-tool-activity"
 
 const suggestions = [
   "How are my matchups looking?",
@@ -72,6 +73,7 @@ export function AssistantPanel({
       >
         <AssistantPanelBody
           messages={messages}
+          isStreaming={isStreaming}
           isLoadingSettings={isLoadingSettings}
           hasSettingsError={hasSettingsError}
           isNotSetUp={isNotSetUp}
@@ -146,6 +148,7 @@ function AssistantPanelHeader({
 
 function AssistantPanelBody({
   messages,
+  isStreaming,
   isLoadingSettings,
   hasSettingsError,
   isNotSetUp,
@@ -155,6 +158,7 @@ function AssistantPanelBody({
 }: Pick<
   AssistantPanelProps,
   | "messages"
+  | "isStreaming"
   | "isLoadingSettings"
   | "hasSettingsError"
   | "isNotSetUp"
@@ -183,15 +187,25 @@ function AssistantPanelBody({
   if (messages.length === 0) {
     return <AssistantSuggestions onSuggestion={onSuggestion} />
   }
-  return messages.map((turn, index) => (
-    <AssistantMessage
-      key={`${turn.kind}-${index}`}
-      turn={turn}
-      index={index}
-      onConfirmAction={onConfirmAction}
-      onCancelAction={onCancelAction}
-    />
-  ))
+  const lastIndex = messages.length - 1
+  const isAwaitingReply = isStreaming && messages[lastIndex]?.role === "user"
+  return (
+    <>
+      {messages.map((turn, index) => (
+        <AssistantMessage
+          key={`${turn.kind}-${index}`}
+          turn={turn}
+          index={index}
+          isWorking={isStreaming && index === lastIndex && !turn.text}
+          onConfirmAction={onConfirmAction}
+          onCancelAction={onCancelAction}
+        />
+      ))}
+      {isAwaitingReply ? (
+        <TypingDots className="self-start py-1 text-muted-foreground" />
+      ) : null}
+    </>
+  )
 }
 
 function AssistantSetupPrompt() {
@@ -252,11 +266,13 @@ function AssistantSuggestions({
 function AssistantMessage({
   turn,
   index,
+  isWorking,
   onConfirmAction,
   onCancelAction,
 }: {
   turn: AssistantTurn
   index: number
+  isWorking: boolean
   onConfirmAction: (index: number) => void
   onCancelAction: (index: number) => void
 }) {
@@ -271,14 +287,12 @@ function AssistantMessage({
   }
   return (
     <div className="flex flex-col gap-2">
-      {turn.toolActivities?.map((activity, index) => (
-        <p
-          key={`${activity}-${index}`}
-          className="text-xs text-muted-foreground"
-        >
-          {activity}
-        </p>
-      ))}
+      {turn.toolActivities?.length ? (
+        <AssistantToolActivity
+          activities={turn.toolActivities}
+          isWorking={isWorking}
+        />
+      ) : null}
       {turn.text ? (
         <p className="max-w-full text-sm leading-6 whitespace-pre-wrap">
           {turn.text}
