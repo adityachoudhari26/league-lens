@@ -122,6 +122,7 @@ export function MatchupCard({
             hasOpponent={hasOpponent}
             status={status}
             liveGames={liveGames}
+            emptyLabel="Empty"
           />
           <details className="group border-t">
             <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-muted-foreground select-none hover:text-foreground">

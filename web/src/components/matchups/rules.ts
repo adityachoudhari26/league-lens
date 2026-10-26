@@ -14,6 +14,98 @@ export type ScoreTone = "winning" | "losing"
 
 export type RoundStatus = "Bye" | "Upcoming" | "In progress" | "Final"
 
+export type LineupPairRow = {
+  slot: string
+  mine?: LineupPlayer
+  theirs?: LineupPlayer
+}
+
+function slotGroups(players: LineupPlayer[]) {
+  const groups = new Map<string, LineupPlayer[]>()
+  for (const player of players) {
+    const group = groups.get(player.slot) ?? []
+    group.push(player)
+    groups.set(player.slot, group)
+  }
+  return groups
+}
+
+function appendRemainingSlots(order: string[], slots: string[], start: number) {
+  for (let index = start; index < slots.length; index++) {
+    order.push(slots[index])
+  }
+}
+
+// Merges two slot lists that follow the same server order into one, so a slot
+// only one side filled still lands in its usual place.
+function mergeSlotOrder(mine: string[], theirs: string[]) {
+  const mineSlots = new Set(mine)
+  const theirSlots = new Set(theirs)
+  const order: string[] = []
+  let mineIndex = 0
+  let theirIndex = 0
+
+  while (mineIndex < mine.length && theirIndex < theirs.length) {
+    const mineSlot = mine[mineIndex]
+    const theirSlot = theirs[theirIndex]
+    if (mineSlot === theirSlot) {
+      order.push(mineSlot)
+      mineIndex++
+      theirIndex++
+    } else if (!theirSlots.has(mineSlot)) {
+      order.push(mineSlot)
+      mineIndex++
+    } else if (!mineSlots.has(theirSlot)) {
+      order.push(theirSlot)
+      theirIndex++
+    } else {
+      order.push(mineSlot)
+      mineIndex++
+    }
+  }
+
+  appendRemainingSlots(order, mine, mineIndex)
+  appendRemainingSlots(order, theirs, theirIndex)
+  return order
+}
+
+function pairSlotRows(
+  slot: string,
+  mine: LineupPlayer[] = [],
+  theirs: LineupPlayer[] = [],
+): LineupPairRow[] {
+  const rows: LineupPairRow[] = []
+  const rowCount = Math.max(mine.length, theirs.length)
+  for (let index = 0; index < rowCount; index++) {
+    rows.push({ slot, mine: mine[index], theirs: theirs[index] })
+  }
+  return rows
+}
+
+/**
+ * Pairs each side's players by slot, preserving server order within each slot.
+ * Slots merge in server order so an empty slot on one side does not shift every
+ * subsequent player into the wrong row.
+ */
+export function pairLineupRows(
+  mine: LineupPlayer[],
+  theirs: LineupPlayer[],
+): LineupPairRow[] {
+  const mineGroups = slotGroups(mine)
+  const theirGroups = slotGroups(theirs)
+  const slots = mergeSlotOrder(
+    Array.from(mineGroups.keys()),
+    Array.from(theirGroups.keys()),
+  )
+  const rows: LineupPairRow[] = []
+  for (const slot of slots) {
+    rows.push(
+      ...pairSlotRows(slot, mineGroups.get(slot), theirGroups.get(slot)),
+    )
+  }
+  return rows
+}
+
 /**
  * Derives the round's status from game states: providers store upcoming
  * rounds as UNKNOWN with a score of 0, so only FINAL is trusted as stored.
