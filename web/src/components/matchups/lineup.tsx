@@ -10,6 +10,7 @@ import {
   gameDetail,
   injuryLabel,
   ownerRowTone,
+  pairLineupRows,
   playerInfo,
   type FieldState,
   shownPoints,
@@ -122,18 +123,43 @@ function PlayerSubtitle({ player }: { player: LineupPlayer }) {
   )
 }
 
+// A starting slot the team left unfilled, kept in its row so the other side
+// stays aligned.
+function EmptyPlayerCell({
+  label,
+  mirrored,
+}: {
+  label: string
+  mirrored?: boolean
+}) {
+  return (
+    <div
+      className={`flex min-h-[52px] items-center px-3 py-2 text-sm text-muted-foreground dark:text-muted-foreground/70 ${mirrored ? "justify-end text-right" : ""}`}
+    >
+      {label}
+    </div>
+  )
+}
+
 function PlayerCell({
   player,
   mirrored,
   toneClass,
   liveGames,
+  emptyLabel,
 }: {
   player?: LineupPlayer
   mirrored?: boolean
   toneClass?: string
   liveGames: LiveGame[]
+  emptyLabel?: string
 }) {
-  if (!player) return <div />
+  if (!player)
+    return emptyLabel ? (
+      <EmptyPlayerCell label={emptyLabel} mirrored={mirrored} />
+    ) : (
+      <div />
+    )
   const injury = injuryLabel(player.injuryStatus)
   const field = fieldState(player, liveGames)
   return (
@@ -208,6 +234,7 @@ function LineupRow({
   hasOpponent,
   status,
   liveGames,
+  emptyLabel,
 }: {
   slot: string
   mine?: LineupPlayer
@@ -215,6 +242,7 @@ function LineupRow({
   hasOpponent: boolean
   status: RoundStatus
   liveGames: LiveGame[]
+  emptyLabel?: string
 }) {
   const tone = ownerRowTone(status, mine, theirs)
   if (!hasOpponent)
@@ -230,9 +258,15 @@ function LineupRow({
         player={mine}
         toneClass={tone && scoreToneClass[tone]}
         liveGames={liveGames}
+        emptyLabel={emptyLabel}
       />
       <SlotBadge slot={slot} />
-      <PlayerCell player={theirs} mirrored liveGames={liveGames} />
+      <PlayerCell
+        player={theirs}
+        mirrored
+        liveGames={liveGames}
+        emptyLabel={emptyLabel}
+      />
     </div>
   )
 }
@@ -247,25 +281,28 @@ export function Lineup({
   hasOpponent,
   status,
   liveGames = [],
+  emptyLabel,
 }: {
   mine: LineupPlayer[]
   theirs: LineupPlayer[]
   hasOpponent: boolean
   status: RoundStatus
   liveGames?: LiveGame[]
+  emptyLabel?: string
 }) {
-  const rows = Array.from({ length: Math.max(mine.length, theirs.length) })
+  const rows = pairLineupRows(mine, theirs)
   return (
     <div className="divide-y">
-      {rows.map((_, index) => (
+      {rows.map((row, index) => (
         <LineupRow
-          key={index}
-          slot={mine[index]?.slot ?? theirs[index]?.slot ?? ""}
-          mine={mine[index]}
-          theirs={theirs[index]}
+          key={`${row.slot}-${index}`}
+          slot={row.slot}
+          mine={row.mine}
+          theirs={row.theirs}
           hasOpponent={hasOpponent}
           status={status}
           liveGames={liveGames}
+          emptyLabel={emptyLabel}
         />
       ))}
     </div>
