@@ -1,10 +1,6 @@
-import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError } from "@connectrpc/connect"
 import {
-  ChatMessageSchema,
-  ChatRole,
   type ActionProposal,
-  type ChatMessage,
   type ChatResponse,
 } from "@/gen/leaguelens/v1/assistant_pb"
 
@@ -21,21 +17,6 @@ export type AssistantTurn = {
 export type ChatProblem = {
   requiresSetup: boolean
   message?: string
-}
-
-export function toChatMessages(turns: AssistantTurn[]): ChatMessage[] {
-  return turns
-    .filter(
-      (turn): turn is Extract<AssistantTurn, { kind: "message" }> =>
-        turn.kind === "message",
-    )
-    .slice(-40)
-    .map((turn) =>
-      create(ChatMessageSchema, {
-        role: turn.role === "user" ? ChatRole.USER : ChatRole.ASSISTANT,
-        text: turn.text,
-      }),
-    )
 }
 
 export function applyChatResponse(
@@ -129,6 +110,13 @@ export function chatErrorMessage(error: unknown): ChatProblem {
       return {
         requiresSetup: false,
         message: "Couldn't reach the AI provider. Try again.",
+      }
+    }
+    if (error.code === Code.NotFound) {
+      return {
+        requiresSetup: false,
+        message:
+          "This conversation is no longer saved. Clear it to start a new one.",
       }
     }
   }

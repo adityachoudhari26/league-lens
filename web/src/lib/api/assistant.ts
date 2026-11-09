@@ -52,11 +52,20 @@ export function useDeleteAssistantSettings() {
 export function useRunAssistantAction() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (action: AssistantAction) =>
-      assistant.runAssistantAction({ action }),
-    onSuccess: async (_response, action) => {
+    mutationFn: ({
+      action,
+      conversationId,
+    }: {
+      action: AssistantAction
+      conversationId?: string
+    }) =>
+      assistant.runAssistantAction({
+        action,
+        conversationId: conversationId ?? "",
+      }),
+    onSuccess: async (_response, variables) => {
       const queries =
-        action.action.case === "syncLeagues"
+        variables.action.action.case === "syncLeagues"
           ? [...Object.values(overviewQueries), syncStatusQuery]
           : [overviewQueries.attention]
       await Promise.all(

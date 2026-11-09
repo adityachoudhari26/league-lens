@@ -75,6 +75,84 @@ func TestRunAssistantActionValidatesAndSanitizesFailures(t *testing.T) {
 	}
 }
 
+func TestRunAssistantActionRecordsSuccessfulOutcome(t *testing.T) {
+	store := &fakeConversationStore{}
+	service := &Service{Dashboard: &fakeAssistantDashboard{}, conversations: store}
+
+	response, err := service.RunAssistantAction(context.Background(), dismissActionRequest(actionTestConversationID))
+	if err != nil || response.GetSummary() != "Dismissed the alert." {
+		t.Fatalf("action response = %v, error = %v", response, err)
+	}
+	assertChatTestSavedTurn(t, store, actionTestConversationID, []llm.Message{
+		{Role: llm.RoleUser, Text: "I confirmed the proposed action."},
+		{Role: llm.RoleAssistant, Text: "Dismissed the alert."},
+	})
+}
+
+func TestRunAssistantActionRecordsFailureAndReturnsActionError(t *testing.T) {
+	want := connect.NewError(connect.CodeUnavailable, "action unavailable")
+	store := &fakeConversationStore{}
+	service := &Service{
+		Dashboard:     &fakeAssistantDashboard{dismissAlertErr: want},
+		conversations: store,
+	}
+
+	response, err := service.RunAssistantAction(context.Background(), dismissActionRequest(actionTestConversationID))
+	if response != nil || !errors.Is(err, want) {
+		t.Fatalf("action response = %v, error = %v; want original error %v", response, err, want)
+	}
+	assertChatTestSavedTurn(t, store, actionTestConversationID, []llm.Message{
+		{Role: llm.RoleUser, Text: "I confirmed the proposed action."},
+		{Role: llm.RoleAssistant, Text: "The action failed."},
+	})
+}
+
+func TestRunAssistantActionIgnoresOutcomeSaveFailure(t *testing.T) {
+	store := &fakeConversationStore{saveErr: errors.New("storage unavailable")}
+	service := &Service{Dashboard: &fakeAssistantDashboard{}, conversations: store}
+
+	response, err := service.RunAssistantAction(context.Background(), dismissActionRequest(actionTestConversationID))
+	if err != nil || response.GetSummary() != "Dismissed the alert." {
+		t.Fatalf("action response = %v, error = %v", response, err)
+	}
+	if store.saveCalls != 1 {
+		t.Fatalf("outcome save calls = %d, want one", store.saveCalls)
+	}
+}
+
+func TestRunAssistantActionRejectsInvalidConversationBeforeRunning(t *testing.T) {
+	dashboard := &fakeAssistantDashboard{}
+	store := &fakeConversationStore{}
+	service := &Service{Dashboard: dashboard, conversations: store}
+
+	_, err := service.RunAssistantAction(context.Background(), dismissActionRequest("invalid"))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument || dashboard.dismissAlertRequest != nil ||
+		store.saveCalls != 0 {
+		t.Fatalf("error=%v action request=%v save calls=%d", err, dashboard.dismissAlertRequest, store.saveCalls)
+	}
+}
+
+func TestRunAssistantActionWithoutConversationDoesNotSave(t *testing.T) {
+	store := &fakeConversationStore{}
+	service := &Service{Dashboard: &fakeAssistantDashboard{}, conversations: store}
+
+	response, err := service.RunAssistantAction(context.Background(), dismissActionRequest(""))
+	if err != nil || response.GetSummary() != "Dismissed the alert." || store.saveCalls != 0 {
+		t.Fatalf("action response=%v error=%v save calls=%d", response, err, store.saveCalls)
+	}
+}
+
+const actionTestConversationID = "00000000-0000-0000-0000-000000000001"
+
+func dismissActionRequest(conversationID string) *v1.RunAssistantActionRequest {
+	return &v1.RunAssistantActionRequest{
+		ConversationId: conversationID,
+		Action: &v1.AssistantAction{Action: &v1.AssistantAction_DismissAlert{
+			DismissAlert: &v1.DismissAlertAction{Fingerprint: "alert:week1"},
+		}},
+	}
+}
+
 func TestActionToolsValidateProposals(t *testing.T) {
 	reader := &fakeAssistantDashboard{alerts: []*v1.LineupAlert{{Fingerprint: "current-alert"}}}
 	tools := buildActionTools(reader)

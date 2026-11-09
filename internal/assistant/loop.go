@@ -10,6 +10,8 @@ import (
 
 const maxToolRounds = 8
 
+const toolLimitFallback = "I couldn't finish looking that up. Try a narrower question."
+
 type chatLoop struct {
 	cancel   context.CancelFunc
 	provider llm.Provider
@@ -19,38 +21,60 @@ type chatLoop struct {
 }
 
 // run completes a chat with sequential, bounded read-only tool rounds.
-func (loop *chatLoop) run(ctx context.Context, page *v1.PageContext, messages []llm.Message) error {
+func (loop *chatLoop) run(
+	ctx context.Context,
+	page *v1.PageContext,
+	history []llm.Message,
+	userMessage llm.Message,
+) ([]llm.Message, error) {
 	system := buildSystemPrompt(time.Now(), page)
+	turn := []llm.Message{userMessage}
 	toolRounds := 0
 	for {
 		availableTools := toolDefinitions(loop.tools)
 		if toolRounds >= maxToolRounds {
 			system += "\nTool limit reached. Answer with the data you already have."
 		}
+		messages := append(append([]llm.Message(nil), history...), turn...)
 		response, err := loop.completeRound(ctx, system, messages, availableTools)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(response.ToolCalls) == 0 {
-			return nil
+			if response.Text != "" {
+				turn = append(turn, llm.Message{Role: llm.RoleAssistant, Text: response.Text})
+			}
+			return turn, nil
 		}
 		if toolRounds >= maxToolRounds {
-			return loop.finishAtToolLimit(response)
+			text, err := loop.finishAtToolLimit(response)
+			if err != nil {
+				return nil, err
+			}
+			return append(turn, llm.Message{Role: llm.RoleAssistant, Text: text}), nil
 		}
-		messages = append(messages, llm.Message{
+		assistantMessage := llm.Message{
 			Role: llm.RoleAssistant, Text: response.Text, ToolCalls: response.ToolCalls,
-		})
-		proposal, actionErrors := loop.proposeAction(ctx, response.ToolCalls)
+		}
+		turn = append(turn, assistantMessage)
+		proposal, proposedCallID, actionErrors := loop.proposeAction(ctx, response.ToolCalls)
 		if proposal != nil {
-			return loop.sendEvent(&v1.ChatResponse{
-				Event: &v1.ChatResponse_Proposal{Proposal: proposal},
+			turn = append(turn, llm.Message{
+				Role:        llm.RoleUser,
+				ToolResults: proposalToolResults(response.ToolCalls, proposedCallID, actionErrors),
 			})
+			if err := loop.sendEvent(&v1.ChatResponse{
+				Event: &v1.ChatResponse_Proposal{Proposal: proposal},
+			}); err != nil {
+				return nil, err
+			}
+			return turn, nil
 		}
 		results, err := loop.runToolCalls(ctx, response.ToolCalls, actionErrors)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		messages = append(messages, llm.Message{Role: llm.RoleUser, ToolResults: results})
+		turn = append(turn, llm.Message{Role: llm.RoleUser, ToolResults: results})
 		toolRounds++
 	}
 }
@@ -81,15 +105,18 @@ func (loop *chatLoop) completeRound(
 	return response, nil
 }
 
-func (loop *chatLoop) finishAtToolLimit(response llm.Response) error {
+func (loop *chatLoop) finishAtToolLimit(response llm.Response) (string, error) {
 	if response.Text != "" {
-		return nil
+		return response.Text, nil
 	}
-	return loop.sendEvent(&v1.ChatResponse{
+	if err := loop.sendEvent(&v1.ChatResponse{
 		Event: &v1.ChatResponse_Text{Text: &v1.TextDelta{
-			Text: "I couldn't finish looking that up. Try a narrower question.",
+			Text: toolLimitFallback,
 		}},
-	})
+	}); err != nil {
+		return "", err
+	}
+	return toolLimitFallback, nil
 }
 
 func (loop *chatLoop) sendEvent(event *v1.ChatResponse) error {
@@ -103,7 +130,7 @@ func (loop *chatLoop) sendEvent(event *v1.ChatResponse) error {
 func (loop *chatLoop) proposeAction(
 	ctx context.Context,
 	calls []llm.ToolCall,
-) (*v1.ActionProposal, map[string]llm.ToolResult) {
+) (*v1.ActionProposal, string, map[string]llm.ToolResult) {
 	actionErrors := make(map[string]llm.ToolResult)
 	for _, call := range calls {
 		tool := findAssistantToolByName(loop.tools, call.Name)
@@ -117,9 +144,34 @@ func (loop *chatLoop) proposeAction(
 			}
 			continue
 		}
-		return proposal, nil
+		return proposal, call.ID, actionErrors
 	}
-	return nil, actionErrors
+	return nil, "", actionErrors
+}
+
+// proposalToolResults records which calls ran when one action was proposed.
+func proposalToolResults(
+	calls []llm.ToolCall,
+	proposedCallID string,
+	actionErrors map[string]llm.ToolResult,
+) []llm.ToolResult {
+	results := make([]llm.ToolResult, 0, len(calls))
+	for _, call := range calls {
+		if call.ID == proposedCallID {
+			results = append(results, llm.ToolResult{
+				CallID: call.ID, Content: "Shown to the user for confirmation. It runs only if they confirm.",
+			})
+			continue
+		}
+		if result, ok := actionErrors[call.ID]; ok {
+			results = append(results, result)
+			continue
+		}
+		results = append(results, llm.ToolResult{
+			CallID: call.ID, Content: "Not run because an action was proposed in the same step.", IsError: true,
+		})
+	}
+	return results
 }
 
 func (loop *chatLoop) runToolCalls(

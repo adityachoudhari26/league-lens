@@ -37,6 +37,20 @@ type storedConversationMessage struct {
 	toolResults []byte
 }
 
+type conversationStore interface {
+	createConversation(ctx context.Context) (string, error)
+	loadConversation(ctx context.Context, conversationID string) ([]llm.Message, error)
+	saveConversationTurn(ctx context.Context, conversationID string, turn []llm.Message) error
+}
+
+// conversationStore lets tests replace the database-backed store.
+func (s *Service) conversationStore() conversationStore {
+	if s.conversations != nil {
+		return s.conversations
+	}
+	return s
+}
+
 // createConversation removes the owner's stale conversations before starting a new one.
 func (s *Service) createConversation(ctx context.Context) (string, error) {
 	var id pgtype.UUID

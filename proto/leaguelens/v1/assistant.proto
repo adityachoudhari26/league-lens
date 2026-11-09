@@ -52,15 +52,6 @@ message SaveAssistantSettingsResponse {
 message DeleteAssistantSettingsRequest {}
 message DeleteAssistantSettingsResponse {}
 
-message ChatMessage {
-  ChatRole role = 1;
-  string text = 2;
-}
-enum ChatRole {
-  CHAT_ROLE_UNSPECIFIED = 0;
-  CHAT_ROLE_USER = 1;
-  CHAT_ROLE_ASSISTANT = 2;
-}
 message PageContext {
   string path = 1;
   string league_season_id = 2;
@@ -68,16 +59,22 @@ message PageContext {
   optional int32 week = 4;
 }
 message ChatRequest {
-  repeated ChatMessage messages = 1;
+  reserved 1;
+  reserved "messages";
   PageContext page = 2;
+  // Empty starts a new conversation; the server replies with ConversationStarted first.
+  string conversation_id = 3;
+  string message = 4;
 }
 message ChatResponse {
   oneof event {
     TextDelta text = 1;
     ToolActivity tool = 2;
     ActionProposal proposal = 3;
+    ConversationStarted conversation = 4;
   }
 }
+message ConversationStarted { string id = 1; }
 message TextDelta {
   string text = 1;
 }
@@ -108,6 +105,8 @@ message ActionProposal {
 }
 message RunAssistantActionRequest {
   AssistantAction action = 1;
+  // Records the outcome in this conversation when set.
+  string conversation_id = 2;
 }
 message RunAssistantActionResponse {
   string summary = 1;

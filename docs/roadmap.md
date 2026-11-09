@@ -75,6 +75,7 @@ remain stable even though the API and frontend work happened before owner setup.
   - [ ] PR4 — In-chat action confirmation and execution.
   - [x] PR5 — Free-agent advice.
   - [ ] PR6 — Trade advice.
+  - [x] Saved conversations — Playbook stores chats on the server, so later turns keep earlier tool results.
 
 - [ ] **12. Package and verify self-hosting.**
   - [x] Local Postgres Compose service and documented development commands.

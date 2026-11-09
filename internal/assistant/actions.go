@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"connectrpc.com/connect/v2"
@@ -36,11 +37,43 @@ func (s *Service) RunAssistantAction(
 	ctx context.Context,
 	request *v1.RunAssistantActionRequest,
 ) (*v1.RunAssistantActionResponse, error) {
-	if request == nil || request.GetAction() == nil {
+	if request == nil {
 		return nil, invalidArgument("an assistant action is required")
 	}
+	conversationID := request.GetConversationId()
+	if err := validateActionConversationID(conversationID); err != nil {
+		return nil, err
+	}
+	if request.GetAction() == nil {
+		return nil, invalidArgument("an assistant action is required")
+	}
+	response, actionErr := s.runConfirmedAction(ctx, request.GetAction())
+	if conversationID != "" {
+		if err := s.recordActionOutcome(
+			ctx, conversationID, actionOutcomeSummary(response, actionErr),
+		); err != nil {
+			slog.Warn("assistant action outcome was not saved", "error", err)
+		}
+	}
+	return response, actionErr
+}
 
-	switch action := request.GetAction().GetAction().(type) {
+func validateActionConversationID(id string) error {
+	if id == "" {
+		return nil
+	}
+	if _, err := parseTradeUUID(id); err != nil {
+		return invalidArgument("conversation id is invalid")
+	}
+	return nil
+}
+
+// runConfirmedAction executes the action the user confirmed in chat.
+func (s *Service) runConfirmedAction(
+	ctx context.Context,
+	action *v1.AssistantAction,
+) (*v1.RunAssistantActionResponse, error) {
+	switch action := action.GetAction().(type) {
 	case *v1.AssistantAction_SyncLeagues:
 		return s.startLeagueSync(ctx, action.SyncLeagues.GetOnlyStale())
 	case *v1.AssistantAction_DismissAlert:
@@ -50,6 +83,21 @@ func (s *Service) RunAssistantAction(
 	default:
 		return nil, invalidArgument("an assistant action is required")
 	}
+}
+
+func actionOutcomeSummary(response *v1.RunAssistantActionResponse, err error) string {
+	if err != nil || response == nil {
+		return "The action failed."
+	}
+	return response.GetSummary()
+}
+
+// recordActionOutcome appends the confirmation and its outcome to the conversation.
+func (s *Service) recordActionOutcome(ctx context.Context, conversationID, summary string) error {
+	return s.conversationStore().saveConversationTurn(ctx, conversationID, []llm.Message{
+		{Role: llm.RoleUser, Text: "I confirmed the proposed action."},
+		{Role: llm.RoleAssistant, Text: summary},
+	})
 }
 
 func (s *Service) startLeagueSync(ctx context.Context, onlyStale bool) (*v1.RunAssistantActionResponse, error) {
