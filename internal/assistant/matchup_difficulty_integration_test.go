@@ -24,7 +24,7 @@ import (
 
 func TestGetMatchupDifficultyReadsImportedRosterAndTeams(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_matchup_difficulty")
 	now := time.Now().UTC()
 	ref := fantasy.LeagueRef{
 		Provider: fantasy.ProviderSleeper, ExternalID: "matchup-difficulty-fixture",

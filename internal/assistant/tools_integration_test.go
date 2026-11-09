@@ -61,7 +61,7 @@ func (f assistantFreeAgentSourceFactory) SourceFor(leaguesync.Target) (fantasy.P
 
 func TestReadToolsUseSeededDashboard(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_tools")
 	now := time.Now().UTC()
 	league := fantasy.League{
 		Ref:  fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "assistant-tools", Season: 2026},

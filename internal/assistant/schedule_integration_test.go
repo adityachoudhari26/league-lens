@@ -20,7 +20,7 @@ import (
 
 func TestGetScheduleReadsStoredScheduleAndOwnerRoster(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_schedule")
 	now := time.Now().UTC()
 	season := fantasy.CurrentSeason(now)
 	importScheduleFixture(ctx, t, db, scheduleFixtureData(now, season))

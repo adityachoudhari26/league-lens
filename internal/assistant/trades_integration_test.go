@@ -40,7 +40,7 @@ func (s *tradeROSProjectionSource) ProjectRestOfSeason(
 
 func TestEvaluateTradeUsesOwnerScopedRosterAndSyncedMatchups(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_trades")
 	now := time.Now().UTC()
 	ref := fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "trade-fixture", Season: 2026}
 	league := fantasy.League{Ref: ref, Name: "Trade Fixture", TeamCount: 2}

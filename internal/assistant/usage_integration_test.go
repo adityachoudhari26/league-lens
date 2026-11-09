@@ -46,7 +46,7 @@ func (source *integrationUsageSource) weeksCalled() []int {
 
 func TestGetPlayerUsageReadsCompletedWeeksAndOwnerScopedRoster(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_usage")
 	now := time.Now().UTC()
 	ref := fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "usage-fixture", Season: 2026}
 	data := usageIntegrationFixture(now, ref)
