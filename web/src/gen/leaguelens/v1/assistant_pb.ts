@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/assistant.proto.
  */
 export const file_leaguelens_v1_assistant: GenFile = /*@__PURE__*/
-  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSJCCgtDaGF0TWVzc2FnZRIlCgRyb2xlGAEgASgOMhcubGVhZ3VlbGVucy52MS5DaGF0Um9sZRIMCgR0ZXh0GAIgASgJImIKC1BhZ2VDb250ZXh0EgwKBHBhdGgYASABKAkSGAoQbGVhZ3VlX3NlYXNvbl9pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEhEKBHdlZWsYBCABKAVIAIgBAUIHCgVfd2VlayJlCgtDaGF0UmVxdWVzdBIsCghtZXNzYWdlcxgBIAMoCzIaLmxlYWd1ZWxlbnMudjEuQ2hhdE1lc3NhZ2USKAoEcGFnZRgCIAEoCzIaLmxlYWd1ZWxlbnMudjEuUGFnZUNvbnRleHQioQEKDENoYXRSZXNwb25zZRIoCgR0ZXh0GAEgASgLMhgubGVhZ3VlbGVucy52MS5UZXh0RGVsdGFIABIrCgR0b29sGAIgASgLMhsubGVhZ3VlbGVucy52MS5Ub29sQWN0aXZpdHlIABIxCghwcm9wb3NhbBgDIAEoCzIdLmxlYWd1ZWxlbnMudjEuQWN0aW9uUHJvcG9zYWxIAEIHCgVldmVudCIZCglUZXh0RGVsdGESDAoEdGV4dBgBIAEoCSIdCgxUb29sQWN0aXZpdHkSDQoFbGFiZWwYASABKAkizQEKD0Fzc2lzdGFudEFjdGlvbhI4CgxzeW5jX2xlYWd1ZXMYASABKAsyIC5sZWFndWVsZW5zLnYxLlN5bmNMZWFndWVzQWN0aW9uSAASOgoNZGlzbWlzc19hbGVydBgCIAEoCzIhLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0FsZXJ0QWN0aW9uSAASOgoNcmVzdG9yZV9hbGVydBgDIAEoCzIhLmxlYWd1ZWxlbnMudjEuUmVzdG9yZUFsZXJ0QWN0aW9uSABCCAoGYWN0aW9uIicKEVN5bmNMZWFndWVzQWN0aW9uEhIKCm9ubHlfc3RhbGUYASABKAgiOgoSRGlzbWlzc0FsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiOgoSUmVzdG9yZUFsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiUQoOQWN0aW9uUHJvcG9zYWwSDwoHc3VtbWFyeRgBIAEoCRIuCgZhY3Rpb24YAiABKAsyHi5sZWFndWVsZW5zLnYxLkFzc2lzdGFudEFjdGlvbiJLChlSdW5Bc3Npc3RhbnRBY3Rpb25SZXF1ZXN0Ei4KBmFjdGlvbhgBIAEoCzIeLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50QWN0aW9uIi0KGlJ1bkFzc2lzdGFudEFjdGlvblJlc3BvbnNlEg8KB3N1bW1hcnkYASABKAkqgwEKEUFzc2lzdGFudFByb3ZpZGVyEiIKHkFTU0lTVEFOVF9QUk9WSURFUl9VTlNQRUNJRklFRBAAEiAKHEFTU0lTVEFOVF9QUk9WSURFUl9BTlRIUk9QSUMQARIoCiRBU1NJU1RBTlRfUFJPVklERVJfT1BFTkFJX0NPTVBBVElCTEUQAipSCghDaGF0Um9sZRIZChVDSEFUX1JPTEVfVU5TUEVDSUZJRUQQABISCg5DSEFUX1JPTEVfVVNFUhABEhcKE0NIQVRfUk9MRV9BU1NJU1RBTlQQAjKNBQoQQXNzaXN0YW50U2VydmljZRJvChRHZXRBc3Npc3RhbnRTZXR0aW5ncxIqLmxlYWd1ZWxlbnMudjEuR2V0QXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0GisubGVhZ3VlbGVucy52MS5HZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEmwKE0xpc3RBc3Npc3RhbnRNb2RlbHMSKS5sZWFndWVsZW5zLnYxLkxpc3RBc3Npc3RhbnRNb2RlbHNSZXF1ZXN0GioubGVhZ3VlbGVucy52MS5MaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2UScgoVU2F2ZUFzc2lzdGFudFNldHRpbmdzEisubGVhZ3VlbGVucy52MS5TYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0GiwubGVhZ3VlbGVucy52MS5TYXZlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJ4ChdEZWxldGVBc3Npc3RhbnRTZXR0aW5ncxItLmxlYWd1ZWxlbnMudjEuRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0Gi4ubGVhZ3VlbGVucy52MS5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEkEKBENoYXQSGi5sZWFndWVsZW5zLnYxLkNoYXRSZXF1ZXN0GhsubGVhZ3VlbGVucy52MS5DaGF0UmVzcG9uc2UwARJpChJSdW5Bc3Npc3RhbnRBY3Rpb24SKC5sZWFndWVsZW5zLnYxLlJ1bkFzc2lzdGFudEFjdGlvblJlcXVlc3QaKS5sZWFndWVsZW5zLnYxLlJ1bkFzc2lzdGFudEFjdGlvblJlc3BvbnNlQlJaUGdpdGh1Yi5jb20vYWRpdHlhY2hvdWRoYXJpMjYvbGVhZ3VlLWxlbnMvaW50ZXJuYWwvZ2VuL2xlYWd1ZWxlbnMvdjE7bGVhZ3VlbGVuc3YxYgZwcm90bzM");
+  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSJiCgtQYWdlQ29udGV4dBIMCgRwYXRoGAEgASgJEhgKEGxlYWd1ZV9zZWFzb25faWQYAiABKAkSDwoHdGVhbV9pZBgDIAEoCRIRCgR3ZWVrGAQgASgFSACIAQFCBwoFX3dlZWsicQoLQ2hhdFJlcXVlc3QSKAoEcGFnZRgCIAEoCzIaLmxlYWd1ZWxlbnMudjEuUGFnZUNvbnRleHQSFwoPY29udmVyc2F0aW9uX2lkGAMgASgJEg8KB21lc3NhZ2UYBCABKAlKBAgBEAJSCG1lc3NhZ2VzIt0BCgxDaGF0UmVzcG9uc2USKAoEdGV4dBgBIAEoCzIYLmxlYWd1ZWxlbnMudjEuVGV4dERlbHRhSAASKwoEdG9vbBgCIAEoCzIbLmxlYWd1ZWxlbnMudjEuVG9vbEFjdGl2aXR5SAASMQoIcHJvcG9zYWwYAyABKAsyHS5sZWFndWVsZW5zLnYxLkFjdGlvblByb3Bvc2FsSAASOgoMY29udmVyc2F0aW9uGAQgASgLMiIubGVhZ3VlbGVucy52MS5Db252ZXJzYXRpb25TdGFydGVkSABCBwoFZXZlbnQiIQoTQ29udmVyc2F0aW9uU3RhcnRlZBIKCgJpZBgBIAEoCSIZCglUZXh0RGVsdGESDAoEdGV4dBgBIAEoCSIdCgxUb29sQWN0aXZpdHkSDQoFbGFiZWwYASABKAkizQEKD0Fzc2lzdGFudEFjdGlvbhI4CgxzeW5jX2xlYWd1ZXMYASABKAsyIC5sZWFndWVsZW5zLnYxLlN5bmNMZWFndWVzQWN0aW9uSAASOgoNZGlzbWlzc19hbGVydBgCIAEoCzIhLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0FsZXJ0QWN0aW9uSAASOgoNcmVzdG9yZV9hbGVydBgDIAEoCzIhLmxlYWd1ZWxlbnMudjEuUmVzdG9yZUFsZXJ0QWN0aW9uSABCCAoGYWN0aW9uIicKEVN5bmNMZWFndWVzQWN0aW9uEhIKCm9ubHlfc3RhbGUYASABKAgiOgoSRGlzbWlzc0FsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiOgoSUmVzdG9yZUFsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiUQoOQWN0aW9uUHJvcG9zYWwSDwoHc3VtbWFyeRgBIAEoCRIuCgZhY3Rpb24YAiABKAsyHi5sZWFndWVsZW5zLnYxLkFzc2lzdGFudEFjdGlvbiJkChlSdW5Bc3Npc3RhbnRBY3Rpb25SZXF1ZXN0Ei4KBmFjdGlvbhgBIAEoCzIeLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50QWN0aW9uEhcKD2NvbnZlcnNhdGlvbl9pZBgCIAEoCSItChpSdW5Bc3Npc3RhbnRBY3Rpb25SZXNwb25zZRIPCgdzdW1tYXJ5GAEgASgJKoMBChFBc3Npc3RhbnRQcm92aWRlchIiCh5BU1NJU1RBTlRfUFJPVklERVJfVU5TUEVDSUZJRUQQABIgChxBU1NJU1RBTlRfUFJPVklERVJfQU5USFJPUElDEAESKAokQVNTSVNUQU5UX1BST1ZJREVSX09QRU5BSV9DT01QQVRJQkxFEAIyjQUKEEFzc2lzdGFudFNlcnZpY2USbwoUR2V0QXNzaXN0YW50U2V0dGluZ3MSKi5sZWFndWVsZW5zLnYxLkdldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdBorLmxlYWd1ZWxlbnMudjEuR2V0QXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJsChNMaXN0QXNzaXN0YW50TW9kZWxzEikubGVhZ3VlbGVucy52MS5MaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBoqLmxlYWd1ZWxlbnMudjEuTGlzdEFzc2lzdGFudE1vZGVsc1Jlc3BvbnNlEnIKFVNhdmVBc3Npc3RhbnRTZXR0aW5ncxIrLmxlYWd1ZWxlbnMudjEuU2F2ZUFzc2lzdGFudFNldHRpbmdzUmVxdWVzdBosLmxlYWd1ZWxlbnMudjEuU2F2ZUFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2USeAoXRGVsZXRlQXNzaXN0YW50U2V0dGluZ3MSLS5sZWFndWVsZW5zLnYxLkRlbGV0ZUFzc2lzdGFudFNldHRpbmdzUmVxdWVzdBouLmxlYWd1ZWxlbnMudjEuRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJBCgRDaGF0EhoubGVhZ3VlbGVucy52MS5DaGF0UmVxdWVzdBobLmxlYWd1ZWxlbnMudjEuQ2hhdFJlc3BvbnNlMAESaQoSUnVuQXNzaXN0YW50QWN0aW9uEigubGVhZ3VlbGVucy52MS5SdW5Bc3Npc3RhbnRBY3Rpb25SZXF1ZXN0GikubGVhZ3VlbGVucy52MS5SdW5Bc3Npc3RhbnRBY3Rpb25SZXNwb25zZUJSWlBnaXRodWIuY29tL2FkaXR5YWNob3VkaGFyaTI2L2xlYWd1ZS1sZW5zL2ludGVybmFsL2dlbi9sZWFndWVsZW5zL3YxO2xlYWd1ZWxlbnN2MWIGcHJvdG8z");
 
 /**
  * @generated from message leaguelens.v1.AssistantSettings
@@ -194,28 +194,6 @@ export const DeleteAssistantSettingsResponseSchema: GenMessage<DeleteAssistantSe
   messageDesc(file_leaguelens_v1_assistant, 8);
 
 /**
- * @generated from message leaguelens.v1.ChatMessage
- */
-export type ChatMessage = Message<"leaguelens.v1.ChatMessage"> & {
-  /**
-   * @generated from field: leaguelens.v1.ChatRole role = 1;
-   */
-  role: ChatRole;
-
-  /**
-   * @generated from field: string text = 2;
-   */
-  text: string;
-};
-
-/**
- * Describes the message leaguelens.v1.ChatMessage.
- * Use `create(ChatMessageSchema)` to create a new message.
- */
-export const ChatMessageSchema: GenMessage<ChatMessage> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 9);
-
-/**
  * @generated from message leaguelens.v1.PageContext
  */
 export type PageContext = Message<"leaguelens.v1.PageContext"> & {
@@ -245,21 +223,28 @@ export type PageContext = Message<"leaguelens.v1.PageContext"> & {
  * Use `create(PageContextSchema)` to create a new message.
  */
 export const PageContextSchema: GenMessage<PageContext> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 10);
+  messageDesc(file_leaguelens_v1_assistant, 9);
 
 /**
  * @generated from message leaguelens.v1.ChatRequest
  */
 export type ChatRequest = Message<"leaguelens.v1.ChatRequest"> & {
   /**
-   * @generated from field: repeated leaguelens.v1.ChatMessage messages = 1;
-   */
-  messages: ChatMessage[];
-
-  /**
    * @generated from field: leaguelens.v1.PageContext page = 2;
    */
   page?: PageContext | undefined;
+
+  /**
+   * Empty starts a new conversation; the server replies with ConversationStarted first.
+   *
+   * @generated from field: string conversation_id = 3;
+   */
+  conversationId: string;
+
+  /**
+   * @generated from field: string message = 4;
+   */
+  message: string;
 };
 
 /**
@@ -267,7 +252,7 @@ export type ChatRequest = Message<"leaguelens.v1.ChatRequest"> & {
  * Use `create(ChatRequestSchema)` to create a new message.
  */
 export const ChatRequestSchema: GenMessage<ChatRequest> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 11);
+  messageDesc(file_leaguelens_v1_assistant, 10);
 
 /**
  * @generated from message leaguelens.v1.ChatResponse
@@ -294,6 +279,12 @@ export type ChatResponse = Message<"leaguelens.v1.ChatResponse"> & {
      */
     value: ActionProposal;
     case: "proposal";
+  } | {
+    /**
+     * @generated from field: leaguelens.v1.ConversationStarted conversation = 4;
+     */
+    value: ConversationStarted;
+    case: "conversation";
   } | { case: undefined; value?: undefined };
 };
 
@@ -302,6 +293,23 @@ export type ChatResponse = Message<"leaguelens.v1.ChatResponse"> & {
  * Use `create(ChatResponseSchema)` to create a new message.
  */
 export const ChatResponseSchema: GenMessage<ChatResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 11);
+
+/**
+ * @generated from message leaguelens.v1.ConversationStarted
+ */
+export type ConversationStarted = Message<"leaguelens.v1.ConversationStarted"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.ConversationStarted.
+ * Use `create(ConversationStartedSchema)` to create a new message.
+ */
+export const ConversationStartedSchema: GenMessage<ConversationStarted> = /*@__PURE__*/
   messageDesc(file_leaguelens_v1_assistant, 12);
 
 /**
@@ -464,6 +472,13 @@ export type RunAssistantActionRequest = Message<"leaguelens.v1.RunAssistantActio
    * @generated from field: leaguelens.v1.AssistantAction action = 1;
    */
   action?: AssistantAction | undefined;
+
+  /**
+   * Records the outcome in this conversation when set.
+   *
+   * @generated from field: string conversation_id = 2;
+   */
+  conversationId: string;
 };
 
 /**
@@ -515,32 +530,6 @@ export enum AssistantProvider {
  */
 export const AssistantProviderSchema: GenEnum<AssistantProvider> = /*@__PURE__*/
   enumDesc(file_leaguelens_v1_assistant, 0);
-
-/**
- * @generated from enum leaguelens.v1.ChatRole
- */
-export enum ChatRole {
-  /**
-   * @generated from enum value: CHAT_ROLE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: CHAT_ROLE_USER = 1;
-   */
-  USER = 1,
-
-  /**
-   * @generated from enum value: CHAT_ROLE_ASSISTANT = 2;
-   */
-  ASSISTANT = 2,
-}
-
-/**
- * Describes the enum leaguelens.v1.ChatRole.
- */
-export const ChatRoleSchema: GenEnum<ChatRole> = /*@__PURE__*/
-  enumDesc(file_leaguelens_v1_assistant, 1);
 
 /**
  * @generated from service leaguelens.v1.AssistantService

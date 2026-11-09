@@ -57,6 +57,7 @@ type Service struct {
 	Trending        TrendingSource
 	PlayerCatalog   playerids.Catalog
 	CatalogPath     string
+	conversations   conversationStore
 	trending        trendingCache
 	matchupRatings  matchupRatingsCache
 	ProviderSources interface {

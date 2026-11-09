@@ -9,7 +9,6 @@ import {
   appendAssistantOutcome,
   applyChatResponse,
   chatErrorMessage,
-  toChatMessages,
   type AssistantTurn,
   type ChatProblem,
   updateTurn,
@@ -22,11 +21,13 @@ export function useAssistantChat(page: PageContext) {
   const [messages, setMessages] = useState<AssistantTurn[]>([])
   const [draft, setDraft] = useState("")
   const [problem, setProblem] = useState<ChatProblem>()
+  const conversationId = useRef<string | undefined>(undefined)
   const handledActions = useRef(new Set<number>())
 
   const clear = useCallback(() => {
     stop()
     handledActions.current.clear()
+    conversationId.current = undefined
     setMessages([])
     setDraft("")
     setProblem(undefined)
@@ -45,12 +46,17 @@ export function useAssistantChat(page: PageContext) {
       setProblem(undefined)
       try {
         const request = create(ChatRequestSchema, {
-          messages: toChatMessages(nextMessages),
+          conversationId: conversationId.current ?? "",
+          message: text,
           page,
         })
-        await stream(request, (event) =>
-          setMessages((current) => applyChatResponse(current, event)),
-        )
+        await stream(request, (event) => {
+          if (event.event.case === "conversation") {
+            conversationId.current = event.event.value.id
+            return
+          }
+          setMessages((current) => applyChatResponse(current, event))
+        })
       } catch (cause) {
         setProblem(chatErrorMessage(cause))
       }
@@ -72,7 +78,10 @@ export function useAssistantChat(page: PageContext) {
         }),
       )
       try {
-        const response = await runAction(action)
+        const response = await runAction({
+          action,
+          conversationId: conversationId.current,
+        })
         setMessages((current) =>
           appendAssistantOutcome(current, response.summary),
         )

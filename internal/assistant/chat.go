@@ -15,9 +15,7 @@ import (
 
 const (
 	chatTimeout             = 2 * time.Minute
-	maxChatMessages         = 40
 	maxChatMessageRunes     = 4000
-	retainedChatMessages    = 20
 	chatCompletionMaxTokens = 1500
 )
 
@@ -40,9 +38,9 @@ func (s *Service) chat(
 	loadProvider chatProviderLoader,
 ) error {
 	if request == nil {
-		return invalidArgument("chat messages are required")
+		return invalidArgument("a chat message is required")
 	}
-	messages, err := validatedChatMessages(request.GetMessages())
+	text, err := validatedChatText(request.GetMessage())
 	if err != nil {
 		return err
 	}
@@ -55,7 +53,40 @@ func (s *Service) chat(
 	loop := chatLoop{
 		cancel: cancel, provider: provider, model: model, send: send, tools: s.chatTools(),
 	}
-	return loop.run(chatCtx, request.GetPage(), messages)
+	conversationID, history, err := s.openConversation(chatCtx, request.GetConversationId(), loop.sendEvent)
+	if err != nil {
+		return err
+	}
+	userMessage := llm.Message{Role: llm.RoleUser, Text: text}
+	turn, err := loop.run(chatCtx, request.GetPage(), history, userMessage)
+	if err != nil {
+		return err
+	}
+	return s.conversationStore().saveConversationTurn(chatCtx, conversationID, turn)
+}
+
+// openConversation starts a new conversation or loads its saved history.
+func (s *Service) openConversation(
+	ctx context.Context,
+	conversationID string,
+	send chatEventSender,
+) (string, []llm.Message, error) {
+	if conversationID != "" {
+		messages, err := s.conversationStore().loadConversation(ctx, conversationID)
+		return conversationID, messages, err
+	}
+	conversationID, err := s.conversationStore().createConversation(ctx)
+	if err != nil {
+		return "", nil, err
+	}
+	if err := send(&v1.ChatResponse{
+		Event: &v1.ChatResponse_Conversation{
+			Conversation: &v1.ConversationStarted{Id: conversationID},
+		},
+	}); err != nil {
+		return "", nil, err
+	}
+	return conversationID, nil, nil
 }
 
 func (s *Service) providerForChat(ctx context.Context) (llm.Provider, string, error) {
@@ -79,47 +110,12 @@ func (s *Service) providerForChat(ctx context.Context) (llm.Provider, string, er
 	return provider, settings.Model, nil
 }
 
-// validatedChatMessages drops empty assistant proposal placeholders from client history.
-func validatedChatMessages(messages []*v1.ChatMessage) ([]llm.Message, error) {
-	if len(messages) < 1 || len(messages) > maxChatMessages {
-		return nil, invalidArgument("chat requires between 1 and 40 messages")
+// validatedChatText trims the new user message and enforces its rune limit.
+func validatedChatText(text string) (string, error) {
+	text = strings.TrimSpace(text)
+	textLength := utf8.RuneCountInString(text)
+	if textLength < 1 || textLength > maxChatMessageRunes {
+		return "", invalidArgument("chat message text must be 1 to 4000 characters")
 	}
-	if messages[len(messages)-1] == nil ||
-		messages[len(messages)-1].GetRole() != v1.ChatRole_CHAT_ROLE_USER {
-		return nil, invalidArgument("the last chat message must be from the user")
-	}
-	validated := make([]llm.Message, 0, len(messages))
-	for _, message := range messages {
-		if message == nil {
-			return nil, invalidArgument("chat messages cannot be empty")
-		}
-		role, err := chatRole(message.GetRole())
-		if err != nil {
-			return nil, err
-		}
-		text := strings.TrimSpace(message.GetText())
-		textLength := utf8.RuneCountInString(text)
-		if role == llm.RoleAssistant && textLength == 0 {
-			continue
-		}
-		if textLength < 1 || textLength > maxChatMessageRunes {
-			return nil, invalidArgument("chat message text must be 1 to 4000 characters")
-		}
-		validated = append(validated, llm.Message{Role: role, Text: text})
-	}
-	if len(validated) > retainedChatMessages {
-		validated = validated[len(validated)-retainedChatMessages:]
-	}
-	return validated, nil
-}
-
-func chatRole(role v1.ChatRole) (llm.Role, error) {
-	switch role {
-	case v1.ChatRole_CHAT_ROLE_USER:
-		return llm.RoleUser, nil
-	case v1.ChatRole_CHAT_ROLE_ASSISTANT:
-		return llm.RoleAssistant, nil
-	default:
-		return "", invalidArgument("chat message role must be user or assistant")
-	}
+	return text, nil
 }

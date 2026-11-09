@@ -70,55 +70,6 @@ func (AssistantProvider) EnumDescriptor() ([]byte, []int) {
 	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{0}
 }
 
-type ChatRole int32
-
-const (
-	ChatRole_CHAT_ROLE_UNSPECIFIED ChatRole = 0
-	ChatRole_CHAT_ROLE_USER        ChatRole = 1
-	ChatRole_CHAT_ROLE_ASSISTANT   ChatRole = 2
-)
-
-// Enum value maps for ChatRole.
-var (
-	ChatRole_name = map[int32]string{
-		0: "CHAT_ROLE_UNSPECIFIED",
-		1: "CHAT_ROLE_USER",
-		2: "CHAT_ROLE_ASSISTANT",
-	}
-	ChatRole_value = map[string]int32{
-		"CHAT_ROLE_UNSPECIFIED": 0,
-		"CHAT_ROLE_USER":        1,
-		"CHAT_ROLE_ASSISTANT":   2,
-	}
-)
-
-func (x ChatRole) Enum() *ChatRole {
-	p := new(ChatRole)
-	*p = x
-	return p
-}
-
-func (x ChatRole) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ChatRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_leaguelens_v1_assistant_proto_enumTypes[1].Descriptor()
-}
-
-func (ChatRole) Type() protoreflect.EnumType {
-	return &file_leaguelens_v1_assistant_proto_enumTypes[1]
-}
-
-func (x ChatRole) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ChatRole.Descriptor instead.
-func (ChatRole) EnumDescriptor() ([]byte, []int) {
-	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{1}
-}
-
 type AssistantSettings struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Provider      AssistantProvider      `protobuf:"varint,1,opt,name=provider,proto3,enum=leaguelens.v1.AssistantProvider" json:"provider,omitempty"`
@@ -555,58 +506,6 @@ func (*DeleteAssistantSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{8}
 }
 
-type ChatMessage struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Role          ChatRole               `protobuf:"varint,1,opt,name=role,proto3,enum=leaguelens.v1.ChatRole" json:"role,omitempty"`
-	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ChatMessage) Reset() {
-	*x = ChatMessage{}
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ChatMessage) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ChatMessage) ProtoMessage() {}
-
-func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
-func (*ChatMessage) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ChatMessage) GetRole() ChatRole {
-	if x != nil {
-		return x.Role
-	}
-	return ChatRole_CHAT_ROLE_UNSPECIFIED
-}
-
-func (x *ChatMessage) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
 type PageContext struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Path           string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -619,7 +518,7 @@ type PageContext struct {
 
 func (x *PageContext) Reset() {
 	*x = PageContext{}
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[10]
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -631,7 +530,7 @@ func (x *PageContext) String() string {
 func (*PageContext) ProtoMessage() {}
 
 func (x *PageContext) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[10]
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -644,7 +543,7 @@ func (x *PageContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PageContext.ProtoReflect.Descriptor instead.
 func (*PageContext) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{10}
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PageContext) GetPath() string {
@@ -676,16 +575,18 @@ func (x *PageContext) GetWeek() int32 {
 }
 
 type ChatRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Messages      []*ChatMessage         `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
-	Page          *PageContext           `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Page  *PageContext           `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	// Empty starts a new conversation; the server replies with ConversationStarted first.
+	ConversationId string `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	Message        string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ChatRequest) Reset() {
 	*x = ChatRequest{}
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[11]
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -697,7 +598,7 @@ func (x *ChatRequest) String() string {
 func (*ChatRequest) ProtoMessage() {}
 
 func (x *ChatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[11]
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -710,14 +611,7 @@ func (x *ChatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatRequest.ProtoReflect.Descriptor instead.
 func (*ChatRequest) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *ChatRequest) GetMessages() []*ChatMessage {
-	if x != nil {
-		return x.Messages
-	}
-	return nil
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ChatRequest) GetPage() *PageContext {
@@ -727,6 +621,20 @@ func (x *ChatRequest) GetPage() *PageContext {
 	return nil
 }
 
+func (x *ChatRequest) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *ChatRequest) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type ChatResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Event:
@@ -734,6 +642,7 @@ type ChatResponse struct {
 	//	*ChatResponse_Text
 	//	*ChatResponse_Tool
 	//	*ChatResponse_Proposal
+	//	*ChatResponse_Conversation
 	Event         isChatResponse_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -741,7 +650,7 @@ type ChatResponse struct {
 
 func (x *ChatResponse) Reset() {
 	*x = ChatResponse{}
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[12]
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -753,7 +662,7 @@ func (x *ChatResponse) String() string {
 func (*ChatResponse) ProtoMessage() {}
 
 func (x *ChatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_leaguelens_v1_assistant_proto_msgTypes[12]
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -766,7 +675,7 @@ func (x *ChatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatResponse.ProtoReflect.Descriptor instead.
 func (*ChatResponse) Descriptor() ([]byte, []int) {
-	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{12}
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ChatResponse) GetEvent() isChatResponse_Event {
@@ -803,6 +712,15 @@ func (x *ChatResponse) GetProposal() *ActionProposal {
 	return nil
 }
 
+func (x *ChatResponse) GetConversation() *ConversationStarted {
+	if x != nil {
+		if x, ok := x.Event.(*ChatResponse_Conversation); ok {
+			return x.Conversation
+		}
+	}
+	return nil
+}
+
 type isChatResponse_Event interface {
 	isChatResponse_Event()
 }
@@ -819,11 +737,61 @@ type ChatResponse_Proposal struct {
 	Proposal *ActionProposal `protobuf:"bytes,3,opt,name=proposal,proto3,oneof"`
 }
 
+type ChatResponse_Conversation struct {
+	Conversation *ConversationStarted `protobuf:"bytes,4,opt,name=conversation,proto3,oneof"`
+}
+
 func (*ChatResponse_Text) isChatResponse_Event() {}
 
 func (*ChatResponse_Tool) isChatResponse_Event() {}
 
 func (*ChatResponse_Proposal) isChatResponse_Event() {}
+
+func (*ChatResponse_Conversation) isChatResponse_Event() {}
+
+type ConversationStarted struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConversationStarted) Reset() {
+	*x = ConversationStarted{}
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConversationStarted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConversationStarted) ProtoMessage() {}
+
+func (x *ConversationStarted) ProtoReflect() protoreflect.Message {
+	mi := &file_leaguelens_v1_assistant_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConversationStarted.ProtoReflect.Descriptor instead.
+func (*ConversationStarted) Descriptor() ([]byte, []int) {
+	return file_leaguelens_v1_assistant_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ConversationStarted) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
 
 type TextDelta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1212,10 +1180,12 @@ func (x *ActionProposal) GetAction() *AssistantAction {
 }
 
 type RunAssistantActionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Action        *AssistantAction       `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Action *AssistantAction       `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`
+	// Records the outcome in this conversation when set.
+	ConversationId string `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RunAssistantActionRequest) Reset() {
@@ -1253,6 +1223,13 @@ func (x *RunAssistantActionRequest) GetAction() *AssistantAction {
 		return x.Action
 	}
 	return nil
+}
+
+func (x *RunAssistantActionRequest) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
 }
 
 type RunAssistantActionResponse struct {
@@ -1327,24 +1304,25 @@ const file_leaguelens_v1_assistant_proto_rawDesc = "" +
 	"\x1dSaveAssistantSettingsResponse\x12<\n" +
 	"\bsettings\x18\x01 \x01(\v2 .leaguelens.v1.AssistantSettingsR\bsettings\" \n" +
 	"\x1eDeleteAssistantSettingsRequest\"!\n" +
-	"\x1fDeleteAssistantSettingsResponse\"N\n" +
-	"\vChatMessage\x12+\n" +
-	"\x04role\x18\x01 \x01(\x0e2\x17.leaguelens.v1.ChatRoleR\x04role\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\"\x86\x01\n" +
+	"\x1fDeleteAssistantSettingsResponse\"\x86\x01\n" +
 	"\vPageContext\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12(\n" +
 	"\x10league_season_id\x18\x02 \x01(\tR\x0eleagueSeasonId\x12\x17\n" +
 	"\ateam_id\x18\x03 \x01(\tR\x06teamId\x12\x17\n" +
 	"\x04week\x18\x04 \x01(\x05H\x00R\x04week\x88\x01\x01B\a\n" +
-	"\x05_week\"u\n" +
-	"\vChatRequest\x126\n" +
-	"\bmessages\x18\x01 \x03(\v2\x1a.leaguelens.v1.ChatMessageR\bmessages\x12.\n" +
-	"\x04page\x18\x02 \x01(\v2\x1a.leaguelens.v1.PageContextR\x04page\"\xb7\x01\n" +
+	"\x05_week\"\x90\x01\n" +
+	"\vChatRequest\x12.\n" +
+	"\x04page\x18\x02 \x01(\v2\x1a.leaguelens.v1.PageContextR\x04page\x12'\n" +
+	"\x0fconversation_id\x18\x03 \x01(\tR\x0econversationId\x12\x18\n" +
+	"\amessage\x18\x04 \x01(\tR\amessageJ\x04\b\x01\x10\x02R\bmessages\"\x81\x02\n" +
 	"\fChatResponse\x12.\n" +
 	"\x04text\x18\x01 \x01(\v2\x18.leaguelens.v1.TextDeltaH\x00R\x04text\x121\n" +
 	"\x04tool\x18\x02 \x01(\v2\x1b.leaguelens.v1.ToolActivityH\x00R\x04tool\x12;\n" +
-	"\bproposal\x18\x03 \x01(\v2\x1d.leaguelens.v1.ActionProposalH\x00R\bproposalB\a\n" +
-	"\x05event\"\x1f\n" +
+	"\bproposal\x18\x03 \x01(\v2\x1d.leaguelens.v1.ActionProposalH\x00R\bproposal\x12H\n" +
+	"\fconversation\x18\x04 \x01(\v2\".leaguelens.v1.ConversationStartedH\x00R\fconversationB\a\n" +
+	"\x05event\"%\n" +
+	"\x13ConversationStarted\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x1f\n" +
 	"\tTextDelta\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\"$\n" +
 	"\fToolActivity\x12\x14\n" +
@@ -1365,19 +1343,16 @@ const file_leaguelens_v1_assistant_proto_rawDesc = "" +
 	"\asummary\x18\x02 \x01(\tR\asummary\"b\n" +
 	"\x0eActionProposal\x12\x18\n" +
 	"\asummary\x18\x01 \x01(\tR\asummary\x126\n" +
-	"\x06action\x18\x02 \x01(\v2\x1e.leaguelens.v1.AssistantActionR\x06action\"S\n" +
+	"\x06action\x18\x02 \x01(\v2\x1e.leaguelens.v1.AssistantActionR\x06action\"|\n" +
 	"\x19RunAssistantActionRequest\x126\n" +
-	"\x06action\x18\x01 \x01(\v2\x1e.leaguelens.v1.AssistantActionR\x06action\"6\n" +
+	"\x06action\x18\x01 \x01(\v2\x1e.leaguelens.v1.AssistantActionR\x06action\x12'\n" +
+	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\"6\n" +
 	"\x1aRunAssistantActionResponse\x12\x18\n" +
 	"\asummary\x18\x01 \x01(\tR\asummary*\x83\x01\n" +
 	"\x11AssistantProvider\x12\"\n" +
 	"\x1eASSISTANT_PROVIDER_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cASSISTANT_PROVIDER_ANTHROPIC\x10\x01\x12(\n" +
-	"$ASSISTANT_PROVIDER_OPENAI_COMPATIBLE\x10\x02*R\n" +
-	"\bChatRole\x12\x19\n" +
-	"\x15CHAT_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
-	"\x0eCHAT_ROLE_USER\x10\x01\x12\x17\n" +
-	"\x13CHAT_ROLE_ASSISTANT\x10\x022\x8d\x05\n" +
+	"$ASSISTANT_PROVIDER_OPENAI_COMPATIBLE\x10\x022\x8d\x05\n" +
 	"\x10AssistantService\x12o\n" +
 	"\x14GetAssistantSettings\x12*.leaguelens.v1.GetAssistantSettingsRequest\x1a+.leaguelens.v1.GetAssistantSettingsResponse\x12l\n" +
 	"\x13ListAssistantModels\x12).leaguelens.v1.ListAssistantModelsRequest\x1a*.leaguelens.v1.ListAssistantModelsResponse\x12r\n" +
@@ -1398,68 +1373,66 @@ func file_leaguelens_v1_assistant_proto_rawDescGZIP() []byte {
 	return file_leaguelens_v1_assistant_proto_rawDescData
 }
 
-var file_leaguelens_v1_assistant_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_leaguelens_v1_assistant_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_leaguelens_v1_assistant_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_leaguelens_v1_assistant_proto_goTypes = []any{
 	(AssistantProvider)(0),                  // 0: leaguelens.v1.AssistantProvider
-	(ChatRole)(0),                           // 1: leaguelens.v1.ChatRole
-	(*AssistantSettings)(nil),               // 2: leaguelens.v1.AssistantSettings
-	(*GetAssistantSettingsRequest)(nil),     // 3: leaguelens.v1.GetAssistantSettingsRequest
-	(*GetAssistantSettingsResponse)(nil),    // 4: leaguelens.v1.GetAssistantSettingsResponse
-	(*ListAssistantModelsRequest)(nil),      // 5: leaguelens.v1.ListAssistantModelsRequest
-	(*ListAssistantModelsResponse)(nil),     // 6: leaguelens.v1.ListAssistantModelsResponse
-	(*SaveAssistantSettingsRequest)(nil),    // 7: leaguelens.v1.SaveAssistantSettingsRequest
-	(*SaveAssistantSettingsResponse)(nil),   // 8: leaguelens.v1.SaveAssistantSettingsResponse
-	(*DeleteAssistantSettingsRequest)(nil),  // 9: leaguelens.v1.DeleteAssistantSettingsRequest
-	(*DeleteAssistantSettingsResponse)(nil), // 10: leaguelens.v1.DeleteAssistantSettingsResponse
-	(*ChatMessage)(nil),                     // 11: leaguelens.v1.ChatMessage
-	(*PageContext)(nil),                     // 12: leaguelens.v1.PageContext
-	(*ChatRequest)(nil),                     // 13: leaguelens.v1.ChatRequest
-	(*ChatResponse)(nil),                    // 14: leaguelens.v1.ChatResponse
-	(*TextDelta)(nil),                       // 15: leaguelens.v1.TextDelta
-	(*ToolActivity)(nil),                    // 16: leaguelens.v1.ToolActivity
-	(*AssistantAction)(nil),                 // 17: leaguelens.v1.AssistantAction
-	(*SyncLeaguesAction)(nil),               // 18: leaguelens.v1.SyncLeaguesAction
-	(*DismissAlertAction)(nil),              // 19: leaguelens.v1.DismissAlertAction
-	(*RestoreAlertAction)(nil),              // 20: leaguelens.v1.RestoreAlertAction
-	(*ActionProposal)(nil),                  // 21: leaguelens.v1.ActionProposal
-	(*RunAssistantActionRequest)(nil),       // 22: leaguelens.v1.RunAssistantActionRequest
-	(*RunAssistantActionResponse)(nil),      // 23: leaguelens.v1.RunAssistantActionResponse
+	(*AssistantSettings)(nil),               // 1: leaguelens.v1.AssistantSettings
+	(*GetAssistantSettingsRequest)(nil),     // 2: leaguelens.v1.GetAssistantSettingsRequest
+	(*GetAssistantSettingsResponse)(nil),    // 3: leaguelens.v1.GetAssistantSettingsResponse
+	(*ListAssistantModelsRequest)(nil),      // 4: leaguelens.v1.ListAssistantModelsRequest
+	(*ListAssistantModelsResponse)(nil),     // 5: leaguelens.v1.ListAssistantModelsResponse
+	(*SaveAssistantSettingsRequest)(nil),    // 6: leaguelens.v1.SaveAssistantSettingsRequest
+	(*SaveAssistantSettingsResponse)(nil),   // 7: leaguelens.v1.SaveAssistantSettingsResponse
+	(*DeleteAssistantSettingsRequest)(nil),  // 8: leaguelens.v1.DeleteAssistantSettingsRequest
+	(*DeleteAssistantSettingsResponse)(nil), // 9: leaguelens.v1.DeleteAssistantSettingsResponse
+	(*PageContext)(nil),                     // 10: leaguelens.v1.PageContext
+	(*ChatRequest)(nil),                     // 11: leaguelens.v1.ChatRequest
+	(*ChatResponse)(nil),                    // 12: leaguelens.v1.ChatResponse
+	(*ConversationStarted)(nil),             // 13: leaguelens.v1.ConversationStarted
+	(*TextDelta)(nil),                       // 14: leaguelens.v1.TextDelta
+	(*ToolActivity)(nil),                    // 15: leaguelens.v1.ToolActivity
+	(*AssistantAction)(nil),                 // 16: leaguelens.v1.AssistantAction
+	(*SyncLeaguesAction)(nil),               // 17: leaguelens.v1.SyncLeaguesAction
+	(*DismissAlertAction)(nil),              // 18: leaguelens.v1.DismissAlertAction
+	(*RestoreAlertAction)(nil),              // 19: leaguelens.v1.RestoreAlertAction
+	(*ActionProposal)(nil),                  // 20: leaguelens.v1.ActionProposal
+	(*RunAssistantActionRequest)(nil),       // 21: leaguelens.v1.RunAssistantActionRequest
+	(*RunAssistantActionResponse)(nil),      // 22: leaguelens.v1.RunAssistantActionResponse
 }
 var file_leaguelens_v1_assistant_proto_depIdxs = []int32{
 	0,  // 0: leaguelens.v1.AssistantSettings.provider:type_name -> leaguelens.v1.AssistantProvider
-	2,  // 1: leaguelens.v1.GetAssistantSettingsResponse.settings:type_name -> leaguelens.v1.AssistantSettings
+	1,  // 1: leaguelens.v1.GetAssistantSettingsResponse.settings:type_name -> leaguelens.v1.AssistantSettings
 	0,  // 2: leaguelens.v1.ListAssistantModelsRequest.provider:type_name -> leaguelens.v1.AssistantProvider
 	0,  // 3: leaguelens.v1.SaveAssistantSettingsRequest.provider:type_name -> leaguelens.v1.AssistantProvider
-	2,  // 4: leaguelens.v1.SaveAssistantSettingsResponse.settings:type_name -> leaguelens.v1.AssistantSettings
-	1,  // 5: leaguelens.v1.ChatMessage.role:type_name -> leaguelens.v1.ChatRole
-	11, // 6: leaguelens.v1.ChatRequest.messages:type_name -> leaguelens.v1.ChatMessage
-	12, // 7: leaguelens.v1.ChatRequest.page:type_name -> leaguelens.v1.PageContext
-	15, // 8: leaguelens.v1.ChatResponse.text:type_name -> leaguelens.v1.TextDelta
-	16, // 9: leaguelens.v1.ChatResponse.tool:type_name -> leaguelens.v1.ToolActivity
-	21, // 10: leaguelens.v1.ChatResponse.proposal:type_name -> leaguelens.v1.ActionProposal
-	18, // 11: leaguelens.v1.AssistantAction.sync_leagues:type_name -> leaguelens.v1.SyncLeaguesAction
-	19, // 12: leaguelens.v1.AssistantAction.dismiss_alert:type_name -> leaguelens.v1.DismissAlertAction
-	20, // 13: leaguelens.v1.AssistantAction.restore_alert:type_name -> leaguelens.v1.RestoreAlertAction
-	17, // 14: leaguelens.v1.ActionProposal.action:type_name -> leaguelens.v1.AssistantAction
-	17, // 15: leaguelens.v1.RunAssistantActionRequest.action:type_name -> leaguelens.v1.AssistantAction
-	3,  // 16: leaguelens.v1.AssistantService.GetAssistantSettings:input_type -> leaguelens.v1.GetAssistantSettingsRequest
-	5,  // 17: leaguelens.v1.AssistantService.ListAssistantModels:input_type -> leaguelens.v1.ListAssistantModelsRequest
-	7,  // 18: leaguelens.v1.AssistantService.SaveAssistantSettings:input_type -> leaguelens.v1.SaveAssistantSettingsRequest
-	9,  // 19: leaguelens.v1.AssistantService.DeleteAssistantSettings:input_type -> leaguelens.v1.DeleteAssistantSettingsRequest
-	13, // 20: leaguelens.v1.AssistantService.Chat:input_type -> leaguelens.v1.ChatRequest
-	22, // 21: leaguelens.v1.AssistantService.RunAssistantAction:input_type -> leaguelens.v1.RunAssistantActionRequest
-	4,  // 22: leaguelens.v1.AssistantService.GetAssistantSettings:output_type -> leaguelens.v1.GetAssistantSettingsResponse
-	6,  // 23: leaguelens.v1.AssistantService.ListAssistantModels:output_type -> leaguelens.v1.ListAssistantModelsResponse
-	8,  // 24: leaguelens.v1.AssistantService.SaveAssistantSettings:output_type -> leaguelens.v1.SaveAssistantSettingsResponse
-	10, // 25: leaguelens.v1.AssistantService.DeleteAssistantSettings:output_type -> leaguelens.v1.DeleteAssistantSettingsResponse
-	14, // 26: leaguelens.v1.AssistantService.Chat:output_type -> leaguelens.v1.ChatResponse
-	23, // 27: leaguelens.v1.AssistantService.RunAssistantAction:output_type -> leaguelens.v1.RunAssistantActionResponse
-	22, // [22:28] is the sub-list for method output_type
-	16, // [16:22] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	1,  // 4: leaguelens.v1.SaveAssistantSettingsResponse.settings:type_name -> leaguelens.v1.AssistantSettings
+	10, // 5: leaguelens.v1.ChatRequest.page:type_name -> leaguelens.v1.PageContext
+	14, // 6: leaguelens.v1.ChatResponse.text:type_name -> leaguelens.v1.TextDelta
+	15, // 7: leaguelens.v1.ChatResponse.tool:type_name -> leaguelens.v1.ToolActivity
+	20, // 8: leaguelens.v1.ChatResponse.proposal:type_name -> leaguelens.v1.ActionProposal
+	13, // 9: leaguelens.v1.ChatResponse.conversation:type_name -> leaguelens.v1.ConversationStarted
+	17, // 10: leaguelens.v1.AssistantAction.sync_leagues:type_name -> leaguelens.v1.SyncLeaguesAction
+	18, // 11: leaguelens.v1.AssistantAction.dismiss_alert:type_name -> leaguelens.v1.DismissAlertAction
+	19, // 12: leaguelens.v1.AssistantAction.restore_alert:type_name -> leaguelens.v1.RestoreAlertAction
+	16, // 13: leaguelens.v1.ActionProposal.action:type_name -> leaguelens.v1.AssistantAction
+	16, // 14: leaguelens.v1.RunAssistantActionRequest.action:type_name -> leaguelens.v1.AssistantAction
+	2,  // 15: leaguelens.v1.AssistantService.GetAssistantSettings:input_type -> leaguelens.v1.GetAssistantSettingsRequest
+	4,  // 16: leaguelens.v1.AssistantService.ListAssistantModels:input_type -> leaguelens.v1.ListAssistantModelsRequest
+	6,  // 17: leaguelens.v1.AssistantService.SaveAssistantSettings:input_type -> leaguelens.v1.SaveAssistantSettingsRequest
+	8,  // 18: leaguelens.v1.AssistantService.DeleteAssistantSettings:input_type -> leaguelens.v1.DeleteAssistantSettingsRequest
+	11, // 19: leaguelens.v1.AssistantService.Chat:input_type -> leaguelens.v1.ChatRequest
+	21, // 20: leaguelens.v1.AssistantService.RunAssistantAction:input_type -> leaguelens.v1.RunAssistantActionRequest
+	3,  // 21: leaguelens.v1.AssistantService.GetAssistantSettings:output_type -> leaguelens.v1.GetAssistantSettingsResponse
+	5,  // 22: leaguelens.v1.AssistantService.ListAssistantModels:output_type -> leaguelens.v1.ListAssistantModelsResponse
+	7,  // 23: leaguelens.v1.AssistantService.SaveAssistantSettings:output_type -> leaguelens.v1.SaveAssistantSettingsResponse
+	9,  // 24: leaguelens.v1.AssistantService.DeleteAssistantSettings:output_type -> leaguelens.v1.DeleteAssistantSettingsResponse
+	12, // 25: leaguelens.v1.AssistantService.Chat:output_type -> leaguelens.v1.ChatResponse
+	22, // 26: leaguelens.v1.AssistantService.RunAssistantAction:output_type -> leaguelens.v1.RunAssistantActionResponse
+	21, // [21:27] is the sub-list for method output_type
+	15, // [15:21] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_leaguelens_v1_assistant_proto_init() }
@@ -1467,11 +1440,12 @@ func file_leaguelens_v1_assistant_proto_init() {
 	if File_leaguelens_v1_assistant_proto != nil {
 		return
 	}
-	file_leaguelens_v1_assistant_proto_msgTypes[10].OneofWrappers = []any{}
-	file_leaguelens_v1_assistant_proto_msgTypes[12].OneofWrappers = []any{
+	file_leaguelens_v1_assistant_proto_msgTypes[9].OneofWrappers = []any{}
+	file_leaguelens_v1_assistant_proto_msgTypes[11].OneofWrappers = []any{
 		(*ChatResponse_Text)(nil),
 		(*ChatResponse_Tool)(nil),
 		(*ChatResponse_Proposal)(nil),
+		(*ChatResponse_Conversation)(nil),
 	}
 	file_leaguelens_v1_assistant_proto_msgTypes[15].OneofWrappers = []any{
 		(*AssistantAction_SyncLeagues)(nil),
@@ -1483,7 +1457,7 @@ func file_leaguelens_v1_assistant_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leaguelens_v1_assistant_proto_rawDesc), len(file_leaguelens_v1_assistant_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,

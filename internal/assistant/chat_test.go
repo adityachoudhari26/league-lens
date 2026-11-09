@@ -3,9 +3,9 @@ package assistant
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"connectrpc.com/connect/v2"
 
@@ -13,198 +13,294 @@ import (
 	"github.com/adityachoudhari26/league-lens/internal/llm"
 )
 
+const chatTestConversationID = "00000000-0000-0000-0000-000000000004"
+
+type fakeConversationStore struct {
+	conversationID       string
+	createCalls          int
+	createErr            error
+	loadedConversationID string
+	loadCalls            int
+	history              []llm.Message
+	loadErr              error
+	savedConversationID  string
+	saveCalls            int
+	savedTurns           [][]llm.Message
+	saveErr              error
+}
+
+func (s *fakeConversationStore) createConversation(context.Context) (string, error) {
+	s.createCalls++
+	if s.createErr != nil {
+		return "", s.createErr
+	}
+	if s.conversationID != "" {
+		return s.conversationID, nil
+	}
+	return chatTestConversationID, nil
+}
+
+func (s *fakeConversationStore) loadConversation(_ context.Context, conversationID string) ([]llm.Message, error) {
+	s.loadCalls++
+	s.loadedConversationID = conversationID
+	if s.loadErr != nil {
+		return nil, s.loadErr
+	}
+	return cloneChatTestMessages(s.history), nil
+}
+
+func (s *fakeConversationStore) saveConversationTurn(
+	_ context.Context,
+	conversationID string,
+	turn []llm.Message,
+) error {
+	s.saveCalls++
+	s.savedConversationID = conversationID
+	if s.saveErr != nil {
+		return s.saveErr
+	}
+	s.savedTurns = append(s.savedTurns, cloneChatTestMessages(turn))
+	return nil
+}
+
 type chatTestProvider struct {
-	deltas        []string
-	completionErr error
-	request       llm.Request
-	hasDeadline   bool
+	response        llm.Response
+	completionErr   error
+	request         llm.Request
+	completionCalls int
+	hasDeadline     bool
 }
 
 func (p *chatTestProvider) ListModels(context.Context) ([]string, error) {
 	return nil, nil
 }
 
-func (p *chatTestProvider) Complete(ctx context.Context, request llm.Request, onText func(string)) (llm.Response, error) {
+func (p *chatTestProvider) Complete(
+	ctx context.Context,
+	request llm.Request,
+	onText func(string),
+) (llm.Response, error) {
 	p.request = request
+	p.completionCalls++
 	_, p.hasDeadline = ctx.Deadline()
-	for _, delta := range p.deltas {
-		onText(delta)
+	if p.completionErr != nil {
+		return llm.Response{}, p.completionErr
 	}
-	return llm.Response{}, p.completionErr
+	if p.response.Text != "" {
+		onText(p.response.Text)
+	}
+	return p.response, nil
 }
 
-func TestChatForwardsDeltasAndTrimsHistory(t *testing.T) {
-	provider := &chatTestProvider{deltas: []string{"One", " two", "!"}}
-	request := &v1.ChatRequest{}
-	for index := 1; index <= 23; index++ {
-		request.Messages = append(request.Messages, &v1.ChatMessage{
-			Role: v1.ChatRole_CHAT_ROLE_USER, Text: messageNumber(index),
-		})
-	}
+func TestChatStartsConversationAndSavesTurn(t *testing.T) {
+	conversationID := "00000000-0000-0000-0000-000000000001"
+	store := &fakeConversationStore{conversationID: conversationID}
+	provider := &chatTestProvider{response: llm.Response{Text: "Hello there."}}
 	var events []*v1.ChatResponse
-	service := &Service{}
-	err := service.chat(context.Background(), request, func(event *v1.ChatResponse) error {
+	service := &Service{conversations: store}
+
+	err := runChatTest(service, &v1.ChatRequest{Message: "  Hello  "}, provider, nil, func(event *v1.ChatResponse) error {
 		events = append(events, event)
 		return nil
-	}, func(context.Context) (llm.Provider, string, error) {
-		return provider, "fake-model", nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(events) != len(provider.deltas) {
-		t.Fatalf("events = %d, want %d", len(events), len(provider.deltas))
+	if len(events) < 1 || events[0].GetConversation().GetId() != conversationID {
+		t.Fatalf("first event = %+v, want ConversationStarted", events)
 	}
-	for index, event := range events {
-		if got := event.GetText().GetText(); got != provider.deltas[index] {
-			t.Errorf("delta %d = %q, want %q", index, got, provider.deltas[index])
-		}
+	if !provider.hasDeadline || provider.completionCalls != 1 {
+		t.Fatalf("provider deadline=%v calls=%d", provider.hasDeadline, provider.completionCalls)
 	}
-	if !provider.hasDeadline {
-		t.Fatal("provider context has no deadline")
+	if store.createCalls != 1 {
+		t.Fatalf("conversation create calls = %d, want one", store.createCalls)
 	}
-	if provider.request.Model != "fake-model" || provider.request.MaxTokens != 1500 {
-		t.Fatalf("completion settings = %+v", provider.request)
+	assertChatTestSavedTurn(t, store, conversationID, []llm.Message{
+		{Role: llm.RoleUser, Text: "Hello"},
+		{Role: llm.RoleAssistant, Text: "Hello there."},
+	})
+}
+
+func TestChatLoadsExistingConversationHistory(t *testing.T) {
+	conversationID := "00000000-0000-0000-0000-000000000002"
+	history := []llm.Message{{Role: llm.RoleUser, Text: "earlier question"}}
+	store := &fakeConversationStore{history: history}
+	provider := &chatTestProvider{response: llm.Response{Text: "A later answer."}}
+	var events []*v1.ChatResponse
+	service := &Service{conversations: store}
+
+	err := runChatTest(service, &v1.ChatRequest{
+		ConversationId: conversationID, Message: "follow up",
+	}, provider, nil, func(event *v1.ChatResponse) error {
+		events = append(events, event)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if len(provider.request.Messages) != retainedChatMessages ||
-		provider.request.Messages[0].Text != messageNumber(4) ||
-		provider.request.Messages[len(provider.request.Messages)-1].Text != messageNumber(23) {
-		t.Fatalf("messages were not trimmed to the last 20: %+v", provider.request.Messages)
+	if store.createCalls != 0 || store.loadCalls != 1 || store.loadedConversationID != conversationID {
+		t.Fatalf("store calls = create:%d load:%d id:%q", store.createCalls, store.loadCalls, store.loadedConversationID)
 	}
-	for index, message := range provider.request.Messages {
-		if message.Role != llm.RoleUser {
-			t.Errorf("message %d role = %q", index, message.Role)
-		}
+	if len(events) != 1 || events[0].GetConversation() != nil {
+		t.Fatalf("events = %+v, want no ConversationStarted", events)
+	}
+	assertChatTestMessages(t, provider.request.Messages, []llm.Message{
+		{Role: llm.RoleUser, Text: "earlier question"},
+		{Role: llm.RoleUser, Text: "follow up"},
+	})
+	assertChatTestSavedTurn(t, store, conversationID, []llm.Message{
+		{Role: llm.RoleUser, Text: "follow up"},
+		{Role: llm.RoleAssistant, Text: "A later answer."},
+	})
+}
+
+func TestChatDoesNotSaveProviderFailures(t *testing.T) {
+	store := &fakeConversationStore{}
+	provider := &chatTestProvider{completionErr: llm.ErrUnavailable}
+
+	err := runChatTest(&Service{conversations: store}, chatTestRequest("", "question"), provider, nil, ignoreChatEvent)
+	if connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Fatalf("chat error = %v, want Unavailable", err)
+	}
+	if store.saveCalls != 0 {
+		t.Fatalf("save calls = %d, want none", store.saveCalls)
 	}
 }
 
-func TestChatPreservesNotSetUpError(t *testing.T) {
+func TestChatDoesNotCreateConversationWhenAssistantIsNotSetUp(t *testing.T) {
+	store := &fakeConversationStore{}
 	want := connect.NewError(connect.CodeFailedPrecondition, "assistant not set up")
-	err := (&Service{}).chat(
-		context.Background(),
-		&v1.ChatRequest{Messages: []*v1.ChatMessage{{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "Hello"}}},
-		func(*v1.ChatResponse) error { return nil },
-		func(context.Context) (llm.Provider, string, error) { return nil, "", want },
+
+	err := runChatTest(&Service{conversations: store}, chatTestRequest("", "question"), nil, want, ignoreChatEvent)
+	if !errors.Is(err, want) || !connectErrorCodeIs(err, connect.CodeFailedPrecondition) || store.createCalls != 0 {
+		t.Fatalf("chat error=%v create calls=%d", err, store.createCalls)
+	}
+}
+
+func TestChatValidatesMessageText(t *testing.T) {
+	for _, text := range []string{"", " \t\n ", strings.Repeat("a", maxChatMessageRunes+1)} {
+		err := runChatTest(
+			&Service{conversations: &fakeConversationStore{}},
+			chatTestRequest("", text),
+			&chatTestProvider{},
+			nil,
+			ignoreChatEvent,
+		)
+		if connect.CodeOf(err) != connect.CodeInvalidArgument {
+			t.Errorf("text length %d error = %v, want InvalidArgument", utf8.RuneCountInString(text), err)
+		}
+	}
+
+	text := strings.Repeat("界", maxChatMessageRunes)
+	store := &fakeConversationStore{}
+	err := runChatTest(&Service{conversations: store}, chatTestRequest("", text), &chatTestProvider{}, nil, ignoreChatEvent)
+	if err != nil || len(store.savedTurns) != 1 || utf8.RuneCountInString(store.savedTurns[0][0].Text) != maxChatMessageRunes {
+		t.Fatalf("4000-rune message: error=%v saved=%+v", err, store.savedTurns)
+	}
+}
+
+func TestChatRejectsNilRequest(t *testing.T) {
+	err := runChatTest(
+		&Service{conversations: &fakeConversationStore{}},
+		nil,
+		&chatTestProvider{},
+		nil,
+		ignoreChatEvent,
 	)
-	if !connectErrorCodeIs(err, connect.CodeFailedPrecondition) {
-		t.Fatalf("chat error = %v, want FailedPrecondition", err)
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("nil request error = %v, want InvalidArgument", err)
 	}
 }
 
-func TestChatMapsProviderErrors(t *testing.T) {
-	for _, test := range []struct {
-		name string
-		err  error
-		code connect.Code
-	}{
-		{name: "rejected key", err: llm.ErrUnauthorized, code: connect.CodePermissionDenied},
-		{name: "unavailable", err: llm.ErrUnavailable, code: connect.CodeUnavailable},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			provider := &chatTestProvider{completionErr: test.err}
-			err := (&Service{}).chat(
-				context.Background(),
-				&v1.ChatRequest{Messages: []*v1.ChatMessage{{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "Hello"}}},
-				func(*v1.ChatResponse) error { return nil },
-				func(context.Context) (llm.Provider, string, error) { return provider, "fake-model", nil },
-			)
-			if !connectErrorCodeIs(err, test.code) {
-				t.Fatalf("chat error = %v, want %v", err, test.code)
-			}
-		})
-	}
-}
-
-func TestChatValidation(t *testing.T) {
-	validMessage := func(role v1.ChatRole, text string) *v1.ChatMessage {
-		return &v1.ChatMessage{Role: role, Text: text}
-	}
-	tests := []struct {
-		name     string
-		messages []*v1.ChatMessage
-	}{
-		{name: "empty", messages: nil},
-		{name: "too many", messages: repeatedMessages(maxChatMessages + 1)},
-		{name: "last assistant", messages: []*v1.ChatMessage{validMessage(v1.ChatRole_CHAT_ROLE_ASSISTANT, "Hello")}},
-		{name: "unspecified role", messages: []*v1.ChatMessage{validMessage(v1.ChatRole_CHAT_ROLE_UNSPECIFIED, "Hello")}},
-		{name: "blank text", messages: []*v1.ChatMessage{validMessage(v1.ChatRole_CHAT_ROLE_USER, " \t\n ")}},
-		{name: "text too long", messages: []*v1.ChatMessage{validMessage(v1.ChatRole_CHAT_ROLE_USER, strings.Repeat("a", maxChatMessageRunes+1))}},
-		{name: "nil message", messages: []*v1.ChatMessage{nil}},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := validatedChatMessages(test.messages)
-			if !connectErrorCodeIs(err, connect.CodeInvalidArgument) {
-				t.Fatalf("validation error = %v, want InvalidArgument", err)
-			}
-		})
-	}
-}
-
-func TestChatTrimsMessageTextAndAllowsNonAlternatingRoles(t *testing.T) {
-	messages, err := validatedChatMessages([]*v1.ChatMessage{
-		{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "  first  "},
-		{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "  last  "},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(messages) != 2 || messages[0].Text != "first" || messages[1].Text != "last" {
-		t.Fatalf("validated messages = %+v", messages)
-	}
-}
-
-func TestChatSkipsEmptyAssistantProposalPlaceholder(t *testing.T) {
-	messages, err := validatedChatMessages([]*v1.ChatMessage{
-		{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "refresh my leagues"},
-		{Role: v1.ChatRole_CHAT_ROLE_ASSISTANT},
-		{Role: v1.ChatRole_CHAT_ROLE_ASSISTANT, Text: "Started a refresh of 1 league."},
-		{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "dismiss an alert"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(messages) != 3 {
-		t.Fatalf("validated messages = %+v, want empty assistant proposal placeholder omitted", messages)
-	}
-	if messages[0].Text != "refresh my leagues" ||
-		messages[1].Text != "Started a refresh of 1 league." ||
-		messages[2].Text != "dismiss an alert" {
-		t.Fatalf("validated messages = %+v", messages)
-	}
-}
-
-func TestChatSendFailureStopsProvider(t *testing.T) {
-	provider := &chatTestProvider{deltas: []string{"first", "second"}}
+func TestChatConversationStartSendFailureStopsProvider(t *testing.T) {
+	store := &fakeConversationStore{}
+	provider := &chatTestProvider{response: llm.Response{Text: "must not run"}}
 	sendErr := errors.New("client disconnected")
-	sent := 0
-	err := (&Service{}).chat(
-		context.Background(),
-		&v1.ChatRequest{Messages: []*v1.ChatMessage{{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "Hello"}}},
-		func(*v1.ChatResponse) error {
-			sent++
-			return sendErr
-		},
-		func(context.Context) (llm.Provider, string, error) { return provider, "fake-model", nil },
-	)
-	if !errors.Is(err, sendErr) || sent != 1 {
-		t.Fatalf("chat error = %v, sent %d events", err, sent)
+	sendCalls := 0
+
+	err := runChatTest(&Service{conversations: store}, chatTestRequest("", "question"), provider, nil, func(*v1.ChatResponse) error {
+		sendCalls++
+		return sendErr
+	})
+	if !errors.Is(err, sendErr) || sendCalls != 1 || provider.completionCalls != 0 || store.saveCalls != 0 {
+		t.Fatalf("error=%v send calls=%d provider calls=%d save calls=%d", err, sendCalls, provider.completionCalls, store.saveCalls)
+	}
+}
+
+func TestChatReturnsConversationSaveError(t *testing.T) {
+	saveErr := connect.NewError(connect.CodeInternal, "save failed")
+	store := &fakeConversationStore{saveErr: saveErr}
+	provider := &chatTestProvider{response: llm.Response{Text: "answer"}}
+
+	err := runChatTest(&Service{conversations: store}, chatTestRequest("", "question"), provider, nil, ignoreChatEvent)
+	if !errors.Is(err, saveErr) {
+		t.Fatalf("chat error = %v, want save error %v", err, saveErr)
+	}
+}
+
+func TestChatReturnsConversationLoadNotFound(t *testing.T) {
+	notFound := connect.NewError(connect.CodeNotFound, "conversation not found")
+	store := &fakeConversationStore{loadErr: notFound}
+	provider := &chatTestProvider{}
+
+	err := runChatTest(&Service{conversations: store}, chatTestRequest("00000000-0000-0000-0000-000000000003", "question"), provider, nil, ignoreChatEvent)
+	if !errors.Is(err, notFound) || provider.completionCalls != 0 || store.createCalls != 0 {
+		t.Fatalf("chat error=%v provider calls=%d create calls=%d", err, provider.completionCalls, store.createCalls)
+	}
+}
+
+func runChatTest(
+	service *Service,
+	request *v1.ChatRequest,
+	provider llm.Provider,
+	loadErr error,
+	send chatEventSender,
+) error {
+	return service.chat(context.Background(), request, send, func(context.Context) (llm.Provider, string, error) {
+		return provider, "fake-model", loadErr
+	})
+}
+
+func chatTestRequest(conversationID, message string) *v1.ChatRequest {
+	return &v1.ChatRequest{ConversationId: conversationID, Message: message}
+}
+
+func ignoreChatEvent(*v1.ChatResponse) error {
+	return nil
+}
+
+func cloneChatTestMessages(messages []llm.Message) []llm.Message {
+	cloned := append([]llm.Message(nil), messages...)
+	for index := range cloned {
+		cloned[index].ToolCalls = append([]llm.ToolCall(nil), messages[index].ToolCalls...)
+		cloned[index].ToolResults = append([]llm.ToolResult(nil), messages[index].ToolResults...)
+	}
+	return cloned
+}
+
+func assertChatTestSavedTurn(t *testing.T, store *fakeConversationStore, id string, want []llm.Message) {
+	t.Helper()
+	if store.savedConversationID != id || len(store.savedTurns) != 1 {
+		t.Fatalf("saved conversation=%q turns=%d, want %q and one turn", store.savedConversationID, len(store.savedTurns), id)
+	}
+	assertChatTestMessages(t, store.savedTurns[0], want)
+}
+
+func assertChatTestMessages(t *testing.T, got, want []llm.Message) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("messages = %+v, want %+v", got, want)
+	}
+	for index := range want {
+		if got[index].Role != want[index].Role || got[index].Text != want[index].Text ||
+			len(got[index].ToolCalls) != len(want[index].ToolCalls) ||
+			len(got[index].ToolResults) != len(want[index].ToolResults) {
+			t.Fatalf("message %d = %+v, want %+v", index, got[index], want[index])
+		}
 	}
 }
 
 func connectErrorCodeIs(err error, want connect.Code) bool {
 	var connectErr *connect.Error
 	return errors.As(err, &connectErr) && connectErr.Code() == want
-}
-
-func repeatedMessages(count int) []*v1.ChatMessage {
-	messages := make([]*v1.ChatMessage, count)
-	for index := range messages {
-		messages[index] = &v1.ChatMessage{Role: v1.ChatRole_CHAT_ROLE_USER, Text: "message"}
-	}
-	return messages
-}
-
-func messageNumber(index int) string {
-	return fmt.Sprintf("message %02d", index)
 }
