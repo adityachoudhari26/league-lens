@@ -35,18 +35,7 @@ func leagueTools(reader assistantDashboard) []assistantTool {
 			`{"type":"object","properties":{},"additionalProperties":false}`,
 			fixedToolLabel("Looking up your leagues"),
 			func(ctx context.Context, raw json.RawMessage) (string, error) {
-				if _, err := decodeToolInput[struct{}](raw); err != nil {
-					return "", err
-				}
-				result, err := listLeagues(ctx, reader)
-				if err != nil {
-					return "", err
-				}
-				content, err := json.Marshal(result)
-				if err != nil {
-					return "", err
-				}
-				return truncateToolResult(string(content)), nil
+				return runListLeagues(ctx, reader, raw)
 			},
 		),
 		readTool[leagueIDInput](
@@ -63,6 +52,21 @@ func leagueTools(reader assistantDashboard) []assistantTool {
 	}
 }
 
+func runListLeagues(ctx context.Context, reader assistantDashboard, raw json.RawMessage) (string, error) {
+	if _, err := decodeToolInput[struct{}](raw); err != nil {
+		return "", err
+	}
+	result, err := listLeagues(ctx, reader)
+	if err != nil {
+		return "", err
+	}
+	content, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+	return truncateToolResult(string(content)), nil
+}
+
 // listLeagues loads imported leagues and adds their selected team names for model-facing lookup.
 func listLeagues(ctx context.Context, reader assistantDashboard) (listLeaguesResult, error) {
 	response, err := reader.ListLeagues(ctx, &v1.ListLeaguesRequest{PageSize: 100})
@@ -72,6 +76,7 @@ func listLeagues(ctx context.Context, reader assistantDashboard) (listLeaguesRes
 	return listLeaguesBuildResult(ctx, reader, response.GetLeagues())
 }
 
+// listLeaguesBuildResult builds the model-facing list and fails if any selected-team lookup fails.
 func listLeaguesBuildResult(
 	ctx context.Context,
 	reader assistantDashboard,

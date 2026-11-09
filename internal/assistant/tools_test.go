@@ -172,9 +172,7 @@ func TestListLeaguesIncludesSelectedTeamName(t *testing.T) {
 			"league-with-team": {Teams: []*v1.Team{{Id: "selected-team", Name: "Chud Ahh Team"}}},
 		},
 	}
-	result := runAssistantTool(context.Background(), buildReadOnlyTools(reader), llm.ToolCall{
-		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
-	})
+	result := runListLeaguesTool(t, reader)
 	if result.IsError {
 		t.Fatalf("list_leagues error = %+v", result)
 	}
@@ -182,17 +180,8 @@ func TestListLeaguesIncludesSelectedTeamName(t *testing.T) {
 	if err := json.Unmarshal([]byte(result.Content), &output); err != nil {
 		t.Fatal(err)
 	}
-	if reader.listLeaguesRequest.GetPageSize() != 100 || len(reader.getLeagueRequests) != 1 ||
-		reader.getLeagueRequests[0].GetLeagueSeasonId() != "league-with-team" {
-		t.Fatalf("requests = list:%+v, details:%+v", reader.listLeaguesRequest, reader.getLeagueRequests)
-	}
-	if len(output.Leagues) != 2 || output.Leagues[0].ID != "league-with-team" ||
-		output.Leagues[0].Provider != "sleeper" || output.Leagues[0].Season != 2026 ||
-		output.Leagues[0].LastSuccessfulSyncAt != "2026-11-03T12:30:00Z" ||
-		output.Leagues[0].MyTeam == nil || output.Leagues[0].MyTeam.ID != "selected-team" ||
-		output.Leagues[0].MyTeam.Name != "Chud Ahh Team" || output.Leagues[1].MyTeam != nil {
-		t.Fatalf("list_leagues output = %+v", output)
-	}
+	assertListLeaguesRequests(t, reader)
+	assertListedLeagues(t, output)
 	if strings.Contains(result.Content, "selected_team_ids") {
 		t.Fatalf("list_leagues exposed selected_team_ids: %s", result.Content)
 	}
@@ -205,9 +194,7 @@ func TestListLeaguesFailsWhenTeamEnrichmentFails(t *testing.T) {
 		}},
 		getLeagueErr: errors.New("private dashboard detail"),
 	}
-	result := runAssistantTool(context.Background(), buildReadOnlyTools(reader), llm.ToolCall{
-		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
-	})
+	result := runListLeaguesTool(t, reader)
 	if !result.IsError || result.Content != "couldn't load the requested data" {
 		t.Fatalf("list_leagues error result = %+v", result)
 	}
@@ -222,11 +209,54 @@ func TestListLeaguesOmitsUnknownSelectedTeam(t *testing.T) {
 			"league": {Teams: []*v1.Team{{Id: "other-team", Name: "Other Team"}}},
 		},
 	}
-	result := runAssistantTool(context.Background(), buildReadOnlyTools(reader), llm.ToolCall{
-		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
-	})
+	result := runListLeaguesTool(t, reader)
 	if result.IsError || strings.Contains(result.Content, "my_team") {
 		t.Fatalf("list_leagues output = %+v", result)
+	}
+}
+
+func runListLeaguesTool(t *testing.T, reader assistantDashboard) llm.ToolResult {
+	t.Helper()
+	return runAssistantTool(context.Background(), buildReadOnlyTools(reader), llm.ToolCall{
+		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
+	})
+}
+
+func assertListLeaguesRequests(t *testing.T, reader *fakeAssistantDashboard) {
+	t.Helper()
+	if reader.listLeaguesRequest == nil || reader.listLeaguesRequest.GetPageSize() != 100 {
+		t.Fatalf("list request = %+v, want page size 100", reader.listLeaguesRequest)
+	}
+	if len(reader.getLeagueRequests) != 1 {
+		t.Fatalf("GetLeague requests = %+v, want one request", reader.getLeagueRequests)
+	}
+	if reader.getLeagueRequests[0].GetLeagueSeasonId() != "league-with-team" {
+		t.Fatalf("GetLeague request = %+v, want league-with-team", reader.getLeagueRequests[0])
+	}
+}
+
+func assertListedLeagues(t *testing.T, output listLeaguesResult) {
+	t.Helper()
+	if len(output.Leagues) != 2 {
+		t.Fatalf("listed leagues = %+v, want two leagues", output.Leagues)
+	}
+	withTeam := output.Leagues[0]
+	if withTeam.ID != "league-with-team" || withTeam.Provider != "sleeper" || withTeam.Season != 2026 ||
+		withTeam.LastSuccessfulSyncAt != "2026-11-03T12:30:00Z" {
+		t.Fatalf("league with selected team = %+v", withTeam)
+	}
+	if withTeam.MyTeam == nil {
+		t.Fatal("league with selected team omitted my_team")
+	}
+	if withTeam.MyTeam.ID != "selected-team" || withTeam.MyTeam.Name != "Chud Ahh Team" {
+		t.Fatalf("selected team = %+v, want selected-team / Chud Ahh Team", withTeam.MyTeam)
+	}
+	withoutTeam := output.Leagues[1]
+	if withoutTeam.ID != "league-without-team" {
+		t.Fatalf("league without selected team = %+v", withoutTeam)
+	}
+	if withoutTeam.MyTeam != nil {
+		t.Fatalf("league without selected team included my_team: %+v", withoutTeam.MyTeam)
 	}
 }
 
@@ -252,6 +282,9 @@ func TestAssistantToolErrorsAreSafe(t *testing.T) {
 		if !result.IsError || strings.Contains(result.Content, "internals") {
 			t.Fatalf("%s error result = %+v", call.Name, result)
 		}
+	}
+	if len(reader.getLeagueRequests) != 0 {
+		t.Fatalf("GetLeague requests after ListLeagues failed = %+v, want none", reader.getLeagueRequests)
 	}
 	result := runAssistantTool(context.Background(), tools, llm.ToolCall{
 		ID: "extra", Name: "get_league", Input: json.RawMessage(`{"league_season_id":"id","extra":true}`),
