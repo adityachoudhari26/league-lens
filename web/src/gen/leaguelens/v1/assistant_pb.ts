@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file leaguelens/v1/assistant.proto.
  */
 export const file_leaguelens_v1_assistant: GenFile = /*@__PURE__*/
-  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSJiCgtQYWdlQ29udGV4dBIMCgRwYXRoGAEgASgJEhgKEGxlYWd1ZV9zZWFzb25faWQYAiABKAkSDwoHdGVhbV9pZBgDIAEoCRIRCgR3ZWVrGAQgASgFSACIAQFCBwoFX3dlZWsicQoLQ2hhdFJlcXVlc3QSKAoEcGFnZRgCIAEoCzIaLmxlYWd1ZWxlbnMudjEuUGFnZUNvbnRleHQSFwoPY29udmVyc2F0aW9uX2lkGAMgASgJEg8KB21lc3NhZ2UYBCABKAlKBAgBEAJSCG1lc3NhZ2VzIt0BCgxDaGF0UmVzcG9uc2USKAoEdGV4dBgBIAEoCzIYLmxlYWd1ZWxlbnMudjEuVGV4dERlbHRhSAASKwoEdG9vbBgCIAEoCzIbLmxlYWd1ZWxlbnMudjEuVG9vbEFjdGl2aXR5SAASMQoIcHJvcG9zYWwYAyABKAsyHS5sZWFndWVsZW5zLnYxLkFjdGlvblByb3Bvc2FsSAASOgoMY29udmVyc2F0aW9uGAQgASgLMiIubGVhZ3VlbGVucy52MS5Db252ZXJzYXRpb25TdGFydGVkSABCBwoFZXZlbnQiIQoTQ29udmVyc2F0aW9uU3RhcnRlZBIKCgJpZBgBIAEoCSIZCglUZXh0RGVsdGESDAoEdGV4dBgBIAEoCSIdCgxUb29sQWN0aXZpdHkSDQoFbGFiZWwYASABKAkizQEKD0Fzc2lzdGFudEFjdGlvbhI4CgxzeW5jX2xlYWd1ZXMYASABKAsyIC5sZWFndWVsZW5zLnYxLlN5bmNMZWFndWVzQWN0aW9uSAASOgoNZGlzbWlzc19hbGVydBgCIAEoCzIhLmxlYWd1ZWxlbnMudjEuRGlzbWlzc0FsZXJ0QWN0aW9uSAASOgoNcmVzdG9yZV9hbGVydBgDIAEoCzIhLmxlYWd1ZWxlbnMudjEuUmVzdG9yZUFsZXJ0QWN0aW9uSABCCAoGYWN0aW9uIicKEVN5bmNMZWFndWVzQWN0aW9uEhIKCm9ubHlfc3RhbGUYASABKAgiOgoSRGlzbWlzc0FsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiOgoSUmVzdG9yZUFsZXJ0QWN0aW9uEhMKC2ZpbmdlcnByaW50GAEgASgJEg8KB3N1bW1hcnkYAiABKAkiUQoOQWN0aW9uUHJvcG9zYWwSDwoHc3VtbWFyeRgBIAEoCRIuCgZhY3Rpb24YAiABKAsyHi5sZWFndWVsZW5zLnYxLkFzc2lzdGFudEFjdGlvbiJkChlSdW5Bc3Npc3RhbnRBY3Rpb25SZXF1ZXN0Ei4KBmFjdGlvbhgBIAEoCzIeLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50QWN0aW9uEhcKD2NvbnZlcnNhdGlvbl9pZBgCIAEoCSItChpSdW5Bc3Npc3RhbnRBY3Rpb25SZXNwb25zZRIPCgdzdW1tYXJ5GAEgASgJKoMBChFBc3Npc3RhbnRQcm92aWRlchIiCh5BU1NJU1RBTlRfUFJPVklERVJfVU5TUEVDSUZJRUQQABIgChxBU1NJU1RBTlRfUFJPVklERVJfQU5USFJPUElDEAESKAokQVNTSVNUQU5UX1BST1ZJREVSX09QRU5BSV9DT01QQVRJQkxFEAIyjQUKEEFzc2lzdGFudFNlcnZpY2USbwoUR2V0QXNzaXN0YW50U2V0dGluZ3MSKi5sZWFndWVsZW5zLnYxLkdldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdBorLmxlYWd1ZWxlbnMudjEuR2V0QXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJsChNMaXN0QXNzaXN0YW50TW9kZWxzEikubGVhZ3VlbGVucy52MS5MaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBoqLmxlYWd1ZWxlbnMudjEuTGlzdEFzc2lzdGFudE1vZGVsc1Jlc3BvbnNlEnIKFVNhdmVBc3Npc3RhbnRTZXR0aW5ncxIrLmxlYWd1ZWxlbnMudjEuU2F2ZUFzc2lzdGFudFNldHRpbmdzUmVxdWVzdBosLmxlYWd1ZWxlbnMudjEuU2F2ZUFzc2lzdGFudFNldHRpbmdzUmVzcG9uc2USeAoXRGVsZXRlQXNzaXN0YW50U2V0dGluZ3MSLS5sZWFndWVsZW5zLnYxLkRlbGV0ZUFzc2lzdGFudFNldHRpbmdzUmVxdWVzdBouLmxlYWd1ZWxlbnMudjEuRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJBCgRDaGF0EhoubGVhZ3VlbGVucy52MS5DaGF0UmVxdWVzdBobLmxlYWd1ZWxlbnMudjEuQ2hhdFJlc3BvbnNlMAESaQoSUnVuQXNzaXN0YW50QWN0aW9uEigubGVhZ3VlbGVucy52MS5SdW5Bc3Npc3RhbnRBY3Rpb25SZXF1ZXN0GikubGVhZ3VlbGVucy52MS5SdW5Bc3Npc3RhbnRBY3Rpb25SZXNwb25zZUJSWlBnaXRodWIuY29tL2FkaXR5YWNob3VkaGFyaTI2L2xlYWd1ZS1sZW5zL2ludGVybmFsL2dlbi9sZWFndWVsZW5zL3YxO2xlYWd1ZWxlbnN2MWIGcHJvdG8z");
+  fileDesc("Ch1sZWFndWVsZW5zL3YxL2Fzc2lzdGFudC5wcm90bxINbGVhZ3VlbGVucy52MSJ+ChFBc3Npc3RhbnRTZXR0aW5ncxIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDQoFbW9kZWwYAyABKAkSFAoMYXBpX2tleV9oaW50GAQgASgJIh0KG0dldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdCJSChxHZXRBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyJzChpMaXN0QXNzaXN0YW50TW9kZWxzUmVxdWVzdBIyCghwcm92aWRlchgBIAEoDjIgLmxlYWd1ZWxlbnMudjEuQXNzaXN0YW50UHJvdmlkZXISEAoIYmFzZV91cmwYAiABKAkSDwoHYXBpX2tleRgDIAEoCSItChtMaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2USDgoGbW9kZWxzGAEgAygJIoQBChxTYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0EjIKCHByb3ZpZGVyGAEgASgOMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRQcm92aWRlchIQCghiYXNlX3VybBgCIAEoCRINCgVtb2RlbBgDIAEoCRIPCgdhcGlfa2V5GAQgASgJIlMKHVNhdmVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEjIKCHNldHRpbmdzGAEgASgLMiAubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRTZXR0aW5ncyIgCh5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1JlcXVlc3QiIQofRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZSIxChZHZXRDb252ZXJzYXRpb25SZXF1ZXN0EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCSJJChdHZXRDb252ZXJzYXRpb25SZXNwb25zZRIuCgV0dXJucxgBIAMoCzIfLmxlYWd1ZWxlbnMudjEuQ29udmVyc2F0aW9uVHVybiJoChBDb252ZXJzYXRpb25UdXJuEi0KBHJvbGUYASABKA4yHy5sZWFndWVsZW5zLnYxLkNvbnZlcnNhdGlvblJvbGUSDAoEdGV4dBgCIAEoCRIXCg90b29sX2FjdGl2aXRpZXMYAyADKAkiYgoLUGFnZUNvbnRleHQSDAoEcGF0aBgBIAEoCRIYChBsZWFndWVfc2Vhc29uX2lkGAIgASgJEg8KB3RlYW1faWQYAyABKAkSEQoEd2VlaxgEIAEoBUgAiAEBQgcKBV93ZWVrInEKC0NoYXRSZXF1ZXN0EigKBHBhZ2UYAiABKAsyGi5sZWFndWVsZW5zLnYxLlBhZ2VDb250ZXh0EhcKD2NvbnZlcnNhdGlvbl9pZBgDIAEoCRIPCgdtZXNzYWdlGAQgASgJSgQIARACUghtZXNzYWdlcyLdAQoMQ2hhdFJlc3BvbnNlEigKBHRleHQYASABKAsyGC5sZWFndWVsZW5zLnYxLlRleHREZWx0YUgAEisKBHRvb2wYAiABKAsyGy5sZWFndWVsZW5zLnYxLlRvb2xBY3Rpdml0eUgAEjEKCHByb3Bvc2FsGAMgASgLMh0ubGVhZ3VlbGVucy52MS5BY3Rpb25Qcm9wb3NhbEgAEjoKDGNvbnZlcnNhdGlvbhgEIAEoCzIiLmxlYWd1ZWxlbnMudjEuQ29udmVyc2F0aW9uU3RhcnRlZEgAQgcKBWV2ZW50IiEKE0NvbnZlcnNhdGlvblN0YXJ0ZWQSCgoCaWQYASABKAkiGQoJVGV4dERlbHRhEgwKBHRleHQYASABKAkiHQoMVG9vbEFjdGl2aXR5Eg0KBWxhYmVsGAEgASgJIs0BCg9Bc3Npc3RhbnRBY3Rpb24SOAoMc3luY19sZWFndWVzGAEgASgLMiAubGVhZ3VlbGVucy52MS5TeW5jTGVhZ3Vlc0FjdGlvbkgAEjoKDWRpc21pc3NfYWxlcnQYAiABKAsyIS5sZWFndWVsZW5zLnYxLkRpc21pc3NBbGVydEFjdGlvbkgAEjoKDXJlc3RvcmVfYWxlcnQYAyABKAsyIS5sZWFndWVsZW5zLnYxLlJlc3RvcmVBbGVydEFjdGlvbkgAQggKBmFjdGlvbiInChFTeW5jTGVhZ3Vlc0FjdGlvbhISCgpvbmx5X3N0YWxlGAEgASgIIjoKEkRpc21pc3NBbGVydEFjdGlvbhITCgtmaW5nZXJwcmludBgBIAEoCRIPCgdzdW1tYXJ5GAIgASgJIjoKElJlc3RvcmVBbGVydEFjdGlvbhITCgtmaW5nZXJwcmludBgBIAEoCRIPCgdzdW1tYXJ5GAIgASgJIlEKDkFjdGlvblByb3Bvc2FsEg8KB3N1bW1hcnkYASABKAkSLgoGYWN0aW9uGAIgASgLMh4ubGVhZ3VlbGVucy52MS5Bc3Npc3RhbnRBY3Rpb24iZAoZUnVuQXNzaXN0YW50QWN0aW9uUmVxdWVzdBIuCgZhY3Rpb24YASABKAsyHi5sZWFndWVsZW5zLnYxLkFzc2lzdGFudEFjdGlvbhIXCg9jb252ZXJzYXRpb25faWQYAiABKAkiLQoaUnVuQXNzaXN0YW50QWN0aW9uUmVzcG9uc2USDwoHc3VtbWFyeRgBIAEoCSqDAQoRQXNzaXN0YW50UHJvdmlkZXISIgoeQVNTSVNUQU5UX1BST1ZJREVSX1VOU1BFQ0lGSUVEEAASIAocQVNTSVNUQU5UX1BST1ZJREVSX0FOVEhST1BJQxABEigKJEFTU0lTVEFOVF9QUk9WSURFUl9PUEVOQUlfQ09NUEFUSUJMRRACKnIKEENvbnZlcnNhdGlvblJvbGUSIQodQ09OVkVSU0FUSU9OX1JPTEVfVU5TUEVDSUZJRUQQABIaChZDT05WRVJTQVRJT05fUk9MRV9VU0VSEAESHwobQ09OVkVSU0FUSU9OX1JPTEVfQVNTSVNUQU5UEAIy7wUKEEFzc2lzdGFudFNlcnZpY2USbwoUR2V0QXNzaXN0YW50U2V0dGluZ3MSKi5sZWFndWVsZW5zLnYxLkdldEFzc2lzdGFudFNldHRpbmdzUmVxdWVzdBorLmxlYWd1ZWxlbnMudjEuR2V0QXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJgCg9HZXRDb252ZXJzYXRpb24SJS5sZWFndWVsZW5zLnYxLkdldENvbnZlcnNhdGlvblJlcXVlc3QaJi5sZWFndWVsZW5zLnYxLkdldENvbnZlcnNhdGlvblJlc3BvbnNlEmwKE0xpc3RBc3Npc3RhbnRNb2RlbHMSKS5sZWFndWVsZW5zLnYxLkxpc3RBc3Npc3RhbnRNb2RlbHNSZXF1ZXN0GioubGVhZ3VlbGVucy52MS5MaXN0QXNzaXN0YW50TW9kZWxzUmVzcG9uc2UScgoVU2F2ZUFzc2lzdGFudFNldHRpbmdzEisubGVhZ3VlbGVucy52MS5TYXZlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0GiwubGVhZ3VlbGVucy52MS5TYXZlQXNzaXN0YW50U2V0dGluZ3NSZXNwb25zZRJ4ChdEZWxldGVBc3Npc3RhbnRTZXR0aW5ncxItLmxlYWd1ZWxlbnMudjEuRGVsZXRlQXNzaXN0YW50U2V0dGluZ3NSZXF1ZXN0Gi4ubGVhZ3VlbGVucy52MS5EZWxldGVBc3Npc3RhbnRTZXR0aW5nc1Jlc3BvbnNlEkEKBENoYXQSGi5sZWFndWVsZW5zLnYxLkNoYXRSZXF1ZXN0GhsubGVhZ3VlbGVucy52MS5DaGF0UmVzcG9uc2UwARJpChJSdW5Bc3Npc3RhbnRBY3Rpb24SKC5sZWFndWVsZW5zLnYxLlJ1bkFzc2lzdGFudEFjdGlvblJlcXVlc3QaKS5sZWFndWVsZW5zLnYxLlJ1bkFzc2lzdGFudEFjdGlvblJlc3BvbnNlQlJaUGdpdGh1Yi5jb20vYWRpdHlhY2hvdWRoYXJpMjYvbGVhZ3VlLWxlbnMvaW50ZXJuYWwvZ2VuL2xlYWd1ZWxlbnMvdjE7bGVhZ3VlbGVuc3YxYgZwcm90bzM");
 
 /**
  * @generated from message leaguelens.v1.AssistantSettings
@@ -194,6 +194,69 @@ export const DeleteAssistantSettingsResponseSchema: GenMessage<DeleteAssistantSe
   messageDesc(file_leaguelens_v1_assistant, 8);
 
 /**
+ * @generated from message leaguelens.v1.GetConversationRequest
+ */
+export type GetConversationRequest = Message<"leaguelens.v1.GetConversationRequest"> & {
+  /**
+   * @generated from field: string conversation_id = 1;
+   */
+  conversationId: string;
+};
+
+/**
+ * Describes the message leaguelens.v1.GetConversationRequest.
+ * Use `create(GetConversationRequestSchema)` to create a new message.
+ */
+export const GetConversationRequestSchema: GenMessage<GetConversationRequest> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 9);
+
+/**
+ * @generated from message leaguelens.v1.GetConversationResponse
+ */
+export type GetConversationResponse = Message<"leaguelens.v1.GetConversationResponse"> & {
+  /**
+   * @generated from field: repeated leaguelens.v1.ConversationTurn turns = 1;
+   */
+  turns: ConversationTurn[];
+};
+
+/**
+ * Describes the message leaguelens.v1.GetConversationResponse.
+ * Use `create(GetConversationResponseSchema)` to create a new message.
+ */
+export const GetConversationResponseSchema: GenMessage<GetConversationResponse> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 10);
+
+/**
+ * One bubble in the chat panel, rebuilt from saved messages.
+ *
+ * @generated from message leaguelens.v1.ConversationTurn
+ */
+export type ConversationTurn = Message<"leaguelens.v1.ConversationTurn"> & {
+  /**
+   * @generated from field: leaguelens.v1.ConversationRole role = 1;
+   */
+  role: ConversationRole;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+
+  /**
+   * @generated from field: repeated string tool_activities = 3;
+   */
+  toolActivities: string[];
+};
+
+/**
+ * Describes the message leaguelens.v1.ConversationTurn.
+ * Use `create(ConversationTurnSchema)` to create a new message.
+ */
+export const ConversationTurnSchema: GenMessage<ConversationTurn> = /*@__PURE__*/
+  messageDesc(file_leaguelens_v1_assistant, 11);
+
+/**
  * @generated from message leaguelens.v1.PageContext
  */
 export type PageContext = Message<"leaguelens.v1.PageContext"> & {
@@ -223,7 +286,7 @@ export type PageContext = Message<"leaguelens.v1.PageContext"> & {
  * Use `create(PageContextSchema)` to create a new message.
  */
 export const PageContextSchema: GenMessage<PageContext> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 9);
+  messageDesc(file_leaguelens_v1_assistant, 12);
 
 /**
  * @generated from message leaguelens.v1.ChatRequest
@@ -252,7 +315,7 @@ export type ChatRequest = Message<"leaguelens.v1.ChatRequest"> & {
  * Use `create(ChatRequestSchema)` to create a new message.
  */
 export const ChatRequestSchema: GenMessage<ChatRequest> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 10);
+  messageDesc(file_leaguelens_v1_assistant, 13);
 
 /**
  * @generated from message leaguelens.v1.ChatResponse
@@ -293,7 +356,7 @@ export type ChatResponse = Message<"leaguelens.v1.ChatResponse"> & {
  * Use `create(ChatResponseSchema)` to create a new message.
  */
 export const ChatResponseSchema: GenMessage<ChatResponse> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 11);
+  messageDesc(file_leaguelens_v1_assistant, 14);
 
 /**
  * @generated from message leaguelens.v1.ConversationStarted
@@ -310,7 +373,7 @@ export type ConversationStarted = Message<"leaguelens.v1.ConversationStarted"> &
  * Use `create(ConversationStartedSchema)` to create a new message.
  */
 export const ConversationStartedSchema: GenMessage<ConversationStarted> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 12);
+  messageDesc(file_leaguelens_v1_assistant, 15);
 
 /**
  * @generated from message leaguelens.v1.TextDelta
@@ -327,7 +390,7 @@ export type TextDelta = Message<"leaguelens.v1.TextDelta"> & {
  * Use `create(TextDeltaSchema)` to create a new message.
  */
 export const TextDeltaSchema: GenMessage<TextDelta> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 13);
+  messageDesc(file_leaguelens_v1_assistant, 16);
 
 /**
  * @generated from message leaguelens.v1.ToolActivity
@@ -344,7 +407,7 @@ export type ToolActivity = Message<"leaguelens.v1.ToolActivity"> & {
  * Use `create(ToolActivitySchema)` to create a new message.
  */
 export const ToolActivitySchema: GenMessage<ToolActivity> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 14);
+  messageDesc(file_leaguelens_v1_assistant, 17);
 
 /**
  * @generated from message leaguelens.v1.AssistantAction
@@ -379,7 +442,7 @@ export type AssistantAction = Message<"leaguelens.v1.AssistantAction"> & {
  * Use `create(AssistantActionSchema)` to create a new message.
  */
 export const AssistantActionSchema: GenMessage<AssistantAction> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 15);
+  messageDesc(file_leaguelens_v1_assistant, 18);
 
 /**
  * @generated from message leaguelens.v1.SyncLeaguesAction
@@ -396,7 +459,7 @@ export type SyncLeaguesAction = Message<"leaguelens.v1.SyncLeaguesAction"> & {
  * Use `create(SyncLeaguesActionSchema)` to create a new message.
  */
 export const SyncLeaguesActionSchema: GenMessage<SyncLeaguesAction> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 16);
+  messageDesc(file_leaguelens_v1_assistant, 19);
 
 /**
  * @generated from message leaguelens.v1.DismissAlertAction
@@ -418,7 +481,7 @@ export type DismissAlertAction = Message<"leaguelens.v1.DismissAlertAction"> & {
  * Use `create(DismissAlertActionSchema)` to create a new message.
  */
 export const DismissAlertActionSchema: GenMessage<DismissAlertAction> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 17);
+  messageDesc(file_leaguelens_v1_assistant, 20);
 
 /**
  * @generated from message leaguelens.v1.RestoreAlertAction
@@ -440,7 +503,7 @@ export type RestoreAlertAction = Message<"leaguelens.v1.RestoreAlertAction"> & {
  * Use `create(RestoreAlertActionSchema)` to create a new message.
  */
 export const RestoreAlertActionSchema: GenMessage<RestoreAlertAction> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 18);
+  messageDesc(file_leaguelens_v1_assistant, 21);
 
 /**
  * @generated from message leaguelens.v1.ActionProposal
@@ -462,7 +525,7 @@ export type ActionProposal = Message<"leaguelens.v1.ActionProposal"> & {
  * Use `create(ActionProposalSchema)` to create a new message.
  */
 export const ActionProposalSchema: GenMessage<ActionProposal> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 19);
+  messageDesc(file_leaguelens_v1_assistant, 22);
 
 /**
  * @generated from message leaguelens.v1.RunAssistantActionRequest
@@ -486,7 +549,7 @@ export type RunAssistantActionRequest = Message<"leaguelens.v1.RunAssistantActio
  * Use `create(RunAssistantActionRequestSchema)` to create a new message.
  */
 export const RunAssistantActionRequestSchema: GenMessage<RunAssistantActionRequest> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 20);
+  messageDesc(file_leaguelens_v1_assistant, 23);
 
 /**
  * @generated from message leaguelens.v1.RunAssistantActionResponse
@@ -503,7 +566,7 @@ export type RunAssistantActionResponse = Message<"leaguelens.v1.RunAssistantActi
  * Use `create(RunAssistantActionResponseSchema)` to create a new message.
  */
 export const RunAssistantActionResponseSchema: GenMessage<RunAssistantActionResponse> = /*@__PURE__*/
-  messageDesc(file_leaguelens_v1_assistant, 21);
+  messageDesc(file_leaguelens_v1_assistant, 24);
 
 /**
  * @generated from enum leaguelens.v1.AssistantProvider
@@ -532,6 +595,32 @@ export const AssistantProviderSchema: GenEnum<AssistantProvider> = /*@__PURE__*/
   enumDesc(file_leaguelens_v1_assistant, 0);
 
 /**
+ * @generated from enum leaguelens.v1.ConversationRole
+ */
+export enum ConversationRole {
+  /**
+   * @generated from enum value: CONVERSATION_ROLE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CONVERSATION_ROLE_USER = 1;
+   */
+  USER = 1,
+
+  /**
+   * @generated from enum value: CONVERSATION_ROLE_ASSISTANT = 2;
+   */
+  ASSISTANT = 2,
+}
+
+/**
+ * Describes the enum leaguelens.v1.ConversationRole.
+ */
+export const ConversationRoleSchema: GenEnum<ConversationRole> = /*@__PURE__*/
+  enumDesc(file_leaguelens_v1_assistant, 1);
+
+/**
  * @generated from service leaguelens.v1.AssistantService
  */
 export const AssistantService: GenService<{
@@ -542,6 +631,14 @@ export const AssistantService: GenService<{
     methodKind: "unary";
     input: typeof GetAssistantSettingsRequestSchema;
     output: typeof GetAssistantSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc leaguelens.v1.AssistantService.GetConversation
+   */
+  getConversation: {
+    methodKind: "unary";
+    input: typeof GetConversationRequestSchema;
+    output: typeof GetConversationResponseSchema;
   },
   /**
    * @generated from rpc leaguelens.v1.AssistantService.ListAssistantModels

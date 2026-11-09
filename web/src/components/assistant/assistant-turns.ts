@@ -2,6 +2,8 @@ import { Code, ConnectError } from "@connectrpc/connect"
 import {
   type ActionProposal,
   type ChatResponse,
+  ConversationRole,
+  type GetConversationResponse,
 } from "@/gen/leaguelens/v1/assistant_pb"
 
 export type AssistantTurn = {
@@ -17,6 +19,19 @@ export type AssistantTurn = {
 export type ChatProblem = {
   requiresSetup: boolean
   message?: string
+}
+
+export function turnsFromConversation(
+  response: GetConversationResponse,
+): AssistantTurn[] {
+  return response.turns.map((turn) => ({
+    kind: "message",
+    role: turn.role === ConversationRole.USER ? "user" : "assistant",
+    text: turn.text,
+    ...(turn.toolActivities.length
+      ? { toolActivities: turn.toolActivities }
+      : {}),
+  }))
 }
 
 export function applyChatResponse(

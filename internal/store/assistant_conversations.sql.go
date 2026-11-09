@@ -67,6 +67,45 @@ type InsertAssistantMessagesParams struct {
 	ToolResults    []byte
 }
 
+const listAssistantMessages = `-- name: ListAssistantMessages :many
+SELECT m.turn, m.role, m.text, m.tool_calls
+FROM assistant_messages m
+WHERE m.conversation_id = $1
+ORDER BY m.position
+`
+
+type ListAssistantMessagesRow struct {
+	Turn      int32
+	Role      string
+	Text      string
+	ToolCalls []byte
+}
+
+func (q *Queries) ListAssistantMessages(ctx context.Context, conversationID pgtype.UUID) ([]ListAssistantMessagesRow, error) {
+	rows, err := q.db.Query(ctx, listAssistantMessages, conversationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAssistantMessagesRow{}
+	for rows.Next() {
+		var i ListAssistantMessagesRow
+		if err := rows.Scan(
+			&i.Turn,
+			&i.Role,
+			&i.Text,
+			&i.ToolCalls,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRecentAssistantMessages = `-- name: ListRecentAssistantMessages :many
 SELECT m.position, m.turn, m.role, m.text, m.tool_calls, m.tool_results, m.created_at
 FROM assistant_messages m

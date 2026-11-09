@@ -181,6 +181,43 @@ func TestActionToolsValidateProposals(t *testing.T) {
 	}
 }
 
+func TestActionToolLabelsDescribeProposals(t *testing.T) {
+	tools := buildActionTools(&fakeAssistantDashboard{})
+	cases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name: "sync_leagues", input: `{"only_stale":true}`,
+			want: "Proposed: Refresh stale leagues",
+		},
+		{
+			name: "sync_leagues", input: `{"only_stale":false}`,
+			want: "Proposed: Refresh all leagues",
+		},
+		{
+			name: "dismiss_alert", input: `{"fingerprint":"alert","summary":"Dismiss alert"}`,
+			want: "Proposed: Dismiss alert",
+		},
+		{
+			name: "restore_alert", input: `{"fingerprint":"alert","summary":"Restore alert"}`,
+			want: "Proposed: Restore alert",
+		},
+		{name: "sync_leagues", input: `{invalid}`, want: "Proposed an action"},
+		{name: "dismiss_alert", input: `{invalid}`, want: "Proposed an action"},
+		{name: "restore_alert", input: `{invalid}`, want: "Proposed an action"},
+	}
+	for _, test := range cases {
+		t.Run(test.name+"/"+test.want, func(t *testing.T) {
+			got := toolLabel(tools, test.name, []byte(test.input))
+			if got != test.want {
+				t.Fatalf("tool label = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func TestRunAssistantToolWithoutRunnerReturnsActionFallback(t *testing.T) {
 	result := runAssistantTool(context.Background(), []assistantTool{{
 		definition: llm.Tool{Name: "action"},

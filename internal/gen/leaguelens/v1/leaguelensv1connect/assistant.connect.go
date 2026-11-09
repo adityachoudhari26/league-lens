@@ -27,6 +27,9 @@ const (
 	// AssistantServiceGetAssistantSettingsProcedure is the procedure name of the AssistantService's
 	// GetAssistantSettings RPC.
 	AssistantServiceGetAssistantSettingsProcedure = "/leaguelens.v1.AssistantService/GetAssistantSettings"
+	// AssistantServiceGetConversationProcedure is the procedure name of the AssistantService's
+	// GetConversation RPC.
+	AssistantServiceGetConversationProcedure = "/leaguelens.v1.AssistantService/GetConversation"
 	// AssistantServiceListAssistantModelsProcedure is the procedure name of the AssistantService's
 	// ListAssistantModels RPC.
 	AssistantServiceListAssistantModelsProcedure = "/leaguelens.v1.AssistantService/ListAssistantModels"
@@ -49,6 +52,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_leaguelens_v1_assistant_proto.Services().ByName("AssistantService").Methods().ByName("GetAssistantSettings"),
 			Procedure:  AssistantServiceGetAssistantSettingsProcedure,
+		}
+	})
+	assistantServiceGetConversationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_leaguelens_v1_assistant_proto.Services().ByName("AssistantService").Methods().ByName("GetConversation"),
+			Procedure:  AssistantServiceGetConversationProcedure,
 		}
 	})
 	assistantServiceListAssistantModelsSpec = sync.OnceValue(func() connect.Spec {
@@ -91,6 +101,7 @@ var (
 // AssistantServiceClient is a client for the leaguelens.v1.AssistantService service.
 type AssistantServiceClient interface {
 	GetAssistantSettings(context.Context, *v1.GetAssistantSettingsRequest) (*v1.GetAssistantSettingsResponse, error)
+	GetConversation(context.Context, *v1.GetConversationRequest) (*v1.GetConversationResponse, error)
 	ListAssistantModels(context.Context, *v1.ListAssistantModelsRequest) (*v1.ListAssistantModelsResponse, error)
 	SaveAssistantSettings(context.Context, *v1.SaveAssistantSettingsRequest) (*v1.SaveAssistantSettingsResponse, error)
 	DeleteAssistantSettings(context.Context, *v1.DeleteAssistantSettingsRequest) (*v1.DeleteAssistantSettingsResponse, error)
@@ -127,6 +138,7 @@ func (s AssistantServiceChatClientStream) Close() error {
 // AssistantServiceHandler is an implementation of the leaguelens.v1.AssistantService service.
 type AssistantServiceHandler interface {
 	GetAssistantSettings(context.Context, *v1.GetAssistantSettingsRequest) (*v1.GetAssistantSettingsResponse, error)
+	GetConversation(context.Context, *v1.GetConversationRequest) (*v1.GetConversationResponse, error)
 	ListAssistantModels(context.Context, *v1.ListAssistantModelsRequest) (*v1.ListAssistantModelsResponse, error)
 	SaveAssistantSettings(context.Context, *v1.SaveAssistantSettingsRequest) (*v1.SaveAssistantSettingsResponse, error)
 	DeleteAssistantSettings(context.Context, *v1.DeleteAssistantSettingsRequest) (*v1.DeleteAssistantSettingsResponse, error)
@@ -140,6 +152,7 @@ func RegisterAssistantServiceHandler(server *connect.Server, svc AssistantServic
 	adapter := assistantServiceHandler{svc: svc}
 	server.Register(
 		connect.Method{Spec: assistantServiceGetAssistantSettingsSpec(), Handler: adapter.getAssistantSettings},
+		connect.Method{Spec: assistantServiceGetConversationSpec(), Handler: adapter.getConversation},
 		connect.Method{Spec: assistantServiceListAssistantModelsSpec(), Handler: adapter.listAssistantModels},
 		connect.Method{Spec: assistantServiceSaveAssistantSettingsSpec(), Handler: adapter.saveAssistantSettings},
 		connect.Method{Spec: assistantServiceDeleteAssistantSettingsSpec(), Handler: adapter.deleteAssistantSettings},
@@ -170,6 +183,10 @@ func (UnimplementedAssistantServiceHandler) GetAssistantSettings(context.Context
 	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.AssistantService.GetAssistantSettings is not implemented")
 }
 
+func (UnimplementedAssistantServiceHandler) GetConversation(context.Context, *v1.GetConversationRequest) (*v1.GetConversationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.AssistantService.GetConversation is not implemented")
+}
+
 func (UnimplementedAssistantServiceHandler) ListAssistantModels(context.Context, *v1.ListAssistantModelsRequest) (*v1.ListAssistantModelsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "leaguelens.v1.AssistantService.ListAssistantModels is not implemented")
 }
@@ -197,6 +214,14 @@ type assistantServiceClient struct {
 func (c *assistantServiceClient) GetAssistantSettings(ctx context.Context, req *v1.GetAssistantSettingsRequest) (*v1.GetAssistantSettingsResponse, error) {
 	var res v1.GetAssistantSettingsResponse
 	if err := c.client.CallUnary(ctx, assistantServiceGetAssistantSettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *assistantServiceClient) GetConversation(ctx context.Context, req *v1.GetConversationRequest) (*v1.GetConversationResponse, error) {
+	var res v1.GetConversationResponse
+	if err := c.client.CallUnary(ctx, assistantServiceGetConversationSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -250,6 +275,18 @@ func (h assistantServiceHandler) getAssistantSettings(ctx context.Context, _ con
 		return err
 	}
 	res, err := h.svc.GetAssistantSettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h assistantServiceHandler) getConversation(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetConversationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetConversation(ctx, &req)
 	if err != nil {
 		return err
 	}

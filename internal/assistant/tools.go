@@ -95,6 +95,9 @@ func toolDefinitions(tools []assistantTool) []llm.Tool {
 func toolLabel(tools []assistantTool, name string, input json.RawMessage) string {
 	for _, tool := range tools {
 		if tool.definition.Name == name {
+			if tool.label == nil {
+				return "Checking requested data"
+			}
 			return tool.label(input)
 		}
 	}
