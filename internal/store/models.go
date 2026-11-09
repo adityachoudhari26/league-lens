@@ -14,6 +14,24 @@ type AlertDismissal struct {
 	DismissedAt pgtype.Timestamptz
 }
 
+type AssistantConversation struct {
+	ID        pgtype.UUID
+	UserID    pgtype.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type AssistantMessage struct {
+	ConversationID pgtype.UUID
+	Position       int32
+	Turn           int32
+	Role           string
+	Text           string
+	ToolCalls      []byte
+	ToolResults    []byte
+	CreatedAt      pgtype.Timestamptz
+}
+
 type AssistantSetting struct {
 	UserID          pgtype.UUID
 	Provider        string

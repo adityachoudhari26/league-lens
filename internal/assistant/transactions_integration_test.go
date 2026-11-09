@@ -35,7 +35,7 @@ func (s *assistantTransactionsSource) ListTransactions(
 
 func TestGetTransactionsUsesOwnerNamesCatalogAndRecentWeeks(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_transactions")
 	now := time.Now().UTC()
 	ref := fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "transactions-fixture", Season: 2026}
 	data := transactionsFixtureData(now, ref)

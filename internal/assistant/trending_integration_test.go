@@ -19,7 +19,7 @@ import (
 
 func TestTrendingAvailabilityUsesLatestOwnerScopedRosterSnapshots(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_trending")
 	now := time.Now().UTC()
 	ref := fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "trending-sleeper", Season: 2026}
 	players := []fantasy.Player{
@@ -79,7 +79,7 @@ func TestTrendingAvailabilityUsesLatestOwnerScopedRosterSnapshots(t *testing.T) 
 
 func TestTrendingAvailabilityUsesESPNIDsAndOmitsUnavailableMappings(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_trending")
 	now := time.Now().UTC()
 	ref := fantasy.LeagueRef{Provider: fantasy.ProviderESPN, ExternalID: "trending-espn", Season: 2026}
 	players := []fantasy.Player{

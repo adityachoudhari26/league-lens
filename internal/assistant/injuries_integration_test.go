@@ -22,7 +22,7 @@ import (
 
 func TestInjuryReportReadsOwnerRosterAndRequestedPlayers(t *testing.T) {
 	ctx := context.Background()
-	db := openSettingsTestDatabase(t)
+	db, _ := openAssistantTestDatabase(t, "assistant_injuries")
 	now := time.Now().UTC()
 	ref := fantasy.LeagueRef{Provider: fantasy.ProviderSleeper, ExternalID: "injury-fixture", Season: 2026}
 	importService := importer.Service{DB: db, Source: assistantLeagueSource{data: injuryFixtureData(now, ref)}}

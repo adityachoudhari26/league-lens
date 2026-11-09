@@ -48,6 +48,7 @@ type Querier interface {
 	BackfillMatchup(ctx context.Context, matchupID pgtype.UUID) (BackfillMatchupRow, error)
 	ClearSelectedTeams(ctx context.Context, arg ClearSelectedTeamsParams) error
 	CompleteSync(ctx context.Context, id pgtype.UUID) (SyncRun, error)
+	CreateAssistantConversation(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error)
 	CreateConnection(ctx context.Context, arg CreateConnectionParams) (Connection, error)
 	CreateEncounteredPlayer(ctx context.Context, arg CreateEncounteredPlayerParams) (Player, error)
 	CreateUser(ctx context.Context, email string) (User, error)
@@ -64,6 +65,7 @@ type Querier interface {
 	DeleteSnapshotEntries(ctx context.Context, snapshotID pgtype.UUID) error
 	// Clears one source's saved news for the players a refresh asked about; other players' rows stay.
 	DeleteSourceNewsForPlayers(ctx context.Context, arg DeleteSourceNewsForPlayersParams) error
+	DeleteStaleAssistantConversations(ctx context.Context, arg DeleteStaleAssistantConversationsParams) error
 	DeleteStaleMatchupLineupTeams(ctx context.Context, matchupID pgtype.UUID) error
 	DeleteStaleMatchups(ctx context.Context, arg DeleteStaleMatchupsParams) error
 	DetachLeagueForUser(ctx context.Context, arg DetachLeagueForUserParams) (int64, error)
@@ -74,12 +76,14 @@ type Querier interface {
 	FindAttachedLeagueIDForConnection(ctx context.Context, arg FindAttachedLeagueIDForConnectionParams) (pgtype.UUID, error)
 	FindPlayerByExternalID(ctx context.Context, arg FindPlayerByExternalIDParams) (Player, error)
 	FindProviderConnection(ctx context.Context, arg FindProviderConnectionParams) (Connection, error)
+	GetAssistantConversation(ctx context.Context, arg GetAssistantConversationParams) (pgtype.UUID, error)
 	GetAssistantSettings(ctx context.Context, userID pgtype.UUID) (AssistantSetting, error)
 	GetConnectionForUser(ctx context.Context, arg GetConnectionForUserParams) (Connection, error)
 	GetLatestObservedSnapshot(ctx context.Context, arg GetLatestObservedSnapshotParams) (TeamSnapshot, error)
 	GetPlayerProfile(ctx context.Context, playerID pgtype.UUID) (PlayerProfile, error)
 	GetUserByEmail(ctx context.Context, dollar_1 string) (User, error)
 	HasNewerSuccessfulSync(ctx context.Context, arg HasNewerSuccessfulSyncParams) (bool, error)
+	InsertAssistantMessages(ctx context.Context, arg []InsertAssistantMessagesParams) (int64, error)
 	InsertLineupPointChange(ctx context.Context, arg InsertLineupPointChangeParams) error
 	InsertWinChanceGap(ctx context.Context, arg InsertWinChanceGapParams) error
 	InsertWinChanceGapStarter(ctx context.Context, arg InsertWinChanceGapStarterParams) error
@@ -111,6 +115,7 @@ type Querier interface {
 	ListNewsPlayers(ctx context.Context, lower string) ([]ListNewsPlayersRow, error)
 	ListPlayerExternalIDs(ctx context.Context, playerID pgtype.UUID) ([]PlayerExternalID, error)
 	ListPlayerProfileStats(ctx context.Context, playerID pgtype.UUID) ([]PlayerProfileStat, error)
+	ListRecentAssistantMessages(ctx context.Context, arg ListRecentAssistantMessagesParams) ([]ListRecentAssistantMessagesRow, error)
 	ListRecentPlayerNews(ctx context.Context, arg ListRecentPlayerNewsParams) ([]PlayerNews, error)
 	// Scoring weeks a sync may skip re-reading: every matchup covering the week is
 	// final, and every team has provider history for it from a successful run.
@@ -127,6 +132,7 @@ type Querier interface {
 	// Gap before/after values plus the starter's latest projection and ESPN/NFL identity.
 	ListWinChanceGapStarters(ctx context.Context, arg ListWinChanceGapStartersParams) ([]ListWinChanceGapStartersRow, error)
 	LoadWinChanceGap(ctx context.Context, arg LoadWinChanceGapParams) (LoadWinChanceGapRow, error)
+	LockAssistantConversation(ctx context.Context, arg LockAssistantConversationParams) (LockAssistantConversationRow, error)
 	// Serialize the brief write phase, including shared identity creation, across importers.
 	// No network calls run while this transaction lock is held.
 	LockImportWrites(ctx context.Context) error
@@ -165,6 +171,7 @@ type Querier interface {
 	SelectUserTeam(ctx context.Context, arg SelectUserTeamParams) error
 	SetConnectionStatusForUser(ctx context.Context, arg SetConnectionStatusForUserParams) (int64, error)
 	StartSync(ctx context.Context, arg StartSyncParams) (SyncRun, error)
+	TouchAssistantConversation(ctx context.Context, id pgtype.UUID) error
 	UpdateConnectionForUser(ctx context.Context, arg UpdateConnectionForUserParams) (Connection, error)
 	// Nil counts mean the provider couldn't supply them this tick, so keep the saved values.
 	UpdateLiveLineupEntry(ctx context.Context, arg UpdateLiveLineupEntryParams) (UpdateLiveLineupEntryRow, error)
