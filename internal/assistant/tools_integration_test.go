@@ -110,7 +110,22 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 	if listed.IsError {
 		t.Fatalf("list_leagues: %s", listed.Content)
 	}
-	leagueID := findJSONField(t, listed.Content, "id")
+	var leagueOutput struct {
+		Leagues []struct {
+			ID     string `json:"id"`
+			MyTeam *struct {
+				Name string `json:"name"`
+			} `json:"my_team"`
+		} `json:"leagues"`
+	}
+	if err := json.Unmarshal([]byte(listed.Content), &leagueOutput); err != nil {
+		t.Fatal(err)
+	}
+	if len(leagueOutput.Leagues) != 1 || leagueOutput.Leagues[0].MyTeam == nil ||
+		leagueOutput.Leagues[0].MyTeam.Name != "Home Team" {
+		t.Fatalf("list_leagues did not include the selected team name: %s", listed.Content)
+	}
+	leagueID := leagueOutput.Leagues[0].ID
 	freeAgentSource := &assistantFreeAgentSource{assistantLeagueSource: assistantLeagueSource{data: data}}
 	freeAgentService := &Service{
 		DB: db, OwnerEmail: "tools@example.test", Dashboard: dashboardService,

@@ -20,6 +20,7 @@ func buildSystemPrompt(today time.Time, page *v1.PageContext) string {
 		"Rules:\n" +
 		"- Answer from League Lens data returned by your tools. Never invent scores, " +
 		"projections, injuries, win chances, or news. If the user asks for something your tools don't return, say so in one short sentence.\n" +
+		"- The user may name a league by their own team's name. Before saying a league isn't imported, check the my_team names from list_leagues.\n" +
 		"- Live scores are what has happened. Projections and win chance are predictions. Keep them apart and say which one you mean.\n" +
 		"- When you give a number, say where it came from in a few words, like \"projection, week 7\".\n" +
 		"- Be brief: a few sentences or a short list. Plain text only: no headings, tables, or bold.\n" +

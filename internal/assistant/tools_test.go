@@ -3,11 +3,14 @@ package assistant
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect/v2"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/adityachoudhari26/league-lens/internal/fantasy"
 	v1 "github.com/adityachoudhari26/league-lens/internal/gen/leaguelens/v1"
@@ -32,16 +35,30 @@ type fakeAssistantDashboard struct {
 	dismissAlertErr         error
 	restoreAlertErr         error
 	listLeaguesErr          error
+	listLeaguesResponse     *v1.ListLeaguesResponse
+	getLeagueResponses      map[string]*v1.GetLeagueResponse
+	getLeagueErr            error
+	getLeagueRequests       []*v1.GetLeagueRequest
 	availableMatchupPeriods []int32
 }
 
 func (d *fakeAssistantDashboard) ListLeagues(_ context.Context, request *v1.ListLeaguesRequest) (*v1.ListLeaguesResponse, error) {
 	d.listLeaguesRequest = request
+	if d.listLeaguesResponse != nil {
+		return d.listLeaguesResponse, d.listLeaguesErr
+	}
 	return &v1.ListLeaguesResponse{}, d.listLeaguesErr
 }
 
 func (d *fakeAssistantDashboard) GetLeague(_ context.Context, request *v1.GetLeagueRequest) (*v1.GetLeagueResponse, error) {
 	d.getLeagueRequest = request
+	d.getLeagueRequests = append(d.getLeagueRequests, request)
+	if d.getLeagueErr != nil {
+		return nil, d.getLeagueErr
+	}
+	if response, ok := d.getLeagueResponses[request.GetLeagueSeasonId()]; ok {
+		return response, nil
+	}
 	return &v1.GetLeagueResponse{AvailableMatchupPeriods: d.availableMatchupPeriods}, nil
 }
 
@@ -138,6 +155,78 @@ func TestAssistantToolsMapInputsAndLabels(t *testing.T) {
 	label := toolLabel(tools, "get_my_matchup", json.RawMessage(`{"league_season_id":"league-id","week":5}`))
 	if label != "Reading your matchup (week 5)" {
 		t.Fatalf("matchup label = %q", label)
+	}
+}
+
+func TestListLeaguesIncludesSelectedTeamName(t *testing.T) {
+	reader := &fakeAssistantDashboard{
+		listLeaguesResponse: &v1.ListLeaguesResponse{Leagues: []*v1.League{
+			{
+				Id: "league-with-team", Provider: "sleeper", Season: 2026, Name: "Team Names League",
+				SelectedTeamIds:      []string{"selected-team"},
+				LastSuccessfulSyncAt: timestamppb.New(time.Date(2026, time.November, 3, 12, 30, 0, 0, time.UTC)),
+			},
+			{Id: "league-without-team", Provider: "espn", Season: 2025, Name: "No Team League"},
+		}},
+		getLeagueResponses: map[string]*v1.GetLeagueResponse{
+			"league-with-team": {Teams: []*v1.Team{{Id: "selected-team", Name: "Chud Ahh Team"}}},
+		},
+	}
+	result := runAssistantTool(context.Background(), buildReadOnlyTools(reader), llm.ToolCall{
+		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
+	})
+	if result.IsError {
+		t.Fatalf("list_leagues error = %+v", result)
+	}
+	var output listLeaguesResult
+	if err := json.Unmarshal([]byte(result.Content), &output); err != nil {
+		t.Fatal(err)
+	}
+	if reader.listLeaguesRequest.GetPageSize() != 100 || len(reader.getLeagueRequests) != 1 ||
+		reader.getLeagueRequests[0].GetLeagueSeasonId() != "league-with-team" {
+		t.Fatalf("requests = list:%+v, details:%+v", reader.listLeaguesRequest, reader.getLeagueRequests)
+	}
+	if len(output.Leagues) != 2 || output.Leagues[0].ID != "league-with-team" ||
+		output.Leagues[0].Provider != "sleeper" || output.Leagues[0].Season != 2026 ||
+		output.Leagues[0].LastSuccessfulSyncAt != "2026-11-03T12:30:00Z" ||
+		output.Leagues[0].MyTeam == nil || output.Leagues[0].MyTeam.ID != "selected-team" ||
+		output.Leagues[0].MyTeam.Name != "Chud Ahh Team" || output.Leagues[1].MyTeam != nil {
+		t.Fatalf("list_leagues output = %+v", output)
+	}
+	if strings.Contains(result.Content, "selected_team_ids") {
+		t.Fatalf("list_leagues exposed selected_team_ids: %s", result.Content)
+	}
+}
+
+func TestListLeaguesFailsWhenTeamEnrichmentFails(t *testing.T) {
+	reader := &fakeAssistantDashboard{
+		listLeaguesResponse: &v1.ListLeaguesResponse{Leagues: []*v1.League{
+			{Id: "league", SelectedTeamIds: []string{"team"}},
+		}},
+		getLeagueErr: errors.New("private dashboard detail"),
+	}
+	result := runAssistantTool(context.Background(), buildReadOnlyTools(reader), llm.ToolCall{
+		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
+	})
+	if !result.IsError || result.Content != "couldn't load the requested data" {
+		t.Fatalf("list_leagues error result = %+v", result)
+	}
+}
+
+func TestListLeaguesOmitsUnknownSelectedTeam(t *testing.T) {
+	reader := &fakeAssistantDashboard{
+		listLeaguesResponse: &v1.ListLeaguesResponse{Leagues: []*v1.League{
+			{Id: "league", SelectedTeamIds: []string{"missing-team"}},
+		}},
+		getLeagueResponses: map[string]*v1.GetLeagueResponse{
+			"league": {Teams: []*v1.Team{{Id: "other-team", Name: "Other Team"}}},
+		},
+	}
+	result := runAssistantTool(context.Background(), buildReadOnlyTools(reader), llm.ToolCall{
+		ID: "leagues", Name: "list_leagues", Input: json.RawMessage(`{}`),
+	})
+	if result.IsError || strings.Contains(result.Content, "my_team") {
+		t.Fatalf("list_leagues output = %+v", result)
 	}
 }
 
