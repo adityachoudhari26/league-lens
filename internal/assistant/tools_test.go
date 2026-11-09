@@ -158,6 +158,13 @@ func TestAssistantToolsMapInputsAndLabels(t *testing.T) {
 	}
 }
 
+func TestToolLabelWithoutLabelUsesDefault(t *testing.T) {
+	tools := []assistantTool{{definition: llm.Tool{Name: "tool"}}}
+	if got := toolLabel(tools, "tool", json.RawMessage(`{}`)); got != "Checking requested data" {
+		t.Fatalf("tool label = %q, want fallback", got)
+	}
+}
+
 func TestListLeaguesIncludesSelectedTeamName(t *testing.T) {
 	reader := &fakeAssistantDashboard{
 		listLeaguesResponse: &v1.ListLeaguesResponse{Leagues: []*v1.League{

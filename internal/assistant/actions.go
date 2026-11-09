@@ -17,6 +17,7 @@ import (
 const (
 	maxActionSummaryRunes     = 200
 	maxActionFingerprintRunes = 200
+	actionConfirmedMessage    = "I confirmed the proposed action."
 )
 
 type assistantSync interface {
@@ -95,7 +96,7 @@ func actionOutcomeSummary(response *v1.RunAssistantActionResponse, err error) st
 // recordActionOutcome appends the confirmation and its outcome to the conversation.
 func (s *Service) recordActionOutcome(ctx context.Context, conversationID, summary string) error {
 	return s.conversationStore().saveConversationTurn(ctx, conversationID, []llm.Message{
-		{Role: llm.RoleUser, Text: "I confirmed the proposed action."},
+		{Role: llm.RoleUser, Text: actionConfirmedMessage},
 		{Role: llm.RoleAssistant, Text: summary},
 	})
 }
@@ -170,6 +171,7 @@ func buildActionTools(reader assistantDashboard) []assistantTool {
 			`{"type":"object","properties":{
 				"only_stale":{"type":"boolean","description":"Whether to skip leagues with fresh saved data"}
 			},"required":["only_stale"],"additionalProperties":false}`,
+			syncLeaguesToolLabel,
 			syncLeaguesProposal,
 		),
 		newAssistantActionTool(
@@ -179,6 +181,7 @@ func buildActionTools(reader assistantDashboard) []assistantTool {
 				"fingerprint":{"type":"string","description":"Fingerprint returned by get_alerts"},
 				"summary":{"type":"string","description":"Short human description, at most 200 characters"}
 			},"required":["fingerprint","summary"],"additionalProperties":false}`,
+			alertProposalToolLabel,
 			func(ctx context.Context, raw json.RawMessage) (*v1.ActionProposal, error) {
 				return dismissAlertProposal(ctx, reader, raw)
 			},
@@ -190,6 +193,7 @@ func buildActionTools(reader assistantDashboard) []assistantTool {
 				"fingerprint":{"type":"string","description":"Fingerprint of the dismissed alert"},
 				"summary":{"type":"string","description":"Short human description, at most 200 characters"}
 			},"required":["fingerprint","summary"],"additionalProperties":false}`,
+			alertProposalToolLabel,
 			restoreAlertProposal,
 		),
 	}
@@ -197,14 +201,32 @@ func buildActionTools(reader assistantDashboard) []assistantTool {
 
 func newAssistantActionTool(
 	name, description, schema string,
+	label func(json.RawMessage) string,
 	propose func(context.Context, json.RawMessage) (*v1.ActionProposal, error),
 ) assistantTool {
 	return assistantTool{
 		definition: llm.Tool{
 			Name: name, Description: description, InputSchema: []byte(schema),
 		},
+		label:   label,
 		propose: propose,
 	}
+}
+
+func syncLeaguesToolLabel(raw json.RawMessage) string {
+	input, err := decodeToolInput[syncLeaguesActionInput](raw)
+	if err != nil {
+		return "Proposed an action"
+	}
+	return "Proposed: " + syncLeaguesProposalSummary(input.OnlyStale)
+}
+
+func alertProposalToolLabel(raw json.RawMessage) string {
+	_, summary, err := decodeAlertAction(raw)
+	if err != nil {
+		return "Proposed an action"
+	}
+	return "Proposed: " + summary
 }
 
 func syncLeaguesProposal(_ context.Context, raw json.RawMessage) (*v1.ActionProposal, error) {
@@ -212,10 +234,7 @@ func syncLeaguesProposal(_ context.Context, raw json.RawMessage) (*v1.ActionProp
 	if err != nil {
 		return nil, err
 	}
-	summary := "Refresh all leagues"
-	if input.OnlyStale {
-		summary = "Refresh stale leagues"
-	}
+	summary := syncLeaguesProposalSummary(input.OnlyStale)
 	return &v1.ActionProposal{
 		Summary: summary,
 		Action: &v1.AssistantAction{
@@ -224,6 +243,13 @@ func syncLeaguesProposal(_ context.Context, raw json.RawMessage) (*v1.ActionProp
 			},
 		},
 	}, nil
+}
+
+func syncLeaguesProposalSummary(onlyStale bool) string {
+	if onlyStale {
+		return "Refresh stale leagues"
+	}
+	return "Refresh all leagues"
 }
 
 func dismissAlertProposal(

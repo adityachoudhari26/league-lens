@@ -39,6 +39,12 @@ WHERE m.conversation_id = @conversation_id
   ) - @turn_limit::integer
 ORDER BY m.position;
 
+-- name: ListAssistantMessages :many
+SELECT m.turn, m.role, m.text, m.tool_calls
+FROM assistant_messages m
+WHERE m.conversation_id = @conversation_id
+ORDER BY m.position;
+
 -- name: InsertAssistantMessages :copyfrom
 INSERT INTO assistant_messages (
     conversation_id, position, turn, role, text, tool_calls, tool_results

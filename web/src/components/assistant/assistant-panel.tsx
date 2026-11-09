@@ -17,7 +17,7 @@ type AssistantPanelProps = {
   messages: AssistantTurn[]
   draft: string
   error?: string
-  isLoadingSettings: boolean
+  isLoading: boolean
   hasSettingsError: boolean
   isNotSetUp: boolean
   isStreaming: boolean
@@ -37,7 +37,7 @@ export function AssistantPanel({
   messages,
   draft,
   error,
-  isLoadingSettings,
+  isLoading,
   hasSettingsError,
   isNotSetUp,
   isStreaming,
@@ -57,7 +57,7 @@ export function AssistantPanel({
     bottomRef.current?.scrollIntoView({ block: "end" })
   }, [error, messages])
 
-  const canChat = !isLoadingSettings && !hasSettingsError && !isNotSetUp
+  const canChat = !isLoading && !hasSettingsError && !isNotSetUp
   return (
     <section
       id="assistant-panel"
@@ -74,7 +74,7 @@ export function AssistantPanel({
         <AssistantPanelBody
           messages={messages}
           isStreaming={isStreaming}
-          isLoadingSettings={isLoadingSettings}
+          isLoading={isLoading}
           hasSettingsError={hasSettingsError}
           isNotSetUp={isNotSetUp}
           onSuggestion={onSuggestion}
@@ -149,7 +149,7 @@ function AssistantPanelHeader({
 function AssistantPanelBody({
   messages,
   isStreaming,
-  isLoadingSettings,
+  isLoading,
   hasSettingsError,
   isNotSetUp,
   onSuggestion,
@@ -159,17 +159,17 @@ function AssistantPanelBody({
   AssistantPanelProps,
   | "messages"
   | "isStreaming"
-  | "isLoadingSettings"
+  | "isLoading"
   | "hasSettingsError"
   | "isNotSetUp"
   | "onSuggestion"
   | "onConfirmAction"
   | "onCancelAction"
 >) {
-  if (isLoadingSettings) {
+  if (isLoading) {
     return (
       <p className="my-auto text-center text-sm text-muted-foreground">
-        Loading assistant settings…
+        Loading Playbook…
       </p>
     )
   }

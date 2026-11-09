@@ -92,6 +92,7 @@ type Querier interface {
 	LatestLiveLineupObservationAt(ctx context.Context, matchupID pgtype.UUID) (pgtype.Timestamptz, error)
 	LatestPlayerNews(ctx context.Context, arg LatestPlayerNewsParams) (PlayerNews, error)
 	LatestWinChanceSample(ctx context.Context, matchupID pgtype.UUID) (LatestWinChanceSampleRow, error)
+	ListAssistantMessages(ctx context.Context, conversationID pgtype.UUID) ([]ListAssistantMessagesRow, error)
 	// Starter identities and the latest observed roster's NFL team for play-by-play replay.
 	ListBackfillMatchupStarters(ctx context.Context, matchupID pgtype.UUID) ([]ListBackfillMatchupStartersRow, error)
 	ListConnectionLeaguesForUser(ctx context.Context, userID pgtype.UUID) ([]ListConnectionLeaguesForUserRow, error)

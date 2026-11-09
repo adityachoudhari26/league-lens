@@ -52,7 +52,7 @@ export function AssistantWidget() {
           messages={chat.messages}
           draft={chat.draft}
           error={chat.error}
-          isLoadingSettings={settings.isPending}
+          isLoading={settings.isPending || chat.isRestoring}
           hasSettingsError={settings.isError}
           isNotSetUp={notSetUp}
           isStreaming={chat.isStreaming}

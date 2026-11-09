@@ -1,19 +1,49 @@
 import { create } from "@bufbuild/protobuf"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   ChatRequestSchema,
   type PageContext,
 } from "@/gen/leaguelens/v1/assistant_pb"
-import { useRunAssistantAction } from "@/lib/api/assistant"
+import {
+  fetchAssistantConversation,
+  useRunAssistantAction,
+} from "@/lib/api/assistant"
 import {
   appendAssistantOutcome,
   applyChatResponse,
   chatErrorMessage,
+  turnsFromConversation,
   type AssistantTurn,
   type ChatProblem,
   updateTurn,
 } from "./assistant-turns"
 import { useChatStream } from "./use-chat-stream"
+
+const conversationStorageKey = "playbook-conversation-id"
+
+function readStoredConversationId(): string | undefined {
+  try {
+    return localStorage.getItem(conversationStorageKey) || undefined
+  } catch {
+    return undefined
+  }
+}
+
+function storeConversationId(conversationId: string) {
+  try {
+    localStorage.setItem(conversationStorageKey, conversationId)
+  } catch {
+    // Keep the current session usable without storage.
+  }
+}
+
+function forgetStoredConversationId() {
+  try {
+    localStorage.removeItem(conversationStorageKey)
+  } catch {
+    // Keep the current session usable without storage.
+  }
+}
 
 export function useAssistantChat(page: PageContext) {
   const { isStreaming, stream, stop } = useChatStream()
@@ -21,22 +51,68 @@ export function useAssistantChat(page: PageContext) {
   const [messages, setMessages] = useState<AssistantTurn[]>([])
   const [draft, setDraft] = useState("")
   const [problem, setProblem] = useState<ChatProblem>()
+  const [isRestoring, setIsRestoring] = useState(
+    () => readStoredConversationId() !== undefined,
+  )
   const conversationId = useRef<string | undefined>(undefined)
   const handledActions = useRef(new Set<number>())
+  const restoreController = useRef<AbortController | undefined>(undefined)
+
+  useEffect(() => {
+    const storedConversationId = readStoredConversationId()
+    if (!storedConversationId) return
+
+    const controller = new AbortController()
+    restoreController.current = controller
+
+    async function restoreConversation(id: string) {
+      try {
+        const response = await fetchAssistantConversation(id, controller.signal)
+        if (controller.signal.aborted) return
+        conversationId.current = id
+        setMessages((current) =>
+          current.length ? current : turnsFromConversation(response),
+        )
+      } catch {
+        if (controller.signal.aborted) return
+        conversationId.current = undefined
+        forgetStoredConversationId()
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsRestoring(false)
+          if (restoreController.current === controller) {
+            restoreController.current = undefined
+          }
+        }
+      }
+    }
+
+    void restoreConversation(storedConversationId)
+    return () => {
+      controller.abort()
+      if (restoreController.current === controller) {
+        restoreController.current = undefined
+      }
+    }
+  }, [])
 
   const clear = useCallback(() => {
     stop()
+    restoreController.current?.abort()
+    restoreController.current = undefined
     handledActions.current.clear()
     conversationId.current = undefined
+    forgetStoredConversationId()
     setMessages([])
     setDraft("")
     setProblem(undefined)
+    setIsRestoring(false)
   }, [stop])
 
   const send = useCallback(
     async (value = draft) => {
       const text = value.trim()
-      if (!text || isStreaming) return
+      if (!text || isStreaming || isRestoring) return
       const nextMessages: AssistantTurn[] = [
         ...messages,
         { kind: "message", role: "user", text },
@@ -52,7 +128,9 @@ export function useAssistantChat(page: PageContext) {
         })
         await stream(request, (event) => {
           if (event.event.case === "conversation") {
-            conversationId.current = event.event.value.id
+            const id = event.event.value.id
+            conversationId.current = id
+            storeConversationId(id)
             return
           }
           setMessages((current) => applyChatResponse(current, event))
@@ -61,7 +139,7 @@ export function useAssistantChat(page: PageContext) {
         setProblem(chatErrorMessage(cause))
       }
     },
-    [draft, isStreaming, messages, page, stream],
+    [draft, isRestoring, isStreaming, messages, page, stream],
   )
 
   const runAction = runAssistantAction.mutateAsync
@@ -116,6 +194,7 @@ export function useAssistantChat(page: PageContext) {
     error: problem?.message,
     requiresSetup: problem?.requiresSetup ?? false,
     isStreaming,
+    isRestoring,
     isActionPending,
     hasPendingAction: messages.some(
       (turn) => turn.actionProposal && !turn.actionChoice,

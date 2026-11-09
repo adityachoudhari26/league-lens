@@ -5,6 +5,7 @@ option go_package = "github.com/adityachoudhari26/league-lens/internal/gen/leagu
 
 service AssistantService {
   rpc GetAssistantSettings(GetAssistantSettingsRequest) returns (GetAssistantSettingsResponse);
+  rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
   rpc ListAssistantModels(ListAssistantModelsRequest) returns (ListAssistantModelsResponse);
   rpc SaveAssistantSettings(SaveAssistantSettingsRequest) returns (SaveAssistantSettingsResponse);
   rpc DeleteAssistantSettings(DeleteAssistantSettingsRequest) returns (DeleteAssistantSettingsResponse);
@@ -51,6 +52,24 @@ message SaveAssistantSettingsResponse {
 
 message DeleteAssistantSettingsRequest {}
 message DeleteAssistantSettingsResponse {}
+
+message GetConversationRequest {
+  string conversation_id = 1;
+}
+message GetConversationResponse {
+  repeated ConversationTurn turns = 1;
+}
+enum ConversationRole {
+  CONVERSATION_ROLE_UNSPECIFIED = 0;
+  CONVERSATION_ROLE_USER = 1;
+  CONVERSATION_ROLE_ASSISTANT = 2;
+}
+// One bubble in the chat panel, rebuilt from saved messages.
+message ConversationTurn {
+  ConversationRole role = 1;
+  string text = 2;
+  repeated string tool_activities = 3;
+}
 
 message PageContext {
   string path = 1;

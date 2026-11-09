@@ -5,6 +5,13 @@ import { assistant } from "./client"
 import { overviewQueries } from "./overview"
 import { syncStatusQuery } from "./sync"
 
+export function fetchAssistantConversation(
+  conversationId: string,
+  signal?: AbortSignal,
+) {
+  return assistant.getConversation({ conversationId }, { signal })
+}
+
 export const assistantQueries = {
   settings: {
     queryKey: ["assistant-settings"],
