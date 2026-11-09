@@ -110,7 +110,7 @@ func TestReadToolsUseSeededDashboard(t *testing.T) {
 	if listed.IsError {
 		t.Fatalf("list_leagues: %s", listed.Content)
 	}
-	leagueID := findJSONField(t, listed.Content, "id")
+	leagueID := assertIntegrationListedTeam(t, listed.Content, "Home Team")
 	freeAgentSource := &assistantFreeAgentSource{assistantLeagueSource: assistantLeagueSource{data: data}}
 	freeAgentService := &Service{
 		DB: db, OwnerEmail: "tools@example.test", Dashboard: dashboardService,
@@ -178,6 +178,25 @@ func findJSONField(t *testing.T, content, field string) string {
 	}
 	t.Fatalf("%s missing from %s", field, content)
 	return ""
+}
+
+func assertIntegrationListedTeam(t *testing.T, content, wantName string) string {
+	t.Helper()
+	var output listLeaguesResult
+	if err := json.Unmarshal([]byte(content), &output); err != nil {
+		t.Fatal(err)
+	}
+	if len(output.Leagues) != 1 {
+		t.Fatalf("listed leagues = %+v, want one league", output.Leagues)
+	}
+	league := output.Leagues[0]
+	if league.MyTeam == nil {
+		t.Fatalf("listed league omitted my_team: %+v", league)
+	}
+	if league.MyTeam.Name != wantName {
+		t.Fatalf("listed team name = %q, want %q", league.MyTeam.Name, wantName)
+	}
+	return league.ID
 }
 
 func findNestedField(value any, field string) string {

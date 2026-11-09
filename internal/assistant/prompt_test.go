@@ -19,6 +19,7 @@ func TestBuildSystemPromptDateAndPageContext(t *testing.T) {
 		"Today is Sunday, October 18, 2026. The user is looking at Matchups (/matchups), league league-1, team team-2, week 7.",
 		"- Answer from League Lens data returned by your tools. Never invent scores, " +
 			"projections, injuries, win chances, or news. If the user asks for something your tools don't return, say so in one short sentence.",
+		"- The user may name a league by their own team's name. Before saying a league isn't imported, check the my_team names from list_leagues.",
 		"- You can't make changes on ESPN or Sleeper.",
 	} {
 		if !strings.Contains(prompt, expected) {
